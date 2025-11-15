@@ -83,15 +83,6 @@ return new class extends Migration
 
             $table->timestamps();
         });
-
-        Schema::create('token_package_access', static function (Blueprint $table) {
-            $table->uuid()->primary();
-            $table->foreignUuid('access_token_uuid')->constrained('access_tokens', 'uuid')->cascadeOnDelete();
-            $table->foreignUuid('package_uuid')->constrained('packages', 'uuid')->cascadeOnDelete();
-            $table->timestamps();
-
-            $table->unique(['access_token_uuid', 'package_uuid']);
-        });
     }
 
     public function down(): void
