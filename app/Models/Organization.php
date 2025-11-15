@@ -51,7 +51,7 @@ class Organization extends Model
     protected $guarded = ['uuid'];
 
     /**
-     * @return BelongsTo<User, Organization>
+     * @return BelongsTo<User, $this>
      */
     public function owner(): BelongsTo
     {
@@ -59,7 +59,7 @@ class Organization extends Model
     }
 
     /**
-     * @return BelongsToMany<User, Organization>
+     * @return BelongsToMany<User, $this>
      */
     public function members(): BelongsToMany
     {
@@ -69,7 +69,7 @@ class Organization extends Model
     }
 
     /**
-     * @return HasMany<Repository>
+     * @return HasMany<Repository, $this>
      */
     public function repositories(): HasMany
     {
@@ -77,7 +77,7 @@ class Organization extends Model
     }
 
     /**
-     * @return HasMany<Package>
+     * @return HasMany<Package, $this>
      */
     public function packages(): HasMany
     {
@@ -85,7 +85,7 @@ class Organization extends Model
     }
 
     /**
-     * @return HasMany<AccessToken>
+     * @return HasMany<AccessToken, $this>
      */
     public function accessTokens(): HasMany
     {

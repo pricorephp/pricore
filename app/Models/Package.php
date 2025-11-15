@@ -47,6 +47,7 @@ use Illuminate\Support\Carbon;
  */
 class Package extends Model
 {
+    /** @use HasFactory<PackageFactory> */
     use HasFactory, HasUuids;
 
     protected $guarded = ['uuid'];
@@ -55,16 +56,25 @@ class Package extends Model
         'is_proxy' => 'boolean',
     ];
 
+    /**
+     * @return BelongsTo<Organization, $this>
+     */
     public function organization(): BelongsTo
     {
         return $this->belongsTo(Organization::class, 'organization_uuid', 'uuid');
     }
 
+    /**
+     * @return BelongsTo<Repository, $this>
+     */
     public function repository(): BelongsTo
     {
         return $this->belongsTo(Repository::class, 'repository_uuid', 'uuid');
     }
 
+    /**
+     * @return HasMany<PackageVersion, $this>
+     */
     public function versions(): HasMany
     {
         return $this->hasMany(PackageVersion::class, 'package_uuid', 'uuid');
