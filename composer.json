@@ -81,6 +81,12 @@
         ],
         "pre-package-uninstall": [
             "Illuminate\\Foundation\\ComposerScripts::prePackageUninstall"
+        ],
+        "phpstan": [
+            "vendor/bin/phpstan analyse"
+        ],
+        "pint": [
+            "vendor/bin/pint"
         ]
     },
     "extra": {
