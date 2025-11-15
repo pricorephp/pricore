@@ -9,19 +9,19 @@ export default defineConfig({
         laravel({
             input: ['resources/css/app.css', 'resources/js/app.tsx'],
             ssr: 'resources/js/ssr.tsx',
-            refresh: true,
+            refresh: true
         }),
         react({
             babel: {
-                plugins: ['babel-plugin-react-compiler'],
-            },
+                plugins: ['babel-plugin-react-compiler']
+            }
         }),
         tailwindcss(),
         wayfinder({
-            formVariants: true,
-        }),
+            formVariants: true
+        })
     ],
     esbuild: {
-        jsx: 'automatic',
-    },
+        jsx: 'automatic'
+    }
 });

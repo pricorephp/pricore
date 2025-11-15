@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import {
     InputOTP,
     InputOTPGroup,
-    InputOTPSlot,
+    InputOTPSlot
 } from '@/components/ui/input-otp';
 import { OTP_MAX_LENGTH } from '@/hooks/use-two-factor-auth';
 import AuthLayout from '@/layouts/auth-layout';
@@ -27,7 +27,7 @@ export default function TwoFactorChallenge() {
                 title: 'Recovery Code',
                 description:
                     'Please confirm access to your account by entering one of your emergency recovery codes.',
-                toggleText: 'login using an authentication code',
+                toggleText: 'login using an authentication code'
             };
         }
 
@@ -35,7 +35,7 @@ export default function TwoFactorChallenge() {
             title: 'Authentication Code',
             description:
                 'Enter the authentication code provided by your authenticator application.',
-            toggleText: 'login using a recovery code',
+            toggleText: 'login using a recovery code'
         };
     }, [showRecoveryInput]);
 
@@ -93,7 +93,7 @@ export default function TwoFactorChallenge() {
                                                             key={index}
                                                             index={index}
                                                         />
-                                                    ),
+                                                    )
                                                 )}
                                             </InputOTPGroup>
                                         </InputOTP>

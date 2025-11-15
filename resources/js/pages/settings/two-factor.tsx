@@ -20,13 +20,13 @@ interface TwoFactorProps {
 const breadcrumbs: BreadcrumbItem[] = [
     {
         title: 'Two-Factor Authentication',
-        href: show.url(),
-    },
+        href: show.url()
+    }
 ];
 
 export default function TwoFactor({
     requiresConfirmation = false,
-    twoFactorEnabled = false,
+    twoFactorEnabled = false
 }: TwoFactorProps) {
     const {
         qrCodeSvg,
@@ -36,7 +36,7 @@ export default function TwoFactor({
         fetchSetupData,
         recoveryCodesList,
         fetchRecoveryCodes,
-        errors,
+        errors
     } = useTwoFactorAuth();
     const [showSetupModal, setShowSetupModal] = useState<boolean>(false);
 

@@ -6,7 +6,7 @@ import type { PropsWithChildren } from 'react';
 
 export default function AppHeaderLayout({
     children,
-    breadcrumbs,
+    breadcrumbs
 }: PropsWithChildren<{ breadcrumbs?: BreadcrumbItem[] }>) {
     return (
         <AppShell>

@@ -16,8 +16,8 @@ import { edit } from '@/routes/user-password';
 const breadcrumbs: BreadcrumbItem[] = [
     {
         title: 'Password settings',
-        href: edit().url,
-    },
+        href: edit().url
+    }
 ];
 
 export default function Password() {
@@ -38,12 +38,12 @@ export default function Password() {
                     <Form
                         {...PasswordController.update.form()}
                         options={{
-                            preserveScroll: true,
+                            preserveScroll: true
                         }}
                         resetOnError={[
                             'password',
                             'password_confirmation',
-                            'current_password',
+                            'current_password'
                         ]}
                         resetOnSuccess
                         onError={(errors) => {

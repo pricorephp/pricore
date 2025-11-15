@@ -3,7 +3,10 @@
     "name": "maartenbode/pricore",
     "type": "project",
     "description": "Private Composer Registry",
-    "keywords": ["laravel", "framework"],
+    "keywords": [
+        "laravel",
+        "framework"
+    ],
     "license": "MIT",
     "require": {
         "php": "^8.4",
@@ -56,7 +59,10 @@
             "Composer\\Config::disableProcessTimeout",
             "npx concurrently -c \"#93c5fd,#c4b5fd,#fb7185,#fdba74\" \"php artisan serve\" \"php artisan queue:listen --tries=1\" \"php artisan pail --timeout=0\" \"php artisan inertia:start-ssr\" --names=server,queue,logs,ssr --kill-others"
         ],
-        "test": ["@php artisan config:clear --ansi", "@php artisan test"],
+        "test": [
+            "@php artisan config:clear --ansi",
+            "@php artisan test"
+        ],
         "post-autoload-dump": [
             "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
             "@php artisan package:discover --ansi"
@@ -76,8 +82,12 @@
         "pre-package-uninstall": [
             "Illuminate\\Foundation\\ComposerScripts::prePackageUninstall"
         ],
-        "phpstan": ["vendor/bin/phpstan analyse"],
-        "pint": ["vendor/bin/pint"]
+        "phpstan": [
+            "vendor/bin/phpstan analyse"
+        ],
+        "pint": [
+            "vendor/bin/pint"
+        ]
     },
     "extra": {
         "laravel": {
