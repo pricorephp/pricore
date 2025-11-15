@@ -32,4 +32,9 @@ interface GitProviderInterface
      * Get the repository identifier (e.g., owner/repo).
      */
     public function getRepositoryIdentifier(): string;
+
+    /**
+     * Get the Git repository URL for cloning.
+     */
+    public function getRepositoryUrl(): string;
 }

@@ -184,4 +184,12 @@ class GitHubProvider extends AbstractGitProvider
             return false;
         }
     }
+
+    /**
+     * Get the Git repository URL for cloning.
+     */
+    public function getRepositoryUrl(): string
+    {
+        return "git@github.com:{$this->repositoryIdentifier}.git";
+    }
 }

@@ -55,10 +55,12 @@ class SyncRefAction
             }
         }
 
-        return DB::transaction(function () use ($metadata, $ref, $package, $repository): string {
+        return DB::transaction(function () use ($metadata, $ref, $package, $repository, $provider): string {
             if (! $package) {
                 $package = $this->findOrCreatePackage->handle($repository, $metadata->name);
             }
+
+            $sourceUrl = $provider->getRepositoryUrl();
 
             $version = PackageVersion::query()
                 ->where('package_uuid', $package->uuid)
@@ -70,6 +72,7 @@ class SyncRefAction
                 $version->update([
                     'normalized_version' => $metadata->normalizedVersion,
                     'composer_json' => $metadata->composerJson,
+                    'source_url' => $sourceUrl,
                     'source_reference' => $ref->commit,
                 ]);
 
@@ -81,6 +84,7 @@ class SyncRefAction
                 'version' => $metadata->version,
                 'normalized_version' => $metadata->normalizedVersion,
                 'composer_json' => $metadata->composerJson,
+                'source_url' => $sourceUrl,
                 'source_reference' => $ref->commit,
                 'released_at' => now(),
             ]);
