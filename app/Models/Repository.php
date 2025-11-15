@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Domains\Repository\Contracts\Enums\GitProvider;
+use App\Domains\Repository\Contracts\Enums\RepositorySyncStatus;
 use App\Models\Concerns\HasUuids;
 use Database\Factories\RepositoryFactory;
 use Eloquent;
@@ -17,16 +19,18 @@ use Illuminate\Support\Carbon;
  * @property string $uuid
  * @property string $organization_uuid
  * @property string $name
- * @property string $provider
+ * @property GitProvider $provider
  * @property string $repo_identifier
  * @property string|null $default_branch
  * @property Carbon|null $last_synced_at
- * @property string|null $sync_status
+ * @property RepositorySyncStatus|null $sync_status
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property-read Organization $organization
  * @property-read Collection<int, Package> $packages
  * @property-read int|null $packages_count
+ * @property-read Collection<int, RepositorySyncLog> $syncLogs
+ * @property-read int|null $sync_logs_count
  *
  * @method static RepositoryFactory factory($count = null, $state = [])
  * @method static Builder<static>|Repository newModelQuery()
@@ -53,6 +57,8 @@ class Repository extends Model
     protected $guarded = ['uuid'];
 
     protected $casts = [
+        'provider' => GitProvider::class,
+        'sync_status' => RepositorySyncStatus::class,
         'last_synced_at' => 'datetime',
     ];
 
@@ -70,5 +76,13 @@ class Repository extends Model
     public function packages(): HasMany
     {
         return $this->hasMany(Package::class, 'repository_uuid', 'uuid');
+    }
+
+    /**
+     * @return HasMany<RepositorySyncLog, $this>
+     */
+    public function syncLogs(): HasMany
+    {
+        return $this->hasMany(RepositorySyncLog::class, 'repository_uuid', 'uuid');
     }
 }
