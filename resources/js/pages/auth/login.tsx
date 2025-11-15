@@ -18,10 +18,10 @@ interface LoginProps {
 }
 
 export default function Login({
-                                  status,
-                                  canResetPassword,
-                                  canRegister
-                              }: LoginProps) {
+    status,
+    canResetPassword,
+    canRegister
+}: LoginProps) {
     return (
         <AuthLayout
             title="Log in to your account"

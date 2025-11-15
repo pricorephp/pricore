@@ -25,9 +25,9 @@ const breadcrumbs: BreadcrumbItem[] = [
 ];
 
 export default function TwoFactor({
-                                      requiresConfirmation = false,
-                                      twoFactorEnabled = false
-                                  }: TwoFactorProps) {
+    requiresConfirmation = false,
+    twoFactorEnabled = false
+}: TwoFactorProps) {
     const {
         qrCodeSvg,
         hasSetupData,

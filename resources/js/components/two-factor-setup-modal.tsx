@@ -49,12 +49,12 @@ function GridScanIcon() {
 }
 
 function TwoFactorSetupStep({
-                                qrCodeSvg,
-                                manualSetupKey,
-                                buttonText,
-                                onNextStep,
-                                errors
-                            }: {
+    qrCodeSvg,
+    manualSetupKey,
+    buttonText,
+    onNextStep,
+    errors
+}: {
     qrCodeSvg: string | null;
     manualSetupKey: string | null;
     buttonText: string;
@@ -130,9 +130,9 @@ function TwoFactorSetupStep({
 }
 
 function TwoFactorVerificationStep({
-                                       onClose,
-                                       onBack
-                                   }: {
+    onClose,
+    onBack
+}: {
     onClose: () => void;
     onBack: () => void;
 }) {
@@ -153,9 +153,9 @@ function TwoFactorVerificationStep({
             resetOnSuccess
         >
             {({
-                  processing,
-                  errors
-              }: {
+                processing,
+                errors
+            }: {
                 processing: boolean;
                 errors?: { confirmTwoFactorAuthentication?: { code?: string } };
             }) => (
@@ -232,16 +232,16 @@ interface TwoFactorSetupModalProps {
 }
 
 export default function TwoFactorSetupModal({
-                                                isOpen,
-                                                onClose,
-                                                requiresConfirmation,
-                                                twoFactorEnabled,
-                                                qrCodeSvg,
-                                                manualSetupKey,
-                                                clearSetupData,
-                                                fetchSetupData,
-                                                errors
-                                            }: TwoFactorSetupModalProps) {
+    isOpen,
+    onClose,
+    requiresConfirmation,
+    twoFactorEnabled,
+    qrCodeSvg,
+    manualSetupKey,
+    clearSetupData,
+    fetchSetupData,
+    errors
+}: TwoFactorSetupModalProps) {
     const [showVerificationStep, setShowVerificationStep] =
         useState<boolean>(false);
 

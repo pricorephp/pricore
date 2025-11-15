@@ -11,8 +11,8 @@ import { Link } from '@inertiajs/react';
 import { Fragment } from 'react';
 
 export function Breadcrumbs({
-                                breadcrumbs
-                            }: {
+    breadcrumbs
+}: {
     breadcrumbs: BreadcrumbItemType[];
 }) {
     return (

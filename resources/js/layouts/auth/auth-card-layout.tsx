@@ -11,10 +11,10 @@ import { Link } from '@inertiajs/react';
 import { type PropsWithChildren } from 'react';
 
 export default function AuthCardLayout({
-                                           children,
-                                           title,
-                                           description
-                                       }: PropsWithChildren<{
+    children,
+    title,
+    description
+}: PropsWithChildren<{
     name?: string;
     title?: string;
     description?: string;

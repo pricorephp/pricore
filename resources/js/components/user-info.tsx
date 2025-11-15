@@ -3,9 +3,9 @@ import { useInitials } from '@/hooks/use-initials';
 import { type User } from '@/types';
 
 export function UserInfo({
-                             user,
-                             showEmail = false
-                         }: {
+    user,
+    showEmail = false
+}: {
     user: User;
     showEmail?: boolean;
 }) {

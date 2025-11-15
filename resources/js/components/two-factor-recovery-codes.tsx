@@ -19,10 +19,10 @@ interface TwoFactorRecoveryCodesProps {
 }
 
 export default function TwoFactorRecoveryCodes({
-                                                   recoveryCodesList,
-                                                   fetchRecoveryCodes,
-                                                   errors
-                                               }: TwoFactorRecoveryCodesProps) {
+    recoveryCodesList,
+    fetchRecoveryCodes,
+    errors
+}: TwoFactorRecoveryCodesProps) {
     const [codesAreVisible, setCodesAreVisible] = useState<boolean>(false);
     const codesSectionRef = useRef<HTMLDivElement | null>(null);
     const canRegenerateCodes = recoveryCodesList.length > 0 && codesAreVisible;

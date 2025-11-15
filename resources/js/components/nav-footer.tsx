@@ -11,10 +11,10 @@ import { type NavItem } from '@/types';
 import { type ComponentPropsWithoutRef } from 'react';
 
 export function NavFooter({
-                              items,
-                              className,
-                              ...props
-                          }: ComponentPropsWithoutRef<typeof SidebarGroup> & {
+    items,
+    className,
+    ...props
+}: ComponentPropsWithoutRef<typeof SidebarGroup> & {
     items: NavItem[];
 }) {
     return (
