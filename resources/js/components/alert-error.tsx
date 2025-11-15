@@ -3,7 +3,7 @@ import { AlertCircleIcon } from 'lucide-react';
 
 export default function AlertError({
     errors,
-    title
+    title,
 }: {
     errors: string[];
     title?: string;

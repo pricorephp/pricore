@@ -17,13 +17,13 @@ import { edit } from '@/routes/profile';
 const breadcrumbs: BreadcrumbItem[] = [
     {
         title: 'Profile settings',
-        href: edit().url
-    }
+        href: edit().url,
+    },
 ];
 
 export default function Profile({
     mustVerifyEmail,
-    status
+    status,
 }: {
     mustVerifyEmail: boolean;
     status?: string;
@@ -44,7 +44,7 @@ export default function Profile({
                     <Form
                         {...ProfileController.update.form()}
                         options={{
-                            preserveScroll: true
+                            preserveScroll: true,
                         }}
                         className="space-y-6"
                     >
@@ -107,12 +107,12 @@ export default function Profile({
 
                                             {status ===
                                                 'verification-link-sent' && (
-                                                    <div className="mt-2 text-sm font-medium text-green-600">
-                                                        A new verification link has
-                                                        been sent to your email
-                                                        address.
-                                                    </div>
-                                                )}
+                                                <div className="mt-2 text-sm font-medium text-green-600">
+                                                    A new verification link has
+                                                    been sent to your email
+                                                    address.
+                                                </div>
+                                            )}
                                         </div>
                                     )}
 

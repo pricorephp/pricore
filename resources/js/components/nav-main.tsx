@@ -3,7 +3,7 @@ import {
     SidebarGroupLabel,
     SidebarMenu,
     SidebarMenuButton,
-    SidebarMenuItem
+    SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { resolveUrl } from '@/lib/utils';
 import { type NavItem } from '@/types';
@@ -20,7 +20,7 @@ export function NavMain({ items = [] }: { items: NavItem[] }) {
                         <SidebarMenuButton
                             asChild
                             isActive={page.url.startsWith(
-                                resolveUrl(item.href)
+                                resolveUrl(item.href),
                             )}
                             tooltip={{ children: item.title }}
                         >

@@ -14,7 +14,7 @@ export const OTP_MAX_LENGTH = 6;
 
 const fetchJson = async <T>(url: string): Promise<T> => {
     const response = await fetch(url, {
-        headers: { Accept: 'application/json' }
+        headers: { Accept: 'application/json' },
     });
 
     if (!response.ok) {
@@ -32,7 +32,7 @@ export const useTwoFactorAuth = () => {
 
     const hasSetupData = useMemo<boolean>(
         () => qrCodeSvg !== null && manualSetupKey !== null,
-        [qrCodeSvg, manualSetupKey]
+        [qrCodeSvg, manualSetupKey],
     );
 
     const fetchQrCode = useCallback(async (): Promise<void> => {
@@ -48,7 +48,7 @@ export const useTwoFactorAuth = () => {
     const fetchSetupKey = useCallback(async (): Promise<void> => {
         try {
             const { secretKey: key } = await fetchJson<TwoFactorSecretKey>(
-                secretKey.url()
+                secretKey.url(),
             );
             setManualSetupKey(key);
         } catch {
@@ -99,6 +99,6 @@ export const useTwoFactorAuth = () => {
         fetchQrCode,
         fetchSetupKey,
         fetchSetupData,
-        fetchRecoveryCodes
+        fetchRecoveryCodes,
     };
 };

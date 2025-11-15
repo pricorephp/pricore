@@ -4,7 +4,7 @@ import {
     CardContent,
     CardDescription,
     CardHeader,
-    CardTitle
+    CardTitle,
 } from '@/components/ui/card';
 import { regenerateRecoveryCodes } from '@/routes/two-factor';
 import { Form } from '@inertiajs/react';
@@ -21,7 +21,7 @@ interface TwoFactorRecoveryCodesProps {
 export default function TwoFactorRecoveryCodes({
     recoveryCodesList,
     fetchRecoveryCodes,
-    errors
+    errors,
 }: TwoFactorRecoveryCodesProps) {
     const [codesAreVisible, setCodesAreVisible] = useState<boolean>(false);
     const codesSectionRef = useRef<HTMLDivElement | null>(null);
@@ -38,7 +38,7 @@ export default function TwoFactorRecoveryCodes({
             setTimeout(() => {
                 codesSectionRef.current?.scrollIntoView({
                     behavior: 'smooth',
-                    block: 'nearest'
+                    block: 'nearest',
                 });
             });
         }
@@ -137,7 +137,7 @@ export default function TwoFactorRecoveryCodes({
                                                         className="h-4 animate-pulse rounded bg-muted-foreground/20"
                                                         aria-hidden="true"
                                                     />
-                                                )
+                                                ),
                                             )}
                                         </div>
                                     )}

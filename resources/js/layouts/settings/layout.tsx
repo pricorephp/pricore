@@ -14,23 +14,23 @@ const sidebarNavItems: NavItem[] = [
     {
         title: 'Profile',
         href: edit(),
-        icon: null
+        icon: null,
     },
     {
         title: 'Password',
         href: editPassword(),
-        icon: null
+        icon: null,
     },
     {
         title: 'Two-Factor Auth',
         href: show(),
-        icon: null
+        icon: null,
     },
     {
         title: 'Appearance',
         href: editAppearance(),
-        icon: null
-    }
+        icon: null,
+    },
 ];
 
 export default function SettingsLayout({ children }: PropsWithChildren) {
@@ -60,8 +60,8 @@ export default function SettingsLayout({ children }: PropsWithChildren) {
                                 className={cn('w-full justify-start', {
                                     'bg-muted': isSameUrl(
                                         currentPath,
-                                        item.href
-                                    )
+                                        item.href,
+                                    ),
                                 })}
                             >
                                 <Link href={item.href}>

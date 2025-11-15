@@ -67,7 +67,7 @@ export function useAppearance() {
 
     useEffect(() => {
         const savedAppearance = localStorage.getItem(
-            'appearance'
+            'appearance',
         ) as Appearance | null;
 
         // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -76,7 +76,7 @@ export function useAppearance() {
         return () =>
             mediaQuery()?.removeEventListener(
                 'change',
-                handleSystemThemeChange
+                handleSystemThemeChange,
             );
     }, [updateAppearance]);
 
