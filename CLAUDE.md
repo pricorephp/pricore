@@ -105,6 +105,296 @@ This is a Laravel 12 application using the streamlined directory structure (no `
 - **Service Providers**: Application-specific providers in `bootstrap/providers.php`
 - **UUID Primary Keys**: All core domain models use UUIDs instead of auto-incrementing IDs for better distributed system support
 
+### Code Architecture & Patterns
+
+This project follows a **Domain-Driven Design** approach with specific architectural patterns:
+
+#### Domain Organization
+
+Complex business logic is organized into **domain directories** under `app/Domains/{DomainName}/`:
+
+```
+app/Domains/Repository/
+├── Actions/              # Single-purpose action classes
+├── Commands/             # Artisan console commands
+├── Contracts/
+│   ├── Data/            # Data Transfer Objects (DTOs)
+│   └── Enums/           # Backed enums with helper methods
+├── Exceptions/          # Domain-specific exceptions
+└── Jobs/                # Queueable jobs
+```
+
+**When to use domains:**
+- Use domains for complex, multi-step business logic (like repository syncing)
+- Keep simple CRUD operations in standard controllers
+- Each domain should represent a cohesive bounded context
+
+#### Enums (Strongly Typed)
+
+All enums use **backed string enums** with helper methods:
+
+```php
+enum GitProvider: string
+{
+    case GitHub = 'github';
+    case GitLab = 'gitlab';
+
+    public function label(): string
+    {
+        return match ($this) {
+            self::GitHub => 'GitHub',
+            self::GitLab => 'GitLab',
+        };
+    }
+
+    public static function options(): array
+    {
+        return [
+            self::GitHub->value => self::GitHub->label(),
+            self::GitLab->value => self::GitLab->label(),
+        ];
+    }
+}
+```
+
+**Enum conventions:**
+- Use PascalCase for case names (e.g., `GitProvider::GitHub`)
+- Always include a `label()` method for human-readable names
+- Add `options()` static method for select dropdowns
+- Add convenience boolean methods (e.g., `isSuccess()`, `isFailed()`)
+- Store enum locations in `app/Domains/{Domain}/Contracts/Enums/`
+
+#### Data Transfer Objects (Spatie Laravel Data)
+
+Use [Spatie Laravel Data](https://spatie.be/docs/laravel-data) for typed data structures:
+
+```php
+use Spatie\LaravelData\Data;
+
+class RefData extends Data
+{
+    public function __construct(
+        public string $name,
+        public string $commit,
+    ) {}
+}
+
+class SyncResultData extends Data
+{
+    public function __construct(
+        public int $added,
+        public int $updated,
+        public int $skipped,
+    ) {}
+
+    public function total(): int
+    {
+        return $this->added + $this->updated + $this->skipped;
+    }
+
+    public function hasChanges(): bool
+    {
+        return $this->added > 0 || $this->updated > 0;
+    }
+}
+```
+
+**DTO conventions:**
+- Use constructor property promotion for all properties
+- Add computed methods for derived values (e.g., `total()`, `hasChanges()`)
+- Use `DataCollection` for collections of DTOs
+- Store in `app/Domains/{Domain}/Contracts/Data/`
+- Prefer DTOs over arrays for complex data structures
+
+#### Action Classes
+
+**Single-purpose action classes** encapsulate business logic:
+
+```php
+class SyncRefAction
+{
+    public function __construct(
+        protected FindOrCreatePackageAction $findOrCreatePackage
+    ) {}
+
+    /**
+     * Sync a single ref (tag or branch).
+     *
+     * @return string added|updated|skipped
+     */
+    public function handle(
+        GitProviderInterface $provider,
+        Repository $repository,
+        RefData $ref
+    ): string {
+        // Business logic here
+    }
+}
+```
+
+**Action conventions:**
+- One public method: `handle()` with explicit parameters
+- Use constructor injection for dependencies (including other actions)
+- Return explicit types (DTOs, enums, strings with doc comments)
+- Name actions with verb suffixes: `CreateSyncLogAction`, `CollectRefsAction`
+- Store in `app/Domains/{Domain}/Actions/`
+- Keep actions focused on a single responsibility
+
+#### Custom Exceptions
+
+Create **domain-specific exceptions** for clear error handling:
+
+```php
+namespace App\Domains\Repository\Exceptions;
+
+use Exception;
+
+class GitProviderException extends Exception
+{
+    //
+}
+```
+
+**Exception conventions:**
+- Extend base `Exception` class
+- Name with `Exception` suffix
+- Keep simple unless custom behavior needed
+- Store in `app/Domains/{Domain}/Exceptions/`
+
+#### Factory Pattern
+
+Use **static factory methods** for complex object creation:
+
+```php
+class GitProviderFactory
+{
+    public static function make(Repository $repository): GitProviderInterface
+    {
+        $credentials = static::getCredentials($repository);
+
+        return match ($repository->provider) {
+            GitProvider::GitHub => new GitHubProvider($repository->repo_identifier, $credentials),
+            GitProvider::GitLab => new GitLabProvider($repository->repo_identifier, $credentials),
+        };
+    }
+}
+```
+
+**Factory conventions:**
+- Use `static` over `self` for better inheritance
+- Use `match` expressions for type-safe branching
+- Return interface types, not concrete implementations
+- Store in `app/Services/{ServiceName}/`
+
+#### Interface-First Design
+
+Define **clean contracts** before implementations:
+
+```php
+interface GitProviderInterface
+{
+    /**
+     * Get all tags from the repository.
+     *
+     * @return array<int, array{name: string, commit: string}>
+     */
+    public function getTags(): array;
+
+    public function getBranches(): array;
+    public function getFileContent(string $ref, string $path): ?string;
+    public function validateCredentials(): bool;
+}
+```
+
+**Interface conventions:**
+- Store contracts in `app/Services/{Service}/Contracts/` or `app/Domains/{Domain}/Contracts/`
+- Use PHPDoc array shapes for complex return types
+- Name with `Interface` suffix
+- Define minimal, focused contracts
+
+#### Modern PHP Patterns
+
+Use modern PHP 8.3+ features consistently:
+
+- **Match expressions** instead of switch statements
+- **Constructor property promotion** everywhere
+- **Explicit return types** on all methods
+- **Typed properties** on all class properties
+- **Array shapes in PHPDoc** for array return types
+- **Named arguments** for better readability
+
+#### Comments & Documentation
+
+**Avoid redundant comments and docblocks.** Code should be self-documenting through clear naming and types.
+
+**When NOT to add docblocks:**
+```php
+// ❌ BAD - Redundant docblock
+/**
+ * Get the user's name.
+ *
+ * @return string
+ */
+public function getName(): string
+{
+    return $this->name;
+}
+
+// ✅ GOOD - Type hint is sufficient
+public function getName(): string
+{
+    return $this->name;
+}
+```
+
+**When TO add docblocks:**
+```php
+// ✅ GOOD - Complex array shape needs documentation
+/**
+ * @return array<int, array{name: string, commit: string}>
+ */
+public function getTags(): array
+{
+    return $this->tags;
+}
+
+// ✅ GOOD - Business logic explanation adds value
+/**
+ * Sync a single ref (tag or branch).
+ *
+ * @return string added|updated|skipped
+ */
+public function handle(GitProviderInterface $provider, Repository $repository, RefData $ref): string
+{
+    // Implementation
+}
+```
+
+**Docblock guidelines:**
+- Only add docblocks when they provide **non-obvious information**
+- Use docblocks for complex array shapes, union types, or return values that need clarification
+- Avoid repeating what the method signature already tells you
+- Never add inline comments unless the logic is genuinely complex
+- Let descriptive method and variable names speak for themselves
+
+#### Laravel Prompts
+
+Use [Laravel Prompts](https://laravel.com/docs/prompts) for beautiful CLI interactions:
+
+```php
+use function Laravel\Prompts\spin;
+
+spin(
+    callback: fn() => SyncRepositoryJob::dispatchSync($repository),
+    message: 'Dispatching sync jobs...',
+);
+```
+
+**Prompt conventions:**
+- Import prompt functions individually (e.g., `use function Laravel\Prompts\spin;`)
+- Use named arguments for clarity
+- Available functions: `spin()`, `text()`, `select()`, `confirm()`, `progress()`
+
 ### Frontend Structure
 
 Modern React 19 + Inertia.js v2 + Tailwind CSS v4 setup with strong typing:
