@@ -1,6 +1,6 @@
 export default function Heading({
     title,
-    description
+    description,
 }: {
     title: string;
     description?: string;

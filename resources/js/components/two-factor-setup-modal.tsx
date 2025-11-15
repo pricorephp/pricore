@@ -5,12 +5,12 @@ import {
     DialogContent,
     DialogDescription,
     DialogHeader,
-    DialogTitle
+    DialogTitle,
 } from '@/components/ui/dialog';
 import {
     InputOTP,
     InputOTPGroup,
-    InputOTPSlot
+    InputOTPSlot,
 } from '@/components/ui/input-otp';
 import { useClipboard } from '@/hooks/use-clipboard';
 import { OTP_MAX_LENGTH } from '@/hooks/use-two-factor-auth';
@@ -53,7 +53,7 @@ function TwoFactorSetupStep({
     manualSetupKey,
     buttonText,
     onNextStep,
-    errors
+    errors,
 }: {
     qrCodeSvg: string | null;
     manualSetupKey: string | null;
@@ -76,7 +76,7 @@ function TwoFactorSetupStep({
                                 {qrCodeSvg ? (
                                     <div
                                         dangerouslySetInnerHTML={{
-                                            __html: qrCodeSvg
+                                            __html: qrCodeSvg,
                                         }}
                                     />
                                 ) : (
@@ -131,7 +131,7 @@ function TwoFactorSetupStep({
 
 function TwoFactorVerificationStep({
     onClose,
-    onBack
+    onBack,
 }: {
     onClose: () => void;
     onBack: () => void;
@@ -154,7 +154,7 @@ function TwoFactorVerificationStep({
         >
             {({
                 processing,
-                errors
+                errors,
             }: {
                 processing: boolean;
                 errors?: { confirmTwoFactorAuthentication?: { code?: string } };
@@ -181,7 +181,7 @@ function TwoFactorVerificationStep({
                                                 key={index}
                                                 index={index}
                                             />
-                                        )
+                                        ),
                                     )}
                                 </InputOTPGroup>
                             </InputOTP>
@@ -240,7 +240,7 @@ export default function TwoFactorSetupModal({
     manualSetupKey,
     clearSetupData,
     fetchSetupData,
-    errors
+    errors,
 }: TwoFactorSetupModalProps) {
     const [showVerificationStep, setShowVerificationStep] =
         useState<boolean>(false);
@@ -255,7 +255,7 @@ export default function TwoFactorSetupModal({
                 title: 'Two-Factor Authentication Enabled',
                 description:
                     'Two-factor authentication is now enabled. Scan the QR code or enter the setup key in your authenticator app.',
-                buttonText: 'Close'
+                buttonText: 'Close',
             };
         }
 
@@ -264,7 +264,7 @@ export default function TwoFactorSetupModal({
                 title: 'Verify Authentication Code',
                 description:
                     'Enter the 6-digit code from your authenticator app',
-                buttonText: 'Continue'
+                buttonText: 'Continue',
             };
         }
 
@@ -272,7 +272,7 @@ export default function TwoFactorSetupModal({
             title: 'Enable Two-Factor Authentication',
             description:
                 'To finish enabling two-factor authentication, scan the QR code or enter the setup key in your authenticator app',
-            buttonText: 'Continue'
+            buttonText: 'Continue',
         };
     }, [twoFactorEnabled, showVerificationStep]);
 

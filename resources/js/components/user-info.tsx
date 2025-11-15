@@ -4,7 +4,7 @@ import { type User } from '@/types';
 
 export function UserInfo({
     user,
-    showEmail = false
+    showEmail = false,
 }: {
     user: User;
     showEmail?: boolean;

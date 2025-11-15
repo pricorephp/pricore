@@ -4,7 +4,7 @@ import {
     CardContent,
     CardDescription,
     CardHeader,
-    CardTitle
+    CardTitle,
 } from '@/components/ui/card';
 import { home } from '@/routes';
 import { Link } from '@inertiajs/react';
@@ -13,7 +13,7 @@ import { type PropsWithChildren } from 'react';
 export default function AuthCardLayout({
     children,
     title,
-    description
+    description,
 }: PropsWithChildren<{
     name?: string;
     title?: string;
