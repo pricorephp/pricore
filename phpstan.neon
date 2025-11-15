@@ -12,3 +12,4 @@ parameters:
     ignoreErrors:
 
     excludePaths:
+        - database/factories
