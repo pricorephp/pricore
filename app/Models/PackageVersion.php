@@ -29,6 +29,8 @@ use Illuminate\Support\Carbon;
  * @method static Builder<static>|PackageVersion newModelQuery()
  * @method static Builder<static>|PackageVersion newQuery()
  * @method static Builder<static>|PackageVersion query()
+ * @method static Builder<static>|PackageVersion stable()
+ * @method static Builder<static>|PackageVersion dev()
  * @method static Builder<static>|PackageVersion whereComposerJson($value)
  * @method static Builder<static>|PackageVersion whereCreatedAt($value)
  * @method static Builder<static>|PackageVersion whereDistUrl($value)
@@ -61,5 +63,29 @@ class PackageVersion extends Model
     public function package(): BelongsTo
     {
         return $this->belongsTo(Package::class, 'package_uuid', 'uuid');
+    }
+
+    /**
+     * @param  Builder<PackageVersion>  $query
+     * @return Builder<PackageVersion>
+     */
+    public function scopeStable(Builder $query): Builder
+    {
+        return $query->where(function (Builder $query) {
+            $query->whereNotLike('version', 'dev-%')
+                ->whereNotLike('version', '%-dev');
+        });
+    }
+
+    /**
+     * @param  Builder<PackageVersion>  $query
+     * @return Builder<PackageVersion>
+     */
+    public function scopeDev(Builder $query): Builder
+    {
+        return $query->where(function (Builder $query) {
+            $query->whereLike('version', 'dev-%')
+                ->orWhereLike('version', '%-dev');
+        });
     }
 }
