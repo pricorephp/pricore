@@ -12,9 +12,6 @@ use Laravel\Fortify\Features;
 
 class TwoFactorAuthenticationController extends Controller implements HasMiddleware
 {
-    /**
-     * Get the middleware that should be assigned to the controller.
-     */
     public static function middleware(): array
     {
         return Features::optionEnabled(Features::twoFactorAuthentication(), 'confirmPassword')
@@ -22,9 +19,6 @@ class TwoFactorAuthenticationController extends Controller implements HasMiddlew
             : [];
     }
 
-    /**
-     * Show the user's two-factor authentication settings page.
-     */
     public function show(TwoFactorAuthenticationRequest $request): Response
     {
         $request->ensureStateIsValid();
