@@ -22,31 +22,21 @@ class VersionMetadataData extends Data
 
     public static function fromPackageVersion(PackageVersion $version): self
     {
-        $source = null;
-        if ($version->source_url && $version->source_reference) {
-            $source = new SourceData(
-                type: 'git',
-                url: $version->source_url,
-                reference: $version->source_reference,
-            );
-        }
-
-        $dist = null;
-        if ($version->dist_url) {
-            $dist = new SourceData(
-                type: 'zip',
-                url: $version->dist_url,
-                reference: $version->source_reference,
-            );
-        }
-
         return new self(
             name: $version->package->name,
             version: $version->version,
             versionNormalized: $version->normalized_version,
             composerJson: $version->composer_json,
-            source: $source,
-            dist: $dist,
+            source: $version->source_url && $version->source_reference ? new SourceData(
+                type: 'git',
+                url: $version->source_url,
+                reference: $version->source_reference,
+            ) : null,
+            dist: $version->dist_url ? new SourceData(
+                type: 'zip',
+                url: $version->dist_url,
+                reference: $version->source_reference,
+            ) : null,
             time: $version->released_at?->toIso8601String(),
         );
     }
