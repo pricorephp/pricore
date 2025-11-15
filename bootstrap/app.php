@@ -22,6 +22,7 @@ return Application::configure(basePath: dirname(__DIR__))
             AddLinkHeadersForPreloadedAssets::class,
         ]);
     })
+    ->withCommands([__DIR__.'/../app/Domains/Repository/Commands'])
     ->withExceptions(function (Exceptions $exceptions): void {
         //
     })->create();

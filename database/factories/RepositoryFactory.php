@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Domains\Repository\Contracts\Enums\RepositorySyncStatus;
 use App\Models\Organization;
 use App\Models\Repository;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -36,7 +37,7 @@ class RepositoryFactory extends Factory
             'repo_identifier' => $this->generateRepoIdentifier($provider, $owner, $repoName),
             'default_branch' => fake()->randomElement(['main', 'master', 'develop']),
             'last_synced_at' => fake()->optional(0.7)->dateTimeBetween('-30 days', 'now'),
-            'sync_status' => fake()->randomElement(['ok', 'failed', 'pending']),
+            'sync_status' => fake()->randomElement([RepositorySyncStatus::Ok, RepositorySyncStatus::Failed, RepositorySyncStatus::Pending]),
         ];
     }
 
@@ -102,7 +103,7 @@ class RepositoryFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'last_synced_at' => now(),
-            'sync_status' => 'ok',
+            'sync_status' => RepositorySyncStatus::Ok,
         ]);
     }
 
@@ -113,7 +114,7 @@ class RepositoryFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'last_synced_at' => fake()->dateTimeBetween('-7 days', 'now'),
-            'sync_status' => 'failed',
+            'sync_status' => RepositorySyncStatus::Failed,
         ]);
     }
 }
