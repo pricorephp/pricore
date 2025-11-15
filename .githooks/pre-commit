@@ -1,0 +1,31 @@
+#!/bin/sh
+
+# Laravel Pint pre-commit hook
+# Automatically formats PHP files before commit
+
+echo "Running Laravel Pint..."
+
+# Get list of staged PHP files
+STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACM | grep ".php$")
+
+if [ -z "$STAGED_FILES" ]; then
+    echo "No PHP files to check."
+    exit 0
+fi
+
+# Run Pint on dirty (changed) files only
+vendor/bin/pint --dirty
+
+# Check if Pint made any changes
+PINT_STATUS=$?
+
+if [ $PINT_STATUS -ne 0 ]; then
+    echo "❌ Pint encountered an error. Please fix the issues and try again."
+    exit 1
+fi
+
+# Re-stage any files that Pint may have modified
+git add $STAGED_FILES
+
+echo "✅ Code formatting complete!"
+exit 0
