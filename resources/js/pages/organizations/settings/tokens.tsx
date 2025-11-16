@@ -69,21 +69,10 @@ export default function Tokens({
                         Manage access tokens for Composer authentication
                     </p>
                 </div>
-                <div className="flex gap-2">
-                    <Button onClick={() => setCreateDialogOpen(true)}>
-                        <Plus className="h-4 w-4" />
-                        Create Token
-                    </Button>
-                    {/* Temporary: Show token created dialog for UI testing */}
-                    <Button
-                        variant="outline"
-                        onClick={() => {
-                            setTokenCreatedDialogOpen(true);
-                        }}
-                    >
-                        Show Token Dialog (Temp)
-                    </Button>
-                </div>
+                <Button onClick={() => setCreateDialogOpen(true)}>
+                    <Plus className="h-4 w-4" />
+                    Create Token
+                </Button>
             </div>
 
             <div className="rounded-lg border bg-card p-4">
@@ -120,14 +109,11 @@ export default function Tokens({
                 />
             )}
 
-            {(tokenCreated || tokenCreatedDialogOpen) && (
+            {tokenCreated && (
                 <TokenCreatedDialog
-                    token={
-                        tokenCreated?.plainToken ||
-                        'pct_temp_token_1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef'
-                    }
-                    name={tokenCreated?.name || 'Test Token'}
-                    expiresAt={tokenCreated?.expiresAt || null}
+                    token={tokenCreated.plainToken}
+                    name={tokenCreated.name}
+                    expiresAt={tokenCreated.expiresAt}
                     isOpen={tokenCreatedDialogOpen}
                     onClose={() => setTokenCreatedDialogOpen(false)}
                 />
