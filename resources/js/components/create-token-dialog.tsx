@@ -41,7 +41,11 @@ export default function CreateTokenDialog({
                     </DialogDescription>
                 </DialogHeader>
 
-                <Form action={storeUrl} method="post" className="space-y-4">
+                <Form
+                    action={storeUrl}
+                    method="post"
+                    className="space-y-4"
+                >
                     {({ processing, errors }) => (
                         <>
                             <div className="space-y-2">

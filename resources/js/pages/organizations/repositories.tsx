@@ -1,3 +1,4 @@
+import { show } from '@/actions/App/Domains/Repository/Http/Controllers/RepositoryController';
 import AddRepositoryDialog from '@/components/add-repository-dialog';
 import GitProviderIcon from '@/components/git-provider-icon';
 import HeadingSmall from '@/components/heading-small';
@@ -6,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
-import { Head } from '@inertiajs/react';
+import { Head, Link } from '@inertiajs/react';
 import { Plus } from 'lucide-react';
 import { DateTime } from 'luxon';
 import { useState } from 'react';
@@ -101,22 +102,41 @@ export default function Repositories({
                 ) : (
                     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                         {repositories.map((repo) => (
-                            <Card
+                            <Link
                                 key={repo.uuid}
-                                className="transition-colors hover:bg-accent/50"
+                                href={show.url([organization.slug, repo.uuid])}
                             >
-                                <CardHeader>
-                                    <CardTitle className="flex items-start justify-between gap-2">
-                                        <span className="text-base">
-                                            {repo.name}
-                                        </span>
-                                        {repo.url ? (
-                                            <a
-                                                href={repo.url}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="inline-block"
-                                            >
+                                <Card className="transition-colors hover:bg-accent/50">
+                                    <CardHeader>
+                                        <CardTitle className="flex items-start justify-between gap-2">
+                                            <span className="text-base">
+                                                {repo.name}
+                                            </span>
+                                            {repo.url ? (
+                                                <a
+                                                    href={repo.url}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="inline-block"
+                                                    onClick={(e) =>
+                                                        e.stopPropagation()
+                                                    }
+                                                >
+                                                    <Badge
+                                                        className={getProviderBadgeColor(
+                                                            repo.provider,
+                                                        )}
+                                                    >
+                                                        <GitProviderIcon
+                                                            provider={
+                                                                repo.provider
+                                                            }
+                                                            className="mr-0.5 size-3"
+                                                        />
+                                                        {repo.providerLabel}
+                                                    </Badge>
+                                                </a>
+                                            ) : (
                                                 <Badge
                                                     className={getProviderBadgeColor(
                                                         repo.provider,
@@ -128,48 +148,36 @@ export default function Repositories({
                                                     />
                                                     {repo.providerLabel}
                                                 </Badge>
-                                            </a>
-                                        ) : (
+                                            )}
+                                        </CardTitle>
+                                    </CardHeader>
+                                    <CardContent className="space-y-3">
+                                        <div className="flex items-center justify-between text-xs">
+                                            <span className="text-muted-foreground">
+                                                Sync Status:
+                                            </span>
                                             <Badge
-                                                className={getProviderBadgeColor(
-                                                    repo.provider,
+                                                variant={getSyncStatusVariant(
+                                                    repo.syncStatus,
                                                 )}
                                             >
-                                                <GitProviderIcon
-                                                    provider={repo.provider}
-                                                    className="mr-0.5 size-3"
-                                                />
-                                                {repo.providerLabel}
+                                                {getSyncStatusLabel(
+                                                    repo.syncStatus,
+                                                )}
                                             </Badge>
-                                        )}
-                                    </CardTitle>
-                                </CardHeader>
-                                <CardContent className="space-y-3">
-                                    <div className="flex items-center justify-between text-xs">
-                                        <span className="text-muted-foreground">
-                                            Sync Status:
-                                        </span>
-                                        <Badge
-                                            variant={getSyncStatusVariant(
-                                                repo.syncStatus,
-                                            )}
-                                        >
-                                            {getSyncStatusLabel(
-                                                repo.syncStatus,
-                                            )}
-                                        </Badge>
-                                    </div>
-
-                                    {repo.lastSyncedAt && (
-                                        <div className="text-xs text-muted-foreground">
-                                            Last synced{' '}
-                                            {DateTime.fromISO(
-                                                repo.lastSyncedAt,
-                                            ).toRelative()}
                                         </div>
-                                    )}
-                                </CardContent>
-                            </Card>
+
+                                        {repo.lastSyncedAt && (
+                                            <div className="text-xs text-muted-foreground">
+                                                Last synced{' '}
+                                                {DateTime.fromISO(
+                                                    repo.lastSyncedAt,
+                                                ).toRelative()}
+                                            </div>
+                                        )}
+                                    </CardContent>
+                                </Card>
+                            </Link>
                         ))}
                     </div>
                 )}

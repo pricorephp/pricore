@@ -7,6 +7,7 @@ use App\Domains\Organization\Http\Controllers\SettingsController;
 use App\Domains\Package\Http\Controllers\PackageController;
 use App\Domains\Repository\Http\Controllers\Api\RepositorySuggestionController;
 use App\Domains\Repository\Http\Controllers\RepositoryController;
+use App\Domains\Repository\Http\Controllers\SyncRepositoryController;
 use App\Domains\Token\Http\Controllers\TokenController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -28,8 +29,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('organizations', [OrganizationController::class, 'store'])->name('organizations.store');
     Route::get('organizations/{organization:slug}', [OrganizationController::class, 'show'])->name('organizations.show');
     Route::get('organizations/{organization:slug}/packages', [PackageController::class, 'index'])->name('organizations.packages.index');
+    Route::get('organizations/{organization:slug}/packages/{package:uuid}', [PackageController::class, 'show'])->name('organizations.packages.show');
     Route::get('organizations/{organization:slug}/repositories', [RepositoryController::class, 'index'])->name('organizations.repositories.index');
     Route::post('organizations/{organization:slug}/repositories', [RepositoryController::class, 'store'])->name('organizations.repositories.store');
+    Route::get('organizations/{organization:slug}/repositories/{repository:uuid}', [RepositoryController::class, 'show'])->name('organizations.repositories.show');
+    Route::post('organizations/{organization:slug}/repositories/{repository:uuid}/sync', SyncRepositoryController::class)->name('organizations.repositories.sync');
     Route::get('organizations/{organization:slug}/repositories/suggest', [RepositorySuggestionController::class, 'index'])->name('organizations.repositories.suggest');
 
     // Organization settings

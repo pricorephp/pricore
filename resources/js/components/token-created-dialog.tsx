@@ -7,6 +7,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
 import { Check, Copy } from 'lucide-react';
 import { useState } from 'react';
 
@@ -28,16 +29,34 @@ export default function TokenCreatedDialog({
     const [copied, setCopied] = useState(false);
 
     const copyToClipboard = async () => {
-        await navigator.clipboard.writeText(token);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
+        try {
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                await navigator.clipboard.writeText(token);
+            } else {
+                // Fallback for browsers that don't support clipboard API
+                const textArea = document.createElement('textarea');
+                textArea.value = token;
+                textArea.style.position = 'fixed';
+                textArea.style.left = '-999999px';
+                textArea.style.top = '-999999px';
+                document.body.appendChild(textArea);
+                textArea.focus();
+                textArea.select();
+                document.execCommand('copy');
+                textArea.remove();
+            }
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
+        } catch (error) {
+            console.error('Failed to copy token:', error);
+        }
     };
 
     const domain = window.location.host;
 
     return (
-        <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="max-w-2xl">
+        <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+            <DialogContent className="max-w-lg">
                 <DialogHeader>
                     <DialogTitle>Access Token Created</DialogTitle>
                     <DialogDescription>
@@ -68,14 +87,19 @@ export default function TokenCreatedDialog({
                     <div>
                         <label className="text-sm font-medium">Token</label>
                         <div className="mt-2 flex gap-2">
-                            <code className="flex-1 rounded bg-muted p-3 font-mono text-sm">
-                                {token}
-                            </code>
+                            <Input
+                                type="text"
+                                value={token}
+                                readOnly
+                                className="font-mono text-sm"
+                                onFocus={(e) => e.target.select()}
+                            />
                             <Button
                                 type="button"
                                 variant="outline"
                                 size="icon"
                                 onClick={copyToClipboard}
+                                className="shrink-0"
                             >
                                 {copied ? (
                                     <Check className="h-4 w-4" />
@@ -86,23 +110,16 @@ export default function TokenCreatedDialog({
                         </div>
                     </div>
 
-                    <div className="rounded-md border border-amber-200 bg-amber-50 p-4 dark:border-amber-900 dark:bg-amber-950">
-                        <p className="text-sm font-medium text-amber-900 dark:text-amber-100">
+                    <div className="rounded-md border border-neutral-200 bg-neutral-50 p-4 dark:border-neutral-800 dark:bg-neutral-950">
+                        <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
                             Configure Composer
                         </p>
-                        <p className="mt-1 text-sm text-amber-700 dark:text-amber-300">
+                        <p className="mt-1 text-sm text-neutral-700 dark:text-neutral-300">
                             Use this token to authenticate with Composer:
                         </p>
-                        <code className="mt-2 block rounded bg-amber-100 p-2 font-mono text-xs text-amber-900 dark:bg-amber-900 dark:text-amber-100">
+                        <code className="mt-2 block rounded border border-border bg-muted p-2 font-mono text-xs break-all">
                             composer config --global --auth http-basic.{domain}{' '}
                             {token} ""
-                        </code>
-                        <p className="mt-2 text-xs text-amber-600 dark:text-amber-400">
-                            Or using Bearer authentication:
-                        </p>
-                        <code className="mt-1 block rounded bg-amber-100 p-2 font-mono text-xs text-amber-900 dark:bg-amber-900 dark:text-amber-100">
-                            composer config --global --auth bearer.{domain}{' '}
-                            {token}
                         </code>
                     </div>
                 </div>

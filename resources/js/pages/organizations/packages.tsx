@@ -3,6 +3,7 @@ import PackageCard from '@/components/package-card';
 import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
+import { show } from '@/actions/App/Domains/Package/Http/Controllers/PackageController';
 import { Link } from '@inertiajs/react';
 import { Head } from '@inertiajs/react';
 import { GitBranch } from 'lucide-react';
@@ -70,7 +71,12 @@ export default function Packages({
                 ) : (
                     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                         {packages.map((pkg) => (
-                            <PackageCard key={pkg.uuid} package={pkg} />
+                            <Link
+                                key={pkg.uuid}
+                                href={show.url([organization.slug, pkg.uuid])}
+                            >
+                                <PackageCard package={pkg} />
+                            </Link>
                         ))}
                     </div>
                 )}

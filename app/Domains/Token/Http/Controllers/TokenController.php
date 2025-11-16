@@ -33,7 +33,7 @@ class TokenController extends Controller
         ]);
     }
 
-    public function store(StoreAccessTokenRequest $request, Organization $organization): RedirectResponse
+    public function store(StoreAccessTokenRequest $request, Organization $organization): Response
     {
         $result = $this->createAccessToken->handle(
             organization: $organization,
@@ -42,12 +42,17 @@ class TokenController extends Controller
             expiresAt: $request->validated('expires_at') ? now()->parse($request->validated('expires_at')) : null
         );
 
-        return to_route('organizations.settings.tokens.index', $organization)
-            ->with('tokenCreated', [
-                'plainToken' => $result->plainToken,
-                'name' => $result->accessToken->name,
-                'expires_at' => $result->accessToken->expires_at,
-            ]);
+        $tokens = AccessToken::query()
+            ->where('organization_uuid', $organization->uuid)
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->map(fn (AccessToken $token) => AccessTokenData::fromModel($token));
+
+        return Inertia::render('organizations/settings/tokens', [
+            'organization' => OrganizationData::fromModel($organization),
+            'tokens' => $tokens,
+            'tokenCreated' => $result,
+        ]);
     }
 
     public function destroy(Organization $organization, AccessToken $token): RedirectResponse

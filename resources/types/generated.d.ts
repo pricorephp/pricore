@@ -40,6 +40,15 @@ latestVersion: string | null;
 updatedAt: string;
 repositoryName: string | null;
 };
+export type PackageVersionData = {
+uuid: string;
+version: string;
+normalizedVersion: string;
+releasedAt: string | null;
+sourceUrl: string | null;
+sourceReference: string | null;
+commitUrl: string | null;
+};
 }
 declare namespace App.Domains.Repository.Contracts.Data {
 export type RepositoryData = {
@@ -59,6 +68,17 @@ fullName: string;
 isPrivate: boolean;
 description: string | null;
 };
+export type SyncLogData = {
+uuid: string;
+status: string;
+statusLabel: string;
+startedAt: string;
+completedAt: string | null;
+errorMessage: string | null;
+versionsAdded: number;
+versionsUpdated: number;
+details: Array<any> | null;
+};
 }
 declare namespace App.Domains.Repository.Contracts.Enums {
 export type GitProvider = 'github' | 'gitlab' | 'bitbucket' | 'git';
@@ -72,5 +92,10 @@ name: string;
 lastUsedAt: string | null;
 expiresAt: string | null;
 createdAt: string;
+};
+export type TokenCreatedData = {
+plainToken: string;
+name: string;
+expiresAt: string | null;
 };
 }

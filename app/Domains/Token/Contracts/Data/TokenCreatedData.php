@@ -2,13 +2,16 @@
 
 namespace App\Domains\Token\Contracts\Data;
 
-use App\Models\AccessToken;
+use Carbon\CarbonInterface;
 use Spatie\LaravelData\Data;
+use Spatie\TypeScriptTransformer\Attributes\TypeScript;
 
+#[TypeScript]
 class TokenCreatedData extends Data
 {
     public function __construct(
         public string $plainToken,
-        public AccessToken $accessToken,
+        public string $name,
+        public ?CarbonInterface $expiresAt,
     ) {}
 }

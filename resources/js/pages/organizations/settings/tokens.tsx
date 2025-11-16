@@ -6,20 +6,17 @@ import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/app-layout';
 import OrganizationSettingsLayout from '@/layouts/organization-settings-layout';
 import { Plus } from 'lucide-react';
-import { startTransition, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 type AccessTokenData = App.Domains.Token.Contracts.Data.AccessTokenData;
+type TokenCreatedData = App.Domains.Token.Contracts.Data.TokenCreatedData;
 type OrganizationData =
     App.Domains.Organization.Contracts.Data.OrganizationData;
 
 interface TokensPageProps {
     organization: OrganizationData;
     tokens: AccessTokenData[];
-    tokenCreated?: {
-        plainToken: string;
-        name: string;
-        expires_at: string | null;
-    };
+    tokenCreated?: TokenCreatedData;
 }
 
 export default function Tokens({
@@ -29,27 +26,34 @@ export default function Tokens({
 }: TokensPageProps) {
     const [createDialogOpen, setCreateDialogOpen] = useState(false);
     const [revokeDialogOpen, setRevokeDialogOpen] = useState(false);
-    const [tokenCreatedDialogClosed, setTokenCreatedDialogClosed] =
-        useState(false);
+    const [tokenCreatedDialogOpen, setTokenCreatedDialogOpen] =
+        useState(!!tokenCreated);
     const [selectedToken, setSelectedToken] = useState<{
         uuid: string;
         name: string;
     } | null>(null);
-    const previousTokenCreatedRef = useRef(tokenCreated);
+    const previousTokenPlainTokenRef = useRef<string | undefined>(undefined);
 
-    // Reset closed state when a new token is created
+    // Open dialog when a new token is created and close create dialog
     useEffect(() => {
-        if (tokenCreated && tokenCreated !== previousTokenCreatedRef.current) {
-            previousTokenCreatedRef.current = tokenCreated;
-            if (tokenCreatedDialogClosed) {
-                startTransition(() => {
-                    setTokenCreatedDialogClosed(false);
-                });
-            }
-        }
-    }, [tokenCreated, tokenCreatedDialogClosed]);
+        if (tokenCreated) {
+            const currentPlainToken = tokenCreated.plainToken;
+            const previousPlainToken = previousTokenPlainTokenRef.current;
 
-    const tokenCreatedDialogOpen = !!tokenCreated && !tokenCreatedDialogClosed;
+            // If this is a new token (different from what we've seen before)
+            if (currentPlainToken !== previousPlainToken) {
+                previousTokenPlainTokenRef.current = currentPlainToken;
+                // Close the create dialog if it's open
+                setCreateDialogOpen(false);
+                // Open the token created dialog
+                setTokenCreatedDialogOpen(true);
+            }
+        } else {
+            // Reset ref when tokenCreated is cleared
+            previousTokenPlainTokenRef.current = undefined;
+            setTokenCreatedDialogOpen(false);
+        }
+    }, [tokenCreated]);
 
     const handleRevoke = (uuid: string, name: string) => {
         setSelectedToken({ uuid, name });
@@ -65,10 +69,21 @@ export default function Tokens({
                         Manage access tokens for Composer authentication
                     </p>
                 </div>
-                <Button onClick={() => setCreateDialogOpen(true)}>
-                    <Plus className="h-4 w-4" />
-                    Create Token
-                </Button>
+                <div className="flex gap-2">
+                    <Button onClick={() => setCreateDialogOpen(true)}>
+                        <Plus className="h-4 w-4" />
+                        Create Token
+                    </Button>
+                    {/* Temporary: Show token created dialog for UI testing */}
+                    <Button
+                        variant="outline"
+                        onClick={() => {
+                            setTokenCreatedDialogOpen(true);
+                        }}
+                    >
+                        Show Token Dialog (Temp)
+                    </Button>
+                </div>
             </div>
 
             <div className="rounded-lg border bg-card p-4">
@@ -105,13 +120,16 @@ export default function Tokens({
                 />
             )}
 
-            {tokenCreated && (
+            {(tokenCreated || tokenCreatedDialogOpen) && (
                 <TokenCreatedDialog
-                    token={tokenCreated.plainToken}
-                    name={tokenCreated.name}
-                    expiresAt={tokenCreated.expires_at}
+                    token={
+                        tokenCreated?.plainToken ||
+                        'pct_temp_token_1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef'
+                    }
+                    name={tokenCreated?.name || 'Test Token'}
+                    expiresAt={tokenCreated?.expiresAt || null}
                     isOpen={tokenCreatedDialogOpen}
-                    onClose={() => setTokenCreatedDialogClosed(true)}
+                    onClose={() => setTokenCreatedDialogOpen(false)}
                 />
             )}
         </div>

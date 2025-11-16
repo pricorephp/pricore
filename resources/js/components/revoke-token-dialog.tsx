@@ -51,7 +51,7 @@ export default function RevokeTokenDialog({
                     <Button type="button" variant="outline" onClick={onClose}>
                         Cancel
                     </Button>
-                    <Form action={deleteUrl} method="delete">
+                    <Form action={deleteUrl} method="delete" onSuccess={onClose}>
                         {({ processing }) => (
                             <Button
                                 type="submit"
