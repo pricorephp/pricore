@@ -5,10 +5,11 @@ FROM node:22-alpine AS frontend-builder
 
 WORKDIR /app
 
-# Install PHP and required extensions for Wayfinder plugin
+# Install PHP and all extensions Laravel/Wayfinder might need
 RUN apk add --no-cache \
     php \
     php-cli \
+    php-common \
     php-json \
     php-mbstring \
     php-xml \
@@ -16,7 +17,17 @@ RUN apk add --no-cache \
     php-phar \
     php-openssl \
     php-pdo \
-    php-pdo_sqlite
+    php-pdo_sqlite \
+    php-pdo_mysql \
+    php-pdo_pgsql \
+    php-session \
+    php-curl \
+    php-fileinfo \
+    php-zip \
+    php-dom \
+    php-simplexml \
+    php-xmlreader \
+    php-xmlwriter
 
 # Copy package files
 COPY package*.json ./
