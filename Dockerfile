@@ -32,7 +32,7 @@ RUN echo "APP_NAME=Pricore" > .env && \
 RUN apk add --no-cache curl && \
     curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer && \
     composer install --no-dev --no-scripts --no-autoloader --ignore-platform-reqs --quiet && \
-    composer dump-autoload --optimize --classmap-authoritative --quiet
+    composer dump-autoload --optimize --classmap-authoritative --no-scripts --ignore-platform-reqs --quiet
 
 # Copy frontend source files
 COPY resources/ ./resources/
