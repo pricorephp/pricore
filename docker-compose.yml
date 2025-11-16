@@ -1,0 +1,90 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: pricore-app
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./storage:/var/www/html/storage
+      - ./database:/var/www/html/database
+    environment:
+      - APP_ENV=${APP_ENV:-production}
+      - APP_DEBUG=${APP_DEBUG:-false}
+      - APP_KEY=${APP_KEY}
+      - DB_CONNECTION=${DB_CONNECTION:-sqlite}
+      - DB_DATABASE=${DB_DATABASE:-/var/www/html/database/database.sqlite}
+    networks:
+      - pricore-network
+    depends_on:
+      - redis
+      - queue
+
+  queue:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: pricore-queue
+    restart: unless-stopped
+    command: php artisan queue:work --tries=3 --timeout=90
+    volumes:
+      - ./storage:/var/www/html/storage
+      - ./database:/var/www/html/database
+    environment:
+      - APP_ENV=${APP_ENV:-production}
+      - APP_DEBUG=${APP_DEBUG:-false}
+      - APP_KEY=${APP_KEY}
+      - DB_CONNECTION=${DB_CONNECTION:-sqlite}
+      - DB_DATABASE=${DB_DATABASE:-/var/www/html/database/database.sqlite}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    networks:
+      - pricore-network
+    depends_on:
+      - redis
+
+  horizon:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: pricore-horizon
+    restart: unless-stopped
+    command: php artisan horizon
+    volumes:
+      - ./storage:/var/www/html/storage
+      - ./database:/var/www/html/database
+    environment:
+      - APP_ENV=${APP_ENV:-production}
+      - APP_DEBUG=${APP_DEBUG:-false}
+      - APP_KEY=${APP_KEY}
+      - DB_CONNECTION=${DB_CONNECTION:-sqlite}
+      - DB_DATABASE=${DB_DATABASE:-/var/www/html/database/database.sqlite}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    networks:
+      - pricore-network
+    depends_on:
+      - redis
+
+  redis:
+    image: redis:7-alpine
+    container_name: pricore-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - pricore-network
+
+networks:
+  pricore-network:
+    driver: bridge
+
+volumes:
+  redis-data:
+
