@@ -74,4 +74,46 @@ class AccessToken extends Model
     {
         return $this->belongsTo(User::class, 'user_uuid', 'uuid');
     }
+
+    public function validateToken(string $plainToken): bool
+    {
+        return hash('sha256', $plainToken) === $this->token_hash;
+    }
+
+    public function isExpired(): bool
+    {
+        return $this->expires_at && $this->expires_at->isPast();
+    }
+
+    public function isValid(): bool
+    {
+        return ! $this->isExpired();
+    }
+
+    public function markAsUsed(): void
+    {
+        $this->last_used_at = now();
+        $this->saveQuietly();
+    }
+
+    /**
+     * @param  Builder<static>  $query
+     * @return Builder<static>
+     */
+    public function scopeValid(Builder $query): Builder
+    {
+        return $query->where(function (Builder $query) {
+            $query->whereNull('expires_at')
+                ->orWhere('expires_at', '>', now());
+        });
+    }
+
+    /**
+     * @param  Builder<static>  $query
+     * @return Builder<static>
+     */
+    public function scopeForOrganization(Builder $query, Organization $organization): Builder
+    {
+        return $query->where('organization_uuid', $organization->uuid);
+    }
 }

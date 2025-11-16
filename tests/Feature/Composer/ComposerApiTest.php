@@ -1,11 +1,10 @@
 <?php
 
+use App\Models\AccessToken;
 use App\Models\Organization;
 use App\Models\Package;
 use App\Models\PackageVersion;
 use App\Models\User;
-
-use function Pest\Laravel\getJson;
 
 beforeEach(function () {
     $this->user = User::factory()->create();
@@ -13,10 +12,26 @@ beforeEach(function () {
         'slug' => 'acme',
         'owner_uuid' => $this->user->uuid,
     ]);
+
+    // Create a valid access token for this organization
+    $this->plainToken = 'test-token-'.uniqid();
+    $this->accessToken = AccessToken::factory()
+        ->forOrganization($this->organization)
+        ->withPlainToken($this->plainToken)
+        ->neverExpires()
+        ->create();
 });
 
+// Helper to make authenticated requests
+function authenticatedGet(string $uri, string $token): \Illuminate\Testing\TestResponse
+{
+    return test()->withHeaders([
+        'Authorization' => "Bearer {$token}",
+    ])->getJson($uri);
+}
+
 it('returns root packages.json with metadata-url template', function () {
-    $response = getJson("/{$this->organization->slug}/packages.json");
+    $response = authenticatedGet("/{$this->organization->slug}/packages.json", $this->plainToken);
 
     $response->assertOk()
         ->assertJson([
@@ -44,7 +59,7 @@ it('returns package metadata in composer v2 format', function () {
             'source_reference' => 'abc123',
         ]);
 
-    $response = getJson("/{$this->organization->slug}/p2/acme/awesome-package.json");
+    $response = authenticatedGet("/{$this->organization->slug}/p2/acme/awesome-package.json", $this->plainToken);
 
     $response->assertOk()
         ->assertJsonStructure([
@@ -94,7 +109,7 @@ it('returns multiple versions ordered by release date', function () {
             'released_at' => $middle,
         ]);
 
-    $response = getJson("/{$this->organization->slug}/p2/acme/package.json");
+    $response = authenticatedGet("/{$this->organization->slug}/p2/acme/package.json", $this->plainToken);
 
     $response->assertOk();
 
@@ -123,7 +138,7 @@ it('excludes dev versions from stable endpoint', function () {
         ->for($package)
         ->create(['version' => '2.0.0-dev']);
 
-    $response = getJson("/{$this->organization->slug}/p2/acme/package.json");
+    $response = authenticatedGet("/{$this->organization->slug}/p2/acme/package.json", $this->plainToken);
 
     $response->assertOk();
 
@@ -150,7 +165,7 @@ it('returns only dev versions from dev endpoint', function () {
         ->for($package)
         ->create(['version' => 'dev-develop']);
 
-    $response = getJson("/{$this->organization->slug}/p2/acme/package~dev.json");
+    $response = authenticatedGet("/{$this->organization->slug}/p2/acme/package~dev.json", $this->plainToken);
 
     $response->assertOk();
 
@@ -165,7 +180,7 @@ it('returns only dev versions from dev endpoint', function () {
 });
 
 it('returns 404 for non-existent package', function () {
-    $response = getJson("/{$this->organization->slug}/p2/acme/non-existent.json");
+    $response = authenticatedGet("/{$this->organization->slug}/p2/acme/non-existent.json", $this->plainToken);
 
     $response->assertNotFound()
         ->assertJson([
@@ -175,7 +190,7 @@ it('returns 404 for non-existent package', function () {
 });
 
 it('returns 404 for non-existent organization', function () {
-    $response = getJson('/non-existent/p2/acme/package.json');
+    $response = authenticatedGet('/non-existent/p2/acme/package.json', $this->plainToken);
 
     $response->assertNotFound();
 });
@@ -189,7 +204,7 @@ it('includes caching headers', function () {
         ->for($package)
         ->create(['version' => '1.0.0']);
 
-    $response = getJson("/{$this->organization->slug}/p2/acme/package.json");
+    $response = authenticatedGet("/{$this->organization->slug}/p2/acme/package.json", $this->plainToken);
 
     $response->assertOk()
         ->assertHeader('Cache-Control')
@@ -212,7 +227,7 @@ it('includes dist information when available', function () {
             'dist_url' => 'https://example.com/dist/acme-package-1.0.0.zip',
         ]);
 
-    $response = getJson("/{$this->organization->slug}/p2/acme/package.json");
+    $response = authenticatedGet("/{$this->organization->slug}/p2/acme/package.json", $this->plainToken);
 
     $response->assertOk()
         ->assertJsonPath('packages.acme/package.0.dist.type', 'zip')
@@ -234,7 +249,7 @@ it('includes time field from released_at', function () {
             'released_at' => $releasedAt,
         ]);
 
-    $response = getJson("/{$this->organization->slug}/p2/acme/package.json");
+    $response = authenticatedGet("/{$this->organization->slug}/p2/acme/package.json", $this->plainToken);
 
     $response->assertOk()
         ->assertJsonPath('packages.acme/package.0.time', $releasedAt->toIso8601String());
@@ -251,7 +266,7 @@ it('does not leak packages from other organizations', function () {
         ->for($package)
         ->create(['version' => '1.0.0']);
 
-    $response = getJson("/{$this->organization->slug}/p2/other/package.json");
+    $response = authenticatedGet("/{$this->organization->slug}/p2/other/package.json", $this->plainToken);
 
     $response->assertNotFound();
 });

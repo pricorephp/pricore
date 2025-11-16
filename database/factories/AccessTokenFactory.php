@@ -6,7 +6,6 @@ use App\Models\AccessToken;
 use App\Models\Organization;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 
 /**
@@ -32,7 +31,7 @@ class AccessTokenFactory extends Factory
             'organization_uuid' => Organization::factory(),
             'user_uuid' => null,
             'name' => fake()->words(2, true).' Token',
-            'token_hash' => Hash::make(Str::random(64)),
+            'token_hash' => hash('sha256', Str::random(64)),
             'scopes' => fake()->optional(0.6)->randomElements(['read', 'write', 'admin'], fake()->numberBetween(1, 3)),
             'last_used_at' => fake()->optional(0.7)->dateTimeBetween('-30 days', 'now'),
             'expires_at' => fake()->optional(0.5)->dateTimeBetween('now', '+2 years'),
@@ -100,6 +99,16 @@ class AccessTokenFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'last_used_at' => fake()->dateTimeBetween('-7 days', 'now'),
+        ]);
+    }
+
+    /**
+     * Create a token with a known plain text token for testing.
+     */
+    public function withPlainToken(string $plainToken): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'token_hash' => hash('sha256', $plainToken),
         ]);
     }
 }

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\ComposerTokenAuth;
 use App\Http\Middleware\HandleAppearance;
 use App\Http\Middleware\HandleInertiaRequests;
 use Illuminate\Foundation\Application;
@@ -26,8 +27,15 @@ return Application::configure(basePath: dirname(__DIR__))
             HandleInertiaRequests::class,
             AddLinkHeadersForPreloadedAssets::class,
         ]);
+
+        $middleware->alias([
+            'composer.token' => ComposerTokenAuth::class,
+        ]);
     })
-    ->withCommands([__DIR__.'/../app/Domains/Repository/Commands'])
+    ->withCommands([
+        __DIR__.'/../app/Domains/Repository/Commands',
+        __DIR__.'/../app/Domains/Token/Commands',
+    ])
     ->withExceptions(function (Exceptions $exceptions): void {
         //
     })->create();
