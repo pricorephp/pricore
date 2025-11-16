@@ -174,11 +174,6 @@ export default function PackageShow({
                                     )}
                                 </Badge>
                             </div>
-                            {pkg.description && (
-                                <p className="text-muted-foreground">
-                                    {pkg.description}
-                                </p>
-                            )}
                             <div className="flex items-center gap-4 text-sm text-muted-foreground">
                                 {pkg.repositoryIdentifier && (
                                     <span className="flex items-center gap-1.5">
