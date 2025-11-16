@@ -42,10 +42,6 @@ class ProfileController extends Controller
 
         $user = $request->user();
 
-        if ($user === null) {
-            return redirect('/');
-        }
-
         Auth::logout();
 
         $user->delete();
@@ -53,6 +49,6 @@ class ProfileController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return redirect('/');
+        return redirect()->route('login');
     }
 }

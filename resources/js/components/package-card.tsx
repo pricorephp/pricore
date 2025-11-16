@@ -10,10 +10,7 @@ interface PackageCardProps {
     hideRepository?: boolean;
 }
 
-export default function PackageCard({
-    package: pkg,
-    hideRepository = false,
-}: PackageCardProps) {
+export default function PackageCard({ package: pkg }: PackageCardProps) {
     return (
         <Card className="gap-4 transition-colors hover:bg-accent/50">
             <CardHeader>
