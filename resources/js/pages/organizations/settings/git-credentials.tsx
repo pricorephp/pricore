@@ -229,7 +229,7 @@ export default function GitCredentials({
                     organizationSlug={organization.slug}
                     organizationName={organization.name}
                     credential={editingCredential}
-                    provider={addingProvider || editingCredential?.provider}
+                    provider={addingProvider ?? editingCredential!.provider}
                     providers={providers}
                     isOpen={dialogOpen}
                     onClose={() => {

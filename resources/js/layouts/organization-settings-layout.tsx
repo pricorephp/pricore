@@ -46,7 +46,7 @@ export default function OrganizationSettingsLayout({
                 icon: GitBranch,
             },
         ];
-    }, [organization?.slug]);
+    }, [organization]);
 
     if (!organization) {
         return null;

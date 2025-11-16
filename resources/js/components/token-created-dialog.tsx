@@ -14,7 +14,6 @@ interface TokenCreatedDialogProps {
     token: string;
     name: string;
     expiresAt: string | null;
-    organizationSlug: string;
     isOpen: boolean;
     onClose: () => void;
 }
@@ -23,7 +22,6 @@ export default function TokenCreatedDialog({
     token,
     name,
     expiresAt,
-    organizationSlug,
     isOpen,
     onClose,
 }: TokenCreatedDialogProps) {

@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/app-layout';
 import OrganizationSettingsLayout from '@/layouts/organization-settings-layout';
 import { Plus } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { startTransition, useEffect, useRef, useState } from 'react';
 
 type AccessTokenData = App.Domains.Token.Contracts.Data.AccessTokenData;
 type OrganizationData =
@@ -29,18 +29,27 @@ export default function Tokens({
 }: TokensPageProps) {
     const [createDialogOpen, setCreateDialogOpen] = useState(false);
     const [revokeDialogOpen, setRevokeDialogOpen] = useState(false);
-    const [tokenCreatedDialogOpen, setTokenCreatedDialogOpen] = useState(false);
+    const [tokenCreatedDialogClosed, setTokenCreatedDialogClosed] =
+        useState(false);
     const [selectedToken, setSelectedToken] = useState<{
         uuid: string;
         name: string;
     } | null>(null);
+    const previousTokenCreatedRef = useRef(tokenCreated);
 
-    // Show token created dialog when a new token is created
+    // Reset closed state when a new token is created
     useEffect(() => {
-        if (tokenCreated) {
-            setTokenCreatedDialogOpen(true);
+        if (tokenCreated && tokenCreated !== previousTokenCreatedRef.current) {
+            previousTokenCreatedRef.current = tokenCreated;
+            if (tokenCreatedDialogClosed) {
+                startTransition(() => {
+                    setTokenCreatedDialogClosed(false);
+                });
+            }
         }
-    }, [tokenCreated]);
+    }, [tokenCreated, tokenCreatedDialogClosed]);
+
+    const tokenCreatedDialogOpen = !!tokenCreated && !tokenCreatedDialogClosed;
 
     const handleRevoke = (uuid: string, name: string) => {
         setSelectedToken({ uuid, name });
@@ -101,9 +110,8 @@ export default function Tokens({
                     token={tokenCreated.plainToken}
                     name={tokenCreated.name}
                     expiresAt={tokenCreated.expires_at}
-                    organizationSlug={organization.slug}
                     isOpen={tokenCreatedDialogOpen}
-                    onClose={() => setTokenCreatedDialogOpen(false)}
+                    onClose={() => setTokenCreatedDialogClosed(true)}
                 />
             )}
         </div>
