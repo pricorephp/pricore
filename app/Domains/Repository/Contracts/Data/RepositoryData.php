@@ -18,6 +18,7 @@ class RepositoryData extends Data
         public string $repoIdentifier,
         public ?string $url,
         public ?string $syncStatus,
+        public ?string $syncStatusLabel,
         public ?CarbonInterface $lastSyncedAt,
         public int $packagesCount,
     ) {}
@@ -32,6 +33,7 @@ class RepositoryData extends Data
             repoIdentifier: $repository->repo_identifier,
             url: $repository->provider->repositoryUrl($repository->repo_identifier),
             syncStatus: $repository->sync_status?->value,
+            syncStatusLabel: $repository->sync_status?->label(),
             lastSyncedAt: $repository->last_synced_at,
             packagesCount: $repository->packages_count ?? 0,
         );

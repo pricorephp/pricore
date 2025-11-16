@@ -16,6 +16,6 @@ class SyncRepositoryController extends Controller
 
         return redirect()
             ->back()
-            ->with('success', 'Repository sync has been queued.');
+            ->with('status', 'Repository sync has been queued.');
     }
 }

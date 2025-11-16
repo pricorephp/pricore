@@ -35,19 +35,11 @@ function getProviderBadgeColor(provider: string): string {
 
 function getSyncStatusVariant(
     status: string | null,
-): 'default' | 'secondary' | 'destructive' | 'outline' {
+): 'default' | 'secondary' | 'destructive' | 'success' | 'outline' {
     if (!status) return 'secondary';
-    if (status === 'ok') return 'default';
+    if (status === 'ok') return 'success';
     if (status === 'failed') return 'destructive';
     return 'secondary';
-}
-
-function getSyncStatusLabel(status: string | null): string {
-    if (!status) return 'Pending';
-    if (status === 'ok') return 'OK';
-    if (status === 'failed') return 'Failed';
-    if (status === 'pending') return 'Pending';
-    return status;
 }
 
 export default function Repositories({
@@ -113,14 +105,18 @@ export default function Repositories({
                                                 {repo.name}
                                             </span>
                                             {repo.url ? (
-                                                <a
-                                                    href={repo.url}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
+                                                <button
+                                                    type="button"
                                                     className="inline-block"
-                                                    onClick={(e) =>
-                                                        e.stopPropagation()
-                                                    }
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        e.preventDefault();
+                                                        window.open(
+                                                            repo.url,
+                                                            '_blank',
+                                                            'noopener,noreferrer',
+                                                        );
+                                                    }}
                                                 >
                                                     <Badge
                                                         className={getProviderBadgeColor(
@@ -135,7 +131,7 @@ export default function Repositories({
                                                         />
                                                         {repo.providerLabel}
                                                     </Badge>
-                                                </a>
+                                                </button>
                                             ) : (
                                                 <Badge
                                                     className={getProviderBadgeColor(
@@ -161,20 +157,18 @@ export default function Repositories({
                                                     repo.syncStatus,
                                                 )}
                                             >
-                                                {getSyncStatusLabel(
-                                                    repo.syncStatus,
-                                                )}
+                                                {repo.syncStatusLabel ?? 'Pending'}
                                             </Badge>
                                         </div>
 
-                                        {repo.lastSyncedAt && (
-                                            <div className="text-xs text-muted-foreground">
-                                                Last synced{' '}
-                                                {DateTime.fromISO(
-                                                    repo.lastSyncedAt,
-                                                ).toRelative()}
-                                            </div>
-                                        )}
+                                        <div className="text-xs text-muted-foreground">
+                                            Last synced:{' '}
+                                            {repo.lastSyncedAt
+                                                ? DateTime.fromISO(
+                                                      repo.lastSyncedAt,
+                                                  ).toRelative()
+                                                : '—'}
+                                        </div>
                                     </CardContent>
                                 </Card>
                             </Link>

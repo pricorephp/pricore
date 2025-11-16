@@ -1,6 +1,6 @@
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { GitBranch, Globe, Lock } from 'lucide-react';
+import { Globe, Lock } from 'lucide-react';
 import { DateTime } from 'luxon';
 
 type PackageData = App.Domains.Package.Contracts.Data.PackageData;
@@ -15,10 +15,10 @@ export default function PackageCard({
     hideRepository = false,
 }: PackageCardProps) {
     return (
-        <Card className="transition-colors hover:bg-accent/50">
+        <Card className="gap-4 transition-colors hover:bg-accent/50">
             <CardHeader>
                 <CardTitle className="flex items-start justify-between gap-2">
-                    <span className="font-mono text-sm">{pkg.name}</span>
+                    <span>{pkg.name}</span>
                     <div className="flex shrink-0 items-center gap-1.5">
                         {pkg.visibility === 'private' ? (
                             <>
@@ -39,13 +39,7 @@ export default function PackageCard({
                 </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-                {pkg.description && (
-                    <p className="line-clamp-2 text-sm text-muted-foreground">
-                        {pkg.description}
-                    </p>
-                )}
-
-                <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+                <div className="flex flex-row items-center gap-2 text-xs text-muted-foreground">
                     {pkg.latestVersion && (
                         <Badge variant="outline" className="font-mono">
                             {pkg.latestVersion}
@@ -59,13 +53,6 @@ export default function PackageCard({
                         </span>
                     )}
                 </div>
-
-                {!hideRepository && pkg.repositoryName && (
-                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                        <GitBranch className="h-3 w-3" />
-                        <span>{pkg.repositoryName}</span>
-                    </div>
-                )}
 
                 <div className="pt-2 text-xs text-muted-foreground">
                     Updated {DateTime.fromISO(pkg.updatedAt).toRelative()}

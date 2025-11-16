@@ -45,19 +45,12 @@ function getProviderBadgeColor(provider: string): string {
 }
 
 function getSyncStatusVariant(
-    status: string,
-): 'default' | 'secondary' | 'destructive' | 'outline' {
-    if (status === 'success') return 'default';
+    status: string | null,
+): 'default' | 'secondary' | 'destructive' | 'success' | 'outline' {
+    if (!status) return 'secondary';
+    if (status === 'ok') return 'success';
     if (status === 'failed') return 'destructive';
-    if (status === 'pending') return 'secondary';
     return 'secondary';
-}
-
-function getSyncStatusLabel(status: string): string {
-    if (status === 'success') return 'Success';
-    if (status === 'failed') return 'Failed';
-    if (status === 'pending') return 'Pending';
-    return status;
 }
 
 function formatDuration(startedAt: string, completedAt: string | null): string {
@@ -145,7 +138,7 @@ export default function RepositoryShow({
                                         repository.syncStatus,
                                     )}
                                 >
-                                    {getSyncStatusLabel(repository.syncStatus)}
+                                    {repository.syncStatusLabel ?? 'Pending'}
                                 </Badge>
                             )}
                         </div>

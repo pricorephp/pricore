@@ -2,7 +2,6 @@ import { NavFooter } from '@/components/nav-footer';
 import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
 import OrganizationSwitcher from '@/components/organization-switcher';
-import { Separator } from '@/components/ui/separator';
 import {
     Sidebar,
     SidebarContent,
@@ -92,7 +91,6 @@ export function AppSidebar() {
 
                 {auth.organizations.length > 0 && (
                     <>
-                        <Separator />
                         <OrganizationSwitcher
                             organizations={auth.organizations}
                             currentOrganization={
@@ -104,7 +102,10 @@ export function AppSidebar() {
             </SidebarHeader>
 
             <SidebarContent>
-                <NavMain items={navigationItems} />
+                <NavMain
+                    items={navigationItems}
+                    showLabel={!!currentOrganization}
+                />
             </SidebarContent>
 
             <SidebarFooter>

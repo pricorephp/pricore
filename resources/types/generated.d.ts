@@ -61,6 +61,7 @@ providerLabel: string;
 repoIdentifier: string;
 url: string | null;
 syncStatus: string | null;
+syncStatusLabel: string | null;
 lastSyncedAt: string | null;
 packagesCount: number;
 };

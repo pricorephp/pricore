@@ -64,7 +64,7 @@ export default function Tokens({
     };
 
     return (
-        <div className="space-y-4">
+        <div className="space-y-6">
             <div className="flex items-center justify-between">
                 <div>
                     <h3 className="text-lg font-medium">API Tokens</h3>

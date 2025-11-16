@@ -411,7 +411,11 @@ export default function PackageShow({
                                                         key={index}
                                                         className="px-3 py-2 text-sm text-muted-foreground"
                                                     >
-                                                        {link.label}
+                                                        <span
+                                                            dangerouslySetInnerHTML={{
+                                                                __html: link.label,
+                                                            }}
+                                                        />
                                                     </span>
                                                 );
                                             }
@@ -424,13 +428,14 @@ export default function PackageShow({
                                                     className={`rounded px-3 py-2 text-sm transition-colors ${
                                                         link.active
                                                             ? 'bg-primary text-primary-foreground'
-                                                            : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                                                            : 'bg-white text-muted-foreground/110 hover:bg-muted/80'
                                                     }`}
                                                 >
-                                                    {link.label.replace(
-                                                        /&laquo;|&raquo;/g,
-                                                        '',
-                                                    )}
+                                                    <span
+                                                        dangerouslySetInnerHTML={{
+                                                            __html: link.label,
+                                                        }}
+                                                    />
                                                 </Link>
                                             );
                                         })}
