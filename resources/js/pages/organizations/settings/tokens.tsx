@@ -43,15 +43,18 @@ export default function Tokens({
             // If this is a new token (different from what we've seen before)
             if (currentPlainToken !== previousPlainToken) {
                 previousTokenPlainTokenRef.current = currentPlainToken;
-                // Close the create dialog if it's open
-                setCreateDialogOpen(false);
-                // Open the token created dialog
-                setTokenCreatedDialogOpen(true);
+                // Schedule state updates to avoid synchronous setState in effect
+                setTimeout(() => {
+                    setCreateDialogOpen(false);
+                    setTokenCreatedDialogOpen(true);
+                }, 0);
             }
         } else {
             // Reset ref when tokenCreated is cleared
             previousTokenPlainTokenRef.current = undefined;
-            setTokenCreatedDialogOpen(false);
+            setTimeout(() => {
+                setTokenCreatedDialogOpen(false);
+            }, 0);
         }
     }, [tokenCreated]);
 
