@@ -107,8 +107,14 @@ COPY composer.json composer.lock ./
 COPY artisan ./
 COPY bootstrap/ ./bootstrap/
 COPY app/ ./app/
+COPY routes/ ./routes/
+COPY config/ ./config/
+COPY database/ ./database/
 
-# Install dependencies (scripts need artisan and bootstrap)
+# Create storage directories needed for Laravel bootstrap
+RUN mkdir -p storage/framework/cache storage/framework/sessions storage/framework/views storage/logs bootstrap/cache
+
+# Install dependencies (scripts need artisan, bootstrap, routes, config, and database)
 RUN composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist
 
 # Copy remaining application files
