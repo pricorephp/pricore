@@ -16,7 +16,8 @@
         "laravel/framework": "^12.0",
         "laravel/tinker": "^2.10.1",
         "laravel/wayfinder": "^0.1.9",
-        "spatie/laravel-data": "^4.18"
+        "spatie/laravel-data": "^4.18",
+        "spatie/laravel-typescript-transformer": "^2.5"
     },
     "require-dev": {
         "barryvdh/laravel-ide-helper": "^3.6",
@@ -90,6 +91,9 @@
         ],
         "pint": [
             "vendor/bin/pint"
+        ],
+        "ts": [
+            "@php artisan typescript:transform"
         ]
     },
     "extra": {
