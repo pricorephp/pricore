@@ -31,7 +31,7 @@ RUN echo "APP_NAME=Pricore" > .env && \
 # Install Composer dependencies (minimal, just for Wayfinder)
 RUN apk add --no-cache curl && \
     curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer && \
-    composer install --no-dev --no-scripts --no-autoloader --quiet && \
+    composer install --no-dev --no-scripts --no-autoloader --ignore-platform-reqs --quiet && \
     composer dump-autoload --optimize --classmap-authoritative --quiet
 
 # Copy frontend source files
