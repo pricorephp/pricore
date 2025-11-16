@@ -10,9 +10,18 @@ class UpdateMemberRoleRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()->can('manageMembers', $this->route('organization'));
+        $user = $this->user();
+
+        if ($user === null) {
+            return false;
+        }
+
+        return $user->can('manageMembers', $this->route('organization'));
     }
 
+    /**
+     * @return array<string, array<int, string|\Illuminate\Validation\Rules\Enum>>
+     */
     public function rules(): array
     {
         return [

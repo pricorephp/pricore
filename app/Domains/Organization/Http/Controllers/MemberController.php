@@ -9,6 +9,7 @@ use App\Domains\Organization\Requests\AddMemberRequest;
 use App\Domains\Organization\Requests\UpdateMemberRoleRequest;
 use App\Models\Organization;
 use App\Models\OrganizationUser;
+use App\Models\Pivots\OrganizationUserPivot;
 use App\Models\User;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
@@ -26,13 +27,15 @@ class MemberController
         $members = $organization->members()
             ->withPivot('role', 'created_at', 'uuid')
             ->get()
-            ->map(fn (User $user) => OrganizationMemberData::from([
-                'uuid' => $user->pivot->uuid,
-                'name' => $user->name,
-                'email' => $user->email,
-                'role' => $user->pivot->role,
-                'joinedAt' => $user->pivot->created_at->toIso8601String(),
-            ]));
+            ->map(function (User $user) {
+                $pivot = $user->pivot;
+
+                if (! $pivot instanceof OrganizationUserPivot) {
+                    throw new \RuntimeException('Pivot is not an instance of OrganizationUserPivot');
+                }
+
+                return OrganizationMemberData::fromUserAndPivot($user, $pivot);
+            });
 
         return Inertia::render('organizations/settings/members', [
             'organization' => OrganizationData::from($organization),

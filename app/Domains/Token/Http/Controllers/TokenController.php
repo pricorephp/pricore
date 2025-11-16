@@ -39,8 +39,7 @@ class TokenController extends Controller
             organization: $organization,
             user: null,
             name: $request->validated('name'),
-            expiresAt: $request->validated('expires_at') ? now()->parse($request->validated('expires_at')) : null,
-            scopes: $request->validated('scopes')
+            expiresAt: $request->validated('expires_at') ? now()->parse($request->validated('expires_at')) : null
         );
 
         return to_route('organizations.settings.tokens.index', $organization)

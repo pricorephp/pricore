@@ -3,6 +3,7 @@
 namespace App\Domains\Repository\Contracts\Data;
 
 use App\Models\Repository;
+use Carbon\CarbonInterface;
 use Spatie\LaravelData\Data;
 use Spatie\TypeScriptTransformer\Attributes\TypeScript;
 
@@ -15,7 +16,7 @@ class RepositoryData extends Data
         public string $provider,
         public string $repoIdentifier,
         public ?string $syncStatus,
-        public ?string $lastSyncedAt,
+        public ?CarbonInterface $lastSyncedAt,
         public int $packagesCount,
     ) {}
 
@@ -27,7 +28,7 @@ class RepositoryData extends Data
             provider: $repository->provider->value,
             repoIdentifier: $repository->repo_identifier,
             syncStatus: $repository->sync_status?->value,
-            lastSyncedAt: $repository->last_synced_at?->toIso8601String(),
+            lastSyncedAt: $repository->last_synced_at,
             packagesCount: $repository->packages_count ?? 0,
         );
     }

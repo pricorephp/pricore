@@ -8,9 +8,18 @@ class UpdateOrganizationRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()->can('update', $this->route('organization'));
+        $user = $this->user();
+
+        if ($user === null) {
+            return false;
+        }
+
+        return $user->can('update', $this->route('organization'));
     }
 
+    /**
+     * @return array<string, array<int, string>>
+     */
     public function rules(): array
     {
         return [

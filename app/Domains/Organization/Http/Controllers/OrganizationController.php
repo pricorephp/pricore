@@ -20,7 +20,13 @@ class OrganizationController extends Controller
 
     public function index(): Response
     {
-        $organizations = auth()->user()
+        $user = auth()->user();
+
+        if ($user === null) {
+            abort(401);
+        }
+
+        $organizations = $user
             ->organizations()
             ->withCount(['packages', 'repositories', 'accessTokens'])
             ->orderBy('name')
@@ -42,9 +48,15 @@ class OrganizationController extends Controller
 
     public function store(StoreOrganizationRequest $request): RedirectResponse
     {
+        $user = auth()->user();
+
+        if ($user === null) {
+            abort(401);
+        }
+
         $organization = $this->createOrganization->handle(
             name: $request->validated('name'),
-            ownerUuid: auth()->user()->uuid
+            ownerUuid: $user->uuid
         );
 
         return redirect()->route('organizations.show', $organization->slug)

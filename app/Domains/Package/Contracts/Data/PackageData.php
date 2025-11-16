@@ -3,6 +3,7 @@
 namespace App\Domains\Package\Contracts\Data;
 
 use App\Models\Package;
+use Carbon\CarbonInterface;
 use Spatie\LaravelData\Data;
 use Spatie\TypeScriptTransformer\Attributes\TypeScript;
 
@@ -18,7 +19,7 @@ class PackageData extends Data
         public bool $isProxy,
         public int $versionsCount,
         public ?string $latestVersion,
-        public string $updatedAt,
+        public CarbonInterface $updatedAt,
         public ?string $repositoryName,
     ) {}
 
@@ -29,6 +30,12 @@ class PackageData extends Data
             ->orderBy('released_at', 'desc')
             ->first();
 
+        $updatedAt = $package->updated_at;
+
+        if ($updatedAt === null) {
+            throw new \RuntimeException('Package updated_at cannot be null');
+        }
+
         return new self(
             uuid: $package->uuid,
             name: $package->name,
@@ -38,7 +45,7 @@ class PackageData extends Data
             isProxy: $package->is_proxy,
             versionsCount: $package->versions_count ?? 0,
             latestVersion: $latestVersion?->version,
-            updatedAt: $package->updated_at->toIso8601String(),
+            updatedAt: $updatedAt,
             repositoryName: $package->repository?->name,
         );
     }

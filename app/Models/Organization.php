@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\HasUuids;
+use App\Models\Pivots\OrganizationUserPivot;
 use Database\Factories\OrganizationFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
@@ -48,7 +49,9 @@ use Illuminate\Support\Carbon;
 class Organization extends Model
 {
     /** @use HasFactory<OrganizationFactory> */
-    use HasFactory, HasUuids;
+    use HasFactory;
+
+    use HasUuids;
 
     protected $guarded = ['uuid'];
 
@@ -61,12 +64,13 @@ class Organization extends Model
     }
 
     /**
-     * @return BelongsToMany<User, $this>
+     * @return BelongsToMany<User, $this, OrganizationUserPivot, 'pivot'>
      */
     public function members(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'organization_users', 'organization_uuid', 'user_uuid', 'uuid', 'uuid')
-            ->withPivot('role')
+            ->using(OrganizationUserPivot::class)
+            ->withPivot('role', 'uuid')
             ->withTimestamps();
     }
 

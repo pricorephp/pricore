@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\HasUuids;
+use App\Models\Pivots\OrganizationUserPivot;
 use Database\Factories\UserFactory;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Builder;
@@ -37,6 +38,7 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @property-read int|null $organizations_count
  * @property-read Collection<int, Organization> $ownedOrganizations
  * @property-read int|null $owned_organizations_count
+ * @property-read OrganizationUserPivot|null $pivot
  *
  * @method static UserFactory factory($count = null, $state = [])
  * @method static Builder<static>|User newModelQuery()
@@ -59,7 +61,11 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
 class User extends Authenticatable implements MustVerifyEmail
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, HasUuids, Notifiable, TwoFactorAuthenticatable;
+    use HasFactory;
+
+    use HasUuids;
+    use Notifiable;
+    use TwoFactorAuthenticatable;
 
     protected $guarded = ['uuid'];
 
