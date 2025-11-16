@@ -102,11 +102,16 @@ FROM php-base AS application
 
 WORKDIR /var/www/html
 
-# Copy Composer files and install dependencies
+# Copy minimal files needed for composer scripts
 COPY composer.json composer.lock ./
+COPY artisan ./
+COPY bootstrap/ ./bootstrap/
+COPY app/ ./app/
+
+# Install dependencies (scripts need artisan and bootstrap)
 RUN composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist
 
-# Copy application files
+# Copy remaining application files
 COPY . .
 
 # Copy built frontend assets from frontend-builder stage
