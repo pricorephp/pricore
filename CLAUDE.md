@@ -771,6 +771,62 @@ If your application uses the `<Form>` component from Inertia, you can use Wayfin
 
 </code-snippet>
 
+### Common Patterns & Gotchas
+
+#### Multiple Route Parameters
+When your route has multiple parameters (e.g., `organizations/{organization}/members/{member}`), you **must** pass them as an array to Wayfinder functions.
+
+<code-snippet name="Multiple Route Parameters" lang="typescript">
+// routes/web.php
+Route::patch('organizations/{organization}/members/{member}', [MemberController::class, 'update']);
+
+// ❌ WRONG - Will cause "Cannot read properties of undefined (reading 'toString')"
+update.url(organization, memberUuid)
+update.url(organization.slug, memberUuid)
+update.url(organization, { member: memberUuid })
+
+// ✅ CORRECT - Use array for multiple parameters
+update.url([organization.slug, memberUuid])
+
+// Also works with router methods
+router.patch(update.url([organization.slug, memberUuid]), { role: 'admin' })
+router.delete(destroy.url([organization.slug, memberUuid]))
+</code-snippet>
+
+#### Form Helper Availability
+Not all Wayfinder actions have the `.form()` helper method. When it's unavailable, use explicit `action` and `method` props instead.
+
+<code-snippet name="Form Helper Alternatives" lang="typescript">
+// ❌ WRONG - May cause "form is not a function" error
+<Form {...store.form(organization)}>
+<Form {...update.form([organization.slug])}>
+
+// ✅ CORRECT - Use explicit action and method props
+<Form action={store.url(organization.slug)} method="post">
+    <input name="email" type="email" />
+    <button type="submit">Add</button>
+</Form>
+
+<Form action={update.url([organization.slug])} method="patch">
+    <input name="name" defaultValue={organization.name} />
+    <button type="submit">Save</button>
+</Form>
+</code-snippet>
+
+#### Route Parameter Order
+Parameters must be passed in the same order as they appear in the route definition.
+
+<code-snippet name="Parameter Order Matters" lang="typescript">
+// routes/web.php
+Route::get('organizations/{organization}/packages/{package}', [PackageController::class, 'show']);
+
+// ✅ CORRECT - Parameters in route order: organization, then package
+show.url([organizationSlug, packageId])
+
+// ❌ WRONG - Parameters reversed
+show.url([packageId, organizationSlug]) // Will generate incorrect URL
+</code-snippet>
+
 
 === pint/core rules ===
 

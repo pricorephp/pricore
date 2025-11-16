@@ -1,5 +1,10 @@
 <?php
 
+use App\Domains\Organization\Http\Controllers\MemberController;
+use App\Domains\Organization\Http\Controllers\OrganizationController;
+use App\Domains\Organization\Http\Controllers\SettingsController;
+use App\Domains\Package\Http\Controllers\PackageController;
+use App\Domains\Repository\Http\Controllers\RepositoryController;
 use App\Domains\Token\Http\Controllers\TokenController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -16,11 +21,27 @@ Route::middleware(['auth', 'verified'])->group(function () {
         return Inertia::render('dashboard');
     })->name('dashboard');
 
-    // Organization token management
-    Route::prefix('organizations/{organization:slug}/settings')->group(function () {
-        Route::get('tokens', [TokenController::class, 'index'])->name('organizations.settings.tokens.index');
-        Route::post('tokens', [TokenController::class, 'store'])->name('organizations.settings.tokens.store');
-        Route::delete('tokens/{token}', [TokenController::class, 'destroy'])->name('organizations.settings.tokens.destroy');
+    // Organizations
+    Route::get('organizations', [OrganizationController::class, 'index'])->name('organizations.index');
+    Route::post('organizations', [OrganizationController::class, 'store'])->name('organizations.store');
+    Route::get('organizations/{organization:slug}', [OrganizationController::class, 'show'])->name('organizations.show');
+    Route::get('organizations/{organization:slug}/packages', [PackageController::class, 'index'])->name('organizations.packages.index');
+    Route::get('organizations/{organization:slug}/repositories', [RepositoryController::class, 'index'])->name('organizations.repositories.index');
+
+    // Organization settings
+    Route::prefix('organizations/{organization:slug}/settings')->name('organizations.settings.')->group(function () {
+        Route::get('/', [SettingsController::class, 'index'])->name('index');
+        Route::get('general', [SettingsController::class, 'general'])->name('general');
+        Route::patch('general', [SettingsController::class, 'update'])->name('update');
+
+        Route::get('members', [MemberController::class, 'index'])->name('members');
+        Route::post('members', [MemberController::class, 'store'])->name('members.store');
+        Route::patch('members/{member}', [MemberController::class, 'update'])->name('members.update');
+        Route::delete('members/{member}', [MemberController::class, 'destroy'])->name('members.destroy');
+
+        Route::get('tokens', [TokenController::class, 'index'])->name('tokens.index');
+        Route::post('tokens', [TokenController::class, 'store'])->name('tokens.store');
+        Route::delete('tokens/{token}', [TokenController::class, 'destroy'])->name('tokens.destroy');
     });
 });
 

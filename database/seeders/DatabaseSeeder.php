@@ -62,7 +62,7 @@ class DatabaseSeeder extends Seeder
         );
         OrganizationUser::firstOrCreate(
             ['organization_uuid' => $org1->uuid, 'user_uuid' => $users[2]?->uuid],
-            ['role' => 'viewer']
+            ['role' => 'member']
         );
 
         // Organization 2-4: Create additional organizations

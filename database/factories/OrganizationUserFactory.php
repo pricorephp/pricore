@@ -29,7 +29,7 @@ class OrganizationUserFactory extends Factory
         return [
             'organization_uuid' => Organization::factory(),
             'user_uuid' => User::factory(),
-            'role' => fake()->randomElement(['member', 'admin', 'viewer']),
+            'role' => fake()->randomElement(['member', 'admin']),
         ];
     }
 
@@ -80,16 +80,6 @@ class OrganizationUserFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'role' => 'member',
-        ]);
-    }
-
-    /**
-     * Indicate that the user is a viewer.
-     */
-    public function viewer(): static
-    {
-        return $this->state(fn (array $attributes) => [
-            'role' => 'viewer',
         ]);
     }
 }

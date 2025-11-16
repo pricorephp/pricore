@@ -1,9 +1,10 @@
-import type { AccessTokenData } from '@/../../resources/types/generated';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Trash2 } from 'lucide-react';
 import { DateTime } from 'luxon';
+
+type AccessTokenData = App.Domains.Token.Contracts.Data.AccessTokenData;
 
 interface TokenListProps {
     tokens: AccessTokenData[];
