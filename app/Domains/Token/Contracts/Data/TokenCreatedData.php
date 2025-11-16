@@ -13,5 +13,6 @@ class TokenCreatedData extends Data
         public string $plainToken,
         public string $name,
         public ?CarbonInterface $expiresAt,
+        public ?string $organizationUuid,
     ) {}
 }

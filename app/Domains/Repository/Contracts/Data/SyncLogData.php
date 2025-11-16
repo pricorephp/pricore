@@ -19,6 +19,7 @@ class SyncLogData extends Data
         public ?string $errorMessage,
         public int $versionsAdded,
         public int $versionsUpdated,
+        /** @var array<string, mixed>|null */
         public ?array $details,
     ) {}
 

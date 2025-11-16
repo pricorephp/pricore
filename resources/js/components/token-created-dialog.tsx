@@ -9,7 +9,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Check, Copy } from 'lucide-react';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 
 interface TokenCreatedDialogProps {
     token: string;
@@ -27,9 +27,16 @@ export default function TokenCreatedDialog({
     onClose,
 }: TokenCreatedDialogProps) {
     const [copied, setCopied] = useState(false);
+    const inputRef = useRef<HTMLInputElement>(null);
 
     const copyToClipboard = async () => {
         try {
+            // Select the input text
+            if (inputRef.current) {
+                inputRef.current.focus();
+                inputRef.current.select();
+            }
+
             if (navigator.clipboard && navigator.clipboard.writeText) {
                 await navigator.clipboard.writeText(token);
             } else {
@@ -88,6 +95,7 @@ export default function TokenCreatedDialog({
                         <label className="text-sm font-medium">Token</label>
                         <div className="mt-2 flex gap-2">
                             <Input
+                                ref={inputRef}
                                 type="text"
                                 value={token}
                                 readOnly

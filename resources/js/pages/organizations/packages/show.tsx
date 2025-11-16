@@ -12,7 +12,6 @@ import {
 } from '@/components/ui/table';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
-import { show } from '@/actions/App/Domains/Package/Http/Controllers/PackageController';
 import { Head, Link } from '@inertiajs/react';
 import { Check, Copy, Globe, Lock } from 'lucide-react';
 import { DateTime } from 'luxon';
@@ -21,8 +20,7 @@ import { useState } from 'react';
 type OrganizationData =
     App.Domains.Organization.Contracts.Data.OrganizationData;
 type PackageData = App.Domains.Package.Contracts.Data.PackageData;
-type PackageVersionData =
-    App.Domains.Package.Contracts.Data.PackageVersionData;
+type PackageVersionData = App.Domains.Package.Contracts.Data.PackageVersionData;
 
 interface PackageShowProps {
     organization: OrganizationData;
@@ -91,7 +89,7 @@ function CopyButton({ text }: { text: string }) {
                 )}
             </Button>
             {copied && (
-                <div className="absolute -top-9 left-1/2 z-50 -translate-x-1/2 whitespace-nowrap rounded-md bg-green-600 px-2 py-1 text-xs font-medium text-white shadow-lg dark:bg-green-500">
+                <div className="absolute -top-9 left-1/2 z-50 -translate-x-1/2 rounded-md bg-green-600 px-2 py-1 text-xs font-medium whitespace-nowrap text-white shadow-lg dark:bg-green-500">
                     Copied!
                     <div className="absolute -bottom-1 left-1/2 h-2 w-2 -translate-x-1/2 rotate-45 bg-green-600 dark:bg-green-500" />
                 </div>
@@ -102,8 +100,7 @@ function CopyButton({ text }: { text: string }) {
 
 function isStableVersion(version: PackageVersionData): boolean {
     return (
-        !version.version.includes('dev') &&
-        /^\d+\.\d+/.test(version.version)
+        !version.version.includes('dev') && /^\d+\.\d+/.test(version.version)
     );
 }
 
@@ -153,7 +150,7 @@ export default function PackageShow({
                     <div className="flex items-start justify-between">
                         <div className="space-y-2">
                             <div className="flex items-center gap-3">
-                                <h1 className="text-2xl font-semibold font-mono">
+                                <h1 className="font-mono text-2xl font-semibold">
                                     {pkg.name}
                                 </h1>
                                 <Badge
@@ -184,7 +181,10 @@ export default function PackageShow({
                             <div className="flex items-center gap-4 text-sm text-muted-foreground">
                                 {pkg.type && (
                                     <span>
-                                        Type: <span className="font-medium">{pkg.type}</span>
+                                        Type:{' '}
+                                        <span className="font-medium">
+                                            {pkg.type}
+                                        </span>
                                     </span>
                                 )}
                                 {pkg.repositoryName && (
@@ -220,7 +220,7 @@ export default function PackageShow({
                             <pre className="overflow-x-auto rounded bg-muted p-4 text-xs">
                                 <code>{composerConfig}</code>
                             </pre>
-                            <div className="absolute right-2 top-2">
+                            <div className="absolute top-2 right-2">
                                 <CopyButton text={composerConfig} />
                             </div>
                         </div>
@@ -246,7 +246,9 @@ export default function PackageShow({
                                         <TableRow>
                                             <TableHead>Version</TableHead>
                                             <TableHead>Released</TableHead>
-                                            <TableHead>Install Command</TableHead>
+                                            <TableHead>
+                                                Install Command
+                                            </TableHead>
                                             <TableHead>Source</TableHead>
                                         </TableRow>
                                     </TableHeader>
@@ -259,7 +261,9 @@ export default function PackageShow({
                                                     <TableCell>
                                                         <div className="flex items-center gap-2">
                                                             <code className="font-mono text-sm">
-                                                                {version.version}
+                                                                {
+                                                                    version.version
+                                                                }
                                                             </code>
                                                             {isStableVersion(
                                                                 version,
@@ -307,7 +311,9 @@ export default function PackageShow({
                                                             <input
                                                                 type="text"
                                                                 readOnly
-                                                                value={installCommand}
+                                                                value={
+                                                                    installCommand
+                                                                }
                                                                 className="w-80 rounded border border-input bg-background px-3 py-1.5 font-mono text-xs"
                                                                 onClick={(e) =>
                                                                     (
@@ -316,14 +322,18 @@ export default function PackageShow({
                                                                 }
                                                             />
                                                             <CopyButton
-                                                                text={installCommand}
+                                                                text={
+                                                                    installCommand
+                                                                }
                                                             />
                                                         </div>
                                                     </TableCell>
                                                     <TableCell>
                                                         {version.commitUrl ? (
                                                             <a
-                                                                href={version.commitUrl}
+                                                                href={
+                                                                    version.commitUrl
+                                                                }
                                                                 target="_blank"
                                                                 rel="noopener noreferrer"
                                                                 className="inline-flex items-center gap-1 rounded bg-muted px-2 py-1 font-mono text-xs transition-colors hover:bg-muted/80"
@@ -341,7 +351,9 @@ export default function PackageShow({
                                                                     <path
                                                                         strokeLinecap="round"
                                                                         strokeLinejoin="round"
-                                                                        strokeWidth={2}
+                                                                        strokeWidth={
+                                                                            2
+                                                                        }
                                                                         d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
                                                                     />
                                                                 </svg>
@@ -425,4 +437,3 @@ export default function PackageShow({
         </AppLayout>
     );
 }
-

@@ -30,8 +30,9 @@ class CreateAccessTokenAction
 
         return new TokenCreatedData(
             plainToken: $plainToken,
-            name: $accessToken->name,
+            name: $name,
             expiresAt: $accessToken->expires_at,
+            organizationUuid: $accessToken->organization_uuid,
         );
     }
 }

@@ -81,8 +81,8 @@ class PackageVersionData extends Data
         string $commitSha
     ): ?string {
         // Remove git@ prefix and .git suffix
-        $cleanUrl = preg_replace('/^git@/', '', $sourceUrl);
-        $cleanUrl = preg_replace('/\.git$/', '', $cleanUrl);
+        $cleanUrl = preg_replace('/^git@/', '', $sourceUrl) ?? '';
+        $cleanUrl = preg_replace('/\.git$/', '', $cleanUrl) ?? '';
         $cleanUrl = str_replace(':', '/', $cleanUrl);
 
         if (str_starts_with($cleanUrl, 'github.com/')) {

@@ -82,14 +82,14 @@ class CreateTokenCommand extends Command
         $this->newLine();
 
         $this->components->twoColumnDetail('Token', $result->plainToken);
-        $this->components->twoColumnDetail('Name', $result->accessToken->name);
+        $this->components->twoColumnDetail('Name', $result->name);
         $this->components->twoColumnDetail(
             'Type',
-            $result->accessToken->organization_uuid ? 'Organization-scoped' : 'User-scoped'
+            $result->organizationUuid ? 'Organization-scoped' : 'User-scoped'
         );
         $this->components->twoColumnDetail(
             'Expires',
-            $result->accessToken->expires_at?->format('Y-m-d H:i:s') ?? 'Never'
+            $result->expiresAt?->format('Y-m-d H:i:s') ?? 'Never'
         );
 
         $this->newLine();
