@@ -6,7 +6,17 @@ FROM node:22-alpine AS frontend-builder
 WORKDIR /app
 
 # Install PHP and required extensions for Wayfinder plugin
-RUN apk add --no-cache php php-cli php-json php-mbstring php-xml php-tokenizer php-phar php-openssl
+RUN apk add --no-cache \
+    php \
+    php-cli \
+    php-json \
+    php-mbstring \
+    php-xml \
+    php-tokenizer \
+    php-phar \
+    php-openssl \
+    php-pdo \
+    php-pdo_sqlite
 
 # Copy package files
 COPY package*.json ./
