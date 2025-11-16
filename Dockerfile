@@ -22,11 +22,15 @@ COPY config/ ./config/
 COPY routes/ ./routes/
 COPY artisan ./
 
+# Create necessary directories
+RUN mkdir -p storage/framework/cache storage/framework/sessions storage/framework/views bootstrap/cache
+
 # Create minimal .env for Wayfinder (doesn't need database connection)
 RUN echo "APP_NAME=Pricore" > .env && \
     echo "APP_ENV=production" >> .env && \
-    echo "APP_KEY=base64:buildtimekey" >> .env && \
-    echo "APP_DEBUG=false" >> .env
+    echo "APP_KEY=base64:dGVzdGtleWZvcmJ1aWxkdGltZW9ubHlub3RyZWFsbHl1c2Vk" >> .env && \
+    echo "APP_DEBUG=false" >> .env && \
+    echo "DB_CONNECTION=sqlite" >> .env
 
 # Install Composer dependencies (minimal, just for Wayfinder)
 RUN apk add --no-cache curl && \
@@ -39,8 +43,8 @@ COPY resources/ ./resources/
 COPY vite.config.ts tsconfig.json ./
 COPY public/ ./public/
 
-# Build frontend assets
-RUN npm run build
+# Build frontend assets (with error output for debugging)
+RUN npm run build 2>&1 || (php artisan wayfinder:generate --with-form 2>&1; exit 1)
 
 # Stage 2: PHP base image with extensions
 FROM php:8.4-fpm-alpine AS php-base
