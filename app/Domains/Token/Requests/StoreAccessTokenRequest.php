@@ -14,9 +14,17 @@ class StoreAccessTokenRequest extends FormRequest
     {
         return [
             'name' => ['required', 'string', 'max:255'],
-            'expires_at' => ['nullable', 'date', 'after:now'],
+            'expires_at' => ['nullable', 'string'],
             'scopes' => ['nullable', 'array'],
             'scopes.*' => ['string'],
         ];
+    }
+
+    protected function prepareForValidation(): void
+    {
+        // Convert "never" to null for expiration
+        if ($this->expires_at === 'never') {
+            $this->merge(['expires_at' => null]);
+        }
     }
 }

@@ -2,7 +2,9 @@
 
 namespace App\Domains\Token\Http\Controllers;
 
+use App\Domains\Organization\Contracts\Data\OrganizationData;
 use App\Domains\Token\Actions\CreateAccessTokenAction;
+use App\Domains\Token\Contracts\Data\AccessTokenData;
 use App\Domains\Token\Requests\StoreAccessTokenRequest;
 use App\Http\Controllers\Controller;
 use App\Models\AccessToken;
@@ -23,17 +25,10 @@ class TokenController extends Controller
             ->where('organization_uuid', $organization->uuid)
             ->orderBy('created_at', 'desc')
             ->get()
-            ->map(fn (AccessToken $token) => [
-                'uuid' => $token->uuid,
-                'name' => $token->name,
-                'scopes' => $token->scopes,
-                'last_used_at' => $token->last_used_at,
-                'expires_at' => $token->expires_at,
-                'created_at' => $token->created_at,
-            ]);
+            ->map(fn (AccessToken $token) => AccessTokenData::fromModel($token));
 
         return Inertia::render('organizations/settings/tokens', [
-            'organization' => $organization,
+            'organization' => OrganizationData::fromModel($organization),
             'tokens' => $tokens,
         ]);
     }
