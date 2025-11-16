@@ -2,6 +2,7 @@
 
 namespace App\Domains\Repository\Services\GitProviders;
 
+use App\Domains\Repository\Contracts\Data\RepositorySuggestionData;
 use App\Domains\Repository\Exceptions\GitProviderException;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Facades\Http;
@@ -181,7 +182,7 @@ class GitHubProvider extends AbstractGitProvider
     }
 
     /**
-     * @return array<int, array{name: string, full_name: string, private: bool, description: string|null}>
+     * @return array<int, RepositorySuggestionData>
      */
     public function getRepositories(): array
     {
@@ -207,12 +208,7 @@ class GitHubProvider extends AbstractGitProvider
                 $pageRepos = $response->json();
 
                 foreach ($pageRepos as $repo) {
-                    $repositories[] = [
-                        'name' => $repo['name'],
-                        'full_name' => $repo['full_name'],
-                        'private' => $repo['private'],
-                        'description' => $repo['description'],
-                    ];
+                    $repositories[] = RepositorySuggestionData::fromGitHubArray($repo);
                 }
 
                 $page++;

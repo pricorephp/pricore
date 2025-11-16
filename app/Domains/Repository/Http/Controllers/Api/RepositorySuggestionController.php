@@ -38,17 +38,7 @@ class RepositorySuggestionController extends Controller
                 ),
             };
 
-            $suggestions = array_map(
-                fn (array $repo) => RepositorySuggestionData::from([
-                    'name' => $repo['name'],
-                    'fullName' => $repo['full_name'],
-                    'isPrivate' => $repo['private'],
-                    'description' => $repo['description'],
-                ]),
-                $repositories
-            );
-
-            return response()->json(['repositories' => $suggestions]);
+            return response()->json(['repositories' => $repositories]);
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
         }
@@ -58,7 +48,7 @@ class RepositorySuggestionController extends Controller
      * Get GitHub repositories using credentials.
      *
      * @param  array<string, mixed>  $credentials
-     * @return array<int, array{name: string, full_name: string, private: bool, description: string|null}>
+     * @return array<int, RepositorySuggestionData>
      */
     protected function getGitHubRepositories(array $credentials): array
     {

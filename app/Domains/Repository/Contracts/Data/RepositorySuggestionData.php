@@ -14,4 +14,19 @@ class RepositorySuggestionData extends Data
         public bool $isPrivate,
         public ?string $description,
     ) {}
+
+    /**
+     * Create instance from GitHub API response array.
+     *
+     * @param  array<string, mixed>  $githubRepo
+     */
+    public static function fromGitHubArray(array $githubRepo): self
+    {
+        return new self(
+            name: $githubRepo['name'],
+            fullName: $githubRepo['full_name'],
+            isPrivate: $githubRepo['private'],
+            description: $githubRepo['description'] ?? null,
+        );
+    }
 }
