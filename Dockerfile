@@ -5,11 +5,34 @@ FROM node:22-alpine AS frontend-builder
 
 WORKDIR /app
 
+# Install PHP and Composer for Wayfinder plugin
+RUN apk add --no-cache php php-cli php-json php-mbstring php-xml php-tokenizer
+
 # Copy package files
 COPY package*.json ./
 
 # Install dependencies
 RUN npm ci --only=production=false
+
+# Copy Composer files for Wayfinder
+COPY composer.json composer.lock ./
+COPY app/ ./app/
+COPY bootstrap/ ./bootstrap/
+COPY config/ ./config/
+COPY routes/ ./routes/
+COPY artisan ./
+
+# Create minimal .env for Wayfinder (doesn't need database connection)
+RUN echo "APP_NAME=Pricore" > .env && \
+    echo "APP_ENV=production" >> .env && \
+    echo "APP_KEY=base64:buildtimekey" >> .env && \
+    echo "APP_DEBUG=false" >> .env
+
+# Install Composer dependencies (minimal, just for Wayfinder)
+RUN apk add --no-cache curl && \
+    curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer && \
+    composer install --no-dev --no-scripts --no-autoloader --quiet && \
+    composer dump-autoload --optimize --classmap-authoritative --quiet
 
 # Copy frontend source files
 COPY resources/ ./resources/
