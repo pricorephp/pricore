@@ -1,9 +1,11 @@
 <?php
 
+use App\Domains\Organization\Http\Controllers\GitCredentialController;
 use App\Domains\Organization\Http\Controllers\MemberController;
 use App\Domains\Organization\Http\Controllers\OrganizationController;
 use App\Domains\Organization\Http\Controllers\SettingsController;
 use App\Domains\Package\Http\Controllers\PackageController;
+use App\Domains\Repository\Http\Controllers\Api\RepositorySuggestionController;
 use App\Domains\Repository\Http\Controllers\RepositoryController;
 use App\Domains\Token\Http\Controllers\TokenController;
 use Illuminate\Support\Facades\Route;
@@ -27,6 +29,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('organizations/{organization:slug}', [OrganizationController::class, 'show'])->name('organizations.show');
     Route::get('organizations/{organization:slug}/packages', [PackageController::class, 'index'])->name('organizations.packages.index');
     Route::get('organizations/{organization:slug}/repositories', [RepositoryController::class, 'index'])->name('organizations.repositories.index');
+    Route::post('organizations/{organization:slug}/repositories', [RepositoryController::class, 'store'])->name('organizations.repositories.store');
+    Route::get('organizations/{organization:slug}/repositories/suggest', [RepositorySuggestionController::class, 'index'])->name('organizations.repositories.suggest');
 
     // Organization settings
     Route::prefix('organizations/{organization:slug}/settings')->name('organizations.settings.')->group(function () {
@@ -42,6 +46,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('tokens', [TokenController::class, 'index'])->name('tokens.index');
         Route::post('tokens', [TokenController::class, 'store'])->name('tokens.store');
         Route::delete('tokens/{token}', [TokenController::class, 'destroy'])->name('tokens.destroy');
+
+        Route::get('git-credentials', [GitCredentialController::class, 'index'])->name('git-credentials.index');
+        Route::post('git-credentials', [GitCredentialController::class, 'store'])->name('git-credentials.store');
+        Route::patch('git-credentials/{credential}', [GitCredentialController::class, 'update'])->name('git-credentials.update');
+        Route::delete('git-credentials/{credential}', [GitCredentialController::class, 'destroy'])->name('git-credentials.destroy');
     });
 });
 

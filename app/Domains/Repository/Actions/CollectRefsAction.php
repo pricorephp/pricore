@@ -4,7 +4,7 @@ namespace App\Domains\Repository\Actions;
 
 use App\Domains\Repository\Contracts\Data\RefData;
 use App\Domains\Repository\Contracts\Data\RefsCollectionData;
-use App\Services\GitProviders\Contracts\GitProviderInterface;
+use App\Domains\Repository\Contracts\Interfaces\GitProviderInterface;
 use Spatie\LaravelData\DataCollection;
 
 class CollectRefsAction

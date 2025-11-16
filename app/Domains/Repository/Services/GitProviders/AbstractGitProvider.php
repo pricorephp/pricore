@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Services\GitProviders;
+namespace App\Domains\Repository\Services\GitProviders;
 
-use App\Services\GitProviders\Contracts\GitProviderInterface;
+use App\Domains\Repository\Contracts\Interfaces\GitProviderInterface;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Facades\Http;
 
@@ -25,25 +25,16 @@ abstract class AbstractGitProvider implements GitProviderInterface
      */
     abstract protected function configureHttpClient(): PendingRequest;
 
-    /**
-     * Get the repository identifier.
-     */
     public function getRepositoryIdentifier(): string
     {
         return $this->repositoryIdentifier;
     }
 
-    /**
-     * Get credential value by key.
-     */
     protected function getCredential(string $key, mixed $default = null): mixed
     {
         return $this->credentials[$key] ?? $default;
     }
 
-    /**
-     * Check if a credential exists.
-     */
     protected function hasCredential(string $key): bool
     {
         return isset($this->credentials[$key]);

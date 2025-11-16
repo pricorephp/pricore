@@ -23,19 +23,19 @@ export default function TokenList({ tokens, onRevoke }: TokenListProps) {
     }
 
     return (
-        <div className="space-y-4">
+        <div className="space-y-2">
             {tokens.map((token, index) => (
                 <div key={token.uuid}>
                     {index > 0 && <Separator />}
-                    <div className="flex items-start justify-between py-4">
-                        <div className="flex-1 space-y-1">
+                    <div className="flex items-start justify-between py-3">
+                        <div className="flex-1 space-y-0.5">
                             <div className="flex items-center gap-2">
                                 <h3 className="font-medium">{token.name}</h3>
                                 {isTokenExpired(token.expiresAt) && (
                                     <Badge variant="destructive">Expired</Badge>
                                 )}
                             </div>
-                            <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
+                            <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
                                 <span>
                                     Last used:{' '}
                                     {token.lastUsedAt

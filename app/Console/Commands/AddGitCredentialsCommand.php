@@ -43,7 +43,7 @@ class AddGitCredentialsCommand extends Command
         // Check if credentials already exist for this provider
         $existingCredential = OrganizationGitCredential::query()
             ->where('organization_uuid', $organization->uuid)
-            ->where('provider', $provider->value)
+            ->where('provider', $provider)
             ->first();
 
         if ($existingCredential) {
@@ -58,7 +58,7 @@ class AddGitCredentialsCommand extends Command
         } else {
             OrganizationGitCredential::create([
                 'organization_uuid' => $organization->uuid,
-                'provider' => $provider->value,
+                'provider' => $provider,
                 'credentials' => $credentials,
             ]);
 

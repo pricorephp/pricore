@@ -189,8 +189,7 @@ export default function Members({ members, roleOptions }: Props) {
                 <Table>
                     <TableHeader>
                         <TableRow>
-                            <TableHead>Name</TableHead>
-                            <TableHead>Email</TableHead>
+                            <TableHead>Member</TableHead>
                             <TableHead>Role</TableHead>
                             <TableHead>Joined</TableHead>
                             <TableHead className="text-right">
@@ -201,10 +200,16 @@ export default function Members({ members, roleOptions }: Props) {
                     <TableBody>
                         {members.map((member) => (
                             <TableRow key={member.uuid}>
-                                <TableCell className="font-medium">
-                                    {member.name}
+                                <TableCell>
+                                    <div className="flex flex-col">
+                                        <span className="font-medium">
+                                            {member.name}
+                                        </span>
+                                        <span className="text-sm text-muted-foreground">
+                                            {member.email}
+                                        </span>
+                                    </div>
                                 </TableCell>
-                                <TableCell>{member.email}</TableCell>
                                 <TableCell>
                                     {member.role === 'owner' ? (
                                         <Badge
@@ -246,9 +251,11 @@ export default function Members({ members, roleOptions }: Props) {
                                     )}
                                 </TableCell>
                                 <TableCell>
-                                    {new Date(
-                                        member.joinedAt,
-                                    ).toLocaleDateString()}
+                                    {member.joinedAt
+                                        ? new Date(
+                                              member.joinedAt,
+                                          ).toLocaleDateString()
+                                        : '-'}
                                 </TableCell>
                                 <TableCell className="text-right">
                                     {member.role !== 'owner' && (

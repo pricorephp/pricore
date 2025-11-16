@@ -2,7 +2,7 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import { Link, usePage } from '@inertiajs/react';
-import { Key, Settings, Users } from 'lucide-react';
+import { GitBranch, Key, Settings, Users } from 'lucide-react';
 import { type PropsWithChildren, useMemo } from 'react';
 
 type OrganizationData =
@@ -39,6 +39,11 @@ export default function OrganizationSettingsLayout({
                 title: 'API Tokens',
                 href: `/organizations/${organization.slug}/settings/tokens`,
                 icon: Key,
+            },
+            {
+                title: 'Git Providers',
+                href: `/organizations/${organization.slug}/settings/git-credentials`,
+                icon: GitBranch,
             },
         ];
     }, [organization?.slug]);

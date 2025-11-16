@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Domains\Repository\Contracts\Enums\GitProvider;
 use App\Models\Concerns\HasUuids;
 use Database\Factories\OrganizationGitCredentialFactory;
 use Eloquent;
@@ -15,7 +16,7 @@ use Illuminate\Support\Carbon;
 /**
  * @property string $uuid
  * @property string $organization_uuid
- * @property string $provider
+ * @property GitProvider $provider
  * @property array<string, mixed> $credentials
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
@@ -37,9 +38,15 @@ use Illuminate\Support\Carbon;
 class OrganizationGitCredential extends Model
 {
     /** @use HasFactory<OrganizationGitCredentialFactory> */
-    use HasFactory, HasUuids;
+    use HasFactory;
+
+    use HasUuids;
 
     protected $guarded = ['uuid'];
+
+    protected $casts = [
+        'provider' => GitProvider::class,
+    ];
 
     /**
      * @return BelongsTo<Organization, $this>

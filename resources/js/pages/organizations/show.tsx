@@ -107,11 +107,11 @@ export default function OrganizationShow({
                     </Card>
                 </div>
 
-                <div className="rounded-md border border-blue-200 bg-blue-50 p-4 dark:border-blue-900 dark:bg-blue-950">
-                    <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                <div className="rounded-md border border-neutral-200 bg-neutral-50 p-4 dark:border-neutral-800 dark:bg-neutral-950">
+                    <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
                         Getting Started
                     </p>
-                    <p className="mt-1 text-sm text-blue-700 dark:text-blue-300">
+                    <p className="mt-1 text-sm text-neutral-700 dark:text-neutral-300">
                         This organization hosts private Composer packages. Add
                         packages from repositories, manage API tokens for
                         authentication, and configure your composer.json to use

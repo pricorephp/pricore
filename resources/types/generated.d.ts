@@ -1,4 +1,10 @@
 declare namespace App.Domains.Organization.Contracts.Data {
+export type GitCredentialData = {
+uuid: string;
+provider: string;
+providerLabel: string;
+isConfigured: boolean;
+};
 export type OrganizationData = {
 uuid: string;
 name: string;
@@ -46,6 +52,12 @@ url: string | null;
 syncStatus: string | null;
 lastSyncedAt: string | null;
 packagesCount: number;
+};
+export type RepositorySuggestionData = {
+name: string;
+fullName: string;
+isPrivate: boolean;
+description: string | null;
 };
 }
 declare namespace App.Domains.Repository.Contracts.Enums {

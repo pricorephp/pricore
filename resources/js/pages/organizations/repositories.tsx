@@ -1,3 +1,4 @@
+import AddRepositoryDialog from '@/components/add-repository-dialog';
 import GitProviderIcon from '@/components/git-provider-icon';
 import HeadingSmall from '@/components/heading-small';
 import { Badge } from '@/components/ui/badge';
@@ -6,8 +7,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { Head } from '@inertiajs/react';
-import { Package, Plus } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { DateTime } from 'luxon';
+import { useState } from 'react';
 
 type OrganizationData =
     App.Domains.Organization.Contracts.Data.OrganizationData;
@@ -16,6 +18,7 @@ type RepositoryData = App.Domains.Repository.Contracts.Data.RepositoryData;
 interface RepositoriesPageProps {
     organization: OrganizationData;
     repositories: RepositoryData[];
+    configuredProviders?: string[];
 }
 
 function getProviderBadgeColor(provider: string): string {
@@ -38,10 +41,21 @@ function getSyncStatusVariant(
     return 'secondary';
 }
 
+function getSyncStatusLabel(status: string | null): string {
+    if (!status) return 'Pending';
+    if (status === 'ok') return 'OK';
+    if (status === 'failed') return 'Failed';
+    if (status === 'pending') return 'Pending';
+    return status;
+}
+
 export default function Repositories({
     organization,
     repositories,
+    configuredProviders = [],
 }: RepositoriesPageProps) {
+    const [isDialogOpen, setIsDialogOpen] = useState(false);
+
     const breadcrumbs: BreadcrumbItem[] = [
         {
             title: organization.name,
@@ -63,7 +77,7 @@ export default function Repositories({
                         title="Repositories"
                         description="Connected Git repositories for automatic package syncing"
                     />
-                    <Button>
+                    <Button onClick={() => setIsDialogOpen(true)}>
                         <Plus className="mr-2 h-4 w-4" />
                         Add Repository
                     </Button>
@@ -75,7 +89,11 @@ export default function Repositories({
                             No repositories yet. Connect a Git repository to
                             automatically sync packages.
                         </p>
-                        <Button className="mt-4" variant="outline">
+                        <Button
+                            className="mt-4"
+                            variant="outline"
+                            onClick={() => setIsDialogOpen(true)}
+                        >
                             <Plus className="mr-2 h-4 w-4" />
                             Connect Your First Repository
                         </Button>
@@ -127,10 +145,6 @@ export default function Repositories({
                                     </CardTitle>
                                 </CardHeader>
                                 <CardContent className="space-y-3">
-                                    <p className="font-mono text-xs text-muted-foreground">
-                                        {repo.repoIdentifier}
-                                    </p>
-
                                     <div className="flex items-center justify-between text-xs">
                                         <span className="text-muted-foreground">
                                             Sync Status:
@@ -140,7 +154,9 @@ export default function Repositories({
                                                 repo.syncStatus,
                                             )}
                                         >
-                                            {repo.syncStatus || 'pending'}
+                                            {getSyncStatusLabel(
+                                                repo.syncStatus,
+                                            )}
                                         </Badge>
                                     </div>
 
@@ -152,29 +168,17 @@ export default function Repositories({
                                             ).toRelative()}
                                         </div>
                                     )}
-
-                                    {repo.packagesCount > 0 && (
-                                        <div className="flex items-center gap-1.5 pt-2 text-xs text-muted-foreground">
-                                            <Package className="h-3 w-3" />
-                                            <span>
-                                                {repo.packagesCount}{' '}
-                                                {repo.packagesCount === 1
-                                                    ? 'package'
-                                                    : 'packages'}
-                                            </span>
-                                        </div>
-                                    )}
                                 </CardContent>
                             </Card>
                         ))}
                     </div>
                 )}
 
-                <div className="rounded-md border border-blue-200 bg-blue-50 p-4 dark:border-blue-900 dark:bg-blue-950">
-                    <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                <div className="rounded-md border border-neutral-200 bg-neutral-50 p-4 dark:border-neutral-800 dark:bg-neutral-950">
+                    <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
                         About Repositories
                     </p>
-                    <p className="mt-1 text-sm text-blue-700 dark:text-blue-300">
+                    <p className="mt-1 text-sm text-neutral-700 dark:text-neutral-300">
                         Connect your Git repositories from GitHub, GitLab,
                         Bitbucket, or any Git server to automatically discover
                         and sync Composer packages. Repositories are monitored
@@ -182,6 +186,13 @@ export default function Repositories({
                         webhooks.
                     </p>
                 </div>
+
+                <AddRepositoryDialog
+                    organizationSlug={organization.slug}
+                    isOpen={isDialogOpen}
+                    onClose={() => setIsDialogOpen(false)}
+                    configuredProviders={configuredProviders}
+                />
             </div>
         </AppLayout>
     );

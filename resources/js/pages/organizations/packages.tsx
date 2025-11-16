@@ -3,8 +3,9 @@ import PackageCard from '@/components/package-card';
 import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
+import { Link } from '@inertiajs/react';
 import { Head } from '@inertiajs/react';
-import { Plus } from 'lucide-react';
+import { GitBranch } from 'lucide-react';
 
 type OrganizationData =
     App.Domains.Organization.Contracts.Data.OrganizationData;
@@ -19,6 +20,7 @@ export default function Packages({
     organization,
     packages,
 }: PackagesPageProps) {
+
     const breadcrumbs: BreadcrumbItem[] = [
         {
             title: organization.name,
@@ -40,21 +42,29 @@ export default function Packages({
                         title="Packages"
                         description="Composer packages in this organization"
                     />
-                    <Button>
-                        <Plus className="mr-2 h-4 w-4" />
-                        Add Package
+                    <Button asChild>
+                        <Link href={`/organizations/${organization.slug}/repositories`}>
+                            <GitBranch className="mr-2 h-4 w-4" />
+                            Manage Repositories
+                        </Link>
                     </Button>
                 </div>
 
                 {packages.length === 0 ? (
                     <div className="rounded-lg border border-dashed p-12 text-center">
                         <p className="text-sm text-muted-foreground">
-                            No packages yet. Add a repository or create a
-                            package to get started.
+                            No packages yet. Connect a Git repository to
+                            automatically discover and sync packages.
                         </p>
-                        <Button className="mt-4" variant="outline">
-                            <Plus className="mr-2 h-4 w-4" />
-                            Add Your First Package
+                        <Button
+                            className="mt-4"
+                            variant="outline"
+                            asChild
+                        >
+                            <Link href={`/organizations/${organization.slug}/repositories`}>
+                                <GitBranch className="mr-2 h-4 w-4" />
+                                Connect Your First Repository
+                            </Link>
                         </Button>
                     </div>
                 ) : (
@@ -64,19 +74,6 @@ export default function Packages({
                         ))}
                     </div>
                 )}
-
-                <div className="rounded-md border border-blue-200 bg-blue-50 p-4 dark:border-blue-900 dark:bg-blue-950">
-                    <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
-                        About Packages
-                    </p>
-                    <p className="mt-1 text-sm text-blue-700 dark:text-blue-300">
-                        Packages are Composer libraries hosted in your private
-                        registry. You can add packages by connecting Git
-                        repositories or creating them manually. Each package can
-                        have multiple versions and is accessible via Composer
-                        using API tokens.
-                    </p>
-                </div>
             </div>
         </AppLayout>
     );

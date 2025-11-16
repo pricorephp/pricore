@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services\GitProviders;
+namespace App\Domains\Repository\Services\GitProviders;
 
 use App\Domains\Repository\Exceptions\GitProviderException;
 use Illuminate\Http\Client\PendingRequest;
@@ -24,8 +24,6 @@ class GitHubProvider extends AbstractGitProvider
     }
 
     /**
-     * Get all tags from the repository.
-     *
      * @return array<int, array{name: string, commit: string}>
      */
     public function getTags(): array
@@ -74,8 +72,6 @@ class GitHubProvider extends AbstractGitProvider
     }
 
     /**
-     * Get all branches from the repository.
-     *
      * @return array<int, array{name: string, commit: string}>
      */
     public function getBranches(): array
@@ -123,9 +119,6 @@ class GitHubProvider extends AbstractGitProvider
         }
     }
 
-    /**
-     * Get file content from a specific reference.
-     */
     public function getFileContent(string $ref, string $path): ?string
     {
         try {
@@ -166,9 +159,6 @@ class GitHubProvider extends AbstractGitProvider
         }
     }
 
-    /**
-     * Validate that the credentials are valid and can access the repository.
-     */
     public function validateCredentials(): bool
     {
         try {
@@ -185,11 +175,59 @@ class GitHubProvider extends AbstractGitProvider
         }
     }
 
-    /**
-     * Get the Git repository URL for cloning.
-     */
     public function getRepositoryUrl(): string
     {
         return "git@github.com:{$this->repositoryIdentifier}.git";
+    }
+
+    /**
+     * @return array<int, array{name: string, full_name: string, private: bool, description: string|null}>
+     */
+    public function getRepositories(): array
+    {
+        try {
+            $repositories = [];
+            $page = 1;
+            $perPage = 100;
+
+            do {
+                $response = $this->http->get('/user/repos', [
+                    'per_page' => $perPage,
+                    'page' => $page,
+                    'sort' => 'updated',
+                    'affiliation' => 'owner,collaborator,organization_member',
+                ]);
+
+                if ($response->failed()) {
+                    throw new GitProviderException(
+                        "Failed to fetch repositories from GitHub: {$response->body()}"
+                    );
+                }
+
+                $pageRepos = $response->json();
+
+                foreach ($pageRepos as $repo) {
+                    $repositories[] = [
+                        'name' => $repo['name'],
+                        'full_name' => $repo['full_name'],
+                        'private' => $repo['private'],
+                        'description' => $repo['description'],
+                    ];
+                }
+
+                $page++;
+            } while (count($pageRepos) === $perPage);
+
+            return $repositories;
+        } catch (\Exception $e) {
+            Log::error('GitHub API error fetching repositories', [
+                'error' => $e->getMessage(),
+            ]);
+
+            throw new GitProviderException(
+                "Failed to fetch repositories: {$e->getMessage()}",
+                previous: $e
+            );
+        }
     }
 }
