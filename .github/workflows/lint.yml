@@ -35,8 +35,5 @@ jobs:
       - name: Run PHPStan
         run: vendor/bin/phpstan analyse --error-format=github
 
-      - name: Format Frontend
-        run: npm run format
-
       - name: Lint Frontend
         run: npm run lint
