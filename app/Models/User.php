@@ -30,7 +30,8 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @property string|null $remember_token
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
- * @property-read Collection<int, \App\Models\AccessToken> $accessTokens
+ * @property-read OrganizationUserPivot|null $pivot
+ * @property-read Collection<int, AccessToken> $accessTokens
  * @property-read int|null $access_tokens_count
  * @property-read DatabaseNotificationCollection<int, DatabaseNotification> $notifications
  * @property-read int|null $notifications_count
@@ -38,7 +39,6 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @property-read int|null $organizations_count
  * @property-read Collection<int, Organization> $ownedOrganizations
  * @property-read int|null $owned_organizations_count
- * @property-read OrganizationUserPivot|null $pivot
  *
  * @method static UserFactory factory($count = null, $state = [])
  * @method static Builder<static>|User newModelQuery()

@@ -26,9 +26,11 @@ use Illuminate\Support\Carbon;
  * @property-read User|null $user
  *
  * @method static AccessTokenFactory factory($count = null, $state = [])
+ * @method static Builder<static>|AccessToken forOrganization(Organization $organization)
  * @method static Builder<static>|AccessToken newModelQuery()
  * @method static Builder<static>|AccessToken newQuery()
  * @method static Builder<static>|AccessToken query()
+ * @method static Builder<static>|AccessToken valid()
  * @method static Builder<static>|AccessToken whereCreatedAt($value)
  * @method static Builder<static>|AccessToken whereExpiresAt($value)
  * @method static Builder<static>|AccessToken whereLastUsedAt($value)

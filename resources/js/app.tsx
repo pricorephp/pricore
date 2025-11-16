@@ -2,9 +2,13 @@ import '../css/app.css';
 
 import { createInertiaApp } from '@inertiajs/react';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
+import { Settings } from 'luxon';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { initializeTheme } from './hooks/use-appearance';
+
+// Set Luxon default locale to English
+Settings.defaultLocale = 'en';
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 

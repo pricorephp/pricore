@@ -1,2 +1,3 @@
 resources/js/components/ui/*
 resources/views/mail/*
+resources/types/generated.d.ts

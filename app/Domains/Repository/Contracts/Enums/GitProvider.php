@@ -19,6 +19,16 @@ enum GitProvider: string
         };
     }
 
+    public function repositoryUrl(string $repoIdentifier): ?string
+    {
+        return match ($this) {
+            self::GitHub => "https://github.com/{$repoIdentifier}",
+            self::GitLab => "https://gitlab.com/{$repoIdentifier}",
+            self::Bitbucket => "https://bitbucket.org/{$repoIdentifier}",
+            self::Git => filter_var($repoIdentifier, FILTER_VALIDATE_URL) ? $repoIdentifier : null,
+        };
+    }
+
     /**
      * @return array<string, string>
      */

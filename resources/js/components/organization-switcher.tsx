@@ -5,6 +5,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { useSidebar } from '@/components/ui/sidebar';
 import { router } from '@inertiajs/react';
 import { Building2 } from 'lucide-react';
 
@@ -20,7 +21,14 @@ export default function OrganizationSwitcher({
     organizations,
     currentOrganization,
 }: OrganizationSwitcherProps) {
+    const { state } = useSidebar();
+    const isCollapsed = state === 'collapsed';
+
     if (organizations.length === 0) {
+        return null;
+    }
+
+    if (isCollapsed) {
         return null;
     }
 
@@ -35,10 +43,10 @@ export default function OrganizationSwitcher({
                 value={currentOrganization?.slug}
                 onValueChange={handleOrganizationChange}
             >
-                <SelectTrigger className="h-8 w-full">
+                <SelectTrigger className="h-8 w-full bg-white dark:bg-neutral-950">
                     <SelectValue placeholder="Select organization" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-white dark:bg-neutral-950">
                     {organizations.map((org) => (
                         <SelectItem key={org.uuid} value={org.slug}>
                             {org.name}

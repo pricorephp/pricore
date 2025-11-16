@@ -3,6 +3,7 @@
 namespace App\Domains\Package\Contracts\Data;
 
 use App\Models\Package;
+use App\Models\PackageVersion;
 use Carbon\CarbonInterface;
 use Spatie\LaravelData\Data;
 use Spatie\TypeScriptTransformer\Attributes\TypeScript;
@@ -25,9 +26,10 @@ class PackageData extends Data
 
     public static function fromModel(Package $package): self
     {
-        // Get latest version
+        /** @var PackageVersion|null $latestVersion */
         $latestVersion = $package->versions()
-            ->orderBy('released_at', 'desc')
+            ->stable()
+            ->orderBySemanticVersion('desc')
             ->first();
 
         $updatedAt = $package->updated_at;

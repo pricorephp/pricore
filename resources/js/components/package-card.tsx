@@ -1,6 +1,6 @@
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { GitBranch } from 'lucide-react';
+import { GitBranch, Globe, Lock } from 'lucide-react';
 import { DateTime } from 'luxon';
 
 type PackageData = App.Domains.Package.Contracts.Data.PackageData;
@@ -15,11 +15,23 @@ export default function PackageCard({ package: pkg }: PackageCardProps) {
             <CardHeader>
                 <CardTitle className="flex items-start justify-between gap-2">
                     <span className="font-mono text-sm">{pkg.name}</span>
-                    {pkg.visibility === 'private' && (
-                        <Badge variant="secondary" className="shrink-0">
-                            Private
-                        </Badge>
-                    )}
+                    <div className="flex shrink-0 items-center gap-1.5">
+                        {pkg.visibility === 'private' ? (
+                            <>
+                                <Lock className="h-3 w-3 text-muted-foreground" />
+                                <span className="text-xs text-muted-foreground">
+                                    Private
+                                </span>
+                            </>
+                        ) : (
+                            <>
+                                <Globe className="h-3 w-3 text-muted-foreground" />
+                                <span className="text-xs text-muted-foreground">
+                                    Public
+                                </span>
+                            </>
+                        )}
+                    </div>
                 </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">

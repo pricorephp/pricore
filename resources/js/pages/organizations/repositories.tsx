@@ -1,3 +1,4 @@
+import GitProviderIcon from '@/components/git-provider-icon';
 import HeadingSmall from '@/components/heading-small';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -91,13 +92,38 @@ export default function Repositories({
                                         <span className="text-base">
                                             {repo.name}
                                         </span>
-                                        <Badge
-                                            className={getProviderBadgeColor(
-                                                repo.provider,
-                                            )}
-                                        >
-                                            {repo.provider}
-                                        </Badge>
+                                        {repo.url ? (
+                                            <a
+                                                href={repo.url}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="inline-block"
+                                            >
+                                                <Badge
+                                                    className={getProviderBadgeColor(
+                                                        repo.provider,
+                                                    )}
+                                                >
+                                                    <GitProviderIcon
+                                                        provider={repo.provider}
+                                                        className="mr-0.5 size-3"
+                                                    />
+                                                    {repo.providerLabel}
+                                                </Badge>
+                                            </a>
+                                        ) : (
+                                            <Badge
+                                                className={getProviderBadgeColor(
+                                                    repo.provider,
+                                                )}
+                                            >
+                                                <GitProviderIcon
+                                                    provider={repo.provider}
+                                                    className="mr-0.5 size-3"
+                                                />
+                                                {repo.providerLabel}
+                                            </Badge>
+                                        )}
                                     </CardTitle>
                                 </CardHeader>
                                 <CardContent className="space-y-3">

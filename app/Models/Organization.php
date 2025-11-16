@@ -25,6 +25,7 @@ use Illuminate\Support\Carbon;
  * @property-read int|null $access_tokens_count
  * @property-read Collection<int, OrganizationGitCredential> $gitCredentials
  * @property-read int|null $git_credentials_count
+ * @property-read OrganizationUserPivot|null $pivot
  * @property-read Collection<int, User> $members
  * @property-read int|null $members_count
  * @property-read User $owner

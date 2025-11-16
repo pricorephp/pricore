@@ -25,12 +25,13 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $updated_at
  * @property-read Package $package
  *
- * @method static PackageVersionFactory factory($count = null, $state = [])
+ * @method static Builder<static>|PackageVersion dev()
+ * @method static \Database\Factories\PackageVersionFactory factory($count = null, $state = [])
  * @method static Builder<static>|PackageVersion newModelQuery()
  * @method static Builder<static>|PackageVersion newQuery()
+ * @method static Builder<static>|PackageVersion orderBySemanticVersion(string $direction = 'desc')
  * @method static Builder<static>|PackageVersion query()
  * @method static Builder<static>|PackageVersion stable()
- * @method static Builder<static>|PackageVersion dev()
  * @method static Builder<static>|PackageVersion whereComposerJson($value)
  * @method static Builder<static>|PackageVersion whereCreatedAt($value)
  * @method static Builder<static>|PackageVersion whereDistUrl($value)
@@ -48,7 +49,9 @@ use Illuminate\Support\Carbon;
 class PackageVersion extends Model
 {
     /** @use HasFactory<PackageVersionFactory> */
-    use HasFactory, HasUuids;
+    use HasFactory;
+
+    use HasUuids;
 
     protected $guarded = ['uuid'];
 
@@ -71,10 +74,10 @@ class PackageVersion extends Model
      */
     public function scopeStable(Builder $query): Builder
     {
-        return $query->where(function (Builder $query) {
-            $query->whereNotLike('version', 'dev-%')
-                ->whereNotLike('version', '%-dev');
-        });
+        // Only include semantic versions (e.g., 1.0.0, 2.3.4)
+        // Semantic versions start with a digit and don't end with -dev
+        return $query->whereRaw("SUBSTR(version, 1, 1) BETWEEN '0' AND '9'")
+            ->whereNotLike('version', '%-dev');
     }
 
     /**
@@ -85,7 +88,53 @@ class PackageVersion extends Model
     {
         return $query->where(function (Builder $query) {
             $query->whereLike('version', 'dev-%')
-                ->orWhereLike('version', '%-dev');
+                ->orWhereLike('version', '%-dev')
+                ->orWhereLike('normalized_version', 'dev-%')
+                ->orWhereLike('normalized_version', '%-dev');
         });
+    }
+
+    /**
+     * Order by semantic version (highest first).
+     * Parses normalized_version (format: MAJOR.MINOR.PATCH.BUILD) and sorts numerically.
+     *
+     * @param  Builder<PackageVersion>  $query
+     * @return Builder<PackageVersion>
+     */
+    public function scopeOrderBySemanticVersion(Builder $query, string $direction = 'desc'): Builder
+    {
+        /** @var \Illuminate\Database\Connection $connection */
+        $connection = $query->getConnection();
+        $driver = $connection->getDriverName();
+
+        if ($driver === 'sqlite') {
+            // SQLite: Extract major, minor, patch from normalized_version and sort numerically
+            return $query->orderByRaw(
+                "CAST(SUBSTR(normalized_version, 1, INSTR(normalized_version || '.', '.') - 1) AS INTEGER) {$direction}, ".
+                "CAST(SUBSTR(normalized_version, INSTR(normalized_version, '.') + 1, INSTR(SUBSTR(normalized_version, INSTR(normalized_version, '.') + 1) || '.', '.') - 1) AS INTEGER) {$direction}, ".
+                "CAST(SUBSTR(normalized_version, INSTR(SUBSTR(normalized_version, INSTR(normalized_version, '.') + 1), '.') + INSTR(normalized_version, '.') + 1, INSTR(SUBSTR(normalized_version, INSTR(SUBSTR(normalized_version, INSTR(normalized_version, '.') + 1), '.') + INSTR(normalized_version, '.') + 1) || '.', '.') - 1) AS INTEGER) {$direction}"
+            );
+        }
+
+        // MySQL/MariaDB: Use SUBSTRING_INDEX
+        if (in_array($driver, ['mysql', 'mariadb'])) {
+            return $query->orderByRaw(
+                "CAST(SUBSTRING_INDEX(normalized_version, '.', 1) AS UNSIGNED) {$direction}, ".
+                "CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(normalized_version, '.', 2), '.', -1) AS UNSIGNED) {$direction}, ".
+                "CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(normalized_version, '.', 3), '.', -1) AS UNSIGNED) {$direction}"
+            );
+        }
+
+        // PostgreSQL: Use SPLIT_PART
+        if ($driver === 'pgsql') {
+            return $query->orderByRaw(
+                "CAST(SPLIT_PART(normalized_version, '.', 1) AS INTEGER) {$direction}, ".
+                "CAST(SPLIT_PART(normalized_version, '.', 2) AS INTEGER) {$direction}, ".
+                "CAST(SPLIT_PART(normalized_version, '.', 3) AS INTEGER) {$direction}"
+            );
+        }
+
+        // Fallback: simple string sort
+        return $query->orderBy('normalized_version', $direction);
     }
 }

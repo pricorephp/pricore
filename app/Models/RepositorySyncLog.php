@@ -19,14 +19,14 @@ use Illuminate\Support\Carbon;
  * @property Carbon $started_at
  * @property Carbon|null $completed_at
  * @property string|null $error_message
- * @property array<string, mixed>|null $details
+ * @property array<array-key, mixed>|null $details
  * @property int $versions_added
  * @property int $versions_updated
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property-read Repository $repository
  *
- * @method static RepositorySyncLogFactory factory($count = null, $state = [])
+ * @method static \Database\Factories\RepositorySyncLogFactory factory($count = null, $state = [])
  * @method static Builder<static>|RepositorySyncLog newModelQuery()
  * @method static Builder<static>|RepositorySyncLog newQuery()
  * @method static Builder<static>|RepositorySyncLog query()

@@ -21,37 +21,34 @@ export default function OrganizationSettingsLayout({
     const { organization } = page.props;
     const currentUrl = page.url;
 
-    const sidebarNavItems: SidebarNavItem[] = useMemo(
-        () => {
-            if (!organization) return [];
+    const sidebarNavItems: SidebarNavItem[] = useMemo(() => {
+        if (!organization) return [];
 
-            return [
-                {
-                    title: 'General',
-                    href: `/organizations/${organization.slug}/settings/general`,
-                    icon: Settings,
-                },
-                {
-                    title: 'Members',
-                    href: `/organizations/${organization.slug}/settings/members`,
-                    icon: Users,
-                },
-                {
-                    title: 'API Tokens',
-                    href: `/organizations/${organization.slug}/settings/tokens`,
-                    icon: Key,
-                },
-            ];
-        },
-        [organization?.slug],
-    );
+        return [
+            {
+                title: 'General',
+                href: `/organizations/${organization.slug}/settings/general`,
+                icon: Settings,
+            },
+            {
+                title: 'Members',
+                href: `/organizations/${organization.slug}/settings/members`,
+                icon: Users,
+            },
+            {
+                title: 'API Tokens',
+                href: `/organizations/${organization.slug}/settings/tokens`,
+                icon: Key,
+            },
+        ];
+    }, [organization?.slug]);
 
     if (!organization) {
         return null;
     }
 
     return (
-        <div className="mx-auto min-w-0 w-full max-w-7xl space-y-6 p-6">
+        <div className="mx-auto w-full max-w-7xl min-w-0 space-y-6 p-6">
             <div>
                 <h1 className="text-3xl font-bold tracking-tight">
                     Organization Settings
@@ -63,9 +60,9 @@ export default function OrganizationSettingsLayout({
 
             <Separator />
 
-            <div className="flex flex-col space-y-8 lg:flex-row lg:space-x-12 lg:space-y-0">
+            <div className="flex flex-col space-y-8 lg:flex-row lg:space-y-0 lg:space-x-12">
                 <aside className="w-full shrink-0 lg:w-48">
-                    <nav className="flex space-x-2 lg:flex-col lg:space-x-0 lg:space-y-1">
+                    <nav className="flex space-x-2 lg:flex-col lg:space-y-1 lg:space-x-0">
                         {sidebarNavItems.map((item) => {
                             const isActive = currentUrl === item.href;
                             return (
