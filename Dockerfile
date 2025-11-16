@@ -53,7 +53,7 @@ RUN apk add --no-cache \
     libzip-dev \
     zip \
     unzip \
-    sqlite \
+    sqlite-dev \
     oniguruma-dev \
     postgresql-dev \
     && docker-php-ext-install \
