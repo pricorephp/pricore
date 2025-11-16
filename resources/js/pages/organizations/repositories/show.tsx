@@ -1,9 +1,11 @@
-import PackageCard from '@/components/package-card';
+import { show } from '@/actions/App/Domains/Package/Http/Controllers/PackageController';
+import SyncRepository from '@/actions/App/Domains/Repository/Http/Controllers/SyncRepositoryController';
 import GitProviderIcon from '@/components/git-provider-icon';
 import HeadingSmall from '@/components/heading-small';
+import PackageCard from '@/components/package-card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import {
     Table,
     TableBody,
@@ -14,10 +16,9 @@ import {
 } from '@/components/ui/table';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
-import SyncRepository from '@/actions/App/Domains/Repository/Http/Controllers/SyncRepositoryController';
-import { Form, Head } from '@inertiajs/react';
-import { DateTime } from 'luxon';
+import { Form, Head, Link } from '@inertiajs/react';
 import { RefreshCw } from 'lucide-react';
+import { DateTime } from 'luxon';
 
 type OrganizationData =
     App.Domains.Organization.Contracts.Data.OrganizationData;
@@ -148,9 +149,20 @@ export default function RepositoryShow({
                                 </Badge>
                             )}
                         </div>
+                        {repository.lastSyncedAt && (
+                            <p className="text-sm text-muted-foreground">
+                                Last synced{' '}
+                                {DateTime.fromISO(
+                                    repository.lastSyncedAt,
+                                ).toRelative()}
+                            </p>
+                        )}
                     </div>
                     <Form
-                        action={SyncRepository.url([organization.slug, repository.uuid])}
+                        action={SyncRepository.url([
+                            organization.slug,
+                            repository.uuid,
+                        ])}
                         method="post"
                     >
                         {({ processing }) => (
@@ -170,46 +182,6 @@ export default function RepositoryShow({
                     </Form>
                 </div>
 
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">
-                                Packages
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">
-                                {repository.packagesCount}
-                            </div>
-                            <p className="mt-2 text-xs text-muted-foreground">
-                                Linked packages from this repository
-                            </p>
-                        </CardContent>
-                    </Card>
-
-                    {repository.lastSyncedAt && (
-                        <Card>
-                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">
-                                    Last Synced
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="text-sm font-medium">
-                                    {DateTime.fromISO(
-                                        repository.lastSyncedAt,
-                                    ).toRelative()}
-                                </div>
-                                <p className="mt-2 text-xs text-muted-foreground">
-                                    {DateTime.fromISO(
-                                        repository.lastSyncedAt,
-                                    ).toLocaleString(DateTime.DATETIME_MED)}
-                                </p>
-                            </CardContent>
-                        </Card>
-                    )}
-                </div>
-
                 {packages.length > 0 && (
                     <div className="space-y-4">
                         <HeadingSmall
@@ -218,7 +190,15 @@ export default function RepositoryShow({
                         />
                         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                             {packages.map((pkg) => (
-                                <PackageCard key={pkg.uuid} package={pkg} />
+                                <Link
+                                    key={pkg.uuid}
+                                    href={show.url([
+                                        organization.slug,
+                                        pkg.uuid,
+                                    ])}
+                                >
+                                    <PackageCard package={pkg} hideRepository />
+                                </Link>
                             ))}
                         </div>
                     </div>
@@ -240,7 +220,7 @@ export default function RepositoryShow({
                         <Card>
                             <Table>
                                 <TableHeader>
-                                    <TableRow>
+                                    <TableRow className="hover:bg-transparent">
                                         <TableHead>Status</TableHead>
                                         <TableHead>Started</TableHead>
                                         <TableHead>Duration</TableHead>
@@ -309,4 +289,3 @@ export default function RepositoryShow({
         </AppLayout>
     );
 }
-

@@ -22,6 +22,8 @@ class PackageData extends Data
         public ?string $latestVersion,
         public CarbonInterface $updatedAt,
         public ?string $repositoryName,
+        public ?string $repositoryIdentifier,
+        public ?string $repositoryUuid,
     ) {}
 
     public static function fromModel(Package $package): self
@@ -49,6 +51,8 @@ class PackageData extends Data
             latestVersion: $latestVersion?->version,
             updatedAt: $updatedAt,
             repositoryName: $package->repository?->name,
+            repositoryIdentifier: $package->repository?->repo_identifier,
+            repositoryUuid: $package->repository?->uuid,
         );
     }
 }

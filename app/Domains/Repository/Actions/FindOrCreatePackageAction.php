@@ -20,7 +20,6 @@ class FindOrCreatePackageAction
                     'organization_uuid' => $repository->organization_uuid,
                     'repository_uuid' => $repository->uuid,
                     'name' => $packageName,
-                    'description' => "Automatically synced from {$repository->name}",
                     'type' => 'library',
                     'visibility' => 'private',
                 ]);

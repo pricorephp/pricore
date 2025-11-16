@@ -32,9 +32,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('organizations/{organization:slug}/packages/{package:uuid}', [PackageController::class, 'show'])->name('organizations.packages.show');
     Route::get('organizations/{organization:slug}/repositories', [RepositoryController::class, 'index'])->name('organizations.repositories.index');
     Route::post('organizations/{organization:slug}/repositories', [RepositoryController::class, 'store'])->name('organizations.repositories.store');
+    Route::get('organizations/{organization:slug}/repositories/suggest', [RepositorySuggestionController::class, 'index'])->name('organizations.repositories.suggest');
     Route::get('organizations/{organization:slug}/repositories/{repository:uuid}', [RepositoryController::class, 'show'])->name('organizations.repositories.show');
     Route::post('organizations/{organization:slug}/repositories/{repository:uuid}/sync', SyncRepositoryController::class)->name('organizations.repositories.sync');
-    Route::get('organizations/{organization:slug}/repositories/suggest', [RepositorySuggestionController::class, 'index'])->name('organizations.repositories.suggest');
 
     // Organization settings
     Route::prefix('organizations/{organization:slug}/settings')->name('organizations.settings.')->group(function () {

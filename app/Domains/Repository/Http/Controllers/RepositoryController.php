@@ -9,6 +9,7 @@ use App\Domains\Repository\Contracts\Data\RepositoryData;
 use App\Domains\Repository\Contracts\Data\SyncLogData;
 use App\Domains\Repository\Contracts\Enums\GitProvider;
 use App\Domains\Repository\Http\Requests\StoreRepositoryRequest;
+use App\Domains\Repository\Jobs\SyncRepositoryJob;
 use App\Http\Controllers\Controller;
 use App\Models\Organization;
 use App\Models\Repository;
@@ -56,6 +57,8 @@ class RepositoryController extends Controller
             'repo_identifier' => $request->repo_identifier,
             'default_branch' => $request->default_branch,
         ]);
+
+        SyncRepositoryJob::dispatch($repository);
 
         return redirect()
             ->route('organizations.repositories.index', $organization)

@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Form } from '@inertiajs/react';
 
 type GitCredentialData = App.Domains.Organization.Contracts.Data.GitCredentialData;
@@ -176,12 +177,11 @@ export default function GitCredentialDialog({
                                 SSH Private Key{' '}
                                 <span className="text-red-500">*</span>
                             </Label>
-                            <textarea
+                            <Textarea
                                 id="ssh_key"
                                 name="credentials[ssh_key]"
                                 required
                                 rows={8}
-                                className="flex min-h-[80px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                                 placeholder="-----BEGIN OPENSSH PRIVATE KEY-----&#10;...&#10;-----END OPENSSH PRIVATE KEY-----"
                                 autoFocus
                             />

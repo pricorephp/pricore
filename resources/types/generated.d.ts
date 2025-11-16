@@ -39,6 +39,8 @@ versionsCount: number;
 latestVersion: string | null;
 updatedAt: string;
 repositoryName: string | null;
+repositoryIdentifier: string | null;
+repositoryUuid: string | null;
 };
 export type PackageVersionData = {
 uuid: string;
@@ -77,7 +79,7 @@ completedAt: string | null;
 errorMessage: string | null;
 versionsAdded: number;
 versionsUpdated: number;
-details: Array<any> | null;
+details: { [key: string]: any } | null;
 };
 }
 declare namespace App.Domains.Repository.Contracts.Enums {
@@ -97,5 +99,6 @@ export type TokenCreatedData = {
 plainToken: string;
 name: string;
 expiresAt: string | null;
+organizationUuid: string | null;
 };
 }

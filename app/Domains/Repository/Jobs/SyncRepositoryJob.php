@@ -16,13 +16,14 @@ use App\Domains\Repository\Services\GitProviders\GitProviderFactory;
 use App\Exceptions\ComposerMetadataException;
 use App\Models\Repository;
 use App\Models\RepositorySyncLog;
+use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\Log;
 use Spatie\LaravelData\DataCollection;
 use Throwable;
 
-class SyncRepositoryJob implements ShouldQueue
+class SyncRepositoryJob implements ShouldBeUnique, ShouldQueue
 {
     use Queueable;
 
@@ -35,8 +36,11 @@ class SyncRepositoryJob implements ShouldQueue
      */
     public function __construct(
         public Repository $repository
-    ) {
-        //
+    ) {}
+
+    public function uniqueId(): string
+    {
+        return "sync-repository-{$this->repository->uuid}";
     }
 
     /**

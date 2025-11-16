@@ -1,3 +1,4 @@
+import { show } from '@/actions/App/Domains/Repository/Http/Controllers/RepositoryController';
 import HeadingSmall from '@/components/heading-small';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -13,7 +14,7 @@ import {
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link } from '@inertiajs/react';
-import { Check, Copy, Globe, Lock } from 'lucide-react';
+import { Check, Copy, GitBranch, Globe, Lock } from 'lucide-react';
 import { DateTime } from 'luxon';
 import { useState } from 'react';
 
@@ -179,20 +180,26 @@ export default function PackageShow({
                                 </p>
                             )}
                             <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                                {pkg.type && (
-                                    <span>
-                                        Type:{' '}
-                                        <span className="font-medium">
-                                            {pkg.type}
-                                        </span>
-                                    </span>
-                                )}
-                                {pkg.repositoryName && (
-                                    <span>
+                                {pkg.repositoryIdentifier && (
+                                    <span className="flex items-center gap-1.5">
                                         Repository:{' '}
-                                        <span className="font-medium">
-                                            {pkg.repositoryName}
-                                        </span>
+                                        {pkg.repositoryUuid ? (
+                                            <Link
+                                                href={show.url([
+                                                    organization.slug,
+                                                    pkg.repositoryUuid,
+                                                ])}
+                                                className="flex items-center gap-1 font-medium text-primary hover:underline"
+                                            >
+                                                <GitBranch className="h-3.5 w-3.5" />
+                                                {pkg.repositoryIdentifier}
+                                            </Link>
+                                        ) : (
+                                            <span className="flex items-center gap-1 font-medium">
+                                                <GitBranch className="h-3.5 w-3.5" />
+                                                {pkg.repositoryIdentifier}
+                                            </span>
+                                        )}
                                     </span>
                                 )}
                                 <span>
@@ -243,7 +250,7 @@ export default function PackageShow({
                             <Card>
                                 <Table>
                                     <TableHeader>
-                                        <TableRow>
+                                        <TableRow className="hover:bg-transparent">
                                             <TableHead>Version</TableHead>
                                             <TableHead>Released</TableHead>
                                             <TableHead>

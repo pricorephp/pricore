@@ -7,9 +7,13 @@ type PackageData = App.Domains.Package.Contracts.Data.PackageData;
 
 interface PackageCardProps {
     package: PackageData;
+    hideRepository?: boolean;
 }
 
-export default function PackageCard({ package: pkg }: PackageCardProps) {
+export default function PackageCard({
+    package: pkg,
+    hideRepository = false,
+}: PackageCardProps) {
     return (
         <Card className="transition-colors hover:bg-accent/50">
             <CardHeader>
@@ -54,15 +58,9 @@ export default function PackageCard({ package: pkg }: PackageCardProps) {
                             {pkg.versionsCount === 1 ? 'version' : 'versions'}
                         </span>
                     )}
-
-                    {pkg.type && (
-                        <span className="rounded bg-muted px-1.5 py-0.5">
-                            {pkg.type}
-                        </span>
-                    )}
                 </div>
 
-                {pkg.repositoryName && (
+                {!hideRepository && pkg.repositoryName && (
                     <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                         <GitBranch className="h-3 w-3" />
                         <span>{pkg.repositoryName}</span>
