@@ -85,12 +85,9 @@ RUN apk add --no-cache \
     pdo \
     pdo_sqlite \
     pdo_mysql \
-    pdo_pgsql \
     mbstring \
-    exif \
     pcntl \
     bcmath \
-    gd \
     zip \
     opcache
 
