@@ -1,4 +1,5 @@
 import HeadingSmall from '@/components/heading-small';
+import InfoBox from '@/components/info-box';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import AppLayout from '@/layouts/app-layout';
@@ -107,17 +108,14 @@ export default function OrganizationShow({
                     </Card>
                 </div>
 
-                <div className="rounded-md border border-neutral-200 bg-neutral-50 p-4 dark:border-neutral-800 dark:bg-neutral-950">
-                    <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
-                        Getting Started
-                    </p>
-                    <p className="mt-1 text-sm text-neutral-700 dark:text-neutral-300">
-                        This organization hosts private Composer packages. Add
+                <InfoBox
+                    title="Getting Started"
+                    description="This organization hosts private Composer packages. Add
                         packages from repositories, manage API tokens for
                         authentication, and configure your composer.json to use
-                        this private registry.
-                    </p>
-                    <div className="mt-3 flex gap-2">
+                        this private registry."
+                >
+                    <div className="flex gap-2">
                         <Button size="sm" asChild>
                             <Link
                                 href={`/organizations/${organization.slug}/packages`}
@@ -133,7 +131,7 @@ export default function OrganizationShow({
                             </Link>
                         </Button>
                     </div>
-                </div>
+                </InfoBox>
             </div>
         </AppLayout>
     );

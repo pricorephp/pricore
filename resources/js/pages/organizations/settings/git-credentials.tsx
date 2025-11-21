@@ -1,5 +1,6 @@
 import GitCredentialDialog from '@/components/git-credential-dialog';
 import GitProviderIcon from '@/components/git-provider-icon';
+import InfoBox from '@/components/info-box';
 import { Button } from '@/components/ui/button';
 import {
     Card,
@@ -212,17 +213,13 @@ export default function GitCredentials({
                     )}
             </div>
 
-            <div className="rounded-md border border-neutral-200 bg-neutral-50 p-4 dark:border-neutral-800 dark:bg-neutral-950">
-                <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
-                    About Git Providers
-                </p>
-                <p className="mt-1 text-sm text-neutral-700 dark:text-neutral-300">
-                    Git provider credentials are required to sync packages from
+            <InfoBox
+                title="About Git Providers"
+                description="Git provider credentials are required to sync packages from
                     private repositories. Each provider requires different
                     authentication methods. Credentials are encrypted and stored
-                    securely.
-                </p>
-            </div>
+                    securely."
+            />
 
             {(editingCredential || addingProvider) && (
                 <GitCredentialDialog

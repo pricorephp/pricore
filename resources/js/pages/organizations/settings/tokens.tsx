@@ -1,4 +1,5 @@
 import CreateTokenDialog from '@/components/create-token-dialog';
+import InfoBox from '@/components/info-box';
 import RevokeTokenDialog from '@/components/revoke-token-dialog';
 import TokenCreatedDialog from '@/components/token-created-dialog';
 import TokenList from '@/components/token-list';
@@ -82,16 +83,12 @@ export default function Tokens({
                 <TokenList tokens={tokens} onRevoke={handleRevoke} />
             </div>
 
-            <div className="rounded-md border border-neutral-200 bg-neutral-50 p-3 dark:border-neutral-800 dark:bg-neutral-950">
-                <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
-                    About API Tokens
-                </p>
-                <p className="mt-1 text-sm text-neutral-700 dark:text-neutral-300">
-                    API tokens allow you to authenticate Composer requests to
+            <InfoBox
+                title="About API Tokens"
+                description="API tokens allow you to authenticate Composer requests to
                     access private packages in this organization. Each token can
-                    be configured with an expiration date for security.
-                </p>
-            </div>
+                    be configured with an expiration date for security."
+            />
 
             <CreateTokenDialog
                 organizationSlug={organization.slug}

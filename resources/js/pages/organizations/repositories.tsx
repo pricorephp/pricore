@@ -2,6 +2,7 @@ import { show } from '@/actions/App/Domains/Repository/Http/Controllers/Reposito
 import AddRepositoryDialog from '@/components/add-repository-dialog';
 import GitProviderIcon from '@/components/git-provider-icon';
 import HeadingSmall from '@/components/heading-small';
+import InfoBox from '@/components/info-box';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -112,7 +113,7 @@ export default function Repositories({
                                                         e.stopPropagation();
                                                         e.preventDefault();
                                                         window.open(
-                                                            repo.url,
+                                                            repo.url!,
                                                             '_blank',
                                                             'noopener,noreferrer',
                                                         );
@@ -157,7 +158,8 @@ export default function Repositories({
                                                     repo.syncStatus,
                                                 )}
                                             >
-                                                {repo.syncStatusLabel ?? 'Pending'}
+                                                {repo.syncStatusLabel ??
+                                                    'Pending'}
                                             </Badge>
                                         </div>
 
@@ -176,18 +178,14 @@ export default function Repositories({
                     </div>
                 )}
 
-                <div className="rounded-md border border-neutral-200 bg-neutral-50 p-4 dark:border-neutral-800 dark:bg-neutral-950">
-                    <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
-                        About Repositories
-                    </p>
-                    <p className="mt-1 text-sm text-neutral-700 dark:text-neutral-300">
-                        Connect your Git repositories from GitHub, GitLab,
+                <InfoBox
+                    title="About Repositories"
+                    description="Connect your Git repositories from GitHub, GitLab,
                         Bitbucket, or any Git server to automatically discover
                         and sync Composer packages. Repositories are monitored
                         for new versions and can be synced manually or via
-                        webhooks.
-                    </p>
-                </div>
+                        webhooks."
+                />
 
                 <AddRepositoryDialog
                     organizationSlug={organization.slug}

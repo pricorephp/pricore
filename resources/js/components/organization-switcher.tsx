@@ -40,12 +40,16 @@ export default function OrganizationSwitcher({
             value={currentOrganization?.slug}
             onValueChange={handleOrganizationChange}
         >
-            <SelectTrigger className="h-8 w-full border-0 border-b-0 bg-white dark:bg-neutral-950">
+            <SelectTrigger className="h-8 w-full rounded-sm border border-sidebar-border bg-sidebar-accent/50 text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground">
                 <SelectValue placeholder="Select organization" />
             </SelectTrigger>
-            <SelectContent className="bg-white dark:bg-neutral-950">
+            <SelectContent className="border-sidebar-border bg-sidebar text-sidebar-foreground">
                 {organizations.map((org) => (
-                    <SelectItem key={org.uuid} value={org.slug}>
+                    <SelectItem
+                        key={org.uuid}
+                        value={org.slug}
+                        className="text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus:bg-sidebar-accent focus:text-sidebar-accent-foreground"
+                    >
                         {org.name}
                     </SelectItem>
                 ))}

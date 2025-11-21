@@ -118,7 +118,7 @@ export default function TokenCreatedDialog({
                         </div>
                     </div>
 
-                    <div className="rounded-md border border-neutral-200 bg-neutral-50 p-4 dark:border-neutral-800 dark:bg-neutral-950">
+                    <div className="rounded-md border border-b-2 border-neutral-200 bg-neutral-50 p-4 dark:border-neutral-800 dark:bg-neutral-950">
                         <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
                             Configure Composer
                         </p>
