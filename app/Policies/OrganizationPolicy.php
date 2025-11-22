@@ -38,4 +38,9 @@ class OrganizationPolicy
     {
         return $this->viewSettings($user, $organization);
     }
+
+    public function updateSlug(User $user, Organization $organization): bool
+    {
+        return $organization->owner_uuid === $user->uuid;
+    }
 }

@@ -84,7 +84,7 @@ export function AppSidebar() {
                         <SidebarMenuButton
                             size="lg"
                             asChild
-                            className="group-data-[collapsible=icon]:justify-center"
+                            className="justify-center"
                         >
                             <Link href={dashboard()} prefetch>
                                 <AppLogo />

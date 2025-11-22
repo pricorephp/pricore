@@ -95,10 +95,7 @@ export default function RepositoryShow({
             <div className="mx-auto w-7xl space-y-6 p-6">
                 <div className="flex items-center justify-between">
                     <div className="space-y-1">
-                        <HeadingSmall
-                            title={repository.name}
-                            description={repository.repoIdentifier}
-                        />
+                        <HeadingSmall title={repository.repoIdentifier} />
                         <div className="flex items-center gap-2">
                             {repository.url ? (
                                 <a
