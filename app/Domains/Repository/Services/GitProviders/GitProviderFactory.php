@@ -16,7 +16,8 @@ class GitProviderFactory
 
         return match ($repository->provider) {
             GitProvider::GitHub => new GitHubProvider($repository->repo_identifier, $credentials),
-            GitProvider::GitLab, GitProvider::Bitbucket, GitProvider::Git => throw new GitProviderException(
+            GitProvider::Git => new GenericGitProvider($repository->repo_identifier, $credentials),
+            GitProvider::GitLab, GitProvider::Bitbucket => throw new GitProviderException(
                 "Provider '{$repository->provider->label()}' is not yet implemented"
             ),
         };
@@ -33,11 +34,9 @@ class GitProviderFactory
             ->first();
 
         if (! $credential) {
-            throw new GitProviderException(
-                "No credentials found for provider '{$repository->provider->label()}' in organization"
-            );
+            return [];
         }
 
-        return $credential->credentials;
+        return $credential->credentials ?? [];
     }
 }

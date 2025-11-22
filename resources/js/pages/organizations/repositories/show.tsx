@@ -95,7 +95,10 @@ export default function RepositoryShow({
             <div className="mx-auto w-7xl space-y-6 p-6">
                 <div className="flex items-center justify-between">
                     <div className="space-y-1">
-                        <HeadingSmall title={repository.repoIdentifier} />
+                        <HeadingSmall
+                            title={repository.name}
+                            description={repository.repoIdentifier}
+                        />
                         <div className="flex items-center gap-2">
                             {repository.url ? (
                                 <a
@@ -211,11 +214,15 @@ export default function RepositoryShow({
                             <Table>
                                 <TableHeader>
                                     <TableRow className="hover:bg-transparent">
-                                        <TableHead>Status</TableHead>
-                                        <TableHead>Started</TableHead>
-                                        <TableHead>Duration</TableHead>
-                                        <TableHead>Versions Added</TableHead>
-                                        <TableHead>Versions Updated</TableHead>
+                                        <TableHead className="w-1/8">
+                                            Status
+                                        </TableHead>
+                                        <TableHead className="w-1/8">
+                                            Started
+                                        </TableHead>
+                                        <TableHead className="w-1/8">
+                                            Duration
+                                        </TableHead>
                                         <TableHead>Error</TableHead>
                                     </TableRow>
                                 </TableHeader>
@@ -250,12 +257,6 @@ export default function RepositoryShow({
                                                     log.startedAt,
                                                     log.completedAt,
                                                 )}
-                                            </TableCell>
-                                            <TableCell>
-                                                {log.versionsAdded}
-                                            </TableCell>
-                                            <TableCell>
-                                                {log.versionsUpdated}
                                             </TableCell>
                                             <TableCell>
                                                 {log.errorMessage ? (

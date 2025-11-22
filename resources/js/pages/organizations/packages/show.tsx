@@ -187,12 +187,12 @@ export default function PackageShow({
                                                 className="flex items-center gap-1 font-medium text-primary hover:underline"
                                             >
                                                 <GitBranch className="h-3.5 w-3.5" />
-                                                {pkg.repositoryIdentifier}
+                                                {pkg.repositoryName}
                                             </Link>
                                         ) : (
                                             <span className="flex items-center gap-1 font-medium">
                                                 <GitBranch className="h-3.5 w-3.5" />
-                                                {pkg.repositoryIdentifier}
+                                                {pkg.repositoryName}
                                             </span>
                                         )}
                                     </span>
