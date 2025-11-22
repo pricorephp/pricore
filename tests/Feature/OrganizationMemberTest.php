@@ -103,7 +103,7 @@ it('admin can update member role', function () {
     ]);
 
     $response->assertRedirect();
-    expect($organizationUser->fresh()->role)->toBe(OrganizationRole::Admin->value);
+    expect($organizationUser->fresh()->role)->toBe(OrganizationRole::Admin);
 });
 
 it('cannot change owner role', function () {
@@ -124,7 +124,7 @@ it('cannot change owner role', function () {
 
     $response->assertRedirect();
     $response->assertSessionHas('error');
-    expect($organizationUser->fresh()->role)->toBe(OrganizationRole::Owner->value);
+    expect($organizationUser->fresh()->role)->toBe(OrganizationRole::Owner);
 });
 
 it('admin can remove member', function () {

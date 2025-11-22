@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Domains\Organization\Contracts\Enums\OrganizationRole;
 use App\Models\Concerns\HasUuids;
 use Database\Factories\OrganizationUserFactory;
 use Illuminate\Database\Eloquent\Builder;
@@ -14,7 +15,7 @@ use Illuminate\Support\Carbon;
  * @property string $uuid
  * @property string $organization_uuid
  * @property string $user_uuid
- * @property string $role
+ * @property OrganizationRole $role
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property-read Organization $organization
@@ -41,6 +42,10 @@ class OrganizationUser extends Model
     protected $table = 'organization_users';
 
     protected $guarded = ['uuid'];
+
+    protected $casts = [
+        'role' => OrganizationRole::class,
+    ];
 
     /**
      * @return BelongsTo<Organization, $this>

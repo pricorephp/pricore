@@ -2,6 +2,7 @@
 
 namespace App\Domains\Organization\Contracts\Data;
 
+use App\Domains\Organization\Contracts\Enums\OrganizationRole;
 use App\Models\Organization;
 use App\Models\Pivots\OrganizationUserPivot;
 use App\Models\User;
@@ -13,7 +14,7 @@ class OrganizationWithRoleData extends Data
 {
     public function __construct(
         public OrganizationData $organization,
-        public string $role,
+        public OrganizationRole $role,
         public bool $isOwner,
         public string $pivotUuid,
     ) {}

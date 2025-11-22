@@ -29,6 +29,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('organizations/{organization:slug}/repositories', [RepositoryController::class, 'store'])->name('organizations.repositories.store');
     Route::get('organizations/{organization:slug}/repositories/suggest', [RepositorySuggestionController::class, 'index'])->name('organizations.repositories.suggest');
     Route::get('organizations/{organization:slug}/repositories/{repository:uuid}', [RepositoryController::class, 'show'])->name('organizations.repositories.show');
+    Route::get('organizations/{organization:slug}/repositories/{repository:uuid}/edit', [RepositoryController::class, 'edit'])->name('organizations.repositories.edit');
+    Route::patch('organizations/{organization:slug}/repositories/{repository:uuid}', [RepositoryController::class, 'update'])->name('organizations.repositories.update');
+    Route::delete('organizations/{organization:slug}/repositories/{repository:uuid}', [RepositoryController::class, 'destroy'])->name('organizations.repositories.destroy');
     Route::post('organizations/{organization:slug}/repositories/{repository:uuid}/sync', SyncRepositoryController::class)->name('organizations.repositories.sync');
 
     // Organization settings
