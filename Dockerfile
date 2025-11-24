@@ -81,15 +81,22 @@ RUN apk add --no-cache \
     sqlite-dev \
     oniguruma-dev \
     postgresql-dev \
+    autoconf \
+    g++ \
+    make \
     && docker-php-ext-install \
     pdo \
     pdo_sqlite \
     pdo_mysql \
+    pdo_pgsql \
     mbstring \
     pcntl \
     bcmath \
     zip \
-    opcache
+    opcache \
+    && pecl install redis \
+    && docker-php-ext-enable redis \
+    && rm -rf /tmp/pear
 
 # Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
@@ -149,4 +156,3 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
 
 # Start Laravel development server (for production, use nginx + PHP-FPM)
 CMD ["php", "artisan", "serve", "--host=0.0.0.0", "--port=8000"]
-
