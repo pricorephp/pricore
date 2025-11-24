@@ -94,9 +94,9 @@ RUN apk add --no-cache \
     bcmath \
     zip \
     opcache \
-    && pecl install redis \
-    && docker-php-ext-enable redis \
-    && rm -rf /tmp/pear
+    && pecl install --onlyreqdeps --force redis \
+    && rm -rf /tmp/pear \
+    && docker-php-ext-enable redis
 
 # Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
