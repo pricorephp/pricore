@@ -2,6 +2,7 @@
 
 namespace App\Domains\Organization\Contracts\Data;
 
+use App\Domains\Organization\Contracts\Enums\OrganizationRole;
 use App\Models\Pivots\OrganizationUserPivot;
 use App\Models\User;
 use Carbon\CarbonInterface;
@@ -15,7 +16,7 @@ class OrganizationMemberData extends Data
         public string $uuid,
         public string $name,
         public string $email,
-        public string $role,
+        public OrganizationRole $role,
         public ?CarbonInterface $joinedAt,
     ) {}
 

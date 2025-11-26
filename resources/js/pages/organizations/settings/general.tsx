@@ -11,9 +11,10 @@ type OrganizationData =
 
 interface Props {
     organization: OrganizationData;
+    isOwner?: boolean;
 }
 
-export default function General({ organization }: Props) {
+export default function General({ organization, isOwner = false }: Props) {
     return (
         <div className="space-y-6">
             <div>
@@ -49,16 +50,43 @@ export default function General({ organization }: Props) {
 
                             <div className="space-y-2">
                                 <Label htmlFor="slug">Organization Slug</Label>
-                                <Input
-                                    id="slug"
-                                    name="slug"
-                                    value={organization.slug}
-                                    disabled
-                                    className="bg-muted"
-                                />
-                                <p className="text-sm text-muted-foreground">
-                                    The slug cannot be changed after creation
-                                </p>
+                                {isOwner ? (
+                                    <>
+                                        <Input
+                                            id="slug"
+                                            name="slug"
+                                            defaultValue={organization.slug}
+                                            required
+                                            maxLength={255}
+                                            pattern="[a-z0-9]+(?:-[a-z0-9]+)*"
+                                            title="Slug must contain only lowercase letters, numbers, and hyphens"
+                                        />
+                                        <p className="text-sm text-muted-foreground">
+                                            The slug is used in URLs. Only
+                                            lowercase letters, numbers, and
+                                            hyphens are allowed.
+                                        </p>
+                                        {errors.slug && (
+                                            <p className="text-sm text-red-600 dark:text-red-400">
+                                                {errors.slug}
+                                            </p>
+                                        )}
+                                    </>
+                                ) : (
+                                    <>
+                                        <Input
+                                            id="slug"
+                                            name="slug"
+                                            value={organization.slug}
+                                            disabled
+                                            className="bg-muted"
+                                        />
+                                        <p className="text-sm text-muted-foreground">
+                                            Only organization owners can change
+                                            the slug
+                                        </p>
+                                    </>
+                                )}
                             </div>
 
                             <div className="flex justify-end">

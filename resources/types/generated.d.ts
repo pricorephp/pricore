@@ -23,6 +23,12 @@ packagesCount: number;
 repositoriesCount: number;
 tokensCount: number;
 };
+export type OrganizationWithRoleData = {
+organization: App.Domains.Organization.Contracts.Data.OrganizationData;
+role: string;
+isOwner: boolean;
+pivotUuid: string;
+};
 }
 declare namespace App.Domains.Organization.Contracts.Enums {
 export type OrganizationRole = 'owner' | 'admin' | 'member';

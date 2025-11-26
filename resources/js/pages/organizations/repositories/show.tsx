@@ -1,4 +1,5 @@
 import { show } from '@/actions/App/Domains/Package/Http/Controllers/PackageController';
+import { edit } from '@/actions/App/Domains/Repository/Http/Controllers/RepositoryController';
 import SyncRepository from '@/actions/App/Domains/Repository/Http/Controllers/SyncRepositoryController';
 import GitProviderIcon from '@/components/git-provider-icon';
 import HeadingSmall from '@/components/heading-small';
@@ -17,7 +18,7 @@ import {
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { Form, Head, Link } from '@inertiajs/react';
-import { RefreshCw } from 'lucide-react';
+import { RefreshCw, Settings } from 'lucide-react';
 import { DateTime } from 'luxon';
 
 type OrganizationData =
@@ -151,28 +152,41 @@ export default function RepositoryShow({
                             </p>
                         )}
                     </div>
-                    <Form
-                        action={SyncRepository.url([
-                            organization.slug,
-                            repository.uuid,
-                        ])}
-                        method="post"
-                    >
-                        {({ processing }) => (
-                            <Button
-                                type="submit"
-                                disabled={processing}
-                                variant="outline"
+                    <div className="flex items-center gap-2">
+                        <Form
+                            action={SyncRepository.url([
+                                organization.slug,
+                                repository.uuid,
+                            ])}
+                            method="post"
+                        >
+                            {({ processing }) => (
+                                <Button
+                                    type="submit"
+                                    disabled={processing}
+                                    variant="outline"
+                                >
+                                    <RefreshCw
+                                        className={`mr-2 h-4 w-4 ${
+                                            processing ? 'animate-spin' : ''
+                                        }`}
+                                    />
+                                    {processing ? 'Syncing...' : 'Sync Now'}
+                                </Button>
+                            )}
+                        </Form>
+                        <Button variant="outline" asChild>
+                            <Link
+                                href={edit.url({
+                                    organization: organization.slug,
+                                    repository: repository.uuid,
+                                })}
                             >
-                                <RefreshCw
-                                    className={`mr-2 h-4 w-4 ${
-                                        processing ? 'animate-spin' : ''
-                                    }`}
-                                />
-                                {processing ? 'Syncing...' : 'Sync Now'}
-                            </Button>
-                        )}
-                    </Form>
+                                <Settings className="mr-2 size-4" />
+                                Edit
+                            </Link>
+                        </Button>
+                    </div>
                 </div>
 
                 {packages.length > 0 && (
@@ -214,11 +228,15 @@ export default function RepositoryShow({
                             <Table>
                                 <TableHeader>
                                     <TableRow className="hover:bg-transparent">
-                                        <TableHead>Status</TableHead>
-                                        <TableHead>Started</TableHead>
-                                        <TableHead>Duration</TableHead>
-                                        <TableHead>Versions Added</TableHead>
-                                        <TableHead>Versions Updated</TableHead>
+                                        <TableHead className="w-1/8">
+                                            Status
+                                        </TableHead>
+                                        <TableHead className="w-1/8">
+                                            Started
+                                        </TableHead>
+                                        <TableHead className="w-1/8">
+                                            Duration
+                                        </TableHead>
                                         <TableHead>Error</TableHead>
                                     </TableRow>
                                 </TableHeader>
@@ -253,12 +271,6 @@ export default function RepositoryShow({
                                                     log.startedAt,
                                                     log.completedAt,
                                                 )}
-                                            </TableCell>
-                                            <TableCell>
-                                                {log.versionsAdded}
-                                            </TableCell>
-                                            <TableCell>
-                                                {log.versionsUpdated}
                                             </TableCell>
                                             <TableCell>
                                                 {log.errorMessage ? (

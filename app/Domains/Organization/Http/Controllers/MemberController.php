@@ -70,9 +70,7 @@ class MemberController
             abort(404);
         }
 
-        $role = OrganizationRole::from($member->role);
-
-        if ($role->isOwner()) {
+        if ($member->role->isOwner()) {
             return redirect()
                 ->route('organizations.settings.members', $organization)
                 ->with('error', 'Cannot change the role of the organization owner.');
@@ -95,9 +93,7 @@ class MemberController
             abort(404);
         }
 
-        $role = OrganizationRole::from($member->role);
-
-        if ($role->isOwner()) {
+        if ($member->role->isOwner()) {
             return redirect()
                 ->route('organizations.settings.members', $organization)
                 ->with('error', 'Cannot remove the organization owner.');

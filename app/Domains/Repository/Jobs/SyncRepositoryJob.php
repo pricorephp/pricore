@@ -29,7 +29,7 @@ class SyncRepositoryJob implements ShouldBeUnique, ShouldQueue
 
     public int $timeout = 300;
 
-    public int $tries = 3;
+    public int $tries = 1;
 
     /**
      * Create a new job instance.
