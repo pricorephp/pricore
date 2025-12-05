@@ -121,7 +121,7 @@ class RepositoryController extends Controller
             abort(404);
         }
 
-        if ($request->user()->cannot('deleteRepository', $organization)) {
+        if (! $request->user()?->can('deleteRepository', $organization)) {
             abort(403);
         }
 
