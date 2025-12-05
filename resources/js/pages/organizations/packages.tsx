@@ -1,11 +1,10 @@
+import { show } from '@/actions/App/Domains/Package/Http/Controllers/PackageController';
 import HeadingSmall from '@/components/heading-small';
 import PackageCard from '@/components/package-card';
 import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
-import { show } from '@/actions/App/Domains/Package/Http/Controllers/PackageController';
-import { Link } from '@inertiajs/react';
-import { Head } from '@inertiajs/react';
+import { Head, Link } from '@inertiajs/react';
 import { GitBranch } from 'lucide-react';
 
 type OrganizationData =
@@ -21,7 +20,6 @@ export default function Packages({
     organization,
     packages,
 }: PackagesPageProps) {
-
     const breadcrumbs: BreadcrumbItem[] = [
         {
             title: organization.name,
@@ -44,7 +42,9 @@ export default function Packages({
                         description="Composer packages in this organization"
                     />
                     <Button asChild>
-                        <Link href={`/organizations/${organization.slug}/repositories`}>
+                        <Link
+                            href={`/organizations/${organization.slug}/repositories`}
+                        >
                             <GitBranch className="mr-2 h-4 w-4" />
                             Manage Repositories
                         </Link>
@@ -57,12 +57,10 @@ export default function Packages({
                             No packages yet. Connect a Git repository to
                             automatically discover and sync packages.
                         </p>
-                        <Button
-                            className="mt-4"
-                            variant="outline"
-                            asChild
-                        >
-                            <Link href={`/organizations/${organization.slug}/repositories`}>
+                        <Button className="mt-4" variant="outline" asChild>
+                            <Link
+                                href={`/organizations/${organization.slug}/repositories`}
+                            >
                                 <GitBranch className="mr-2 h-4 w-4" />
                                 Connect Your First Repository
                             </Link>

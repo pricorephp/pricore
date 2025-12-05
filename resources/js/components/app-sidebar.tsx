@@ -1,4 +1,3 @@
-import { NavFooter } from '@/components/nav-footer';
 import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
 import OrganizationSwitcher from '@/components/organization-switcher';
@@ -7,23 +6,16 @@ import {
     SidebarContent,
     SidebarFooter,
     SidebarHeader,
-    SidebarMenu,
-    SidebarMenuButton,
-    SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { dashboard } from '@/routes';
 import { type NavItem } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
 import { Box, GitBranch, LayoutDashboard, Settings } from 'lucide-react';
 import { useMemo } from 'react';
-import AppLogo from './app-logo';
+import AppLogoIcon from './app-logo-icon';
 
 type OrganizationData =
     App.Domains.Organization.Contracts.Data.OrganizationData;
-
-const mainNavItems: NavItem[] = [];
-
-const footerNavItems: NavItem[] = [];
 
 export function AppSidebar() {
     const page = usePage<{
@@ -60,7 +52,7 @@ export function AppSidebar() {
                 icon: Box,
             },
             {
-                title: 'Repositories',
+                title: 'Repos',
                 href: `/organizations/${currentOrganization.slug}/repositories`,
                 icon: GitBranch,
             },
@@ -72,48 +64,30 @@ export function AppSidebar() {
         ];
     }, [currentOrganization]);
 
-    const navigationItems = currentOrganization
-        ? [...mainNavItems, ...orgNavItems]
-        : mainNavItems;
-
     return (
-        <Sidebar collapsible="icon" variant="sidebar">
-            <SidebarHeader>
-                <SidebarMenu>
-                    <SidebarMenuItem>
-                        <SidebarMenuButton
-                            size="lg"
-                            asChild
-                            className="justify-center"
-                        >
-                            <Link href={dashboard()} prefetch>
-                                <AppLogo />
-                            </Link>
-                        </SidebarMenuButton>
-                    </SidebarMenuItem>
-                </SidebarMenu>
+        <Sidebar>
+            <SidebarHeader className="items-center border-b border-sidebar-border pb-3">
+                <Link
+                    href={dashboard()}
+                    prefetch
+                    className="flex items-center justify-center"
+                >
+                    <AppLogoIcon className="size-7 fill-current text-white dark:text-black" />
+                </Link>
 
                 {auth.organizations.length > 0 && (
-                    <>
-                        <OrganizationSwitcher
-                            organizations={auth.organizations}
-                            currentOrganization={
-                                currentOrganization || undefined
-                            }
-                        />
-                    </>
+                    <OrganizationSwitcher
+                        organizations={auth.organizations}
+                        currentOrganization={currentOrganization || undefined}
+                    />
                 )}
             </SidebarHeader>
 
-            <SidebarContent>
-                <NavMain
-                    items={navigationItems}
-                    showLabel={!!currentOrganization}
-                />
+            <SidebarContent className="pt-2">
+                <NavMain items={orgNavItems} />
             </SidebarContent>
 
-            <SidebarFooter>
-                <NavFooter items={footerNavItems} className="mt-auto" />
+            <SidebarFooter className="border-t border-sidebar-border pt-2">
                 <NavUser />
             </SidebarFooter>
         </Sidebar>

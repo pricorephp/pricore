@@ -1,4 +1,7 @@
-import { store, update } from '@/actions/App/Domains/Organization/Http/Controllers/GitCredentialController';
+import {
+    store,
+    update,
+} from '@/actions/App/Domains/Organization/Http/Controllers/GitCredentialController';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -13,7 +16,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Form } from '@inertiajs/react';
 
-type GitCredentialData = App.Domains.Organization.Contracts.Data.GitCredentialData;
+type GitCredentialData =
+    App.Domains.Organization.Contracts.Data.GitCredentialData;
 
 interface GitCredentialDialogProps {
     organizationSlug: string;
@@ -75,10 +79,9 @@ export default function GitCredentialDialog({
                                     GitHub Settings → Developer settings →
                                     Personal access tokens
                                 </a>
-                                . Make sure to select the{' '}
-                                <strong>repo</strong> scope (and{' '}
-                                <strong>read:org</strong> if accessing
-                                organization repositories).
+                                . Make sure to select the <strong>repo</strong>{' '}
+                                scope (and <strong>read:org</strong> if
+                                accessing organization repositories).
                             </p>
                         </div>
                     </>
@@ -131,8 +134,7 @@ export default function GitCredentialDialog({
                     <>
                         <div className="space-y-2">
                             <Label htmlFor="username">
-                                Username{' '}
-                                <span className="text-red-500">*</span>
+                                Username <span className="text-red-500">*</span>
                             </Label>
                             <Input
                                 id="username"
@@ -255,7 +257,7 @@ export default function GitCredentialDialog({
                                     <p className="text-sm font-medium text-destructive">
                                         Please fix the following errors:
                                     </p>
-                                    <ul className="mt-1 list-disc list-inside text-sm text-destructive">
+                                    <ul className="mt-1 list-inside list-disc text-sm text-destructive">
                                         {errors.provider && (
                                             <li>{errors.provider}</li>
                                         )}
@@ -274,7 +276,11 @@ export default function GitCredentialDialog({
                                         {errors['credentials.app_password'] && (
                                             <li>
                                                 App Password:{' '}
-                                                {errors['credentials.app_password']}
+                                                {
+                                                    errors[
+                                                        'credentials.app_password'
+                                                    ]
+                                                }
                                             </li>
                                         )}
                                         {errors['credentials.ssh_key'] && (
@@ -317,4 +323,3 @@ export default function GitCredentialDialog({
         </Dialog>
     );
 }
-
