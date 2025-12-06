@@ -11,6 +11,7 @@ use Illuminate\Support\Carbon;
  * @property string $organization_uuid
  * @property string $user_uuid
  * @property OrganizationRole $role
+ * @property Carbon|null $last_accessed_at
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  *
@@ -33,6 +34,7 @@ class OrganizationUserPivot extends Pivot
     protected $casts = [
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
+        'last_accessed_at' => 'datetime',
         'role' => OrganizationRole::class,
     ];
 }

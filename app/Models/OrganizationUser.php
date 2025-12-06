@@ -16,6 +16,7 @@ use Illuminate\Support\Carbon;
  * @property string $organization_uuid
  * @property string $user_uuid
  * @property OrganizationRole $role
+ * @property Carbon|null $last_accessed_at
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property-read Organization $organization
@@ -45,6 +46,7 @@ class OrganizationUser extends Model
 
     protected $casts = [
         'role' => OrganizationRole::class,
+        'last_accessed_at' => 'datetime',
     ];
 
     /**

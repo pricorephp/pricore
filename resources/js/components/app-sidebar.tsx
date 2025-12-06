@@ -32,7 +32,6 @@ export function AppSidebar() {
             return auth.organizations.find((org) => org.slug === slug) || null;
         }
 
-        // No organization selected (e.g., on dashboard)
         return null;
     }, [url, auth.organizations]);
 
@@ -69,7 +68,6 @@ export function AppSidebar() {
             <SidebarHeader className="items-center border-b border-sidebar-border pb-3">
                 <Link
                     href={dashboard()}
-                    prefetch
                     className="flex items-center justify-center"
                 >
                     <AppLogoIcon className="size-7 fill-current text-white dark:text-black" />

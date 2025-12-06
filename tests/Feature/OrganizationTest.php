@@ -65,7 +65,7 @@ it('requires authentication to view organization pages', function () {
 });
 
 it('shares organizations in inertia props', function () {
-    $response = $this->actingAs($this->user)->get('/dashboard');
+    $response = $this->actingAs($this->user)->get("/organizations/{$this->organization->slug}");
 
     $response->assertSuccessful();
     $response->assertInertia(fn ($page) => $page

@@ -40,7 +40,6 @@ export function NavMain({ items = [] }: { items?: NavItem[] }) {
                     <Link
                         key={item.title}
                         href={item.href}
-                        prefetch
                         className={cn(
                             'flex flex-col items-center gap-1 rounded-md px-2 py-2.5 text-center transition-colors',
                             'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',

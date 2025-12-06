@@ -106,8 +106,15 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         return $this->belongsToMany(Organization::class, 'organization_users', 'user_uuid', 'organization_uuid', 'uuid', 'uuid')
             ->using(OrganizationUserPivot::class)
-            ->withPivot('role', 'uuid')
+            ->withPivot('role', 'uuid', 'last_accessed_at')
             ->withTimestamps();
+    }
+
+    public function lastAccessedOrganization(): ?Organization
+    {
+        return $this->organizations()
+            ->orderByDesc('organization_users.last_accessed_at')
+            ->first();
     }
 
     /**
