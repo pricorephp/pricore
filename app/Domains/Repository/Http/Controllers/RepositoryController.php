@@ -21,7 +21,7 @@ use Inertia\Response;
 class RepositoryController extends Controller
 {
     public function __construct(
-        protected ExtractRepositoryNameAction $extractRepositoryName
+        protected ExtractRepositoryNameAction $extractRepositoryNameAction
     ) {}
 
     public function index(Organization $organization): Response
@@ -46,7 +46,7 @@ class RepositoryController extends Controller
 
     public function store(StoreRepositoryRequest $request, Organization $organization): RedirectResponse
     {
-        $name = $request->name ?? $this->extractRepositoryName->handle(
+        $name = $request->name ?? $this->extractRepositoryNameAction->handle(
             $request->repo_identifier,
             GitProvider::from($request->provider)
         );
