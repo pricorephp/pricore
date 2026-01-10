@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   app:
     build:
@@ -10,42 +8,31 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      - ./storage:/var/www/html/storage
-      - ./database:/var/www/html/database
+      - ./storage:/app/storage
+      - ./database:/app/database
     environment:
       - APP_ENV=${APP_ENV:-production}
       - APP_DEBUG=${APP_DEBUG:-false}
       - APP_KEY=${APP_KEY}
+      - APP_URL=${APP_URL:-http://localhost:8000}
       - DB_CONNECTION=${DB_CONNECTION:-sqlite}
-      - DB_DATABASE=${DB_DATABASE:-/var/www/html/database/database.sqlite}
-    networks:
-      - pricore-network
-    depends_on:
-      - redis
-      - queue
-
-  queue:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: pricore-queue
-    restart: unless-stopped
-    command: php artisan queue:work --tries=3 --timeout=90
-    volumes:
-      - ./storage:/var/www/html/storage
-      - ./database:/var/www/html/database
-    environment:
-      - APP_ENV=${APP_ENV:-production}
-      - APP_DEBUG=${APP_DEBUG:-false}
-      - APP_KEY=${APP_KEY}
-      - DB_CONNECTION=${DB_CONNECTION:-sqlite}
-      - DB_DATABASE=${DB_DATABASE:-/var/www/html/database/database.sqlite}
+      - DB_DATABASE=${DB_DATABASE:-/app/database/database.sqlite}
       - REDIS_HOST=redis
       - REDIS_PORT=6379
+      - CACHE_STORE=redis
+      - SESSION_DRIVER=redis
+      - QUEUE_CONNECTION=redis
     networks:
       - pricore-network
     depends_on:
-      - redis
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
 
   horizon:
     build:
@@ -54,32 +41,76 @@ services:
     container_name: pricore-horizon
     restart: unless-stopped
     command: php artisan horizon
+    stop_signal: SIGTERM
+    stop_grace_period: 30s
     volumes:
-      - ./storage:/var/www/html/storage
-      - ./database:/var/www/html/database
+      - ./storage:/app/storage
+      - ./database:/app/database
     environment:
       - APP_ENV=${APP_ENV:-production}
       - APP_DEBUG=${APP_DEBUG:-false}
       - APP_KEY=${APP_KEY}
       - DB_CONNECTION=${DB_CONNECTION:-sqlite}
-      - DB_DATABASE=${DB_DATABASE:-/var/www/html/database/database.sqlite}
+      - DB_DATABASE=${DB_DATABASE:-/app/database/database.sqlite}
       - REDIS_HOST=redis
       - REDIS_PORT=6379
+      - CACHE_STORE=redis
+      - QUEUE_CONNECTION=redis
     networks:
       - pricore-network
     depends_on:
-      - redis
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "php", "artisan", "horizon:status"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+  scheduler:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: pricore-scheduler
+    restart: unless-stopped
+    command: sh -c "while true; do php artisan schedule:run --verbose --no-interaction; sleep 60; done"
+    volumes:
+      - ./storage:/app/storage
+      - ./database:/app/database
+    environment:
+      - APP_ENV=${APP_ENV:-production}
+      - APP_DEBUG=${APP_DEBUG:-false}
+      - APP_KEY=${APP_KEY}
+      - DB_CONNECTION=${DB_CONNECTION:-sqlite}
+      - DB_DATABASE=${DB_DATABASE:-/app/database/database.sqlite}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - CACHE_STORE=redis
+      - QUEUE_CONNECTION=redis
+    networks:
+      - pricore-network
+    depends_on:
+      redis:
+        condition: service_healthy
 
   redis:
     image: redis:7-alpine
     container_name: pricore-redis
     restart: unless-stopped
+    command: redis-server --appendonly yes --maxmemory 128mb --maxmemory-policy allkeys-lru
     ports:
       - "6379:6379"
     volumes:
       - redis-data:/data
     networks:
       - pricore-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
 
 networks:
   pricore-network:
@@ -87,4 +118,3 @@ networks:
 
 volumes:
   redis-data:
-
