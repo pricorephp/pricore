@@ -1,9 +1,19 @@
 declare namespace App.Domains.Organization.Contracts.Data {
+export type ActivityFeedData = {
+recentReleases: Array<any>;
+recentSyncs: Array<any>;
+};
 export type GitCredentialData = {
 uuid: string;
 provider: string;
 providerLabel: string;
 isConfigured: boolean;
+};
+export type MemberMetricsData = {
+totalMembers: number;
+ownerCount: number;
+adminCount: number;
+memberCount: number;
 };
 export type OrganizationData = {
 uuid: string;
@@ -15,19 +25,59 @@ export type OrganizationMemberData = {
 uuid: string;
 name: string;
 email: string;
-role: string;
+role: App.Domains.Organization.Contracts.Enums.OrganizationRole;
 joinedAt: string | null;
 };
 export type OrganizationStatsData = {
 packagesCount: number;
 repositoriesCount: number;
 tokensCount: number;
+repositoryHealth: App.Domains.Organization.Contracts.Data.RepositoryHealthData;
+packageMetrics: App.Domains.Organization.Contracts.Data.PackageMetricsData;
+tokenMetrics: App.Domains.Organization.Contracts.Data.TokenMetricsData;
+memberMetrics: App.Domains.Organization.Contracts.Data.MemberMetricsData;
+activityFeed: App.Domains.Organization.Contracts.Data.ActivityFeedData;
 };
 export type OrganizationWithRoleData = {
 organization: App.Domains.Organization.Contracts.Data.OrganizationData;
-role: string;
+role: App.Domains.Organization.Contracts.Enums.OrganizationRole;
 isOwner: boolean;
 pivotUuid: string;
+};
+export type PackageMetricsData = {
+totalVersions: number;
+stableVersions: number;
+devVersions: number;
+privatePackages: number;
+publicPackages: number;
+};
+export type RecentReleaseData = {
+packageName: string;
+packageUuid: string;
+version: string;
+isStable: boolean;
+releasedAt: string | null;
+};
+export type RecentSyncData = {
+repositoryName: string;
+repositoryUuid: string;
+status: string;
+statusLabel: string;
+startedAt: string;
+versionsAdded: number;
+versionsUpdated: number;
+};
+export type RepositoryHealthData = {
+okCount: number;
+failedCount: number;
+pendingCount: number;
+successRate: number;
+};
+export type TokenMetricsData = {
+totalTokens: number;
+activeTokens: number;
+unusedTokens: number;
+expiredTokens: number;
 };
 }
 declare namespace App.Domains.Organization.Contracts.Enums {

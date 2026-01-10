@@ -118,7 +118,7 @@ function Sidebar({
         <div
             data-slot="sidebar"
             className={cn(
-                'bg-sidebar text-sidebar-foreground hidden h-svh w-(--sidebar-width) flex-col border-r md:flex',
+                'bg-sidebar text-sidebar-foreground sticky top-0 hidden h-svh w-(--sidebar-width) flex-col border-r md:flex',
                 className
             )}
             {...props}
