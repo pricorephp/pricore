@@ -7,7 +7,7 @@
         "laravel",
         "framework"
     ],
-    "license": "MIT",
+    "license": "Apache-2.0",
     "require": {
         "php": "^8.4",
         "composer/semver": "^3.4",
