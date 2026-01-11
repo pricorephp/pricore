@@ -14,7 +14,7 @@ export default function InfoBox({
     return (
         <div className="rounded-xl border bg-muted/30 p-5 dark:bg-muted/10">
             <div className="flex gap-3">
-                <div className="shrink-0 rounded-lg bg-muted/50 p-2 dark:bg-muted/30">
+                <div className="shrink-0 rounded-lg p-2">
                     <Info className="h-4 w-4 text-muted-foreground" />
                 </div>
                 <div className="flex-1">
