@@ -9,12 +9,6 @@ provider: string;
 providerLabel: string;
 isConfigured: boolean;
 };
-export type MemberMetricsData = {
-totalMembers: number;
-ownerCount: number;
-adminCount: number;
-memberCount: number;
-};
 export type OrganizationData = {
 uuid: string;
 name: string;
@@ -32,10 +26,7 @@ export type OrganizationStatsData = {
 packagesCount: number;
 repositoriesCount: number;
 tokensCount: number;
-repositoryHealth: App.Domains.Organization.Contracts.Data.RepositoryHealthData;
-packageMetrics: App.Domains.Organization.Contracts.Data.PackageMetricsData;
-tokenMetrics: App.Domains.Organization.Contracts.Data.TokenMetricsData;
-memberMetrics: App.Domains.Organization.Contracts.Data.MemberMetricsData;
+membersCount: number;
 activityFeed: App.Domains.Organization.Contracts.Data.ActivityFeedData;
 };
 export type OrganizationWithRoleData = {
@@ -43,13 +34,6 @@ organization: App.Domains.Organization.Contracts.Data.OrganizationData;
 role: App.Domains.Organization.Contracts.Enums.OrganizationRole;
 isOwner: boolean;
 pivotUuid: string;
-};
-export type PackageMetricsData = {
-totalVersions: number;
-stableVersions: number;
-devVersions: number;
-privatePackages: number;
-publicPackages: number;
 };
 export type RecentReleaseData = {
 packageName: string;
@@ -66,18 +50,6 @@ statusLabel: string;
 startedAt: string;
 versionsAdded: number;
 versionsUpdated: number;
-};
-export type RepositoryHealthData = {
-okCount: number;
-failedCount: number;
-pendingCount: number;
-successRate: number;
-};
-export type TokenMetricsData = {
-totalTokens: number;
-activeTokens: number;
-unusedTokens: number;
-expiredTokens: number;
 };
 }
 declare namespace App.Domains.Organization.Contracts.Enums {

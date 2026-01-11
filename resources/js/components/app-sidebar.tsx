@@ -13,15 +13,23 @@ import { Box, GitBranch, LayoutDashboard, Settings } from 'lucide-react';
 import { useMemo } from 'react';
 import AppLogoIcon from './app-logo-icon';
 
-export function AppSidebar() {
-    const page = usePage();
-    const url = page.url;
+type OrganizationData =
+    App.Domains.Organization.Contracts.Data.OrganizationData;
 
-    // Extract organization slug from URL for navigation
+export function AppSidebar() {
+    const page = usePage<{
+        auth: { organizations: OrganizationData[] };
+    }>();
+    const url = page.url;
+    const organizations = page.props.auth.organizations;
+
+    // Extract organization slug from URL, or fall back to first organization
     const currentOrgSlug = useMemo(() => {
         const match = url.match(/^\/organizations\/([^/]+)/);
-        return match ? match[1] : null;
-    }, [url]);
+        if (match) return match[1];
+        // Fall back to first organization if available
+        return organizations.length > 0 ? organizations[0].slug : null;
+    }, [url, organizations]);
 
     // Build organization-specific navigation
     const orgNavItems: NavItem[] = useMemo(() => {

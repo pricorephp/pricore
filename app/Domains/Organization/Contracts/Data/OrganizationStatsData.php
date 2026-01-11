@@ -12,10 +12,7 @@ class OrganizationStatsData extends Data
         public int $packagesCount,
         public int $repositoriesCount,
         public int $tokensCount,
-        public RepositoryHealthData $repositoryHealth,
-        public PackageMetricsData $packageMetrics,
-        public TokenMetricsData $tokenMetrics,
-        public MemberMetricsData $memberMetrics,
+        public int $membersCount,
         public ActivityFeedData $activityFeed,
     ) {}
 }
