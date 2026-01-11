@@ -1,0 +1,6 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "pricore-docs",
+  "compatibility_date": "2026-01-11",
+  "pages_build_output_dir": "docs/.vitepress/dist"
+}
