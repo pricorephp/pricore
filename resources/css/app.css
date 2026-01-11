@@ -60,6 +60,17 @@
     --color-sidebar-border: var(--sidebar-border);
     --color-sidebar-ring: var(--sidebar-ring);
 
+    /* Button gradient colors */
+    --color-button-primary-from: var(--button-primary-from);
+    --color-button-primary-to: var(--button-primary-to);
+    --color-button-primary-border: var(--button-primary-border);
+    --color-button-secondary-from: var(--button-secondary-from);
+    --color-button-secondary-to: var(--button-secondary-to);
+    --color-button-secondary-border: var(--button-secondary-border);
+    --color-button-destructive-from: var(--button-destructive-from);
+    --color-button-destructive-to: var(--button-destructive-to);
+    --color-button-destructive-border: var(--button-destructive-border);
+
     /* Elegant shadow system */
     --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.03);
     --shadow-sm:
@@ -87,6 +98,17 @@
     --accent-foreground: oklch(0.25 0.01 260);
     --destructive: oklch(0.55 0.22 25);
     --destructive-foreground: oklch(0.55 0.22 25);
+
+    /* Button depth styling */
+    --button-primary-from: oklch(0.68 0.20 35);
+    --button-primary-to: oklch(0.58 0.22 35);
+    --button-primary-border: oklch(0.52 0.20 35);
+    --button-secondary-from: oklch(0.99 0.002 90);
+    --button-secondary-to: oklch(0.91 0.004 90);
+    --button-secondary-border: oklch(0.82 0.005 90);
+    --button-destructive-from: oklch(0.60 0.20 25);
+    --button-destructive-to: oklch(0.50 0.22 25);
+    --button-destructive-border: oklch(0.45 0.20 25);
     --border: oklch(0.93 0.003 90);
     --input: oklch(0.93 0.003 90);
     --ring: oklch(0.88 0.005 90);
@@ -123,6 +145,17 @@
     --accent-foreground: oklch(0.95 0 0);
     --destructive: oklch(0.45 0.18 25);
     --destructive-foreground: oklch(0.68 0.2 25);
+
+    /* Button depth styling - dark mode */
+    --button-primary-from: oklch(0.98 0 0);
+    --button-primary-to: oklch(0.88 0 0);
+    --button-primary-border: oklch(0.75 0 0);
+    --button-secondary-from: oklch(0.32 0.01 260);
+    --button-secondary-to: oklch(0.22 0.01 260);
+    --button-secondary-border: oklch(0.38 0.01 260);
+    --button-destructive-from: oklch(0.52 0.18 25);
+    --button-destructive-to: oklch(0.42 0.18 25);
+    --button-destructive-border: oklch(0.55 0.16 25);
     --border: oklch(0.26 0.01 260);
     --input: oklch(0.26 0.01 260);
     --ring: oklch(0.42 0.01 260);

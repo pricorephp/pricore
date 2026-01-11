@@ -39,7 +39,7 @@ export default function Dashboard() {
                         description="Select an organization to manage packages and repositories"
                     />
                     <Button onClick={() => setCreateDialogOpen(true)}>
-                        <Plus className="mr-2 h-4 w-4" />
+                        <Plus className="size-4" />
                         Create Organization
                     </Button>
                 </div>

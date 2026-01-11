@@ -47,7 +47,7 @@ export default function Packages({
                         <Link
                             href={`/organizations/${organization.slug}/repositories`}
                         >
-                            <GitBranch className="mr-2 h-4 w-4" />
+                            <GitBranch className="h-4 w-4" />
                             Manage Repositories
                         </Link>
                     </Button>

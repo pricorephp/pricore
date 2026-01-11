@@ -183,7 +183,7 @@ export default function Organizations() {
                                                                         organization.slug
                                                                     }
                                                                 >
-                                                                    <LogOut className="mr-2 h-4 w-4" />
+                                                                    <LogOut className="size-4" />
                                                                     Leave
                                                                 </Button>
                                                             </DialogTrigger>

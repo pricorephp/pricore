@@ -168,7 +168,7 @@ export default function RepositoryShow({
                                     variant="outline"
                                 >
                                     <RefreshCw
-                                        className={`mr-2 h-4 w-4 ${
+                                        className={`h-4 w-4 ${
                                             processing ? 'animate-spin' : ''
                                         }`}
                                     />

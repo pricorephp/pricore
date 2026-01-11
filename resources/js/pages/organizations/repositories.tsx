@@ -73,7 +73,7 @@ export default function Repositories({
                         description="Connected Git repositories for automatic package syncing"
                     />
                     <Button onClick={() => setIsDialogOpen(true)}>
-                        <Plus className="mr-2 h-4 w-4" />
+                        <Plus className="size-4" />
                         Add Repository
                     </Button>
                 </div>
