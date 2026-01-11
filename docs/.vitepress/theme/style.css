@@ -1,6 +1,9 @@
 /* Custom theme overrides */
 
 :root {
+  --vp-font-family-base: 'Hanken Grotesk', sans-serif;
+  --vp-font-family-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Monaco,
+    Consolas, 'Liberation Mono', 'Courier New', monospace;
   --vp-c-brand-1: #f03f03;
   --vp-c-brand-2: #e52916;
   --vp-c-brand-3: #cc240f;
