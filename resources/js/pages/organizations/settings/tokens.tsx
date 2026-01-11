@@ -78,7 +78,7 @@ export default function Tokens({
                 </Button>
             </div>
 
-            <div className="rounded-lg border bg-card p-4">
+            <div className="rounded-lg border bg-card p-4 shadow-sm">
                 <TokenList tokens={tokens} onRevoke={handleRevoke} />
             </div>
 

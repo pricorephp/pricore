@@ -129,5 +129,9 @@ export default function OrganizationSettingsLayout({
 }
 
 export function withOrganizationSettingsLayout(page: React.ReactNode) {
-    return <OrganizationSettingsLayoutWrapper>{page}</OrganizationSettingsLayoutWrapper>;
+    return (
+        <OrganizationSettingsLayoutWrapper>
+            {page}
+        </OrganizationSettingsLayoutWrapper>
+    );
 }

@@ -23,7 +23,7 @@ export default function General({ organization, isOwner = false }: Props) {
                 </p>
             </div>
 
-            <div className="rounded-lg border bg-card p-6">
+            <div className="rounded-lg border bg-card p-6 shadow-sm">
                 <Form
                     action={update.url([organization.slug])}
                     method="patch"

@@ -57,7 +57,7 @@ export function StatCard({
             className={cn(
                 'group cursor-pointer hover:shadow-md',
                 styles.bg,
-                className
+                className,
             )}
         >
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
