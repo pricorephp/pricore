@@ -6,8 +6,8 @@ import { StatCard } from '@/components/stats/stat-card';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import AppLayout from '@/layouts/app-layout';
-import { type BreadcrumbItem } from '@/types';
-import { Head, Link } from '@inertiajs/react';
+import { createOrganizationBreadcrumb } from '@/lib/breadcrumbs';
+import { Head, Link, usePage } from '@inertiajs/react';
 import {
     Box,
     CheckCircle,
@@ -32,11 +32,12 @@ export default function OrganizationShow({
     organization,
     stats,
 }: OrganizationShowProps) {
-    const breadcrumbs: BreadcrumbItem[] = [
-        {
-            title: organization.name,
-            href: `/organizations/${organization.slug}`,
-        },
+    const { auth } = usePage<{
+        auth: { organizations: OrganizationData[] };
+    }>().props;
+
+    const breadcrumbs = [
+        createOrganizationBreadcrumb(organization, auth.organizations),
     ];
 
     const repoHealthVariant =

@@ -1,5 +1,6 @@
 import { show } from '@/actions/App/Domains/Repository/Http/Controllers/RepositoryController';
 import AddRepositoryDialog from '@/components/add-repository-dialog';
+import { EmptyState } from '@/components/empty-state';
 import GitProviderIcon from '@/components/git-provider-icon';
 import HeadingSmall from '@/components/heading-small';
 import InfoBox from '@/components/info-box';
@@ -7,9 +8,9 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import AppLayout from '@/layouts/app-layout';
-import { type BreadcrumbItem } from '@/types';
-import { Head, Link } from '@inertiajs/react';
-import { Plus } from 'lucide-react';
+import { createOrganizationBreadcrumb } from '@/lib/breadcrumbs';
+import { Head, Link, usePage } from '@inertiajs/react';
+import { ArrowUpRight, GitBranch, Plus } from 'lucide-react';
 import { DateTime } from 'luxon';
 import { useState } from 'react';
 
@@ -48,13 +49,13 @@ export default function Repositories({
     repositories,
     configuredProviders = [],
 }: RepositoriesPageProps) {
+    const { auth } = usePage<{
+        auth: { organizations: OrganizationData[] };
+    }>().props;
     const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-    const breadcrumbs: BreadcrumbItem[] = [
-        {
-            title: organization.name,
-            href: `/organizations/${organization.slug}`,
-        },
+    const breadcrumbs = [
+        createOrganizationBreadcrumb(organization, auth.organizations),
         {
             title: 'Repositories',
             href: `/organizations/${organization.slug}/repositories`,
@@ -78,20 +79,15 @@ export default function Repositories({
                 </div>
 
                 {repositories.length === 0 ? (
-                    <div className="rounded-lg border border-dashed p-12 text-center">
-                        <p className="text-sm text-muted-foreground">
-                            No repositories yet. Connect a Git repository to
-                            automatically sync packages.
-                        </p>
-                        <Button
-                            className="mt-4"
-                            variant="outline"
-                            onClick={() => setIsDialogOpen(true)}
-                        >
-                            <Plus className="mr-2 h-4 w-4" />
-                            Connect Your First Repository
-                        </Button>
-                    </div>
+                    <EmptyState
+                        icon={GitBranch}
+                        title="No repositories yet"
+                        description="Connect a Git repository to automatically sync and discover Composer packages."
+                        action={{
+                            label: 'Connect Your First Repository',
+                            onClick: () => setIsDialogOpen(true),
+                        }}
+                    />
                 ) : (
                     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                         {repositories.map((repo) => (
@@ -99,26 +95,42 @@ export default function Repositories({
                                 key={repo.uuid}
                                 href={show.url([organization.slug, repo.uuid])}
                             >
-                                <Card className="transition-colors hover:bg-accent/50">
+                                <Card className="group hover:shadow-md">
                                     <CardHeader>
                                         <CardTitle className="flex items-start justify-between gap-2">
-                                            <span className="text-base">
+                                            <span className="text-base transition-colors group-hover:text-primary">
                                                 {repo.name}
                                             </span>
-                                            {repo.url ? (
-                                                <button
-                                                    type="button"
-                                                    className="inline-block"
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        e.preventDefault();
-                                                        window.open(
-                                                            repo.url!,
-                                                            '_blank',
-                                                            'noopener,noreferrer',
-                                                        );
-                                                    }}
-                                                >
+                                            <div className="flex items-center gap-2">
+                                                {repo.url ? (
+                                                    <button
+                                                        type="button"
+                                                        className="inline-block"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            e.preventDefault();
+                                                            window.open(
+                                                                repo.url!,
+                                                                '_blank',
+                                                                'noopener,noreferrer',
+                                                            );
+                                                        }}
+                                                    >
+                                                        <Badge
+                                                            className={getProviderBadgeColor(
+                                                                repo.provider,
+                                                            )}
+                                                        >
+                                                            <GitProviderIcon
+                                                                provider={
+                                                                    repo.provider
+                                                                }
+                                                                className="mr-0.5 size-3"
+                                                            />
+                                                            {repo.providerLabel}
+                                                        </Badge>
+                                                    </button>
+                                                ) : (
                                                     <Badge
                                                         className={getProviderBadgeColor(
                                                             repo.provider,
@@ -132,26 +144,15 @@ export default function Repositories({
                                                         />
                                                         {repo.providerLabel}
                                                     </Badge>
-                                                </button>
-                                            ) : (
-                                                <Badge
-                                                    className={getProviderBadgeColor(
-                                                        repo.provider,
-                                                    )}
-                                                >
-                                                    <GitProviderIcon
-                                                        provider={repo.provider}
-                                                        className="mr-0.5 size-3"
-                                                    />
-                                                    {repo.providerLabel}
-                                                </Badge>
-                                            )}
+                                                )}
+                                                <ArrowUpRight className="h-4 w-4 text-muted-foreground/50 transition-all group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-muted-foreground" />
+                                            </div>
                                         </CardTitle>
                                     </CardHeader>
                                     <CardContent className="space-y-3">
                                         <div className="flex items-center justify-between text-xs">
                                             <span className="text-muted-foreground">
-                                                Sync Status:
+                                                Sync Status
                                             </span>
                                             <Badge
                                                 variant={getSyncStatusVariant(
@@ -163,13 +164,13 @@ export default function Repositories({
                                             </Badge>
                                         </div>
 
-                                        <div className="text-xs text-muted-foreground">
+                                        <div className="border-t pt-3 text-xs text-muted-foreground">
                                             Last synced:{' '}
                                             {repo.lastSyncedAt
                                                 ? DateTime.fromISO(
                                                       repo.lastSyncedAt,
                                                   ).toRelative()
-                                                : '—'}
+                                                : 'Never'}
                                         </div>
                                     </CardContent>
                                 </Card>

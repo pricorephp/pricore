@@ -2,8 +2,7 @@ import { update } from '@/actions/App/Domains/Organization/Http/Controllers/Sett
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import AppLayout from '@/layouts/app-layout';
-import OrganizationSettingsLayout from '@/layouts/organization-settings-layout';
+import { withOrganizationSettingsLayout } from '@/layouts/organization-settings-layout';
 import { Form } from '@inertiajs/react';
 
 type OrganizationData =
@@ -102,8 +101,4 @@ export default function General({ organization, isOwner = false }: Props) {
     );
 }
 
-General.layout = (page: React.ReactNode) => (
-    <AppLayout>
-        <OrganizationSettingsLayout>{page}</OrganizationSettingsLayout>
-    </AppLayout>
-);
+General.layout = withOrganizationSettingsLayout;

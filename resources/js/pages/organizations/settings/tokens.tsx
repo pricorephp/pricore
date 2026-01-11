@@ -4,8 +4,7 @@ import RevokeTokenDialog from '@/components/revoke-token-dialog';
 import TokenCreatedDialog from '@/components/token-created-dialog';
 import TokenList from '@/components/token-list';
 import { Button } from '@/components/ui/button';
-import AppLayout from '@/layouts/app-layout';
-import OrganizationSettingsLayout from '@/layouts/organization-settings-layout';
+import { withOrganizationSettingsLayout } from '@/layouts/organization-settings-layout';
 import { Plus } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
@@ -122,8 +121,4 @@ export default function Tokens({
     );
 }
 
-Tokens.layout = (page: React.ReactNode) => (
-    <AppLayout>
-        <OrganizationSettingsLayout>{page}</OrganizationSettingsLayout>
-    </AppLayout>
-);
+Tokens.layout = withOrganizationSettingsLayout;

@@ -12,8 +12,8 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import AppLayout from '@/layouts/app-layout';
-import { type BreadcrumbItem } from '@/types';
-import { Head, Link } from '@inertiajs/react';
+import { createOrganizationBreadcrumb } from '@/lib/breadcrumbs';
+import { Head, Link, usePage } from '@inertiajs/react';
 import { Check, Copy, GitBranch, Globe, Lock } from 'lucide-react';
 import { DateTime } from 'luxon';
 import { useState } from 'react';
@@ -118,11 +118,12 @@ export default function PackageShow({
     versions,
     composerRepositoryUrl,
 }: PackageShowProps) {
-    const breadcrumbs: BreadcrumbItem[] = [
-        {
-            title: organization.name,
-            href: `/organizations/${organization.slug}`,
-        },
+    const { auth } = usePage<{
+        auth: { organizations: OrganizationData[] };
+    }>().props;
+
+    const breadcrumbs = [
+        createOrganizationBreadcrumb(organization, auth.organizations),
         {
             title: 'Packages',
             href: `/organizations/${organization.slug}/packages`,

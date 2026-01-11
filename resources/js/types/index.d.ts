@@ -5,9 +5,19 @@ export interface Auth {
     user: User;
 }
 
+export interface BreadcrumbDropdownItem {
+    id: string;
+    title: string;
+    href: string;
+    active?: boolean;
+}
+
 export interface BreadcrumbItem {
     title: string;
     href: string;
+    dropdown?: {
+        items: BreadcrumbDropdownItem[];
+    };
 }
 
 export interface NavGroup {

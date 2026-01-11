@@ -1,12 +1,14 @@
 import CreateOrganizationDialog from '@/components/create-organization-dialog';
+import { EmptyState } from '@/components/empty-state';
 import HeadingSmall from '@/components/heading-small';
+import InfoBox from '@/components/info-box';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import AppLayout from '@/layouts/app-layout';
 import { dashboard } from '@/routes';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link, usePage } from '@inertiajs/react';
-import { ArrowRight, Building2, Plus } from 'lucide-react';
+import { ArrowUpRight, Building2, Plus } from 'lucide-react';
 import { useState } from 'react';
 
 type OrganizationData =
@@ -43,21 +45,15 @@ export default function Dashboard() {
                 </div>
 
                 {auth.organizations.length === 0 ? (
-                    <div className="rounded-lg border border-dashed p-12 text-center">
-                        <Building2 className="mx-auto h-12 w-12 text-muted-foreground" />
-                        <p className="mt-4 text-sm text-muted-foreground">
-                            No organizations yet. Create your first organization
-                            to start managing private Composer packages.
-                        </p>
-                        <Button
-                            className="mt-4"
-                            variant="outline"
-                            onClick={() => setCreateDialogOpen(true)}
-                        >
-                            <Plus className="mr-2 h-4 w-4" />
-                            Create Your First Organization
-                        </Button>
-                    </div>
+                    <EmptyState
+                        icon={Building2}
+                        title="No organizations yet"
+                        description="Create your first organization to start managing private Composer packages."
+                        action={{
+                            label: 'Create Your First Organization',
+                            onClick: () => setCreateDialogOpen(true),
+                        }}
+                    />
                 ) : (
                     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                         {auth.organizations.map((org) => (
@@ -65,14 +61,18 @@ export default function Dashboard() {
                                 key={org.uuid}
                                 href={`/organizations/${org.slug}`}
                             >
-                                <Card className="transition-colors hover:bg-accent/50">
+                                <Card className="group hover:shadow-md">
                                     <CardHeader>
                                         <CardTitle className="flex items-start justify-between gap-2">
-                                            <div className="flex items-center gap-2">
-                                                <Building2 className="h-5 w-5 text-muted-foreground" />
-                                                <span>{org.name}</span>
+                                            <div className="flex items-center gap-2.5">
+                                                <div className="rounded-lg bg-muted/50 p-2 transition-colors group-hover:bg-muted">
+                                                    <Building2 className="h-4 w-4 text-muted-foreground" />
+                                                </div>
+                                                <span className="transition-colors group-hover:text-primary">
+                                                    {org.name}
+                                                </span>
                                             </div>
-                                            <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                                            <ArrowUpRight className="h-4 w-4 text-muted-foreground/50 transition-all group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-muted-foreground" />
                                         </CardTitle>
                                     </CardHeader>
                                     <CardContent>
@@ -86,17 +86,10 @@ export default function Dashboard() {
                     </div>
                 )}
 
-                <div className="rounded-md border border-b-2 border-neutral-200 bg-neutral-50 p-4 dark:border-neutral-800 dark:bg-neutral-950">
-                    <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
-                        What are Organizations?
-                    </p>
-                    <p className="mt-1 text-sm text-neutral-700 dark:text-neutral-300">
-                        Organizations are workspaces for managing your private
-                        Composer packages. Each organization has its own
-                        packages, repositories, and API tokens. You can create
-                        multiple organizations for different projects or teams.
-                    </p>
-                </div>
+                <InfoBox
+                    title="What are Organizations?"
+                    description="Organizations are workspaces for managing your private Composer packages. Each organization has its own packages, repositories, and API tokens. You can create multiple organizations for different projects or teams."
+                />
             </div>
 
             <CreateOrganizationDialog

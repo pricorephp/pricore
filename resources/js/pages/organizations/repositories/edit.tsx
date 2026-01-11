@@ -17,8 +17,8 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import AppLayout from '@/layouts/app-layout';
-import { type BreadcrumbItem } from '@/types';
-import { Head, router } from '@inertiajs/react';
+import { createOrganizationBreadcrumb } from '@/lib/breadcrumbs';
+import { Head, router, usePage } from '@inertiajs/react';
 import { Trash2 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -35,6 +35,9 @@ export default function RepositoryEdit({
     organization,
     repository,
 }: RepositoryEditProps) {
+    const { auth } = usePage<{
+        auth: { organizations: OrganizationData[] };
+    }>().props;
     const [isDeleteOpen, setIsDeleteOpen] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
 
@@ -54,11 +57,8 @@ export default function RepositoryEdit({
         );
     };
 
-    const breadcrumbs: BreadcrumbItem[] = [
-        {
-            title: organization.name,
-            href: `/organizations/${organization.slug}`,
-        },
+    const breadcrumbs = [
+        createOrganizationBreadcrumb(organization, auth.organizations),
         {
             title: 'Repositories',
             href: `/organizations/${organization.slug}/repositories`,

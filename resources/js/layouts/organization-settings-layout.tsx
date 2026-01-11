@@ -1,5 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
+import AppLayout from '@/layouts/app-layout';
+import { createOrganizationBreadcrumb } from '@/lib/breadcrumbs';
 import { cn } from '@/lib/utils';
 import { Link, usePage } from '@inertiajs/react';
 import { GitBranch, Key, Settings, Users } from 'lucide-react';
@@ -14,9 +16,7 @@ interface SidebarNavItem {
     icon: React.ComponentType<{ className?: string }>;
 }
 
-export default function OrganizationSettingsLayout({
-    children,
-}: PropsWithChildren) {
+function SettingsContent({ children }: PropsWithChildren) {
     const page = usePage<{ organization: OrganizationData }>();
     const { organization } = page.props;
     const currentUrl = page.url;
@@ -94,4 +94,40 @@ export default function OrganizationSettingsLayout({
             </div>
         </div>
     );
+}
+
+function OrganizationSettingsLayoutWrapper({ children }: PropsWithChildren) {
+    const page = usePage<{
+        organization: OrganizationData;
+        auth: { organizations: OrganizationData[] };
+    }>();
+    const { organization, auth } = page.props;
+
+    const breadcrumbs = useMemo(() => {
+        if (!organization) return [];
+
+        return [
+            createOrganizationBreadcrumb(organization, auth.organizations),
+            {
+                title: 'Settings',
+                href: `/organizations/${organization.slug}/settings/general`,
+            },
+        ];
+    }, [organization, auth.organizations]);
+
+    return (
+        <AppLayout breadcrumbs={breadcrumbs}>
+            <SettingsContent>{children}</SettingsContent>
+        </AppLayout>
+    );
+}
+
+export default function OrganizationSettingsLayout({
+    children,
+}: PropsWithChildren) {
+    return <SettingsContent>{children}</SettingsContent>;
+}
+
+export function withOrganizationSettingsLayout(page: React.ReactNode) {
+    return <OrganizationSettingsLayoutWrapper>{page}</OrganizationSettingsLayoutWrapper>;
 }

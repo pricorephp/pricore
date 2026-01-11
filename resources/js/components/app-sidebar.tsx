@@ -1,6 +1,5 @@
 import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
-import OrganizationSwitcher from '@/components/organization-switcher';
 import {
     Sidebar,
     SidebarContent,
@@ -14,71 +13,53 @@ import { Box, GitBranch, LayoutDashboard, Settings } from 'lucide-react';
 import { useMemo } from 'react';
 import AppLogoIcon from './app-logo-icon';
 
-type OrganizationData =
-    App.Domains.Organization.Contracts.Data.OrganizationData;
-
 export function AppSidebar() {
-    const page = usePage<{
-        auth: { organizations: OrganizationData[] };
-    }>();
-    const { auth } = page.props;
+    const page = usePage();
     const url = page.url;
 
-    // Detect if we're viewing an organization
-    const currentOrganization = useMemo(() => {
+    // Extract organization slug from URL for navigation
+    const currentOrgSlug = useMemo(() => {
         const match = url.match(/^\/organizations\/([^/]+)/);
-        if (match) {
-            const slug = match[1];
-            return auth.organizations.find((org) => org.slug === slug) || null;
-        }
-
-        return null;
-    }, [url, auth.organizations]);
+        return match ? match[1] : null;
+    }, [url]);
 
     // Build organization-specific navigation
     const orgNavItems: NavItem[] = useMemo(() => {
-        if (!currentOrganization) return [];
+        if (!currentOrgSlug) return [];
 
         return [
             {
                 title: 'Overview',
-                href: `/organizations/${currentOrganization.slug}`,
+                href: `/organizations/${currentOrgSlug}`,
                 icon: LayoutDashboard,
             },
             {
                 title: 'Packages',
-                href: `/organizations/${currentOrganization.slug}/packages`,
+                href: `/organizations/${currentOrgSlug}/packages`,
                 icon: Box,
             },
             {
                 title: 'Repos',
-                href: `/organizations/${currentOrganization.slug}/repositories`,
+                href: `/organizations/${currentOrgSlug}/repositories`,
                 icon: GitBranch,
             },
             {
                 title: 'Settings',
-                href: `/organizations/${currentOrganization.slug}/settings/general`,
+                href: `/organizations/${currentOrgSlug}/settings/general`,
                 icon: Settings,
             },
         ];
-    }, [currentOrganization]);
+    }, [currentOrgSlug]);
 
     return (
         <Sidebar>
-            <SidebarHeader className="items-center border-b border-sidebar-border pb-3">
+            <SidebarHeader className="h-16 items-center justify-center border-b border-sidebar-border">
                 <Link
                     href={dashboard()}
                     className="flex items-center justify-center"
                 >
                     <AppLogoIcon className="size-7 fill-current text-white dark:text-black" />
                 </Link>
-
-                {auth.organizations.length > 0 && (
-                    <OrganizationSwitcher
-                        organizations={auth.organizations}
-                        currentOrganization={currentOrganization || undefined}
-                    />
-                )}
             </SidebarHeader>
 
             <SidebarContent className="pt-2">

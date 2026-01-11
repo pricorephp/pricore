@@ -16,8 +16,8 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import AppLayout from '@/layouts/app-layout';
-import { type BreadcrumbItem } from '@/types';
-import { Form, Head, Link } from '@inertiajs/react';
+import { createOrganizationBreadcrumb } from '@/lib/breadcrumbs';
+import { Form, Head, Link, usePage } from '@inertiajs/react';
 import { RefreshCw, Settings } from 'lucide-react';
 import { DateTime } from 'luxon';
 
@@ -74,11 +74,12 @@ export default function RepositoryShow({
     packages,
     syncLogs,
 }: RepositoryShowProps) {
-    const breadcrumbs: BreadcrumbItem[] = [
-        {
-            title: organization.name,
-            href: `/organizations/${organization.slug}`,
-        },
+    const { auth } = usePage<{
+        auth: { organizations: OrganizationData[] };
+    }>().props;
+
+    const breadcrumbs = [
+        createOrganizationBreadcrumb(organization, auth.organizations),
         {
             title: 'Repositories',
             href: `/organizations/${organization.slug}/repositories`,

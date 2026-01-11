@@ -1,3 +1,5 @@
+import { Info } from 'lucide-react';
+
 interface InfoBoxProps {
     title: string;
     description: string;
@@ -10,14 +12,21 @@ export default function InfoBox({
     children,
 }: InfoBoxProps) {
     return (
-        <div className="rounded-md border border-b-2 border-neutral-200 bg-neutral-50 p-5 dark:border-neutral-800 dark:bg-neutral-950">
-            <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
-                {title}
-            </p>
-            <p className="mt-1 text-sm text-neutral-700 dark:text-neutral-300">
-                {description}
-            </p>
-            {children && <div className="mt-3">{children}</div>}
+        <div className="rounded-xl border bg-muted/30 p-5 dark:bg-muted/10">
+            <div className="flex gap-3">
+                <div className="shrink-0 rounded-lg bg-muted/50 p-2 dark:bg-muted/30">
+                    <Info className="h-4 w-4 text-muted-foreground" />
+                </div>
+                <div className="flex-1">
+                    <p className="text-sm font-medium text-foreground">
+                        {title}
+                    </p>
+                    <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+                        {description}
+                    </p>
+                    {children && <div className="mt-4">{children}</div>}
+                </div>
+            </div>
         </div>
     );
 }

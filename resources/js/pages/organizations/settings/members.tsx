@@ -30,8 +30,7 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
-import AppLayout from '@/layouts/app-layout';
-import OrganizationSettingsLayout from '@/layouts/organization-settings-layout';
+import { withOrganizationSettingsLayout } from '@/layouts/organization-settings-layout';
 import { Form, router, usePage } from '@inertiajs/react';
 import { Trash2, UserPlus } from 'lucide-react';
 import { useState } from 'react';
@@ -279,8 +278,4 @@ export default function Members({ members, roleOptions }: Props) {
     );
 }
 
-Members.layout = (page: React.ReactNode) => (
-    <AppLayout>
-        <OrganizationSettingsLayout>{page}</OrganizationSettingsLayout>
-    </AppLayout>
-);
+Members.layout = withOrganizationSettingsLayout;

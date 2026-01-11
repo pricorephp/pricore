@@ -22,10 +22,23 @@ const variantIcons = {
     danger: XCircle,
 };
 
-const variantIconColors = {
-    success: 'text-green-600 dark:text-green-400',
-    warning: 'text-yellow-600 dark:text-yellow-400',
-    danger: 'text-red-600 dark:text-red-400',
+const variantStyles = {
+    default: {
+        icon: 'text-muted-foreground',
+        bg: '',
+    },
+    success: {
+        icon: 'text-emerald-600 dark:text-emerald-400',
+        bg: '',
+    },
+    warning: {
+        icon: 'text-amber-600 dark:text-amber-400',
+        bg: '',
+    },
+    danger: {
+        icon: 'text-red-600 dark:text-red-400',
+        bg: '',
+    },
 };
 
 export function StatCard({
@@ -37,26 +50,37 @@ export function StatCard({
     className,
 }: StatCardProps) {
     const StatusIcon = variant !== 'default' ? variantIcons[variant] : null;
-    const statusIconColor =
-        variant !== 'default' ? variantIconColors[variant] : '';
+    const styles = variantStyles[variant];
 
     return (
-        <Card className={className}>
+        <Card
+            className={cn(
+                'group cursor-pointer hover:shadow-md',
+                styles.bg,
+                className
+            )}
+        >
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">{title}</CardTitle>
-                <div className="flex items-center gap-1">
+                <CardTitle className="text-sm font-medium text-muted-foreground">
+                    {title}
+                </CardTitle>
+                <div className="flex items-center gap-1.5">
                     {StatusIcon && (
-                        <StatusIcon
-                            className={cn('h-4 w-4', statusIconColor)}
-                        />
+                        <StatusIcon className={cn('h-4 w-4', styles.icon)} />
                     )}
-                    {Icon && <Icon className="h-4 w-4 text-muted-foreground" />}
+                    {Icon && (
+                        <div className="rounded-md bg-muted/50 p-1.5 transition-colors group-hover:bg-muted">
+                            <Icon className="h-4 w-4 text-muted-foreground" />
+                        </div>
+                    )}
                 </div>
             </CardHeader>
-            <CardContent>
-                <div className="text-2xl font-bold">{value}</div>
+            <CardContent className="pt-1">
+                <div className="text-3xl font-semibold tracking-tight">
+                    {value}
+                </div>
                 {description && (
-                    <p className="mt-1 text-xs text-muted-foreground">
+                    <p className="mt-1.5 text-xs text-muted-foreground">
                         {description}
                     </p>
                 )}
