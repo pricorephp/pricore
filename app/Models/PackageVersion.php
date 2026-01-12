@@ -107,6 +107,8 @@ class PackageVersion extends Model
         $connection = $query->getConnection();
         $driver = $connection->getDriverName();
 
+        $direction = strtolower($direction) === 'asc' ? 'asc' : 'desc';
+
         if ($driver === 'sqlite') {
             // SQLite: Extract major, minor, patch from normalized_version and sort numerically
             return $query->orderByRaw(
@@ -127,10 +129,16 @@ class PackageVersion extends Model
 
         // PostgreSQL: Use SPLIT_PART
         if ($driver === 'pgsql') {
+            $isSemver = "normalized_version ~ '^[0-9]+(\\.[0-9]+){0,3}$'";
+            $part = fn (int $index): string => "CASE WHEN {$isSemver} THEN COALESCE(NULLIF(SPLIT_PART(normalized_version, '.', {$index}), ''), '0')::int ELSE NULL END";
+
             return $query->orderByRaw(
-                "CAST(SPLIT_PART(normalized_version, '.', 1) AS INTEGER) {$direction}, ".
-                "CAST(SPLIT_PART(normalized_version, '.', 2) AS INTEGER) {$direction}, ".
-                "CAST(SPLIT_PART(normalized_version, '.', 3) AS INTEGER) {$direction}"
+                "({$isSemver}) DESC, ".
+                "{$part(1)} {$direction} NULLS LAST, ".
+                "{$part(2)} {$direction} NULLS LAST, ".
+                "{$part(3)} {$direction} NULLS LAST, ".
+                "released_at {$direction} NULLS LAST, ".
+                "version {$direction}"
             );
         }
 
