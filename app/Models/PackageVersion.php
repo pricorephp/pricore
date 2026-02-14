@@ -110,24 +110,38 @@ class PackageVersion extends Model
         $direction = strtolower($direction) === 'asc' ? 'asc' : 'desc';
 
         if ($driver === 'sqlite') {
-            // SQLite: Extract major, minor, patch from normalized_version and sort numerically
+            $isSemver = "normalized_version GLOB '[0-9]*.[0-9]*'";
+
+            $substr1 = "SUBSTR(normalized_version, 1, INSTR(normalized_version || '.', '.') - 1)";
+            $substr2 = "SUBSTR(normalized_version, INSTR(normalized_version, '.') + 1, INSTR(SUBSTR(normalized_version, INSTR(normalized_version, '.') + 1) || '.', '.') - 1)";
+            $substr3 = "SUBSTR(normalized_version, INSTR(SUBSTR(normalized_version, INSTR(normalized_version, '.') + 1), '.') + INSTR(normalized_version, '.') + 1, INSTR(SUBSTR(normalized_version, INSTR(SUBSTR(normalized_version, INSTR(normalized_version, '.') + 1), '.') + INSTR(normalized_version, '.') + 1) || '.', '.') - 1)";
+
+            $part = fn (string $substr): string => "CASE WHEN {$isSemver} THEN CAST({$substr} AS INTEGER) ELSE NULL END";
+
             return $query->orderByRaw(
-                "CAST(SUBSTR(normalized_version, 1, INSTR(normalized_version || '.', '.') - 1) AS INTEGER) {$direction}, ".
-                "CAST(SUBSTR(normalized_version, INSTR(normalized_version, '.') + 1, INSTR(SUBSTR(normalized_version, INSTR(normalized_version, '.') + 1) || '.', '.') - 1) AS INTEGER) {$direction}, ".
-                "CAST(SUBSTR(normalized_version, INSTR(SUBSTR(normalized_version, INSTR(normalized_version, '.') + 1), '.') + INSTR(normalized_version, '.') + 1, INSTR(SUBSTR(normalized_version, INSTR(SUBSTR(normalized_version, INSTR(normalized_version, '.') + 1), '.') + INSTR(normalized_version, '.') + 1) || '.', '.') - 1) AS INTEGER) {$direction}"
+                "({$isSemver}) DESC, ".
+                "{$part($substr1)} {$direction}, ".
+                "{$part($substr2)} {$direction}, ".
+                "{$part($substr3)} {$direction}, ".
+                "released_at {$direction}, ".
+                "version {$direction}"
             );
         }
 
-        // MySQL/MariaDB: Use SUBSTRING_INDEX
         if (in_array($driver, ['mysql', 'mariadb'])) {
+            $isSemver = "normalized_version REGEXP '^[0-9]+(\\.[0-9]+){0,3}$'";
+            $part = fn (int $index): string => "CASE WHEN {$isSemver} THEN CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(normalized_version, '.', {$index}), '.', -1) AS UNSIGNED) ELSE NULL END";
+
             return $query->orderByRaw(
-                "CAST(SUBSTRING_INDEX(normalized_version, '.', 1) AS UNSIGNED) {$direction}, ".
-                "CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(normalized_version, '.', 2), '.', -1) AS UNSIGNED) {$direction}, ".
-                "CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(normalized_version, '.', 3), '.', -1) AS UNSIGNED) {$direction}"
+                "({$isSemver}) DESC, ".
+                "{$part(1)} {$direction}, ".
+                "{$part(2)} {$direction}, ".
+                "{$part(3)} {$direction}, ".
+                "released_at {$direction}, ".
+                "version {$direction}"
             );
         }
 
-        // PostgreSQL: Use SPLIT_PART
         if ($driver === 'pgsql') {
             $isSemver = "normalized_version ~ '^[0-9]+(\\.[0-9]+){0,3}$'";
             $part = fn (int $index): string => "CASE WHEN {$isSemver} THEN COALESCE(NULLIF(SPLIT_PART(normalized_version, '.', {$index}), ''), '0')::int ELSE NULL END";
