@@ -252,7 +252,7 @@ test('connect callback creates git credential for organization', function () {
 
     $response = $this->actingAs($user)
         ->withSession(['github_connect_organization' => $organization->slug])
-        ->get(route('auth.github.connect.callback'));
+        ->get(route('auth.github.callback'));
 
     $response->assertRedirect(route('organizations.settings.git-credentials.index', $organization));
     $response->assertSessionHas('status', 'GitHub credentials connected successfully.');
@@ -283,7 +283,7 @@ test('connect callback rejects if credentials already exist', function () {
 
     $response = $this->actingAs($user)
         ->withSession(['github_connect_organization' => $organization->slug])
-        ->get(route('auth.github.connect.callback'));
+        ->get(route('auth.github.callback'));
 
     $response->assertRedirect(route('organizations.settings.git-credentials.index', $organization));
     $response->assertSessionHas('error');
@@ -291,15 +291,14 @@ test('connect callback rejects if credentials already exist', function () {
     expect(OrganizationGitCredential::where('organization_uuid', $organization->uuid)->count())->toBe(1);
 });
 
-test('connect callback redirects to dashboard when no organization in session', function () {
+test('callback without connect session performs normal login', function () {
     $user = User::factory()->withGitHub()->create();
 
     $socialiteUser = mockSocialiteUser(['id' => $user->github_id]);
     mockSocialiteCallback($socialiteUser);
 
-    $response = $this->actingAs($user)
-        ->get(route('auth.github.connect.callback'));
+    $response = $this->get(route('auth.github.callback'));
 
     $response->assertRedirect(route('dashboard'));
-    $response->assertSessionHas('error');
+    $this->assertAuthenticatedAs($user);
 });

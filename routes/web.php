@@ -16,14 +16,14 @@ use Illuminate\Support\Facades\Route;
 
 Route::middleware('guest')->group(function () {
     Route::get('auth/github/redirect', [GitHubController::class, 'redirect'])->name('auth.github.redirect');
-    Route::get('auth/github/callback', [GitHubController::class, 'callback'])->name('auth.github.callback');
 });
+
+Route::get('auth/github/callback', [GitHubController::class, 'callback'])->name('auth.github.callback');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/', DashboardController::class)->name('dashboard');
 
     // GitHub connect (elevated scopes for git credentials)
-    Route::get('auth/github/connect/callback', [GitHubController::class, 'connectCallback'])->name('auth.github.connect.callback');
     Route::get('auth/github/connect/{organization:slug}', [GitHubController::class, 'connect'])->name('auth.github.connect');
 
     // Organizations

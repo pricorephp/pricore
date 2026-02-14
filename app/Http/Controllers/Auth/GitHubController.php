@@ -9,6 +9,7 @@ use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 use Laravel\Socialite\Facades\Socialite;
+use Laravel\Socialite\Two\GithubProvider;
 use Laravel\Socialite\Two\User as SocialiteUser;
 use Symfony\Component\HttpFoundation\RedirectResponse as SymfonyRedirectResponse;
 
@@ -16,7 +17,7 @@ class GitHubController extends Controller
 {
     public function redirect(): SymfonyRedirectResponse
     {
-        /** @var \Laravel\Socialite\Two\GithubProvider $driver */
+        /** @var GithubProvider $driver */
         $driver = Socialite::driver('github');
 
         return $driver
@@ -26,6 +27,10 @@ class GitHubController extends Controller
 
     public function callback(): RedirectResponse
     {
+        if (session()->has('github_connect_organization') && Auth::check()) {
+            return $this->connectCallback();
+        }
+
         try {
             /** @var SocialiteUser $githubUser */
             $githubUser = Socialite::driver('github')->user();
@@ -90,7 +95,7 @@ class GitHubController extends Controller
     {
         session(['github_connect_organization' => $organization->slug]);
 
-        /** @var \Laravel\Socialite\Two\GithubProvider $driver */
+        /** @var GithubProvider $driver */
         $driver = Socialite::driver('github');
 
         return $driver
