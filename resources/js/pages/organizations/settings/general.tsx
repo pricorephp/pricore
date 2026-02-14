@@ -18,7 +18,7 @@ export default function General({ organization, isOwner = false }: Props) {
         <div className="space-y-6">
             <div>
                 <h3 className="text-lg font-medium">General Settings</h3>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-muted-foreground">
                     Update your organization's basic information
                 </p>
             </div>
@@ -31,7 +31,7 @@ export default function General({ organization, isOwner = false }: Props) {
                 >
                     {({ processing, errors }) => (
                         <>
-                            <div className="space-y-2">
+                            <div className="grid space-y-2">
                                 <Label htmlFor="name">Organization Name</Label>
                                 <Input
                                     id="name"
@@ -41,13 +41,13 @@ export default function General({ organization, isOwner = false }: Props) {
                                     maxLength={255}
                                 />
                                 {errors.name && (
-                                    <p className="text-sm text-red-600 dark:text-red-400">
+                                    <p className="text-red-600 dark:text-red-400">
                                         {errors.name}
                                     </p>
                                 )}
                             </div>
 
-                            <div className="space-y-2">
+                            <div className="grid space-y-2">
                                 <Label htmlFor="slug">Organization Slug</Label>
                                 {isOwner ? (
                                     <>
@@ -60,13 +60,13 @@ export default function General({ organization, isOwner = false }: Props) {
                                             pattern="[a-z0-9]+(?:-[a-z0-9]+)*"
                                             title="Slug must contain only lowercase letters, numbers, and hyphens"
                                         />
-                                        <p className="text-sm text-muted-foreground">
+                                        <p className="text-muted-foreground">
                                             The slug is used in URLs. Only
                                             lowercase letters, numbers, and
                                             hyphens are allowed.
                                         </p>
                                         {errors.slug && (
-                                            <p className="text-sm text-red-600 dark:text-red-400">
+                                            <p className="text-red-600 dark:text-red-400">
                                                 {errors.slug}
                                             </p>
                                         )}
@@ -80,7 +80,7 @@ export default function General({ organization, isOwner = false }: Props) {
                                             disabled
                                             className="bg-muted"
                                         />
-                                        <p className="text-sm text-muted-foreground">
+                                        <p className="text-muted-foreground">
                                             Only organization owners can change
                                             the slug
                                         </p>

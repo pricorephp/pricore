@@ -68,7 +68,7 @@ export default function Tokens({
             <div className="flex items-center justify-between">
                 <div>
                     <h3 className="text-lg font-medium">API Tokens</h3>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-muted-foreground">
                         Manage access tokens for Composer authentication
                     </p>
                 </div>
@@ -85,8 +85,8 @@ export default function Tokens({
             <InfoBox
                 title="About API Tokens"
                 description="API tokens allow you to authenticate Composer requests to
-                    access private packages in this organization. Each token can
-                    be configured with an expiration date for security."
+ access private packages in this organization. Each token can
+ be configured with an expiration date for security."
             />
 
             <CreateTokenDialog

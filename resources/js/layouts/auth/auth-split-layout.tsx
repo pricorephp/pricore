@@ -33,7 +33,7 @@ export default function AuthSplitLayout({
                             <p className="text-lg">
                                 &ldquo;{quote.message}&rdquo;
                             </p>
-                            <footer className="text-sm text-neutral-300">
+                            <footer className="text-neutral-300">
                                 {quote.author}
                             </footer>
                         </blockquote>
@@ -50,7 +50,7 @@ export default function AuthSplitLayout({
                     </Link>
                     <div className="flex flex-col items-start gap-2 text-left sm:items-center sm:text-center">
                         <h1 className="text-xl font-medium">{title}</h1>
-                        <p className="text-sm text-balance text-muted-foreground">
+                        <p className="text-balance text-muted-foreground">
                             {description}
                         </p>
                     </div>

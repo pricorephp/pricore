@@ -94,7 +94,7 @@ export default function GitCredentials({
             <div className="flex items-center justify-between">
                 <div>
                     <h3 className="text-lg font-medium">Git Providers</h3>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-muted-foreground">
                         Configure authentication for Git providers to enable
                         repository syncing
                     </p>
@@ -104,9 +104,7 @@ export default function GitCredentials({
             <div className="space-y-4">
                 {credentials.length > 0 && (
                     <div className="space-y-3">
-                        <h4 className="text-sm font-medium">
-                            Configured Providers
-                        </h4>
+                        <h4 className="font-medium">Configured Providers</h4>
                         {credentials.map((credential) => (
                             <Card
                                 key={credential.uuid}
@@ -135,7 +133,7 @@ export default function GitCredentials({
                                 <CardContent>
                                     <div className="flex gap-2">
                                         <Button
-                                            variant="outline"
+                                            variant="secondary"
                                             size="sm"
                                             onClick={() =>
                                                 handleEdit(credential)
@@ -145,7 +143,7 @@ export default function GitCredentials({
                                             Edit
                                         </Button>
                                         <Button
-                                            variant="outline"
+                                            variant="secondary"
                                             size="sm"
                                             onClick={() =>
                                                 handleDelete(credential)
@@ -163,9 +161,7 @@ export default function GitCredentials({
 
                 {availableProviders.length > 0 && (
                     <div className="space-y-3">
-                        <h4 className="text-sm font-medium">
-                            Available Providers
-                        </h4>
+                        <h4 className="font-medium">Available Providers</h4>
                         <div className="grid gap-4 sm:grid-cols-2">
                             {availableProviders.map(([provider, label]) => (
                                 <Card
@@ -188,7 +184,7 @@ export default function GitCredentials({
                                     </CardHeader>
                                     <CardContent>
                                         <Button
-                                            variant="outline"
+                                            variant="secondary"
                                             size="sm"
                                             className="w-full"
                                         >
@@ -205,7 +201,7 @@ export default function GitCredentials({
                 {credentials.length === 0 &&
                     availableProviders.length === 0 && (
                         <div className="rounded-lg border border-dashed p-12 text-center">
-                            <p className="text-sm text-muted-foreground">
+                            <p className="text-muted-foreground">
                                 All Git providers are configured.
                             </p>
                         </div>
@@ -215,9 +211,9 @@ export default function GitCredentials({
             <InfoBox
                 title="About Git Providers"
                 description="Git provider credentials are required to sync packages from
-                    private repositories. Each provider requires different
-                    authentication methods. Credentials are encrypted and stored
-                    securely."
+ private repositories. Each provider requires different
+ authentication methods. Credentials are encrypted and stored
+ securely."
             />
 
             {(editingCredential || addingProvider) && (

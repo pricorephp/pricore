@@ -36,9 +36,7 @@ export function ActivityFeed({
                 </CardHeader>
                 <CardContent>
                     {recentReleases.length === 0 ? (
-                        <p className="text-sm text-muted-foreground">
-                            No releases yet
-                        </p>
+                        <p className="text-muted-foreground">No releases yet</p>
                     ) : (
                         <div className="space-y-3">
                             {recentReleases
@@ -51,7 +49,7 @@ export function ActivityFeed({
                                         <div className="min-w-0 flex-1">
                                             <Link
                                                 href={`/organizations/${organizationSlug}/packages/${release.packageUuid}`}
-                                                className="truncate font-mono text-sm hover:underline"
+                                                className="truncate font-mono hover:underline"
                                             >
                                                 {release.packageName}
                                             </Link>
@@ -61,7 +59,7 @@ export function ActivityFeed({
                                                 </code>
                                                 {release.isStable ? (
                                                     <Badge
-                                                        variant="outline"
+                                                        variant="secondary"
                                                         className="text-xs"
                                                     >
                                                         Stable
@@ -97,7 +95,7 @@ export function ActivityFeed({
                 </CardHeader>
                 <CardContent>
                     {recentSyncs.length === 0 ? (
-                        <p className="text-sm text-muted-foreground">
+                        <p className="text-muted-foreground">
                             No sync activity yet
                         </p>
                     ) : (
@@ -110,7 +108,7 @@ export function ActivityFeed({
                                     <div className="min-w-0 flex-1">
                                         <Link
                                             href={`/organizations/${organizationSlug}/repositories/${sync.repositoryUuid}`}
-                                            className="flex items-center gap-1 truncate text-sm hover:underline"
+                                            className="flex items-center gap-1 truncate hover:underline"
                                         >
                                             <GitBranch className="h-3.5 w-3.5" />
                                             {sync.repositoryName}

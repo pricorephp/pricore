@@ -74,37 +74,33 @@ export default function TokenCreatedDialog({
 
                 <div className="space-y-4">
                     <div>
-                        <label className="text-sm font-medium">
-                            Token Name
-                        </label>
-                        <p className="text-sm text-muted-foreground">{name}</p>
+                        <label className="font-medium">Token Name</label>
+                        <p className="text-muted-foreground">{name}</p>
                     </div>
 
                     {expiresAt && (
                         <div>
-                            <label className="text-sm font-medium">
-                                Expires
-                            </label>
-                            <p className="text-sm text-muted-foreground">
+                            <label className="font-medium">Expires</label>
+                            <p className="text-muted-foreground">
                                 {new Date(expiresAt).toLocaleDateString()}
                             </p>
                         </div>
                     )}
 
                     <div>
-                        <label className="text-sm font-medium">Token</label>
+                        <label className="font-medium">Token</label>
                         <div className="mt-2 flex gap-2">
                             <Input
                                 ref={inputRef}
                                 type="text"
                                 value={token}
                                 readOnly
-                                className="font-mono text-sm"
+                                className="font-mono"
                                 onFocus={(e) => e.target.select()}
                             />
                             <Button
                                 type="button"
-                                variant="outline"
+                                variant="secondary"
                                 size="icon"
                                 onClick={copyToClipboard}
                                 className="shrink-0"
@@ -119,10 +115,10 @@ export default function TokenCreatedDialog({
                     </div>
 
                     <div className="rounded-md border border-b-2 border-neutral-200 bg-neutral-50 p-4 dark:border-neutral-800 dark:bg-neutral-950">
-                        <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
+                        <p className="font-medium text-neutral-900 dark:text-neutral-100">
                             Configure Composer
                         </p>
-                        <p className="mt-1 text-sm text-neutral-700 dark:text-neutral-300">
+                        <p className="mt-1 text-neutral-700 dark:text-neutral-300">
                             Use this token to authenticate with Composer:
                         </p>
                         <code className="mt-2 block rounded border border-border bg-muted p-2 font-mono text-xs break-all">

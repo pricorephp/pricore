@@ -50,7 +50,7 @@ export function NavMain({ items = [] }: { items?: NavItem[] }) {
                         {item.icon && (
                             <item.icon className="size-5" strokeWidth={1.75} />
                         )}
-                        <span className="text-[11px] leading-tight">
+                        <span className="text-[10px] leading-tight">
                             {item.title}
                         </span>
                     </Link>

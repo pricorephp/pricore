@@ -96,7 +96,7 @@ export default function Organizations() {
 
                     {flash?.error && (
                         <div className="rounded-md border border-red-200 bg-red-50 p-4 dark:border-red-800 dark:bg-red-950">
-                            <p className="text-sm font-medium text-red-800 dark:text-red-200">
+                            <p className="font-medium text-red-800 dark:text-red-200">
                                 {flash.error}
                             </p>
                         </div>
@@ -104,7 +104,7 @@ export default function Organizations() {
 
                     {flash?.status && (
                         <div className="rounded-md border border-green-200 bg-green-50 p-4 dark:border-green-800 dark:bg-green-950">
-                            <p className="text-sm font-medium text-green-800 dark:text-green-200">
+                            <p className="font-medium text-green-800 dark:text-green-200">
                                 {flash.status}
                             </p>
                         </div>
@@ -113,7 +113,7 @@ export default function Organizations() {
                     {organizations.length === 0 ? (
                         <div className="rounded-lg border border-dashed p-12 text-center">
                             <Building2 className="mx-auto h-12 w-12 text-muted-foreground" />
-                            <p className="mt-4 text-sm text-muted-foreground">
+                            <p className="mt-4 text-muted-foreground">
                                 You are not a member of any organizations yet.
                             </p>
                         </div>
@@ -146,7 +146,7 @@ export default function Organizations() {
                                                 </div>
                                                 <div className="flex items-center gap-2">
                                                     <Button
-                                                        variant="outline"
+                                                        variant="secondary"
                                                         size="sm"
                                                         asChild
                                                     >
@@ -219,7 +219,7 @@ export default function Organizations() {
                                                                     <DialogClose
                                                                         asChild
                                                                     >
-                                                                        <Button variant="outline">
+                                                                        <Button variant="secondary">
                                                                             Cancel
                                                                         </Button>
                                                                     </DialogClose>

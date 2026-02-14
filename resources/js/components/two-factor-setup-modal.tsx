@@ -195,7 +195,7 @@ function TwoFactorVerificationStep({
                         <div className="flex w-full space-x-5">
                             <Button
                                 type="button"
-                                variant="outline"
+                                variant="secondary"
                                 className="flex-1"
                                 onClick={onBack}
                                 disabled={processing}

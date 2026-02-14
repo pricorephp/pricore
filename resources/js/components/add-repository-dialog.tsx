@@ -185,7 +185,7 @@ export default function AddRepositoryDialog({
                 >
                     {({ processing, errors, wasSuccessful }) => (
                         <>
-                            <div className="space-y-2">
+                            <div className="grid space-y-2">
                                 <Label htmlFor="provider">
                                     Git Provider{' '}
                                     <span className="text-red-500">*</span>
@@ -215,7 +215,7 @@ export default function AddRepositoryDialog({
                                 {errors.provider &&
                                     !processing &&
                                     !wasSuccessful && (
-                                        <p className="text-sm text-destructive">
+                                        <p className="text-destructive">
                                             {errors.provider}
                                         </p>
                                     )}
@@ -232,13 +232,13 @@ export default function AddRepositoryDialog({
                                 </p>
                             </div>
 
-                            <div className="space-y-2">
+                            <div className="grid space-y-2">
                                 <Label htmlFor="repo_identifier">
                                     Repository{' '}
                                     <span className="text-red-500">*</span>
                                 </Label>
                                 {loadingRepos && provider === 'github' ? (
-                                    <div className="flex items-center gap-2 rounded-md border border-input bg-transparent px-3 py-2 text-sm">
+                                    <div className="flex items-center gap-2 rounded-md border border-input bg-transparent px-3 py-2">
                                         <Spinner className="size-4" />
                                         <span className="text-muted-foreground">
                                             Loading repositories...
@@ -369,7 +369,7 @@ export default function AddRepositoryDialog({
                                                         },
                                                     )
                                                 ) : (
-                                                    <div className="px-2 py-4 text-center text-sm text-muted-foreground">
+                                                    <div className="px-2 py-4 text-center text-muted-foreground">
                                                         No repositories found
                                                     </div>
                                                 )}
@@ -385,7 +385,7 @@ export default function AddRepositoryDialog({
                                 ) : provider === 'github' &&
                                   repositories.length === 0 ? (
                                     <>
-                                        <div className="rounded-md border border-destructive bg-destructive/10 p-3 text-sm text-destructive">
+                                        <div className="rounded-md border border-destructive bg-destructive/10 p-3 text-destructive">
                                             No repositories found. Please
                                             configure GitHub credentials in
                                             settings.
@@ -434,13 +434,13 @@ export default function AddRepositoryDialog({
                                 {errors.repo_identifier &&
                                     !processing &&
                                     !wasSuccessful && (
-                                        <p className="text-sm text-destructive">
+                                        <p className="text-destructive">
                                             {errors.repo_identifier}
                                         </p>
                                     )}
                             </div>
 
-                            <div className="space-y-2">
+                            <div className="grid space-y-2">
                                 <Label htmlFor="default_branch">
                                     Default Branch (optional)
                                 </Label>
@@ -452,7 +452,7 @@ export default function AddRepositoryDialog({
                                 {errors.default_branch &&
                                     !processing &&
                                     !wasSuccessful && (
-                                        <p className="text-sm text-destructive">
+                                        <p className="text-destructive">
                                             {errors.default_branch}
                                         </p>
                                     )}
@@ -466,7 +466,7 @@ export default function AddRepositoryDialog({
                             <DialogFooter>
                                 <Button
                                     type="button"
-                                    variant="outline"
+                                    variant="secondary"
                                     onClick={handleClose}
                                 >
                                     Cancel

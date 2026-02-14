@@ -55,9 +55,7 @@ function SettingsContent({ children }: PropsWithChildren) {
     return (
         <div className="mx-auto w-full max-w-7xl min-w-0 space-y-6 p-6">
             <div>
-                <h1 className="text-3xl font-bold tracking-tight">
-                    Organization Settings
-                </h1>
+                <h1 className="mb-2 text-xl">Organization Settings</h1>
                 <p className="text-muted-foreground">
                     Manage {organization.name} settings and preferences
                 </p>

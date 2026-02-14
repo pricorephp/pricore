@@ -55,7 +55,7 @@ export default function GitCredentialDialog({
             case 'github':
                 return (
                     <>
-                        <div className="space-y-2">
+                        <div className="grid space-y-2">
                             <Label htmlFor="token">
                                 Personal Access Token{' '}
                                 <span className="text-red-500">*</span>
@@ -89,7 +89,7 @@ export default function GitCredentialDialog({
             case 'gitlab':
                 return (
                     <>
-                        <div className="space-y-2">
+                        <div className="grid space-y-2">
                             <Label htmlFor="token">
                                 Personal Access Token{' '}
                                 <span className="text-red-500">*</span>
@@ -114,7 +114,7 @@ export default function GitCredentialDialog({
                                 </a>
                             </p>
                         </div>
-                        <div className="space-y-2">
+                        <div className="grid space-y-2">
                             <Label htmlFor="url">GitLab URL (optional)</Label>
                             <Input
                                 id="url"
@@ -132,7 +132,7 @@ export default function GitCredentialDialog({
             case 'bitbucket':
                 return (
                     <>
-                        <div className="space-y-2">
+                        <div className="grid space-y-2">
                             <Label htmlFor="username">
                                 Username <span className="text-red-500">*</span>
                             </Label>
@@ -144,7 +144,7 @@ export default function GitCredentialDialog({
                                 autoFocus
                             />
                         </div>
-                        <div className="space-y-2">
+                        <div className="grid space-y-2">
                             <Label htmlFor="app_password">
                                 App Password{' '}
                                 <span className="text-red-500">*</span>
@@ -174,7 +174,7 @@ export default function GitCredentialDialog({
             case 'git':
                 return (
                     <>
-                        <div className="space-y-2">
+                        <div className="grid space-y-2">
                             <Label htmlFor="ssh_key">
                                 SSH Private Key{' '}
                                 <span className="text-red-500">*</span>
@@ -254,10 +254,10 @@ export default function GitCredentialDialog({
                                 errors['credentials.ssh_key'] ||
                                 errors['credentials.url']) && (
                                 <div className="rounded-md border border-destructive bg-destructive/10 p-3">
-                                    <p className="text-sm font-medium text-destructive">
+                                    <p className="font-medium text-destructive">
                                         Please fix the following errors:
                                     </p>
-                                    <ul className="mt-1 list-inside list-disc text-sm text-destructive">
+                                    <ul className="mt-1 list-inside list-disc text-destructive">
                                         {errors.provider && (
                                             <li>{errors.provider}</li>
                                         )}
@@ -301,7 +301,7 @@ export default function GitCredentialDialog({
                             <DialogFooter>
                                 <Button
                                     type="button"
-                                    variant="outline"
+                                    variant="secondary"
                                     onClick={onClose}
                                 >
                                     Cancel

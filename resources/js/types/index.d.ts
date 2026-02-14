@@ -17,6 +17,13 @@ export interface BreadcrumbItem {
     href: string;
     dropdown?: {
         items: BreadcrumbDropdownItem[];
+        action?: {
+            label: string;
+            dialog?: React.ComponentType<{
+                isOpen: boolean;
+                onClose: () => void;
+            }>;
+        };
     };
 }
 

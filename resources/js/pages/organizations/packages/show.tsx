@@ -150,7 +150,7 @@ export default function PackageShow({
             <div className="mx-auto w-7xl space-y-6 p-6">
                 <div className="space-y-4">
                     <div className="flex items-start justify-between">
-                        <div className="space-y-2">
+                        <div className="grid space-y-2">
                             <div className="flex items-center gap-3">
                                 <h1 className="font-mono text-2xl font-semibold">
                                     {pkg.name}
@@ -175,7 +175,7 @@ export default function PackageShow({
                                     )}
                                 </Badge>
                             </div>
-                            <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                            <div className="flex items-center gap-4 text-muted-foreground">
                                 {pkg.repositoryIdentifier && (
                                     <span className="flex items-center gap-1.5">
                                         Repository:{' '}
@@ -212,7 +212,7 @@ export default function PackageShow({
                         <CardTitle>Composer Configuration</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                        <p className="text-sm text-muted-foreground">
+                        <p className="text-muted-foreground">
                             Add this repository to your{' '}
                             <code className="rounded bg-muted px-1 py-0.5 text-xs">
                                 composer.json
@@ -220,7 +220,7 @@ export default function PackageShow({
                             to install packages from this organization:
                         </p>
                         <div className="relative">
-                            <pre className="overflow-x-auto rounded bg-muted p-4 text-xs">
+                            <pre className="overflow-x-auto rounded bg-muted p-4 text-sm">
                                 <code>{composerConfig}</code>
                             </pre>
                             <div className="absolute top-2 right-2">
@@ -237,7 +237,7 @@ export default function PackageShow({
                     />
                     {versions.data.length === 0 ? (
                         <Card>
-                            <CardContent className="py-8 text-center text-sm text-muted-foreground">
+                            <CardContent className="py-8 text-center text-muted-foreground">
                                 No versions available yet.
                             </CardContent>
                         </Card>
@@ -263,7 +263,7 @@ export default function PackageShow({
                                                 <TableRow key={version.uuid}>
                                                     <TableCell>
                                                         <div className="flex items-center gap-2">
-                                                            <code className="font-mono text-sm">
+                                                            <code className="font-mono">
                                                                 {
                                                                     version.version
                                                                 }
@@ -272,7 +272,7 @@ export default function PackageShow({
                                                                 version,
                                                             ) ? (
                                                                 <Badge
-                                                                    variant="outline"
+                                                                    variant="secondary"
                                                                     className="text-xs"
                                                                 >
                                                                     Stable
@@ -291,11 +291,11 @@ export default function PackageShow({
                                                     </TableCell>
                                                     <TableCell>
                                                         {version.releasedAt ? (
-                                                            <div className="text-sm">
+                                                            <div className="">
                                                                 {DateTime.fromISO(
                                                                     version.releasedAt,
                                                                 ).toRelative()}
-                                                                <div className="text-xs text-muted-foreground">
+                                                                <div className="text-sm text-muted-foreground">
                                                                     {DateTime.fromISO(
                                                                         version.releasedAt,
                                                                     ).toLocaleString(
@@ -304,7 +304,7 @@ export default function PackageShow({
                                                                 </div>
                                                             </div>
                                                         ) : (
-                                                            <span className="text-sm text-muted-foreground">
+                                                            <span className="text-muted-foreground">
                                                                 —
                                                             </span>
                                                         )}
@@ -369,7 +369,7 @@ export default function PackageShow({
                                                                 )}
                                                             </code>
                                                         ) : (
-                                                            <span className="text-sm text-muted-foreground">
+                                                            <span className="text-muted-foreground">
                                                                 —
                                                             </span>
                                                         )}
@@ -383,7 +383,7 @@ export default function PackageShow({
 
                             {versions.last_page > 1 && (
                                 <div className="flex items-center justify-between">
-                                    <div className="text-sm text-muted-foreground">
+                                    <div className="text-muted-foreground">
                                         Showing{' '}
                                         {(versions.current_page - 1) *
                                             versions.per_page +
@@ -405,7 +405,7 @@ export default function PackageShow({
                                                 return (
                                                     <span
                                                         key={index}
-                                                        className="px-3 py-2 text-sm text-muted-foreground"
+                                                        className="px-3 py-2 text-muted-foreground"
                                                     >
                                                         <span
                                                             dangerouslySetInnerHTML={{
@@ -421,7 +421,7 @@ export default function PackageShow({
                                                     key={index}
                                                     href={link.url}
                                                     preserveScroll
-                                                    className={`rounded px-3 py-2 text-sm transition-colors ${
+                                                    className={`rounded px-3 py-2 transition-colors ${
                                                         link.active
                                                             ? 'bg-primary text-primary-foreground'
                                                             : 'bg-white text-muted-foreground/110 hover:bg-muted/80'

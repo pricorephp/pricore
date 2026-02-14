@@ -12,7 +12,7 @@ interface PackageCardProps {
 
 export default function PackageCard({ package: pkg }: PackageCardProps) {
     return (
-        <Card className="group gap-4 hover:shadow-md">
+        <Card className="group gap-4">
             <CardHeader>
                 <CardTitle className="flex items-start justify-between gap-2">
                     <span className="transition-colors group-hover:text-primary">
@@ -41,10 +41,10 @@ export default function PackageCard({ package: pkg }: PackageCardProps) {
                 </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-                <div className="flex flex-row items-center gap-2 text-xs text-muted-foreground">
+                <div className="flex flex-row items-center gap-2 text-sm text-muted-foreground">
                     {pkg.latestVersion && (
                         <Badge
-                            variant="outline"
+                            variant="secondary"
                             className="bg-muted/30 font-mono"
                         >
                             {pkg.latestVersion}
@@ -59,7 +59,7 @@ export default function PackageCard({ package: pkg }: PackageCardProps) {
                     )}
                 </div>
 
-                <div className="border-t pt-3 text-xs text-muted-foreground">
+                <div className="pt-3 text-sm text-muted-foreground">
                     Updated {DateTime.fromISO(pkg.updatedAt).toRelative()}
                 </div>
             </CardContent>

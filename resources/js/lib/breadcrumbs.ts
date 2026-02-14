@@ -1,3 +1,4 @@
+import CreateOrganizationDialog from '@/components/create-organization-dialog';
 import { type BreadcrumbItem } from '@/types';
 
 type OrganizationData =
@@ -17,6 +18,10 @@ export function createOrganizationBreadcrumb(
                 href: `/organizations/${org.slug}`,
                 active: org.uuid === currentOrg.uuid,
             })),
+            action: {
+                label: 'Add Organization',
+                dialog: CreateOrganizationDialog,
+            },
         },
     };
 }

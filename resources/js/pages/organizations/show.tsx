@@ -94,9 +94,9 @@ export default function OrganizationShow({
                 <InfoBox
                     title="Getting Started"
                     description="This organization hosts private Composer packages. Add
-                        packages from repositories, manage API tokens for
-                        authentication, and configure your composer.json to use
-                        this private registry."
+ packages from repositories, manage API tokens for
+ authentication, and configure your composer.json to use
+ this private registry."
                 >
                     <div className="flex gap-2">
                         <Button size="sm" asChild>
@@ -106,7 +106,7 @@ export default function OrganizationShow({
                                 View Packages
                             </Link>
                         </Button>
-                        <Button size="sm" variant="outline" asChild>
+                        <Button size="sm" variant="secondary" asChild>
                             <Link
                                 href={`/organizations/${organization.slug}/repositories`}
                             >

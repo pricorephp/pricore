@@ -7,11 +7,9 @@ export default function HeadingSmall({
 }) {
     return (
         <header>
-            <h3 className="text-lg font-semibold tracking-tight">{title}</h3>
+            <h3 className="text-lg font-semibold">{title}</h3>
             {description && (
-                <p className="mt-0.5 text-sm text-muted-foreground">
-                    {description}
-                </p>
+                <p className="mt-0.5 text-muted-foreground">{description}</p>
             )}
         </header>
     );

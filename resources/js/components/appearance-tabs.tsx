@@ -35,7 +35,7 @@ export default function AppearanceToggleTab({
                     )}
                 >
                     <Icon className="-ml-1 h-4 w-4" />
-                    <span className="ml-1.5 text-sm">{label}</span>
+                    <span className="ml-1.5">{label}</span>
                 </button>
             ))}
         </div>

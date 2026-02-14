@@ -61,7 +61,7 @@ export default function Dashboard() {
                                 key={org.uuid}
                                 href={`/organizations/${org.slug}`}
                             >
-                                <Card className="group hover:shadow-md">
+                                <Card className="group">
                                     <CardHeader>
                                         <CardTitle className="flex items-start justify-between gap-2">
                                             <div className="flex items-center gap-2.5">
@@ -76,7 +76,7 @@ export default function Dashboard() {
                                         </CardTitle>
                                     </CardHeader>
                                     <CardContent>
-                                        <p className="text-sm text-muted-foreground">
+                                        <p className="text-muted-foreground">
                                             @{org.slug}
                                         </p>
                                     </CardContent>

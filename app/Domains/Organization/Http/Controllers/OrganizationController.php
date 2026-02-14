@@ -61,6 +61,6 @@ class OrganizationController extends Controller
         );
 
         return redirect()->route('organizations.show', $organization->slug)
-            ->with('success', 'Organization created successfully.');
+            ->with('status', 'Organization created successfully.');
     }
 }

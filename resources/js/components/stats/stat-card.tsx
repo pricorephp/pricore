@@ -53,15 +53,9 @@ export function StatCard({
     const styles = variantStyles[variant];
 
     return (
-        <Card
-            className={cn(
-                'group cursor-pointer hover:shadow-md',
-                styles.bg,
-                className,
-            )}
-        >
+        <Card className={cn('group cursor-pointer', styles.bg, className)}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
+                <CardTitle className="font-medium text-muted-foreground">
                     {title}
                 </CardTitle>
                 <div className="flex items-center gap-1.5">

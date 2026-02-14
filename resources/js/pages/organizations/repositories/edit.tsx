@@ -98,7 +98,7 @@ export default function RepositoryEdit({
                                 <p className="font-medium text-destructive">
                                     Delete Repository
                                 </p>
-                                <p className="text-sm text-muted-foreground">
+                                <p className="text-muted-foreground">
                                     Permanently remove this repository and
                                     unlink all associated packages.
                                 </p>
@@ -129,7 +129,7 @@ export default function RepositoryEdit({
                         </DialogHeader>
                         <DialogFooter>
                             <Button
-                                variant="outline"
+                                variant="secondary"
                                 onClick={() => setIsDeleteOpen(false)}
                             >
                                 Cancel

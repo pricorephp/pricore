@@ -18,10 +18,8 @@ export default function InfoBox({
                     <Info className="h-4 w-4 text-muted-foreground" />
                 </div>
                 <div className="flex-1">
-                    <p className="text-sm font-medium text-foreground">
-                        {title}
-                    </p>
-                    <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+                    <p className="font-medium text-foreground">{title}</p>
+                    <p className="mt-1 leading-relaxed text-muted-foreground">
                         {description}
                     </p>
                     {children && <div className="mt-4">{children}</div>}

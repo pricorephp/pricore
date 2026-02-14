@@ -145,7 +145,7 @@ export default function RepositoryShow({
                             )}
                         </div>
                         {repository.lastSyncedAt && (
-                            <p className="text-sm text-muted-foreground">
+                            <p className="text-muted-foreground">
                                 Last synced{' '}
                                 {DateTime.fromISO(
                                     repository.lastSyncedAt,
@@ -165,7 +165,7 @@ export default function RepositoryShow({
                                 <Button
                                     type="submit"
                                     disabled={processing}
-                                    variant="outline"
+                                    variant="secondary"
                                 >
                                     <RefreshCw
                                         className={`h-4 w-4 ${
@@ -176,7 +176,7 @@ export default function RepositoryShow({
                                 </Button>
                             )}
                         </Form>
-                        <Button variant="outline" asChild>
+                        <Button variant="secondary" asChild>
                             <Link
                                 href={edit.url({
                                     organization: organization.slug,
@@ -219,7 +219,7 @@ export default function RepositoryShow({
                     />
                     {syncLogs.length === 0 ? (
                         <Card>
-                            <CardContent className="py-8 text-center text-sm text-muted-foreground">
+                            <CardContent className="py-8 text-center text-muted-foreground">
                                 No sync history yet. Click "Sync Now" to perform
                                 the first synchronization.
                             </CardContent>
@@ -254,7 +254,7 @@ export default function RepositoryShow({
                                                 </Badge>
                                             </TableCell>
                                             <TableCell>
-                                                <div className="text-sm">
+                                                <div className="">
                                                     {DateTime.fromISO(
                                                         log.startedAt,
                                                     ).toRelative()}

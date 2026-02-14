@@ -95,7 +95,7 @@ export default function Repositories({
                                 key={repo.uuid}
                                 href={show.url([organization.slug, repo.uuid])}
                             >
-                                <Card className="group hover:shadow-md">
+                                <Card className="group">
                                     <CardHeader>
                                         <CardTitle className="flex items-start justify-between gap-2">
                                             <span className="text-base transition-colors group-hover:text-primary">
@@ -150,7 +150,7 @@ export default function Repositories({
                                         </CardTitle>
                                     </CardHeader>
                                     <CardContent className="space-y-3">
-                                        <div className="flex items-center justify-between text-xs">
+                                        <div className="flex items-center justify-between text-sm">
                                             <span className="text-muted-foreground">
                                                 Sync Status
                                             </span>
@@ -164,7 +164,7 @@ export default function Repositories({
                                             </Badge>
                                         </div>
 
-                                        <div className="border-t pt-3 text-xs text-muted-foreground">
+                                        <div className="border-t pt-3 text-sm text-muted-foreground">
                                             Last synced:{' '}
                                             {repo.lastSyncedAt
                                                 ? DateTime.fromISO(
@@ -182,10 +182,10 @@ export default function Repositories({
                 <InfoBox
                     title="About Repositories"
                     description="Connect your Git repositories from GitHub, GitLab,
-                        Bitbucket, or any Git server to automatically discover
-                        and sync Composer packages. Repositories are monitored
-                        for new versions and can be synced manually or via
-                        webhooks."
+ Bitbucket, or any Git server to automatically discover
+ and sync Composer packages. Repositories are monitored
+ for new versions and can be synced manually or via
+ webhooks."
                 />
 
                 <AddRepositoryDialog

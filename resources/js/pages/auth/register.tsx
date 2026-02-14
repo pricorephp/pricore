@@ -102,7 +102,7 @@ export default function Register() {
                             </Button>
                         </div>
 
-                        <div className="text-center text-sm text-muted-foreground">
+                        <div className="text-center text-muted-foreground">
                             Already have an account?{' '}
                             <TextLink href={login()} tabIndex={6}>
                                 Log in

@@ -37,13 +37,13 @@ export function EmptyState({
                 </div>
             )}
             <h3 className="text-lg font-medium text-foreground">{title}</h3>
-            <p className="mt-1.5 max-w-sm text-sm text-muted-foreground">
+            <p className="mt-1.5 max-w-sm text-muted-foreground">
                 {description}
             </p>
             {action && (
                 <Button
                     className="mt-6"
-                    variant="outline"
+                    variant="secondary"
                     asChild={!!action.href}
                 >
                     {action.href ? (

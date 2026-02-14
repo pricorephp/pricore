@@ -84,7 +84,7 @@ export default function Members({ members, roleOptions }: Props) {
             <div className="flex items-center justify-between">
                 <div>
                     <h3 className="text-lg font-medium">Members</h3>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-muted-foreground">
                         Manage who has access to this organization
                     </p>
                 </div>
@@ -112,7 +112,7 @@ export default function Members({ members, roleOptions }: Props) {
                         >
                             {({ processing, errors }) => (
                                 <div className="space-y-4">
-                                    <div className="space-y-2">
+                                    <div className="grid space-y-2">
                                         <Label htmlFor="email">Email</Label>
                                         <Input
                                             id="email"
@@ -122,13 +122,13 @@ export default function Members({ members, roleOptions }: Props) {
                                             required
                                         />
                                         {errors.email && (
-                                            <p className="text-sm text-red-600 dark:text-red-400">
+                                            <p className="text-red-600 dark:text-red-400">
                                                 {errors.email}
                                             </p>
                                         )}
                                     </div>
 
-                                    <div className="space-y-2">
+                                    <div className="grid space-y-2">
                                         <Label htmlFor="role">Role</Label>
                                         <Select
                                             name="role"
@@ -152,7 +152,7 @@ export default function Members({ members, roleOptions }: Props) {
                                             </SelectContent>
                                         </Select>
                                         {errors.role && (
-                                            <p className="text-sm text-red-600 dark:text-red-400">
+                                            <p className="text-red-600 dark:text-red-400">
                                                 {errors.role}
                                             </p>
                                         )}
@@ -161,7 +161,7 @@ export default function Members({ members, roleOptions }: Props) {
                                     <div className="flex justify-end gap-2">
                                         <Button
                                             type="button"
-                                            variant="outline"
+                                            variant="secondary"
                                             onClick={() =>
                                                 setAddDialogOpen(false)
                                             }
@@ -204,7 +204,7 @@ export default function Members({ members, roleOptions }: Props) {
                                         <span className="font-medium">
                                             {member.name}
                                         </span>
-                                        <span className="text-sm text-muted-foreground">
+                                        <span className="text-muted-foreground">
                                             {member.email}
                                         </span>
                                     </div>
