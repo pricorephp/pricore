@@ -12,10 +12,10 @@ class SyncRepositoryController extends Controller
 {
     public function __invoke(Organization $organization, Repository $repository): RedirectResponse
     {
-        SyncRepositoryJob::dispatch($repository);
+        SyncRepositoryJob::dispatchSync($repository);
 
         return redirect()
             ->back()
-            ->with('status', 'Repository sync has been queued.');
+            ->with('status', 'Repository sync has started.');
     }
 }
