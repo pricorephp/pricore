@@ -8,7 +8,7 @@ import AppLayout from '@/layouts/app-layout';
 import { dashboard } from '@/routes';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link, usePage } from '@inertiajs/react';
-import { ArrowUpRight, Building2, Plus } from 'lucide-react';
+import { ArrowUpRight, Plus, Users } from 'lucide-react';
 import { useState } from 'react';
 
 type OrganizationData =
@@ -46,7 +46,7 @@ export default function Dashboard() {
 
                 {auth.organizations.length === 0 ? (
                     <EmptyState
-                        icon={Building2}
+                        icon={Users}
                         title="No organizations yet"
                         description="Create your first organization to start managing private Composer packages."
                         action={{
@@ -66,7 +66,7 @@ export default function Dashboard() {
                                         <CardTitle className="flex items-start justify-between gap-2">
                                             <div className="flex items-center gap-2.5">
                                                 <div className="rounded-lg bg-muted/50 p-2 transition-colors group-hover:bg-muted">
-                                                    <Building2 className="h-4 w-4 text-muted-foreground" />
+                                                    <Users className="h-4 w-4 text-muted-foreground" />
                                                 </div>
                                                 <span className="transition-colors group-hover:text-primary">
                                                     {org.name}

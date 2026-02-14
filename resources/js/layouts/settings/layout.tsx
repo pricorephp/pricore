@@ -9,12 +9,12 @@ import { edit as editPassword } from '@/routes/user-password';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/react';
 import {
-    Building2,
     GitBranch,
     Lock,
     Paintbrush,
     ShieldCheck,
     User,
+    Users,
 } from 'lucide-react';
 import { type PropsWithChildren } from 'react';
 
@@ -47,7 +47,7 @@ const sidebarNavItems: NavItem[] = [
     {
         title: 'Organizations',
         href: organizations.url(),
-        icon: Building2,
+        icon: Users,
     },
 ];
 

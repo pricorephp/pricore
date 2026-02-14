@@ -208,7 +208,7 @@ test('callback uses nickname as name when GitHub name is null', function () {
 });
 
 test('connect route requires authentication', function () {
-    $response = $this->get(route('auth.github.connect'));
+    $response = $this->get(route('settings.github.connect'));
 
     $response->assertRedirect(route('login'));
 });
@@ -228,10 +228,9 @@ test('connect route redirects to GitHub with repo scope', function () {
     Socialite::shouldReceive('driver')->with('github')->andReturn($provider);
 
     $response = $this->actingAs($user)
-        ->get(route('auth.github.connect'));
+        ->get(route('settings.github.connect'));
 
     $response->assertRedirect();
-    expect(session('github_connect_return_url'))->toBe(route('settings.git-credentials'));
 });
 
 test('connect callback creates git credential for user', function () {
@@ -241,8 +240,7 @@ test('connect callback creates git credential for user', function () {
     mockSocialiteCallback($socialiteUser);
 
     $response = $this->actingAs($user)
-        ->withSession(['github_connect_return_url' => route('settings.git-credentials')])
-        ->get(route('auth.github.callback'));
+        ->get(route('settings.github.callback'));
 
     $response->assertRedirect(route('settings.git-credentials'));
     $response->assertSessionHas('status', 'GitHub credentials connected successfully.');
@@ -266,8 +264,7 @@ test('connect callback updates existing credential', function () {
     mockSocialiteCallback($socialiteUser);
 
     $response = $this->actingAs($user)
-        ->withSession(['github_connect_return_url' => route('settings.git-credentials')])
-        ->get(route('auth.github.callback'));
+        ->get(route('settings.github.callback'));
 
     $response->assertRedirect(route('settings.git-credentials'));
     $response->assertSessionHas('status', 'GitHub credentials updated successfully.');

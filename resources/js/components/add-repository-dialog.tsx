@@ -456,7 +456,7 @@ export default function AddRepositoryDialog({
                                             {errors.default_branch}
                                         </p>
                                     )}
-                                <p className="text-xs text-muted-foreground">
+                                <p className="text-sm text-muted-foreground">
                                     The default branch to sync from. If not
                                     specified, the repository's default branch
                                     will be used.

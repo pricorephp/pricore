@@ -24,7 +24,7 @@ import {
 import AppLayout from '@/layouts/app-layout';
 import SettingsLayout from '@/layouts/settings/layout';
 import { organizations } from '@/routes/settings';
-import { Building2, LogOut } from 'lucide-react';
+import { LogOut, Users } from 'lucide-react';
 import { useState } from 'react';
 
 type OrganizationWithRoleData =
@@ -112,7 +112,7 @@ export default function Organizations() {
 
                     {organizations.length === 0 ? (
                         <div className="rounded-lg border border-dashed p-12 text-center">
-                            <Building2 className="mx-auto h-12 w-12 text-muted-foreground" />
+                            <Users className="mx-auto h-12 w-12 text-muted-foreground" />
                             <p className="mt-4 text-muted-foreground">
                                 You are not a member of any organizations yet.
                             </p>
@@ -124,25 +124,20 @@ export default function Organizations() {
                                     <Card key={organization.uuid}>
                                         <CardHeader>
                                             <div className="flex items-start justify-between">
-                                                <div className="flex items-start gap-3">
-                                                    <Building2 className="mt-1 h-5 w-5 text-muted-foreground" />
-                                                    <div>
-                                                        <CardTitle className="flex items-center gap-2">
-                                                            {organization.name}
-                                                            <Badge
-                                                                variant={getRoleBadgeVariant(
-                                                                    role,
-                                                                )}
-                                                            >
-                                                                {getRoleLabel(
-                                                                    role,
-                                                                )}
-                                                            </Badge>
-                                                        </CardTitle>
-                                                        <CardDescription className="mt-1">
-                                                            @{organization.slug}
-                                                        </CardDescription>
-                                                    </div>
+                                                <div>
+                                                    <CardTitle className="flex items-center gap-2">
+                                                        {organization.name}
+                                                        <Badge
+                                                            variant={getRoleBadgeVariant(
+                                                                role,
+                                                            )}
+                                                        >
+                                                            {getRoleLabel(role)}
+                                                        </Badge>
+                                                    </CardTitle>
+                                                    <CardDescription className="mt-1">
+                                                        @{organization.slug}
+                                                    </CardDescription>
                                                 </div>
                                                 <div className="flex items-center gap-2">
                                                     <Button

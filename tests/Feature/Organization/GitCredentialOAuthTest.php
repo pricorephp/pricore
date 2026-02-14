@@ -29,7 +29,7 @@ test('git credentials index passes githubConnectUrl', function () {
     $response->assertSuccessful();
     $response->assertInertia(fn ($page) => $page
         ->component('settings/git-credentials')
-        ->where('githubConnectUrl', route('auth.github.connect'))
+        ->where('githubConnectUrl', route('settings.github.connect'))
     );
 });
 

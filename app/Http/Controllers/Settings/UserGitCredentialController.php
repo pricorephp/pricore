@@ -26,7 +26,7 @@ class UserGitCredentialController extends Controller
         return Inertia::render('settings/git-credentials', [
             'credentials' => $credentials,
             'providers' => GitProvider::options(),
-            'githubConnectUrl' => route('auth.github.connect'),
+            'githubConnectUrl' => route('settings.github.connect'),
         ]);
     }
 

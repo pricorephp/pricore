@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Settings\ConnectGitHubController;
 use App\Http\Controllers\Settings\LeaveOrganizationController;
 use App\Http\Controllers\Settings\OrganizationsController;
 use App\Http\Controllers\Settings\PasswordController;
@@ -36,4 +37,7 @@ Route::middleware('auth')->group(function () {
     Route::post('settings/git-credentials', [UserGitCredentialController::class, 'store'])->name('settings.git-credentials.store');
     Route::patch('settings/git-credentials/{credential}', [UserGitCredentialController::class, 'update'])->name('settings.git-credentials.update');
     Route::delete('settings/git-credentials/{credential}', [UserGitCredentialController::class, 'destroy'])->name('settings.git-credentials.destroy');
+
+    Route::get('settings/git-credentials/github/connect', [ConnectGitHubController::class, 'redirect'])->name('settings.github.connect');
+    Route::get('settings/git-credentials/github/callback', [ConnectGitHubController::class, 'callback'])->name('settings.github.callback');
 });

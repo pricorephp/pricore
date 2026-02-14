@@ -1,4 +1,3 @@
-import HeadingSmall from '@/components/heading-small';
 import InfoBox from '@/components/info-box';
 import { ActivityFeed } from '@/components/stats/activity-feed';
 import { StatCard } from '@/components/stats/stat-card';
@@ -36,10 +35,7 @@ export default function OrganizationShow({
 
             <div className="mx-auto w-7xl space-y-6 p-6">
                 <div className="flex items-center justify-between">
-                    <HeadingSmall
-                        title={organization.name}
-                        description="Organization overview and statistics"
-                    />
+                    <h1 className="text-xl">{organization.name}</h1>
                 </div>
 
                 {/* Quick Stats Row */}

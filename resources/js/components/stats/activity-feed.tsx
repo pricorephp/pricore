@@ -28,7 +28,7 @@ export function ActivityFeed({
     recentSyncs,
 }: ActivityFeedProps) {
     return (
-        <div className="grid gap-6 lg:grid-cols-2">
+        <div className="grid gap-4 lg:grid-cols-2">
             <Card>
                 <CardHeader className="flex flex-row items-center gap-2">
                     <Package className="h-4 w-4 text-muted-foreground" />
