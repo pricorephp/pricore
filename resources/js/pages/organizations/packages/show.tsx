@@ -243,7 +243,7 @@ export default function PackageShow({
                         </Card>
                     ) : (
                         <>
-                            <Card className="py-3">
+                            <div className="rounded-lg border bg-card">
                                 <Table>
                                     <TableHeader>
                                         <TableRow className="hover:bg-transparent">
@@ -379,7 +379,7 @@ export default function PackageShow({
                                         })}
                                     </TableBody>
                                 </Table>
-                            </Card>
+                            </div>
 
                             {versions.last_page > 1 && (
                                 <div className="flex items-center justify-between">

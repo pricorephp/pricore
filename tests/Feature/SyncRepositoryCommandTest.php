@@ -1,8 +1,9 @@
 <?php
 
 use App\Models\Organization;
-use App\Models\OrganizationGitCredential;
 use App\Models\Repository;
+use App\Models\User;
+use App\Models\UserGitCredential;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 
@@ -57,14 +58,15 @@ it('displays error when organization is not found', function () {
 });
 
 it('can sync a specific repository', function () {
+    $user = User::factory()->create();
     $organization = Organization::factory()->create();
     $repository = Repository::factory()
         ->for($organization, 'organization')
         ->github()
-        ->create();
+        ->create(['credential_user_uuid' => $user->uuid]);
 
-    OrganizationGitCredential::factory()
-        ->for($organization, 'organization')
+    UserGitCredential::factory()
+        ->for($user, 'user')
         ->github()
         ->create();
 
@@ -75,16 +77,17 @@ it('can sync a specific repository', function () {
 });
 
 it('can sync all repositories for an organization', function () {
+    $user = User::factory()->create();
     $organization = Organization::factory()->create(['slug' => 'test-org']);
 
     Repository::factory()
         ->for($organization, 'organization')
         ->github()
         ->count(3)
-        ->create();
+        ->create(['credential_user_uuid' => $user->uuid]);
 
-    OrganizationGitCredential::factory()
-        ->for($organization, 'organization')
+    UserGitCredential::factory()
+        ->for($user, 'user')
         ->github()
         ->create();
 
@@ -94,16 +97,17 @@ it('can sync all repositories for an organization', function () {
 });
 
 it('can sync all repositories with --all flag', function () {
+    $user = User::factory()->create();
     $organization = Organization::factory()->create();
 
     Repository::factory()
         ->for($organization, 'organization')
         ->github()
         ->count(2)
-        ->create();
+        ->create(['credential_user_uuid' => $user->uuid]);
 
-    OrganizationGitCredential::factory()
-        ->for($organization, 'organization')
+    UserGitCredential::factory()
+        ->for($user, 'user')
         ->github()
         ->create();
 

@@ -3,9 +3,8 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
-use App\Models\Organization;
-use App\Models\OrganizationGitCredential;
 use App\Models\User;
+use App\Models\UserGitCredential;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 use Laravel\Socialite\Facades\Socialite;
@@ -27,7 +26,7 @@ class GitHubController extends Controller
 
     public function callback(): RedirectResponse
     {
-        if (session()->has('github_connect_organization') && Auth::check()) {
+        if (session()->has('github_connect_return_url') && Auth::check()) {
             return $this->connectCallback();
         }
 
@@ -51,7 +50,7 @@ class GitHubController extends Controller
                 'avatar_url' => $githubUser->getAvatar(),
             ]);
 
-            $this->refreshOrganizationCredentials($user);
+            $this->refreshUserGitCredentials($user);
 
             Auth::login($user, remember: true);
 
@@ -68,7 +67,7 @@ class GitHubController extends Controller
                 'avatar_url' => $githubUser->getAvatar(),
             ]);
 
-            $this->refreshOrganizationCredentials($user);
+            $this->refreshUserGitCredentials($user);
 
             Auth::login($user, remember: true);
 
@@ -91,9 +90,9 @@ class GitHubController extends Controller
         return redirect()->intended(route('dashboard'));
     }
 
-    public function connect(Organization $organization): SymfonyRedirectResponse
+    public function connect(): SymfonyRedirectResponse
     {
-        session(['github_connect_organization' => $organization->slug]);
+        session(['github_connect_return_url' => route('settings.git-credentials')]);
 
         /** @var GithubProvider $driver */
         $driver = Socialite::driver('github');
@@ -105,20 +104,13 @@ class GitHubController extends Controller
 
     public function connectCallback(): RedirectResponse
     {
-        $organizationSlug = session()->pull('github_connect_organization');
-
-        if (! $organizationSlug) {
-            return redirect()->route('dashboard')->with('error', 'No organization found for GitHub connection.');
-        }
-
-        $organization = Organization::where('slug', $organizationSlug)->firstOrFail();
+        $returnUrl = session()->pull('github_connect_return_url', route('settings.git-credentials'));
 
         try {
             /** @var SocialiteUser $githubUser */
             $githubUser = Socialite::driver('github')->user();
         } catch (\Exception) {
-            return redirect()
-                ->route('organizations.settings.git-credentials.index', $organization)
+            return redirect()->to($returnUrl)
                 ->with('error', 'GitHub authentication failed. Please try again.');
         }
 
@@ -132,33 +124,34 @@ class GitHubController extends Controller
             'avatar_url' => $githubUser->getAvatar(),
         ]);
 
-        if ($organization->gitCredentials()->where('provider', 'github')->exists()) {
-            return redirect()
-                ->route('organizations.settings.git-credentials.index', $organization)
-                ->with('error', 'GitHub credentials already exist for this organization. Please update the existing credentials instead.');
+        if ($user->gitCredentials()->where('provider', 'github')->exists()) {
+            // Update existing credential with new token
+            $user->gitCredentials()->where('provider', 'github')->update([
+                'credentials' => encrypt(json_encode(['token' => $githubUser->token])),
+            ]);
+
+            return redirect()->to($returnUrl)
+                ->with('status', 'GitHub credentials updated successfully.');
         }
 
-        OrganizationGitCredential::create([
-            'organization_uuid' => $organization->uuid,
+        UserGitCredential::create([
+            'user_uuid' => $user->uuid,
             'provider' => 'github',
             'credentials' => ['token' => $githubUser->token],
-            'source_user_uuid' => $user->uuid,
         ]);
 
-        $this->refreshOrganizationCredentials($user);
-
-        return redirect()
-            ->route('organizations.settings.git-credentials.index', $organization)
+        return redirect()->to($returnUrl)
             ->with('status', 'GitHub credentials connected successfully.');
     }
 
-    private function refreshOrganizationCredentials(User $user): void
+    private function refreshUserGitCredentials(User $user): void
     {
-        OrganizationGitCredential::where('source_user_uuid', $user->uuid)
-            ->each(function (OrganizationGitCredential $credential) use ($user) {
-                $credential->update([
-                    'credentials' => ['token' => $user->github_token],
-                ]);
-            });
+        $credential = $user->gitCredentials()->where('provider', 'github')->first();
+
+        if ($credential) {
+            $credential->update([
+                'credentials' => ['token' => $user->github_token],
+            ]);
+        }
     }
 }

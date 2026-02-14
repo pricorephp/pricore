@@ -3,38 +3,51 @@ import { Separator } from '@/components/ui/separator';
 import { cn, isSameUrl, resolveUrl } from '@/lib/utils';
 import { edit as editAppearance } from '@/routes/appearance';
 import { edit } from '@/routes/profile';
-import { organizations } from '@/routes/settings';
+import { gitCredentials, organizations } from '@/routes/settings';
 import { show } from '@/routes/two-factor';
 import { edit as editPassword } from '@/routes/user-password';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/react';
+import {
+    Building2,
+    GitBranch,
+    Lock,
+    Paintbrush,
+    ShieldCheck,
+    User,
+} from 'lucide-react';
 import { type PropsWithChildren } from 'react';
 
 const sidebarNavItems: NavItem[] = [
     {
         title: 'Profile',
         href: edit(),
-        icon: null,
+        icon: User,
     },
     {
         title: 'Password',
         href: editPassword(),
-        icon: null,
+        icon: Lock,
     },
     {
         title: 'Two-Factor Auth',
         href: show(),
-        icon: null,
+        icon: ShieldCheck,
     },
     {
         title: 'Appearance',
         href: editAppearance(),
-        icon: null,
+        icon: Paintbrush,
+    },
+    {
+        title: 'Git Providers',
+        href: gitCredentials(),
+        icon: GitBranch,
     },
     {
         title: 'Organizations',
         href: organizations.url(),
-        icon: null,
+        icon: Building2,
     },
 ];
 

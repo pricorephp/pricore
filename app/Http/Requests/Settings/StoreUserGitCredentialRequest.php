@@ -1,23 +1,17 @@
 <?php
 
-namespace App\Domains\Organization\Http\Requests;
+namespace App\Http\Requests\Settings;
 
 use App\Domains\Repository\Contracts\Enums\GitProvider;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
-class StoreGitCredentialRequest extends FormRequest
+class StoreUserGitCredentialRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        $user = $this->user();
-
-        if ($user === null) {
-            return false;
-        }
-
-        return $user->can('viewSettings', $this->route('organization'));
+        return $this->user() !== null;
     }
 
     /**

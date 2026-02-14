@@ -3,8 +3,8 @@
 namespace App\Console\Commands;
 
 use App\Domains\Repository\Contracts\Enums\GitProvider;
-use App\Models\Organization;
-use App\Models\OrganizationGitCredential;
+use App\Models\User;
+use App\Models\UserGitCredential;
 use Illuminate\Console\Command;
 
 use function Laravel\Prompts\password;
@@ -18,21 +18,21 @@ class AddGitCredentialsCommand extends Command
      * @var string
      */
     protected $signature = 'credentials:add
-                            {organization? : The UUID or slug of the organization}
+                            {user? : The UUID or email of the user}
                             {--provider= : The Git provider (github, gitlab, bitbucket, git)}
                             {--token= : The authentication token}';
 
     /**
      * @var string
      */
-    protected $description = 'Add Git credentials to an organization';
+    protected $description = 'Add Git credentials to a user';
 
     public function handle(): int
     {
-        $organization = $this->organization();
+        $user = $this->user();
 
-        if (! $organization) {
-            $this->error('Organization not found.');
+        if (! $user) {
+            $this->error('User not found.');
 
             return self::FAILURE;
         }
@@ -40,9 +40,8 @@ class AddGitCredentialsCommand extends Command
         $provider = $this->provider();
         $credentials = $this->credentials($provider);
 
-        // Check if credentials already exist for this provider
-        $existingCredential = OrganizationGitCredential::query()
-            ->where('organization_uuid', $organization->uuid)
+        $existingCredential = UserGitCredential::query()
+            ->where('user_uuid', $user->uuid)
             ->where('provider', $provider)
             ->first();
 
@@ -56,8 +55,8 @@ class AddGitCredentialsCommand extends Command
             $existingCredential->update(['credentials' => $credentials]);
             $this->info("Credentials for {$provider->label()} have been updated successfully.");
         } else {
-            OrganizationGitCredential::create([
-                'organization_uuid' => $organization->uuid,
+            UserGitCredential::create([
+                'user_uuid' => $user->uuid,
                 'provider' => $provider,
                 'credentials' => $credentials,
             ]);
@@ -68,38 +67,38 @@ class AddGitCredentialsCommand extends Command
         return self::SUCCESS;
     }
 
-    protected function organization(): ?Organization
+    protected function user(): ?User
     {
-        if ($organizationIdentifier = $this->argument('organization')) {
-            return Organization::query()
-                ->where('uuid', $organizationIdentifier)
-                ->orWhere('slug', $organizationIdentifier)
+        if ($userIdentifier = $this->argument('user')) {
+            return User::query()
+                ->where('uuid', $userIdentifier)
+                ->orWhere('email', $userIdentifier)
                 ->first();
         }
 
-        $organizations = Organization::all();
+        $users = User::all();
 
-        if ($organizations->isEmpty()) {
-            $this->error('No organizations found. Please create an organization first.');
+        if ($users->isEmpty()) {
+            $this->error('No users found. Please create a user first.');
 
             return null;
         }
 
         $selectedUuid = search(
-            label: 'Select an organization',
+            label: 'Select a user',
             options: fn (string $value) => $value !== ''
-                ? $organizations
-                    ->filter(fn ($org) => str_contains(strtolower($org->name), strtolower($value))
-                        || str_contains(strtolower($org->slug), strtolower($value)))
-                    ->mapWithKeys(fn ($org) => [$org->uuid => "{$org->name} ({$org->slug})"])
+                ? $users
+                    ->filter(fn ($user) => str_contains(strtolower($user->name), strtolower($value))
+                        || str_contains(strtolower($user->email), strtolower($value)))
+                    ->mapWithKeys(fn ($user) => [$user->uuid => "{$user->name} ({$user->email})"])
                     ->all()
-                : $organizations
-                    ->mapWithKeys(fn ($org) => [$org->uuid => "{$org->name} ({$org->slug})"])
+                : $users
+                    ->mapWithKeys(fn ($user) => [$user->uuid => "{$user->name} ({$user->email})"])
                     ->all(),
-            placeholder: 'Search organizations...'
+            placeholder: 'Search users...'
         );
 
-        return Organization::find($selectedUuid);
+        return User::find($selectedUuid);
     }
 
     protected function provider(): GitProvider
@@ -126,8 +125,6 @@ class AddGitCredentialsCommand extends Command
     }
 
     /**
-     * Get credentials based on provider.
-     *
      * @return array<string, string|null>
      */
     protected function credentials(GitProvider $provider): array
@@ -141,8 +138,6 @@ class AddGitCredentialsCommand extends Command
     }
 
     /**
-     * Get GitHub credentials.
-     *
      * @return array<string, string>
      */
     protected function getGitHubCredentials(): array
@@ -164,8 +159,6 @@ class AddGitCredentialsCommand extends Command
     }
 
     /**
-     * Get GitLab credentials.
-     *
      * @return array<string, string|null>
      */
     protected function getGitLabCredentials(): array
@@ -198,8 +191,6 @@ class AddGitCredentialsCommand extends Command
     }
 
     /**
-     * Get Bitbucket credentials.
-     *
      * @return array<string, string>
      */
     protected function getBitbucketCredentials(): array
@@ -224,8 +215,6 @@ class AddGitCredentialsCommand extends Command
     }
 
     /**
-     * Get generic Git credentials.
-     *
      * @return array<string, string>
      */
     protected function getGenericGitCredentials(): array

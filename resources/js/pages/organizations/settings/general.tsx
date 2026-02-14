@@ -111,9 +111,7 @@ export default function General({ organization, isOwner = false }: Props) {
                 </Form>
             </div>
 
-            {isOwner && (
-                <DeleteOrganization organization={organization} />
-            )}
+            {isOwner && <DeleteOrganization organization={organization} />}
         </div>
     );
 }
@@ -141,9 +139,7 @@ function DeleteOrganization({
                     </p>
                 </div>
 
-                <Dialog
-                    onOpenChange={() => setConfirmationName('')}
-                >
+                <Dialog onOpenChange={() => setConfirmationName('')}>
                     <DialogTrigger asChild>
                         <Button variant="destructive">
                             Delete organization
@@ -165,11 +161,7 @@ function DeleteOrganization({
                             method="delete"
                             className="space-y-6"
                         >
-                            {({
-                                resetAndClearErrors,
-                                processing,
-                                errors,
-                            }) => (
+                            {({ resetAndClearErrors, processing, errors }) => (
                                 <>
                                     <div className="grid gap-2">
                                         <Label

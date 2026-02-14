@@ -5,6 +5,7 @@ use App\Http\Controllers\Settings\OrganizationsController;
 use App\Http\Controllers\Settings\PasswordController;
 use App\Http\Controllers\Settings\ProfileController;
 use App\Http\Controllers\Settings\TwoFactorAuthenticationController;
+use App\Http\Controllers\Settings\UserGitCredentialController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -30,4 +31,9 @@ Route::middleware('auth')->group(function () {
 
     Route::get('settings/organizations', [OrganizationsController::class, 'index'])->name('settings.organizations');
     Route::delete('settings/organizations/{organization:slug}', LeaveOrganizationController::class)->name('settings.organizations.leave');
+
+    Route::get('settings/git-credentials', [UserGitCredentialController::class, 'index'])->name('settings.git-credentials');
+    Route::post('settings/git-credentials', [UserGitCredentialController::class, 'store'])->name('settings.git-credentials.store');
+    Route::patch('settings/git-credentials/{credential}', [UserGitCredentialController::class, 'update'])->name('settings.git-credentials.update');
+    Route::delete('settings/git-credentials/{credential}', [UserGitCredentialController::class, 'destroy'])->name('settings.git-credentials.destroy');
 });

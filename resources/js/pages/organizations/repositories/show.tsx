@@ -264,7 +264,7 @@ export default function RepositoryShow({
                             </CardContent>
                         </Card>
                     ) : (
-                        <Card className="py-3">
+                        <div className="rounded-lg border bg-card">
                             <Table>
                                 <TableHeader>
                                     <TableRow className="hover:bg-transparent">
@@ -327,7 +327,7 @@ export default function RepositoryShow({
                                     ))}
                                 </TableBody>
                             </Table>
-                        </Card>
+                        </div>
                     )}
                 </div>
             </div>

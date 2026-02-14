@@ -36,7 +36,10 @@ class RepositoryController extends Controller
             ->get()
             ->map(fn ($repository) => RepositoryData::fromModel($repository));
 
-        $configuredProviders = $organization->gitCredentials()
+        /** @var \App\Models\User $user */
+        $user = auth()->user();
+
+        $configuredProviders = $user->gitCredentials()
             ->pluck('provider')
             ->map(fn (GitProvider $provider) => $provider->value)
             ->toArray();
@@ -57,6 +60,7 @@ class RepositoryController extends Controller
 
         $repository = Repository::create([
             'organization_uuid' => $organization->uuid,
+            'credential_user_uuid' => auth()->id(),
             'name' => $name,
             'provider' => GitProvider::from($request->provider),
             'repo_identifier' => $request->repo_identifier,

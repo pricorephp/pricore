@@ -25,8 +25,6 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $deleted_at
  * @property-read Collection<int, AccessToken> $accessTokens
  * @property-read int|null $access_tokens_count
- * @property-read Collection<int, OrganizationGitCredential> $gitCredentials
- * @property-read int|null $git_credentials_count
  * @property-read OrganizationUserPivot|null $pivot
  * @property-read Collection<int, User> $members
  * @property-read int|null $members_count
@@ -100,13 +98,5 @@ class Organization extends Model
     public function accessTokens(): HasMany
     {
         return $this->hasMany(AccessToken::class, 'organization_uuid', 'uuid');
-    }
-
-    /**
-     * @return HasMany<OrganizationGitCredential, $this>
-     */
-    public function gitCredentials(): HasMany
-    {
-        return $this->hasMany(OrganizationGitCredential::class, 'organization_uuid', 'uuid');
     }
 }

@@ -1,23 +1,22 @@
 <?php
 
-namespace App\Domains\Organization\Http\Requests;
+namespace App\Http\Requests\Settings;
 
 use App\Domains\Repository\Contracts\Enums\GitProvider;
-use App\Models\OrganizationGitCredential;
+use App\Models\UserGitCredential;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
-class UpdateGitCredentialRequest extends FormRequest
+class UpdateUserGitCredentialRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        $user = $this->user();
+        /** @var UserGitCredential|null $credential */
+        $credential = $this->route('credential');
 
-        if ($user === null) {
-            return false;
-        }
-
-        return $user->can('viewSettings', $this->route('organization'));
+        return $this->user() !== null
+            && $credential !== null
+            && $credential->user_uuid === $this->user()->uuid;
     }
 
     /**
@@ -25,7 +24,7 @@ class UpdateGitCredentialRequest extends FormRequest
      */
     public function rules(): array
     {
-        /** @var OrganizationGitCredential|null $credential */
+        /** @var UserGitCredential|null $credential */
         $credential = $this->route('credential');
 
         $provider = $credential?->provider;

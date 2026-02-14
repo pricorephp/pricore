@@ -1,7 +1,7 @@
 import {
     store,
     update,
-} from '@/actions/App/Domains/Organization/Http/Controllers/GitCredentialController';
+} from '@/actions/App/Http/Controllers/Settings/UserGitCredentialController';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -21,8 +21,6 @@ type GitCredentialData =
     App.Domains.Organization.Contracts.Data.GitCredentialData;
 
 interface GitCredentialDialogProps {
-    organizationSlug: string;
-    organizationName?: string;
     credential?: GitCredentialData | null;
     provider: string;
     providers: Record<string, string>;
@@ -32,8 +30,6 @@ interface GitCredentialDialogProps {
 }
 
 export default function GitCredentialDialog({
-    organizationSlug,
-    organizationName,
     credential,
     provider,
     providers,
@@ -47,9 +43,7 @@ export default function GitCredentialDialog({
         provider === 'github' && !!githubConnectUrl && !isEditing;
 
     const getGitHubTokenUrl = (): string => {
-        const description = organizationName
-            ? `Pricore (${organizationName})`
-            : 'Pricore';
+        const description = 'Pricore';
         const encodedDescription = encodeURIComponent(description);
         const scopes = 'repo,read:org';
         return `https://github.com/settings/tokens/new?description=${encodedDescription}&scopes=${scopes}`;
@@ -268,9 +262,7 @@ export default function GitCredentialDialog({
 
                 <Form
                     action={
-                        isEditing
-                            ? update.url([organizationSlug, credential.uuid])
-                            : store.url(organizationSlug)
+                        isEditing ? update.url(credential.uuid) : store.url()
                     }
                     method={isEditing ? 'patch' : 'post'}
                     onSuccess={onClose}

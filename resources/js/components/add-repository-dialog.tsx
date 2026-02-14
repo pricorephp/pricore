@@ -219,14 +219,14 @@ export default function AddRepositoryDialog({
                                             {errors.provider}
                                         </p>
                                     )}
-                                <p className="text-xs text-muted-foreground">
+                                <p className="text-sm text-muted-foreground">
                                     Need to add more providers? Configure them
                                     in{' '}
                                     <Link
-                                        href={`/organizations/${organizationSlug}/settings/git-credentials`}
+                                        href="/settings/git-credentials"
                                         className="font-medium text-primary underline underline-offset-4 hover:no-underline"
                                     >
-                                        organization settings
+                                        your settings
                                     </Link>
                                     .
                                 </p>

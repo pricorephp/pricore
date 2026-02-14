@@ -2,7 +2,7 @@
 
 namespace App\Domains\Organization\Contracts\Data;
 
-use App\Models\OrganizationGitCredential;
+use App\Models\UserGitCredential;
 use Spatie\LaravelData\Data;
 use Spatie\TypeScriptTransformer\Attributes\TypeScript;
 
@@ -16,7 +16,7 @@ class GitCredentialData extends Data
         public bool $isConfigured,
     ) {}
 
-    public static function fromModel(OrganizationGitCredential $credential): self
+    public static function fromModel(UserGitCredential $credential): self
     {
         return new self(
             uuid: $credential->uuid,

@@ -1,6 +1,5 @@
 <?php
 
-use App\Domains\Organization\Http\Controllers\GitCredentialController;
 use App\Domains\Organization\Http\Controllers\MemberController;
 use App\Domains\Organization\Http\Controllers\OrganizationController;
 use App\Domains\Organization\Http\Controllers\SettingsController;
@@ -24,7 +23,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/', DashboardController::class)->name('dashboard');
 
     // GitHub connect (elevated scopes for git credentials)
-    Route::get('auth/github/connect/{organization:slug}', [GitHubController::class, 'connect'])->name('auth.github.connect');
+    Route::get('auth/github/connect', [GitHubController::class, 'connect'])->name('auth.github.connect');
 
     // Organizations
     Route::get('organizations', [OrganizationController::class, 'index'])->name('organizations.index');
@@ -61,10 +60,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::post('tokens', [TokenController::class, 'store'])->name('tokens.store');
             Route::delete('tokens/{token}', [TokenController::class, 'destroy'])->name('tokens.destroy');
 
-            Route::get('git-credentials', [GitCredentialController::class, 'index'])->name('git-credentials.index');
-            Route::post('git-credentials', [GitCredentialController::class, 'store'])->name('git-credentials.store');
-            Route::patch('git-credentials/{credential}', [GitCredentialController::class, 'update'])->name('git-credentials.update');
-            Route::delete('git-credentials/{credential}', [GitCredentialController::class, 'destroy'])->name('git-credentials.destroy');
         });
     });
 });

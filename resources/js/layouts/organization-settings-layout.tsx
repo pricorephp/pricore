@@ -4,7 +4,7 @@ import AppLayout from '@/layouts/app-layout';
 import { createOrganizationBreadcrumb } from '@/lib/breadcrumbs';
 import { cn } from '@/lib/utils';
 import { Link, usePage } from '@inertiajs/react';
-import { GitBranch, Key, Settings, Users } from 'lucide-react';
+import { ArrowRight, Key, Settings, Users } from 'lucide-react';
 import { type PropsWithChildren, useMemo } from 'react';
 
 type OrganizationData =
@@ -39,11 +39,6 @@ function SettingsContent({ children }: PropsWithChildren) {
                 title: 'API Tokens',
                 href: `/organizations/${organization.slug}/settings/tokens`,
                 icon: Key,
-            },
-            {
-                title: 'Git Providers',
-                href: `/organizations/${organization.slug}/settings/git-credentials`,
-                icon: GitBranch,
             },
         ];
     }, [organization]);
@@ -86,6 +81,20 @@ function SettingsContent({ children }: PropsWithChildren) {
                             );
                         })}
                     </nav>
+
+                    <Separator className="my-4" />
+
+                    <Button
+                        size="sm"
+                        variant="ghost"
+                        asChild
+                        className="w-full justify-start"
+                    >
+                        <Link href="/settings/profile">
+                            <ArrowRight className="h-4 w-4" />
+                            Personal Settings
+                        </Link>
+                    </Button>
                 </aside>
 
                 <div className="w-full min-w-0 flex-1">{children}</div>

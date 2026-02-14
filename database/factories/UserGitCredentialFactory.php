@@ -2,23 +2,21 @@
 
 namespace Database\Factories;
 
-use App\Models\Organization;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\OrganizationGitCredential>
+ * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\UserGitCredential>
  */
-class OrganizationGitCredentialFactory extends Factory
+class UserGitCredentialFactory extends Factory
 {
     /**
-     * Define the model's default state.
-     *
      * @return array<string, mixed>
      */
     public function definition(): array
     {
         return [
-            'organization_uuid' => Organization::factory(),
+            'user_uuid' => User::factory(),
             'provider' => fake()->randomElement(['github', 'gitlab', 'bitbucket', 'git']),
             'credentials' => [
                 'token' => fake()->sha256(),
@@ -26,9 +24,6 @@ class OrganizationGitCredentialFactory extends Factory
         ];
     }
 
-    /**
-     * Indicate that the credential is for GitHub.
-     */
     public function github(): static
     {
         return $this->state(fn (array $attributes) => [
@@ -39,9 +34,6 @@ class OrganizationGitCredentialFactory extends Factory
         ]);
     }
 
-    /**
-     * Indicate that the credential is for GitLab.
-     */
     public function gitlab(): static
     {
         return $this->state(fn (array $attributes) => [
@@ -53,9 +45,6 @@ class OrganizationGitCredentialFactory extends Factory
         ]);
     }
 
-    /**
-     * Indicate that the credential is for Bitbucket.
-     */
     public function bitbucket(): static
     {
         return $this->state(fn (array $attributes) => [
@@ -67,9 +56,6 @@ class OrganizationGitCredentialFactory extends Factory
         ]);
     }
 
-    /**
-     * Indicate that the credential is for generic Git.
-     */
     public function git(): static
     {
         return $this->state(fn (array $attributes) => [

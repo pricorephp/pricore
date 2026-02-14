@@ -42,6 +42,8 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @property-read int|null $notifications_count
  * @property-read Collection<int, Organization> $organizations
  * @property-read int|null $organizations_count
+ * @property-read Collection<int, UserGitCredential> $gitCredentials
+ * @property-read int|null $git_credentials_count
  * @property-read Collection<int, Organization> $ownedOrganizations
  * @property-read int|null $owned_organizations_count
  *
@@ -129,6 +131,14 @@ class User extends Authenticatable implements MustVerifyEmail
     public function accessTokens(): HasMany
     {
         return $this->hasMany(AccessToken::class, 'user_uuid', 'uuid');
+    }
+
+    /**
+     * @return HasMany<UserGitCredential, $this>
+     */
+    public function gitCredentials(): HasMany
+    {
+        return $this->hasMany(UserGitCredential::class, 'user_uuid', 'uuid');
     }
 
     public function hasGitHubConnected(): bool

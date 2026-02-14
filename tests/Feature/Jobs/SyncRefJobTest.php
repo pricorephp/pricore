@@ -3,10 +3,11 @@
 use App\Domains\Repository\Contracts\Data\RefData;
 use App\Domains\Repository\Jobs\SyncRefJob;
 use App\Models\Organization;
-use App\Models\OrganizationGitCredential;
 use App\Models\Package;
 use App\Models\PackageVersion;
 use App\Models\Repository;
+use App\Models\User;
+use App\Models\UserGitCredential;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Cache;
@@ -32,14 +33,15 @@ beforeEach(function () {
 });
 
 it('syncs a single ref and creates a package version', function () {
+    $user = User::factory()->create();
     $organization = Organization::factory()->create();
     $repository = Repository::factory()
         ->for($organization, 'organization')
         ->github()
-        ->create();
+        ->create(['credential_user_uuid' => $user->uuid]);
 
-    OrganizationGitCredential::factory()
-        ->for($organization, 'organization')
+    UserGitCredential::factory()
+        ->for($user, 'user')
         ->github()
         ->create();
 
@@ -57,14 +59,15 @@ it('syncs a single ref and creates a package version', function () {
 });
 
 it('skips if batch is cancelled', function () {
+    $user = User::factory()->create();
     $organization = Organization::factory()->create();
     $repository = Repository::factory()
         ->for($organization, 'organization')
         ->github()
-        ->create();
+        ->create(['credential_user_uuid' => $user->uuid]);
 
-    OrganizationGitCredential::factory()
-        ->for($organization, 'organization')
+    UserGitCredential::factory()
+        ->for($user, 'user')
         ->github()
         ->create();
 
@@ -87,14 +90,15 @@ it('skips if batch is cancelled', function () {
 });
 
 it('increments cache counters when part of a batch', function () {
+    $user = User::factory()->create();
     $organization = Organization::factory()->create();
     $repository = Repository::factory()
         ->for($organization, 'organization')
         ->github()
-        ->create();
+        ->create(['credential_user_uuid' => $user->uuid]);
 
-    OrganizationGitCredential::factory()
-        ->for($organization, 'organization')
+    UserGitCredential::factory()
+        ->for($user, 'user')
         ->github()
         ->create();
 
@@ -111,14 +115,15 @@ it('increments cache counters when part of a batch', function () {
 });
 
 it('skips refs when composer.json is missing', function () {
+    $user = User::factory()->create();
     $organization = Organization::factory()->create();
     $repository = Repository::factory()
         ->for($organization, 'organization')
         ->github()
-        ->create();
+        ->create(['credential_user_uuid' => $user->uuid]);
 
-    OrganizationGitCredential::factory()
-        ->for($organization, 'organization')
+    UserGitCredential::factory()
+        ->for($user, 'user')
         ->github()
         ->create();
 

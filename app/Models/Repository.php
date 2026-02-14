@@ -18,6 +18,7 @@ use Illuminate\Support\Carbon;
 /**
  * @property string $uuid
  * @property string $organization_uuid
+ * @property string|null $credential_user_uuid
  * @property string $name
  * @property GitProvider $provider
  * @property string $repo_identifier
@@ -28,6 +29,7 @@ use Illuminate\Support\Carbon;
  * @property RepositorySyncStatus|null $sync_status
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
+ * @property-read User|null $credentialUser
  * @property-read Organization $organization
  * @property-read Collection<int, Package> $packages
  * @property-read int|null $packages_count
@@ -71,6 +73,14 @@ class Repository extends Model
     public function organization(): BelongsTo
     {
         return $this->belongsTo(Organization::class, 'organization_uuid', 'uuid');
+    }
+
+    /**
+     * @return BelongsTo<User, $this>
+     */
+    public function credentialUser(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'credential_user_uuid', 'uuid');
     }
 
     /**

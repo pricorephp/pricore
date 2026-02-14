@@ -5,8 +5,8 @@ namespace App\Domains\Repository\Services\GitProviders;
 use App\Domains\Repository\Contracts\Enums\GitProvider;
 use App\Domains\Repository\Contracts\Interfaces\GitProviderInterface;
 use App\Domains\Repository\Exceptions\GitProviderException;
-use App\Models\OrganizationGitCredential;
 use App\Models\Repository;
+use App\Models\UserGitCredential;
 
 class GitProviderFactory
 {
@@ -28,8 +28,8 @@ class GitProviderFactory
      */
     protected static function getCredentials(Repository $repository): array
     {
-        $credential = OrganizationGitCredential::query()
-            ->where('organization_uuid', $repository->organization_uuid)
+        $credential = UserGitCredential::query()
+            ->where('user_uuid', $repository->credential_user_uuid)
             ->where('provider', $repository->provider)
             ->first();
 
