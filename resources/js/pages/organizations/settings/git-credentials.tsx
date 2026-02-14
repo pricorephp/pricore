@@ -23,12 +23,14 @@ interface GitCredentialsPageProps {
     organization: OrganizationData;
     credentials: GitCredentialData[];
     providers: Record<string, string>;
+    hasGitHubConnected: boolean;
 }
 
 export default function GitCredentials({
     organization,
     credentials,
     providers,
+    hasGitHubConnected,
 }: GitCredentialsPageProps) {
     const [dialogOpen, setDialogOpen] = useState(false);
     const [editingCredential, setEditingCredential] =
@@ -223,6 +225,7 @@ export default function GitCredentials({
                     credential={editingCredential}
                     provider={addingProvider ?? editingCredential!.provider}
                     providers={providers}
+                    hasGitHubConnected={hasGitHubConnected}
                     isOpen={dialogOpen}
                     onClose={() => {
                         setDialogOpen(false);

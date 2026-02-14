@@ -10,8 +10,14 @@ use App\Domains\Repository\Http\Controllers\RepositoryController;
 use App\Domains\Repository\Http\Controllers\SyncRepositoryController;
 use App\Domains\Repository\Http\Controllers\SyncWebhookController;
 use App\Domains\Token\Http\Controllers\TokenController;
+use App\Http\Controllers\Auth\GitHubController;
 use App\Http\Controllers\DashboardController;
 use Illuminate\Support\Facades\Route;
+
+Route::middleware('guest')->group(function () {
+    Route::get('auth/github/redirect', [GitHubController::class, 'redirect'])->name('auth.github.redirect');
+    Route::get('auth/github/callback', [GitHubController::class, 'callback'])->name('auth.github.callback');
+});
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/', DashboardController::class)->name('dashboard');

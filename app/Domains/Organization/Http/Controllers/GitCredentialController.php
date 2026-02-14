@@ -30,6 +30,7 @@ class GitCredentialController
             'organization' => OrganizationData::fromModel($organization),
             'credentials' => $credentials,
             'providers' => GitProvider::options(),
+            'hasGitHubConnected' => auth()->user()?->hasGitHubConnected(),
         ]);
     }
 
@@ -43,11 +44,29 @@ class GitCredentialController
                 ->with('error', 'Credentials for this provider already exist. Please update the existing credentials instead.');
         }
 
-        OrganizationGitCredential::create([
-            'organization_uuid' => $organization->uuid,
-            'provider' => $provider,
-            'credentials' => $request->validated('credentials'),
-        ]);
+        $user = $request->user();
+        $isOAuth = $request->validated('source') === 'oauth';
+
+        if ($isOAuth && $provider === GitProvider::GitHub) {
+            if (! $user?->hasGitHubConnected()) {
+                return redirect()
+                    ->route('organizations.settings.git-credentials.index', $organization)
+                    ->with('error', 'You must connect your GitHub account first.');
+            }
+
+            OrganizationGitCredential::create([
+                'organization_uuid' => $organization->uuid,
+                'provider' => $provider,
+                'credentials' => ['token' => $user->github_token],
+                'source_user_uuid' => $user->uuid,
+            ]);
+        } else {
+            OrganizationGitCredential::create([
+                'organization_uuid' => $organization->uuid,
+                'provider' => $provider,
+                'credentials' => $request->validated('credentials'),
+            ]);
+        }
 
         return redirect()
             ->route('organizations.settings.git-credentials.index', $organization)

@@ -7,6 +7,7 @@ use App\Models\Pivots\OrganizationUserPivot;
 use Database\Factories\UserFactory;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -22,8 +23,12 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @property string $uuid
  * @property string $name
  * @property string $email
+ * @property string|null $github_id
+ * @property string|null $github_token
+ * @property string|null $github_nickname
+ * @property string|null $avatar_url
  * @property Carbon|null $email_verified_at
- * @property string $password
+ * @property string|null $password
  * @property string|null $two_factor_secret
  * @property string|null $two_factor_recovery_codes
  * @property Carbon|null $two_factor_confirmed_at
@@ -74,6 +79,7 @@ class User extends Authenticatable implements MustVerifyEmail
      */
     protected $hidden = [
         'password',
+        'github_token',
         'two_factor_secret',
         'two_factor_recovery_codes',
         'remember_token',
@@ -123,5 +129,21 @@ class User extends Authenticatable implements MustVerifyEmail
     public function accessTokens(): HasMany
     {
         return $this->hasMany(AccessToken::class, 'user_uuid', 'uuid');
+    }
+
+    public function hasGitHubConnected(): bool
+    {
+        return $this->github_id !== null && $this->github_token !== null;
+    }
+
+    /**
+     * @return Attribute<string|null, string|null>
+     */
+    protected function githubToken(): Attribute
+    {
+        return Attribute::make(
+            get: fn (?string $value) => $value ? decrypt($value) : null,
+            set: fn (?string $value) => $value ? encrypt($value) : null,
+        );
     }
 }
