@@ -243,7 +243,7 @@ export default function PackageShow({
                         </Card>
                     ) : (
                         <>
-                            <Card>
+                            <Card className="py-3">
                                 <Table>
                                     <TableHeader>
                                         <TableRow className="hover:bg-transparent">

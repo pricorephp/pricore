@@ -29,6 +29,8 @@ class SyncRepositoryJob implements ShouldBeUnique, ShouldQueue
 
     public int $tries = 1;
 
+    public int $uniqueFor = 300;
+
     public function __construct(
         public Repository $repository
     ) {}

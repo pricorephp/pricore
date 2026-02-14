@@ -1,4 +1,3 @@
-import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowUpRight, Globe, Lock } from 'lucide-react';
 import { DateTime } from 'luxon';
@@ -41,14 +40,9 @@ export default function PackageCard({ package: pkg }: PackageCardProps) {
                 </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-                <div className="flex flex-row items-center gap-2 text-sm text-muted-foreground">
+                <div className="flex flex-row items-center justify-between gap-2 text-sm text-muted-foreground">
                     {pkg.latestVersion && (
-                        <Badge
-                            variant="secondary"
-                            className="bg-muted/30 font-mono"
-                        >
-                            {pkg.latestVersion}
-                        </Badge>
+                        <span className="font-mono">{pkg.latestVersion}</span>
                     )}
 
                     {pkg.versionsCount > 0 && (

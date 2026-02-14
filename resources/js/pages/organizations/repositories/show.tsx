@@ -207,9 +207,7 @@ export default function RepositoryShow({
                                     >
                                         <Webhook
                                             className={`h-4 w-4 ${
-                                                processing
-                                                    ? 'animate-spin'
-                                                    : ''
+                                                processing ? 'animate-spin' : ''
                                             }`}
                                         />
                                         {processing
@@ -270,7 +268,7 @@ export default function RepositoryShow({
                             </CardContent>
                         </Card>
                     ) : (
-                        <Card>
+                        <Card className="py-3">
                             <Table>
                                 <TableHeader>
                                     <TableRow className="hover:bg-transparent">
