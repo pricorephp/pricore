@@ -9,13 +9,17 @@ use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 use Laravel\Socialite\Facades\Socialite;
+use Laravel\Socialite\Two\User as SocialiteUser;
 use Symfony\Component\HttpFoundation\RedirectResponse as SymfonyRedirectResponse;
 
 class GitHubController extends Controller
 {
     public function redirect(): SymfonyRedirectResponse
     {
-        return Socialite::driver('github')
+        /** @var \Laravel\Socialite\Two\GithubProvider $driver */
+        $driver = Socialite::driver('github');
+
+        return $driver
             ->scopes(['user:email'])
             ->redirect();
     }
@@ -23,6 +27,7 @@ class GitHubController extends Controller
     public function callback(): RedirectResponse
     {
         try {
+            /** @var SocialiteUser $githubUser */
             $githubUser = Socialite::driver('github')->user();
         } catch (\Exception) {
             return redirect()->route('login')->with('error', 'GitHub authentication failed. Please try again.');
@@ -85,7 +90,10 @@ class GitHubController extends Controller
     {
         session(['github_connect_organization' => $organization->slug]);
 
-        return Socialite::driver('github')
+        /** @var \Laravel\Socialite\Two\GithubProvider $driver */
+        $driver = Socialite::driver('github');
+
+        return $driver
             ->scopes(['repo', 'read:org'])
             ->redirect();
     }
@@ -101,6 +109,7 @@ class GitHubController extends Controller
         $organization = Organization::where('slug', $organizationSlug)->firstOrFail();
 
         try {
+            /** @var SocialiteUser $githubUser */
             $githubUser = Socialite::driver('github')->user();
         } catch (\Exception) {
             return redirect()
@@ -108,6 +117,7 @@ class GitHubController extends Controller
                 ->with('error', 'GitHub authentication failed. Please try again.');
         }
 
+        /** @var User $user */
         $user = Auth::user();
 
         $user->update([
