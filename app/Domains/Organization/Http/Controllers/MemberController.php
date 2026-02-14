@@ -61,7 +61,7 @@ class MemberController
 
         return redirect()
             ->route('organizations.settings.members', $organization)
-            ->with('success', 'Member added successfully.');
+            ->with('status', 'Member added successfully.');
     }
 
     public function update(UpdateMemberRoleRequest $request, Organization $organization, OrganizationUser $member): RedirectResponse
@@ -82,7 +82,7 @@ class MemberController
 
         return redirect()
             ->route('organizations.settings.members', $organization)
-            ->with('success', 'Member role updated successfully.');
+            ->with('status', 'Member role updated successfully.');
     }
 
     public function destroy(Organization $organization, OrganizationUser $member): RedirectResponse
@@ -103,6 +103,6 @@ class MemberController
 
         return redirect()
             ->route('organizations.settings.members', $organization)
-            ->with('success', 'Member removed successfully.');
+            ->with('status', 'Member removed successfully.');
     }
 }

@@ -2,6 +2,7 @@ import {
     Toast,
     ToastClose,
     ToastDescription,
+    ToastIcon,
     ToastProvider,
     ToastTitle,
     ToastViewport,
@@ -20,11 +21,18 @@ export function Toaster() {
                 title,
                 description,
                 action,
+                variant,
                 ...props
             }) {
                 return (
-                    <Toast key={id} duration={TOAST_DURATION} {...props}>
-                        <div className="grid gap-1">
+                    <Toast
+                        key={id}
+                        duration={TOAST_DURATION}
+                        variant={variant}
+                        {...props}
+                    >
+                        <ToastIcon variant={variant} />
+                        <div className="grid gap-0.5">
                             {title && <ToastTitle>{title}</ToastTitle>}
                             {description && (
                                 <ToastDescription>

@@ -51,7 +51,7 @@ class GitCredentialController
 
         return redirect()
             ->route('organizations.settings.git-credentials.index', $organization)
-            ->with('success', 'Git credentials added successfully.');
+            ->with('status', 'Git credentials added successfully.');
     }
 
     public function update(UpdateGitCredentialRequest $request, Organization $organization, OrganizationGitCredential $credential): RedirectResponse
@@ -66,7 +66,7 @@ class GitCredentialController
 
         return redirect()
             ->route('organizations.settings.git-credentials.index', $organization)
-            ->with('success', 'Git credentials updated successfully.');
+            ->with('status', 'Git credentials updated successfully.');
     }
 
     public function destroy(Organization $organization, OrganizationGitCredential $credential): RedirectResponse
@@ -79,6 +79,6 @@ class GitCredentialController
 
         return redirect()
             ->route('organizations.settings.git-credentials.index', $organization)
-            ->with('success', 'Git credentials removed successfully.');
+            ->with('status', 'Git credentials removed successfully.');
     }
 }

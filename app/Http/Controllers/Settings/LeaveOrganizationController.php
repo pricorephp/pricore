@@ -38,6 +38,6 @@ class LeaveOrganizationController extends Controller
 
         return redirect()
             ->route('settings.organizations')
-            ->with('success', 'You have left the organization successfully.');
+            ->with('status', 'You have left the organization successfully.');
     }
 }

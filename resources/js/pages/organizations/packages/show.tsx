@@ -317,7 +317,7 @@ export default function PackageShow({
                                                                 value={
                                                                     installCommand
                                                                 }
-                                                                className="w-80 rounded border border-input bg-background px-3 py-1.5 font-mono text-xs"
+                                                                className="w-80 rounded border border-input bg-background px-3 py-1.5 font-mono text-sm"
                                                                 onClick={(e) =>
                                                                     (
                                                                         e.target as HTMLInputElement

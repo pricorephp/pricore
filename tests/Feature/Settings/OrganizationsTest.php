@@ -83,7 +83,7 @@ it('member can leave organization', function () {
         ->delete(route('settings.organizations.leave', $organization->slug));
 
     $response->assertRedirect(route('settings.organizations'));
-    $response->assertSessionHas('success');
+    $response->assertSessionHas('status');
     expect($organization->members()->where('user_uuid', $this->user->uuid)->exists())->toBeFalse();
 });
 
@@ -98,7 +98,7 @@ it('admin can leave organization', function () {
         ->delete(route('settings.organizations.leave', $organization->slug));
 
     $response->assertRedirect(route('settings.organizations'));
-    $response->assertSessionHas('success');
+    $response->assertSessionHas('status');
     expect($organization->members()->where('user_uuid', $this->user->uuid)->exists())->toBeFalse();
 });
 

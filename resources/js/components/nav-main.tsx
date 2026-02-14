@@ -44,7 +44,7 @@ export function NavMain({ items = [] }: { items?: NavItem[] }) {
                             'flex flex-col items-center gap-1 rounded-md px-2 py-2.5 text-center transition-colors',
                             'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
                             active &&
-                                'bg-sidebar-accent font-medium text-sidebar-accent-foreground',
+                                'bg-sidebar-accent font-bold text-sidebar-accent-foreground',
                         )}
                     >
                         {item.icon && (

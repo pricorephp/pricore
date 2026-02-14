@@ -16,7 +16,17 @@ class DashboardController extends Controller
         $organization = $user->lastAccessedOrganization() ?? $user->organizations()->first();
 
         if ($organization) {
-            return redirect()->route('organizations.show', $organization);
+            $redirect = redirect()->route('organizations.show', $organization);
+
+            if ($request->session()->has('status')) {
+                $redirect->with('status', $request->session()->get('status'));
+            }
+
+            if ($request->session()->has('error')) {
+                $redirect->with('error', $request->session()->get('error'));
+            }
+
+            return $redirect;
         }
 
         return Inertia::render('dashboard');

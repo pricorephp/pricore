@@ -50,6 +50,6 @@ class SettingsController
 
         return redirect()
             ->route('organizations.settings.general', $organization)
-            ->with('success', 'Organization updated successfully.');
+            ->with('status', 'Organization updated successfully.');
     }
 }

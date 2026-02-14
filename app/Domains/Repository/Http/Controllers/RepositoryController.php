@@ -63,7 +63,7 @@ class RepositoryController extends Controller
 
         return redirect()
             ->route('organizations.repositories.index', $organization)
-            ->with('success', 'Repository added successfully.');
+            ->with('status', 'Repository added successfully.');
     }
 
     public function show(Organization $organization, Repository $repository): Response
@@ -112,7 +112,7 @@ class RepositoryController extends Controller
         // Placeholder for future updates
         return redirect()
             ->route('organizations.repositories.edit', [$organization, $repository])
-            ->with('success', 'Repository updated successfully.');
+            ->with('status', 'Repository updated successfully.');
     }
 
     public function destroy(Request $request, Organization $organization, Repository $repository): RedirectResponse
@@ -129,6 +129,6 @@ class RepositoryController extends Controller
 
         return redirect()
             ->route('organizations.repositories.index', $organization)
-            ->with('success', 'Repository deleted successfully.');
+            ->with('status', 'Repository deleted successfully.');
     }
 }
