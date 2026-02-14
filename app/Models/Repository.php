@@ -22,6 +22,8 @@ use Illuminate\Support\Carbon;
  * @property GitProvider $provider
  * @property string $repo_identifier
  * @property string|null $default_branch
+ * @property string|null $webhook_id
+ * @property string|null $webhook_secret
  * @property Carbon|null $last_synced_at
  * @property RepositorySyncStatus|null $sync_status
  * @property Carbon|null $created_at
@@ -60,6 +62,7 @@ class Repository extends Model
         'provider' => GitProvider::class,
         'sync_status' => RepositorySyncStatus::class,
         'last_synced_at' => 'datetime',
+        'webhook_secret' => 'encrypted',
     ];
 
     /**

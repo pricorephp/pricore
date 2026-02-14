@@ -92,6 +92,7 @@ syncStatus: string | null;
 syncStatusLabel: string | null;
 lastSyncedAt: string | null;
 packagesCount: number;
+webhookActive: boolean;
 };
 export type RepositorySuggestionData = {
 name: string;

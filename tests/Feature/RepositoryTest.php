@@ -75,7 +75,7 @@ it('cannot delete a repository as a member', function () {
     assertDatabaseHas('repositories', ['uuid' => $repository->uuid]);
 });
 
-it('cannot delete a repository as an admin', function () {
+it('can delete a repository as an admin', function () {
     $owner = User::factory()->create();
     $organization = Organization::factory()->create(['owner_uuid' => $owner->uuid]);
     $organization->members()->attach($owner->uuid, ['role' => 'owner', 'uuid' => (string) Str::uuid()]);
@@ -87,9 +87,9 @@ it('cannot delete a repository as an admin', function () {
 
     actingAs($admin)
         ->delete(route('organizations.repositories.destroy', [$organization->slug, $repository->uuid]))
-        ->assertForbidden();
+        ->assertRedirect(route('organizations.repositories.index', $organization->slug));
 
-    assertDatabaseHas('repositories', ['uuid' => $repository->uuid]);
+    assertDatabaseMissing('repositories', ['uuid' => $repository->uuid]);
 });
 
 it('cannot delete a repository from another organization', function () {

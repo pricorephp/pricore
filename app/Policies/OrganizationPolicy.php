@@ -61,6 +61,6 @@ class OrganizationPolicy
             return false;
         }
 
-        return $pivot->role->isAdmin();
+        return $pivot->role->canManageSettings();
     }
 }

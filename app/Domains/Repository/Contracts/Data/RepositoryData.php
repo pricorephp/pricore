@@ -21,6 +21,7 @@ class RepositoryData extends Data
         public ?string $syncStatusLabel,
         public ?CarbonInterface $lastSyncedAt,
         public int $packagesCount,
+        public bool $webhookActive,
     ) {}
 
     public static function fromModel(Repository $repository): self
@@ -36,6 +37,7 @@ class RepositoryData extends Data
             syncStatusLabel: $repository->sync_status?->label(),
             lastSyncedAt: $repository->last_synced_at,
             packagesCount: $repository->packages_count ?? 0,
+            webhookActive: $repository->webhook_id !== null,
         );
     }
 }

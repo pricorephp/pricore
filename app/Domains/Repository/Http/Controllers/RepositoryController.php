@@ -4,7 +4,9 @@ namespace App\Domains\Repository\Http\Controllers;
 
 use App\Domains\Organization\Contracts\Data\OrganizationData;
 use App\Domains\Package\Contracts\Data\PackageData;
+use App\Domains\Repository\Actions\DeleteWebhookAction;
 use App\Domains\Repository\Actions\ExtractRepositoryNameAction;
+use App\Domains\Repository\Actions\RegisterWebhookAction;
 use App\Domains\Repository\Contracts\Data\RepositoryData;
 use App\Domains\Repository\Contracts\Data\SyncLogData;
 use App\Domains\Repository\Contracts\Enums\GitProvider;
@@ -21,7 +23,9 @@ use Inertia\Response;
 class RepositoryController extends Controller
 {
     public function __construct(
-        protected ExtractRepositoryNameAction $extractRepositoryNameAction
+        protected ExtractRepositoryNameAction $extractRepositoryNameAction,
+        protected RegisterWebhookAction $registerWebhookAction,
+        protected DeleteWebhookAction $deleteWebhookAction,
     ) {}
 
     public function index(Organization $organization): Response
@@ -61,9 +65,16 @@ class RepositoryController extends Controller
 
         SyncRepositoryJob::dispatch($repository);
 
+        $webhookRegistered = $this->registerWebhookAction->handle($repository);
+
+        $message = 'Repository added successfully.';
+        if (! $webhookRegistered && $repository->provider === GitProvider::GitHub) {
+            $message .= ' Webhook registration failed — you can retry from the repository page.';
+        }
+
         return redirect()
             ->route('organizations.repositories.index', $organization)
-            ->with('status', 'Repository added successfully.');
+            ->with('status', $message);
     }
 
     public function show(Organization $organization, Repository $repository): Response
@@ -124,6 +135,8 @@ class RepositoryController extends Controller
         if (! $request->user()?->can('deleteRepository', $organization)) {
             abort(403);
         }
+
+        $this->deleteWebhookAction->handle($repository);
 
         $repository->delete();
 

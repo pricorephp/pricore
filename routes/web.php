@@ -8,6 +8,7 @@ use App\Domains\Package\Http\Controllers\PackageController;
 use App\Domains\Repository\Http\Controllers\Api\RepositorySuggestionController;
 use App\Domains\Repository\Http\Controllers\RepositoryController;
 use App\Domains\Repository\Http\Controllers\SyncRepositoryController;
+use App\Domains\Repository\Http\Controllers\SyncWebhookController;
 use App\Domains\Token\Http\Controllers\TokenController;
 use App\Http\Controllers\DashboardController;
 use Illuminate\Support\Facades\Route;
@@ -33,6 +34,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::patch('organizations/{organization:slug}/repositories/{repository:uuid}', [RepositoryController::class, 'update'])->name('organizations.repositories.update');
         Route::delete('organizations/{organization:slug}/repositories/{repository:uuid}', [RepositoryController::class, 'destroy'])->name('organizations.repositories.destroy');
         Route::post('organizations/{organization:slug}/repositories/{repository:uuid}/sync', SyncRepositoryController::class)->name('organizations.repositories.sync');
+        Route::post('organizations/{organization:slug}/repositories/{repository:uuid}/webhook/sync', SyncWebhookController::class)->name('organizations.repositories.webhook.sync');
 
         // Organization settings
         Route::prefix('organizations/{organization:slug}/settings')->name('organizations.settings.')->group(function () {

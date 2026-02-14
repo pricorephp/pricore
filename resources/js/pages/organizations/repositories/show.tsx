@@ -1,6 +1,7 @@
 import { show } from '@/actions/App/Domains/Package/Http/Controllers/PackageController';
 import { edit } from '@/actions/App/Domains/Repository/Http/Controllers/RepositoryController';
 import SyncRepository from '@/actions/App/Domains/Repository/Http/Controllers/SyncRepositoryController';
+import SyncWebhook from '@/actions/App/Domains/Repository/Http/Controllers/SyncWebhookController';
 import GitProviderIcon from '@/components/git-provider-icon';
 import HeadingSmall from '@/components/heading-small';
 import PackageCard from '@/components/package-card';
@@ -18,7 +19,7 @@ import {
 import AppLayout from '@/layouts/app-layout';
 import { createOrganizationBreadcrumb } from '@/lib/breadcrumbs';
 import { Form, Head, Link, usePage } from '@inertiajs/react';
-import { RefreshCw, Settings } from 'lucide-react';
+import { RefreshCw, Settings, Webhook } from 'lucide-react';
 import { DateTime } from 'luxon';
 
 type OrganizationData =
@@ -143,6 +144,20 @@ export default function RepositoryShow({
                                     {repository.syncStatusLabel ?? 'Pending'}
                                 </Badge>
                             )}
+                            {repository.provider === 'github' && (
+                                <Badge
+                                    variant={
+                                        repository.webhookActive
+                                            ? 'success'
+                                            : 'outline'
+                                    }
+                                >
+                                    <Webhook className="mr-0.5 size-3" />
+                                    {repository.webhookActive
+                                        ? 'Webhook Active'
+                                        : 'No Webhook'}
+                                </Badge>
+                            )}
                         </div>
                         {repository.lastSyncedAt && (
                             <p className="text-muted-foreground">
@@ -176,6 +191,36 @@ export default function RepositoryShow({
                                 </Button>
                             )}
                         </Form>
+                        {repository.provider === 'github' && (
+                            <Form
+                                action={SyncWebhook.url([
+                                    organization.slug,
+                                    repository.uuid,
+                                ])}
+                                method="post"
+                            >
+                                {({ processing }) => (
+                                    <Button
+                                        type="submit"
+                                        disabled={processing}
+                                        variant="secondary"
+                                    >
+                                        <Webhook
+                                            className={`h-4 w-4 ${
+                                                processing
+                                                    ? 'animate-spin'
+                                                    : ''
+                                            }`}
+                                        />
+                                        {processing
+                                            ? 'Registering...'
+                                            : repository.webhookActive
+                                              ? 'Re-register Webhook'
+                                              : 'Register Webhook'}
+                                    </Button>
+                                )}
+                            </Form>
+                        )}
                         <Button variant="secondary" asChild>
                             <Link
                                 href={edit.url({
