@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\Organization;
 use App\Models\OrganizationGitCredential;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
@@ -15,7 +16,7 @@ class GitHubController extends Controller
     public function redirect(): SymfonyRedirectResponse
     {
         return Socialite::driver('github')
-            ->scopes(['user:email', 'repo', 'read:org'])
+            ->scopes(['user:email'])
             ->redirect();
     }
 
@@ -78,6 +79,62 @@ class GitHubController extends Controller
         Auth::login($user, remember: true);
 
         return redirect()->intended(route('dashboard'));
+    }
+
+    public function connect(Organization $organization): SymfonyRedirectResponse
+    {
+        session(['github_connect_organization' => $organization->slug]);
+
+        return Socialite::driver('github')
+            ->scopes(['repo', 'read:org'])
+            ->redirect();
+    }
+
+    public function connectCallback(): RedirectResponse
+    {
+        $organizationSlug = session()->pull('github_connect_organization');
+
+        if (! $organizationSlug) {
+            return redirect()->route('dashboard')->with('error', 'No organization found for GitHub connection.');
+        }
+
+        $organization = Organization::where('slug', $organizationSlug)->firstOrFail();
+
+        try {
+            $githubUser = Socialite::driver('github')->user();
+        } catch (\Exception) {
+            return redirect()
+                ->route('organizations.settings.git-credentials.index', $organization)
+                ->with('error', 'GitHub authentication failed. Please try again.');
+        }
+
+        $user = Auth::user();
+
+        $user->update([
+            'github_token' => $githubUser->token,
+            'github_id' => $user->github_id ?? $githubUser->getId(),
+            'github_nickname' => $githubUser->getNickname(),
+            'avatar_url' => $githubUser->getAvatar(),
+        ]);
+
+        if ($organization->gitCredentials()->where('provider', 'github')->exists()) {
+            return redirect()
+                ->route('organizations.settings.git-credentials.index', $organization)
+                ->with('error', 'GitHub credentials already exist for this organization. Please update the existing credentials instead.');
+        }
+
+        OrganizationGitCredential::create([
+            'organization_uuid' => $organization->uuid,
+            'provider' => 'github',
+            'credentials' => ['token' => $githubUser->token],
+            'source_user_uuid' => $user->uuid,
+        ]);
+
+        $this->refreshOrganizationCredentials($user);
+
+        return redirect()
+            ->route('organizations.settings.git-credentials.index', $organization)
+            ->with('status', 'GitHub credentials connected successfully.');
     }
 
     private function refreshOrganizationCredentials(User $user): void

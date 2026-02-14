@@ -26,16 +26,10 @@ class StoreGitCredentialRequest extends FormRequest
     public function rules(): array
     {
         $provider = GitProvider::tryFrom($this->input('provider'));
-        $isOAuth = $this->input('source') === 'oauth';
 
         $baseRules = [
             'provider' => ['required', 'string', Rule::enum(GitProvider::class)],
-            'source' => ['nullable', 'string', 'in:oauth'],
         ];
-
-        if ($isOAuth && $provider === GitProvider::GitHub) {
-            return $baseRules;
-        }
 
         $credentialRules = match ($provider) {
             GitProvider::GitHub => [

@@ -1,5 +1,7 @@
 <?php
 
+use App\Domains\Organization\Contracts\Enums\OrganizationRole;
+use App\Models\Organization;
 use App\Models\OrganizationGitCredential;
 use App\Models\User;
 use Laravel\Socialite\Contracts\User as SocialiteUser;
@@ -40,11 +42,30 @@ function mockSocialiteCallback(SocialiteUser $user): void
     Socialite::shouldReceive('driver')->with('github')->andReturn($provider);
 }
 
-test('redirect sends user to GitHub', function () {
+function mockSocialiteRedirect(string $expectedUrl = 'https://github.com/login/oauth/authorize'): void
+{
+    $provider = Mockery::mock(GithubProvider::class);
+    $provider->shouldReceive('scopes')->andReturnSelf();
+    $provider->shouldReceive('redirect')->andReturn(redirect($expectedUrl));
+
+    Socialite::shouldReceive('driver')->with('github')->andReturn($provider);
+}
+
+test('redirect sends user to GitHub with only user:email scope', function () {
+    $provider = Mockery::mock(GithubProvider::class);
+    $provider->shouldReceive('scopes')
+        ->once()
+        ->with(['user:email'])
+        ->andReturnSelf();
+    $provider->shouldReceive('redirect')
+        ->once()
+        ->andReturn(redirect('https://github.com/login/oauth/authorize'));
+
+    Socialite::shouldReceive('driver')->with('github')->andReturn($provider);
+
     $response = $this->get(route('auth.github.redirect'));
 
     $response->assertRedirect();
-    expect($response->headers->get('Location'))->toContain('github.com');
 });
 
 test('callback creates new user from GitHub', function () {
@@ -186,4 +207,99 @@ test('callback uses nickname as name when GitHub name is null', function () {
 
     $user = User::where('email', 'john@example.com')->first();
     expect($user->name)->toBe('johndoe');
+});
+
+test('connect route requires authentication', function () {
+    $organization = Organization::factory()->create();
+
+    $response = $this->get(route('auth.github.connect', $organization));
+
+    $response->assertRedirect(route('login'));
+});
+
+test('connect route redirects to GitHub with repo scope', function () {
+    $user = User::factory()->create();
+    $organization = Organization::factory()->create();
+
+    $provider = Mockery::mock(GithubProvider::class);
+    $provider->shouldReceive('scopes')
+        ->once()
+        ->with(['repo', 'read:org'])
+        ->andReturnSelf();
+    $provider->shouldReceive('redirect')
+        ->once()
+        ->andReturn(redirect('https://github.com/login/oauth/authorize'));
+
+    Socialite::shouldReceive('driver')->with('github')->andReturn($provider);
+
+    $response = $this->actingAs($user)
+        ->get(route('auth.github.connect', $organization));
+
+    $response->assertRedirect();
+    expect(session('github_connect_organization'))->toBe($organization->slug);
+});
+
+test('connect callback creates git credential for organization', function () {
+    $user = User::factory()->withGitHub()->create();
+    $organization = Organization::factory()->create();
+    $organization->members()->attach($user->uuid, [
+        'uuid' => \Illuminate\Support\Str::uuid()->toString(),
+        'role' => OrganizationRole::Owner->value,
+    ]);
+
+    $socialiteUser = mockSocialiteUser(['id' => $user->github_id, 'token' => 'gho_elevated_token']);
+    mockSocialiteCallback($socialiteUser);
+
+    $response = $this->actingAs($user)
+        ->withSession(['github_connect_organization' => $organization->slug])
+        ->get(route('auth.github.connect.callback'));
+
+    $response->assertRedirect(route('organizations.settings.git-credentials.index', $organization));
+    $response->assertSessionHas('status', 'GitHub credentials connected successfully.');
+
+    $credential = OrganizationGitCredential::where('organization_uuid', $organization->uuid)
+        ->where('provider', 'github')
+        ->first();
+
+    expect($credential)->not->toBeNull()
+        ->and($credential->source_user_uuid)->toBe($user->uuid)
+        ->and($credential->credentials['token'])->toBe('gho_elevated_token');
+});
+
+test('connect callback rejects if credentials already exist', function () {
+    $user = User::factory()->withGitHub()->create();
+    $organization = Organization::factory()->create();
+    $organization->members()->attach($user->uuid, [
+        'uuid' => \Illuminate\Support\Str::uuid()->toString(),
+        'role' => OrganizationRole::Owner->value,
+    ]);
+
+    OrganizationGitCredential::factory()->github()->create([
+        'organization_uuid' => $organization->uuid,
+    ]);
+
+    $socialiteUser = mockSocialiteUser(['id' => $user->github_id, 'token' => 'gho_elevated_token']);
+    mockSocialiteCallback($socialiteUser);
+
+    $response = $this->actingAs($user)
+        ->withSession(['github_connect_organization' => $organization->slug])
+        ->get(route('auth.github.connect.callback'));
+
+    $response->assertRedirect(route('organizations.settings.git-credentials.index', $organization));
+    $response->assertSessionHas('error');
+
+    expect(OrganizationGitCredential::where('organization_uuid', $organization->uuid)->count())->toBe(1);
+});
+
+test('connect callback redirects to dashboard when no organization in session', function () {
+    $user = User::factory()->withGitHub()->create();
+
+    $socialiteUser = mockSocialiteUser(['id' => $user->github_id]);
+    mockSocialiteCallback($socialiteUser);
+
+    $response = $this->actingAs($user)
+        ->get(route('auth.github.connect.callback'));
+
+    $response->assertRedirect(route('dashboard'));
+    $response->assertSessionHas('error');
 });
