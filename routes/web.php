@@ -22,6 +22,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Organization routes (with access tracking)
     Route::middleware('track.organization')->group(function () {
         Route::get('organizations/{organization:slug}', [OrganizationController::class, 'show'])->name('organizations.show');
+        Route::delete('organizations/{organization:slug}', [OrganizationController::class, 'destroy'])->name('organizations.destroy');
         Route::get('organizations/{organization:slug}/packages', [PackageController::class, 'index'])->name('organizations.packages.index');
         Route::get('organizations/{organization:slug}/packages/{package:uuid}', [PackageController::class, 'show'])->name('organizations.packages.show');
         Route::get('organizations/{organization:slug}/repositories', [RepositoryController::class, 'index'])->name('organizations.repositories.index');

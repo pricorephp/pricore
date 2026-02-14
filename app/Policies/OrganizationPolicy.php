@@ -36,6 +36,11 @@ class OrganizationPolicy
         return $this->viewSettings($user, $organization);
     }
 
+    public function delete(User $user, Organization $organization): bool
+    {
+        return $organization->owner_uuid === $user->uuid;
+    }
+
     public function updateSlug(User $user, Organization $organization): bool
     {
         return $organization->owner_uuid === $user->uuid;
@@ -56,6 +61,6 @@ class OrganizationPolicy
             return false;
         }
 
-        return $pivot->role->isOwner();
+        return $pivot->role->isAdmin();
     }
 }

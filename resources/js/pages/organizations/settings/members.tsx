@@ -184,7 +184,7 @@ export default function Members({ members, roleOptions }: Props) {
                 </Dialog>
             </div>
 
-            <div className="rounded-lg border bg-card shadow-sm">
+            <div className="rounded-lg border bg-card">
                 <Table>
                     <TableHeader>
                         <TableRow className="hover:bg-transparent">
