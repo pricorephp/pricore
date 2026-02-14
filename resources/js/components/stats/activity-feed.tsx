@@ -54,24 +54,12 @@ export function ActivityFeed({
                                                 {release.packageName}
                                             </Link>
                                             <div className="flex items-center gap-2">
-                                                <code className="text-xs text-muted-foreground">
+                                                <code
+                                                    className="max-w-64 truncate text-xs text-muted-foreground"
+                                                    title={release.version}
+                                                >
                                                     {release.version}
                                                 </code>
-                                                {release.isStable ? (
-                                                    <Badge
-                                                        variant="secondary"
-                                                        className="text-xs"
-                                                    >
-                                                        Stable
-                                                    </Badge>
-                                                ) : (
-                                                    <Badge
-                                                        variant="secondary"
-                                                        className="text-xs"
-                                                    >
-                                                        Dev
-                                                    </Badge>
-                                                )}
                                             </div>
                                         </div>
                                         <span className="shrink-0 text-xs text-muted-foreground">

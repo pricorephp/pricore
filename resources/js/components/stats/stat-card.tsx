@@ -63,8 +63,8 @@ export function StatCard({
                         <StatusIcon className={cn('h-4 w-4', styles.icon)} />
                     )}
                     {Icon && (
-                        <div className="rounded-md bg-muted/50 p-1.5 transition-colors group-hover:bg-muted">
-                            <Icon className="h-4 w-4 text-muted-foreground" />
+                        <div className="rounded-md bg-muted/50 p-1.5 transition-colors group-hover:bg-primary/10">
+                            <Icon className="h-4 w-4 text-muted-foreground transition-colors group-hover:text-primary" />
                         </div>
                     )}
                 </div>

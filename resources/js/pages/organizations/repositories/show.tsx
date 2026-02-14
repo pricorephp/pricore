@@ -9,6 +9,13 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
     Table,
     TableBody,
     TableCell,
@@ -18,8 +25,8 @@ import {
 } from '@/components/ui/table';
 import AppLayout from '@/layouts/app-layout';
 import { createOrganizationBreadcrumb } from '@/lib/breadcrumbs';
-import { Form, Head, Link, usePage } from '@inertiajs/react';
-import { RefreshCw, Settings, Webhook } from 'lucide-react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
+import { EllipsisVertical, RefreshCw, Settings, Webhook } from 'lucide-react';
 import { DateTime } from 'luxon';
 
 type OrganizationData =
@@ -168,69 +175,58 @@ export default function RepositoryShow({
                             </p>
                         )}
                     </div>
-                    <div className="flex items-center gap-2">
-                        <Form
-                            action={SyncRepository.url([
-                                organization.slug,
-                                repository.uuid,
-                            ])}
-                            method="post"
-                        >
-                            {({ processing }) => (
-                                <Button
-                                    type="submit"
-                                    disabled={processing}
-                                    variant="secondary"
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="secondary">
+                                Actions
+                                <EllipsisVertical className="size-4" />
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                            <DropdownMenuItem
+                                onSelect={() =>
+                                    router.post(
+                                        SyncRepository.url([
+                                            organization.slug,
+                                            repository.uuid,
+                                        ]),
+                                    )
+                                }
+                            >
+                                <RefreshCw />
+                                Sync Now
+                            </DropdownMenuItem>
+                            {repository.provider === 'github' && (
+                                <DropdownMenuItem
+                                    onSelect={() =>
+                                        router.post(
+                                            SyncWebhook.url([
+                                                organization.slug,
+                                                repository.uuid,
+                                            ]),
+                                        )
+                                    }
                                 >
-                                    <RefreshCw
-                                        className={`h-4 w-4 ${
-                                            processing ? 'animate-spin' : ''
-                                        }`}
-                                    />
-                                    {processing ? 'Syncing...' : 'Sync Now'}
-                                </Button>
+                                    <Webhook />
+                                    {repository.webhookActive
+                                        ? 'Re-register Webhook'
+                                        : 'Register Webhook'}
+                                </DropdownMenuItem>
                             )}
-                        </Form>
-                        {repository.provider === 'github' && (
-                            <Form
-                                action={SyncWebhook.url([
-                                    organization.slug,
-                                    repository.uuid,
-                                ])}
-                                method="post"
-                            >
-                                {({ processing }) => (
-                                    <Button
-                                        type="submit"
-                                        disabled={processing}
-                                        variant="secondary"
-                                    >
-                                        <Webhook
-                                            className={`h-4 w-4 ${
-                                                processing ? 'animate-spin' : ''
-                                            }`}
-                                        />
-                                        {processing
-                                            ? 'Registering...'
-                                            : repository.webhookActive
-                                              ? 'Re-register Webhook'
-                                              : 'Register Webhook'}
-                                    </Button>
-                                )}
-                            </Form>
-                        )}
-                        <Button variant="secondary" asChild>
-                            <Link
-                                href={edit.url({
-                                    organization: organization.slug,
-                                    repository: repository.uuid,
-                                })}
-                            >
-                                <Settings className="mr-2 size-4" />
-                                Edit
-                            </Link>
-                        </Button>
-                    </div>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem asChild>
+                                <Link
+                                    href={edit.url({
+                                        organization: organization.slug,
+                                        repository: repository.uuid,
+                                    })}
+                                >
+                                    <Settings />
+                                    Edit
+                                </Link>
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
                 </div>
 
                 {packages.length > 0 && (
