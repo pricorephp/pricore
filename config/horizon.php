@@ -6,6 +6,18 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Allowed Emails
+    |--------------------------------------------------------------------------
+    |
+    | A comma-separated list of email addresses that are allowed to access
+    | the Horizon dashboard in non-local environments.
+    |
+    */
+
+    'allowed_emails' => env('HORIZON_ALLOWED_EMAILS', ''),
+
+    /*
+    |--------------------------------------------------------------------------
     | Horizon Name
     |--------------------------------------------------------------------------
     |

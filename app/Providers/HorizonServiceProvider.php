@@ -30,7 +30,7 @@ class HorizonServiceProvider extends HorizonApplicationServiceProvider
         Gate::define('viewHorizon', static function (User $user) {
             return in_array(
                 needle: $user->email,
-                haystack: explode(',', env('HORIZON_ALLOWED_EMAILS')),
+                haystack: explode(',', (string) config('horizon.allowed_emails')),
                 strict: true
             );
         });
