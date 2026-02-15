@@ -105,6 +105,7 @@ name: string;
 fullName: string;
 isPrivate: boolean;
 description: string | null;
+isConnected: boolean;
 };
 export type SyncLogData = {
 uuid: string;

@@ -1,8 +1,18 @@
 import DismissOnboardingController from '@/actions/App/Domains/Organization/Http/Controllers/DismissOnboardingController';
+import ImportRepositoriesDialog from '@/components/import-repositories-dialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Link, router } from '@inertiajs/react';
-import { CheckCircle2, Circle, ExternalLink, GitBranch, Key, X } from 'lucide-react';
+import {
+    CheckCircle2,
+    Circle,
+    ExternalLink,
+    GitBranch,
+    Import,
+    Key,
+    X,
+} from 'lucide-react';
+import { useState } from 'react';
 
 type OnboardingChecklistData =
     App.Domains.Organization.Contracts.Data.OnboardingChecklistData;
@@ -10,6 +20,7 @@ type OnboardingChecklistData =
 interface OnboardingChecklistProps {
     organization: { slug: string };
     onboarding: OnboardingChecklistData;
+    configuredProviders?: string[];
 }
 
 interface StepProps {
@@ -53,7 +64,9 @@ function Step({ title, description, completed, children }: StepProps) {
 export default function OnboardingChecklist({
     organization,
     onboarding,
+    configuredProviders = [],
 }: OnboardingChecklistProps) {
+    const [isImportOpen, setIsImportOpen] = useState(false);
     if (onboarding.isDismissed) {
         return null;
     }
@@ -96,14 +109,26 @@ export default function OnboardingChecklist({
                     description="Link a Git repository to automatically sync packages."
                     completed={onboarding.hasRepository}
                 >
-                    <Button size="sm" variant="secondary" asChild>
-                        <Link
-                            href={`/organizations/${organization.slug}/repositories`}
-                        >
-                            <GitBranch className="size-4" />
-                            Add Repository
-                        </Link>
-                    </Button>
+                    <div className="flex flex-wrap gap-2">
+                        <Button size="sm" variant="secondary" asChild>
+                            <Link
+                                href={`/organizations/${organization.slug}/repositories`}
+                            >
+                                <GitBranch className="size-4" />
+                                Add Repository
+                            </Link>
+                        </Button>
+                        {configuredProviders.length > 0 && (
+                            <Button
+                                size="sm"
+                                variant="secondary"
+                                onClick={() => setIsImportOpen(true)}
+                            >
+                                <Import className="size-4" />
+                                Import Repositories
+                            </Button>
+                        )}
+                    </div>
                 </Step>
 
                 <Step
@@ -130,6 +155,15 @@ export default function OnboardingChecklist({
                     </div>
                 </Step>
             </CardContent>
+
+            {configuredProviders.length > 0 && (
+                <ImportRepositoriesDialog
+                    organizationSlug={organization.slug}
+                    isOpen={isImportOpen}
+                    onClose={() => setIsImportOpen(false)}
+                    configuredProviders={configuredProviders}
+                />
+            )}
         </Card>
     );
 }

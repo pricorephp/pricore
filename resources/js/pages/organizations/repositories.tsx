@@ -3,6 +3,7 @@ import AddRepositoryDialog from '@/components/add-repository-dialog';
 import { EmptyState } from '@/components/empty-state';
 import GitProviderIcon from '@/components/git-provider-icon';
 import HeadingSmall from '@/components/heading-small';
+import ImportRepositoriesDialog from '@/components/import-repositories-dialog';
 import InfoBox from '@/components/info-box';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -10,7 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import AppLayout from '@/layouts/app-layout';
 import { createOrganizationBreadcrumb } from '@/lib/breadcrumbs';
 import { Head, Link, usePage } from '@inertiajs/react';
-import { ArrowUpRight, GitBranch, Plus } from 'lucide-react';
+import { ArrowUpRight, GitBranch, Import, Plus } from 'lucide-react';
 import { DateTime } from 'luxon';
 import { useState } from 'react';
 
@@ -53,6 +54,7 @@ export default function Repositories({
         auth: { organizations: OrganizationData[] };
     }>().props;
     const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [isImportOpen, setIsImportOpen] = useState(false);
 
     const breadcrumbs = [
         createOrganizationBreadcrumb(organization, auth.organizations),
@@ -72,10 +74,21 @@ export default function Repositories({
                         title="Repositories"
                         description="Connected Git repositories for automatic package syncing"
                     />
-                    <Button onClick={() => setIsDialogOpen(true)}>
-                        <Plus className="size-4" />
-                        Add Repository
-                    </Button>
+                    <div className="flex gap-2">
+                        {configuredProviders.length > 0 && (
+                            <Button
+                                variant="outline"
+                                onClick={() => setIsImportOpen(true)}
+                            >
+                                <Import className="size-4" />
+                                Import Repositories
+                            </Button>
+                        )}
+                        <Button onClick={() => setIsDialogOpen(true)}>
+                            <Plus className="size-4" />
+                            Add Repository
+                        </Button>
+                    </div>
                 </div>
 
                 {repositories.length === 0 ? (
@@ -194,6 +207,15 @@ export default function Repositories({
                     onClose={() => setIsDialogOpen(false)}
                     configuredProviders={configuredProviders}
                 />
+
+                {configuredProviders.length > 0 && (
+                    <ImportRepositoriesDialog
+                        organizationSlug={organization.slug}
+                        isOpen={isImportOpen}
+                        onClose={() => setIsImportOpen(false)}
+                        configuredProviders={configuredProviders}
+                    />
+                )}
             </div>
         </AppLayout>
     );

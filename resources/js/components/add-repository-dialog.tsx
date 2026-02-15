@@ -68,18 +68,22 @@ export default function AddRepositoryDialog({
     const repoListContainerRef = useRef<HTMLDivElement>(null);
 
     const handleClose = (): void => {
-        setProvider(defaultProvider);
-        setRepositories([]);
-        setSelectedRepo('');
-        setRepoIdentifier('');
-        setSearchQuery('');
         onClose();
     };
 
     useEffect(() => {
+        if (!isOpen) {
+            return;
+        }
+
+        setProvider(defaultProvider);
+        setSelectedRepo('');
+        setRepoIdentifier('');
+        setSearchQuery('');
+    }, [isOpen]);
+
+    useEffect(() => {
         if (!isOpen || provider === 'git') {
-            setRepositories([]);
-            setSelectedRepo('');
             return;
         }
 

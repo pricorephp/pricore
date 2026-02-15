@@ -18,12 +18,14 @@ interface OrganizationShowProps {
     organization: OrganizationData;
     stats: OrganizationStatsData;
     onboarding: OnboardingChecklistData;
+    configuredProviders?: string[];
 }
 
 export default function OrganizationShow({
     organization,
     stats,
     onboarding,
+    configuredProviders = [],
 }: OrganizationShowProps) {
     const { auth } = usePage<{
         auth: { organizations: OrganizationData[] };
@@ -87,6 +89,7 @@ export default function OrganizationShow({
                 <OnboardingChecklist
                     organization={organization}
                     onboarding={onboarding}
+                    configuredProviders={configuredProviders}
                 />
 
                 {/* Activity Feed */}

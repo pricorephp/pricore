@@ -7,6 +7,7 @@ use App\Domains\Repository\Contracts\Enums\GitProvider;
 use App\Domains\Repository\Services\GitProviders\GitHubProvider;
 use App\Http\Controllers\Controller;
 use App\Models\Organization;
+use App\Models\Repository;
 use App\Models\UserGitCredential;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -40,6 +41,23 @@ class RepositorySuggestionController extends Controller
                     "Provider '{$provider->label()}' repository suggestions are not yet implemented"
                 ),
             };
+
+            $connectedIdentifiers = Repository::query()
+                ->where('organization_uuid', $organization->uuid)
+                ->where('provider', $provider)
+                ->pluck('repo_identifier')
+                ->toArray();
+
+            $repositories = array_map(
+                fn (RepositorySuggestionData $repo) => new RepositorySuggestionData(
+                    name: $repo->name,
+                    fullName: $repo->fullName,
+                    isPrivate: $repo->isPrivate,
+                    description: $repo->description,
+                    isConnected: in_array($repo->fullName, $connectedIdentifiers),
+                ),
+                $repositories,
+            );
 
             return response()->json(['repositories' => $repositories]);
         } catch (\Exception $e) {

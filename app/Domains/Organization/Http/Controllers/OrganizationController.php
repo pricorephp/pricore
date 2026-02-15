@@ -7,6 +7,7 @@ use App\Domains\Organization\Actions\BuildOrganizationStatsAction;
 use App\Domains\Organization\Actions\CreateOrganizationAction;
 use App\Domains\Organization\Contracts\Data\OrganizationData;
 use App\Domains\Organization\Requests\StoreOrganizationRequest;
+use App\Domains\Repository\Contracts\Enums\GitProvider;
 use App\Http\Controllers\Controller;
 use App\Models\Organization;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
@@ -34,10 +35,16 @@ class OrganizationController extends Controller
         /** @var \App\Models\User $user */
         $user = auth()->user();
 
+        $configuredProviders = $user->gitCredentials()
+            ->pluck('provider')
+            ->map(fn (GitProvider $provider) => $provider->value)
+            ->toArray();
+
         return Inertia::render('organizations/show', [
             'organization' => OrganizationData::fromModel($organization),
             'stats' => $this->buildStats->handle($organization),
             'onboarding' => $this->buildOnboarding->handle($organization, $user),
+            'configuredProviders' => $configuredProviders,
         ]);
     }
 

@@ -4,12 +4,14 @@ namespace App\Domains\Repository\Http\Controllers;
 
 use App\Domains\Organization\Contracts\Data\OrganizationData;
 use App\Domains\Package\Contracts\Data\PackageData;
+use App\Domains\Repository\Actions\BulkCreateRepositoriesAction;
 use App\Domains\Repository\Actions\DeleteWebhookAction;
 use App\Domains\Repository\Actions\ExtractRepositoryNameAction;
 use App\Domains\Repository\Actions\RegisterWebhookAction;
 use App\Domains\Repository\Contracts\Data\RepositoryData;
 use App\Domains\Repository\Contracts\Data\SyncLogData;
 use App\Domains\Repository\Contracts\Enums\GitProvider;
+use App\Domains\Repository\Http\Requests\BulkStoreRepositoryRequest;
 use App\Domains\Repository\Http\Requests\StoreRepositoryRequest;
 use App\Domains\Repository\Jobs\SyncRepositoryJob;
 use App\Http\Controllers\Controller;
@@ -79,6 +81,26 @@ class RepositoryController extends Controller
         return redirect()
             ->route('organizations.repositories.index', $organization)
             ->with('status', $message);
+    }
+
+    public function bulkStore(
+        BulkStoreRepositoryRequest $request,
+        Organization $organization,
+        BulkCreateRepositoriesAction $bulkCreateAction,
+    ): RedirectResponse {
+        /** @var \App\Models\User $user */
+        $user = $request->user();
+
+        $result = $bulkCreateAction->handle(
+            organization: $organization,
+            provider: GitProvider::from($request->validated('provider')),
+            repositories: $request->validated('repositories'),
+            userUuid: $user->uuid,
+        );
+
+        return redirect()
+            ->route('organizations.repositories.index', $organization)
+            ->with('status', $result->statusMessage());
     }
 
     public function show(Organization $organization, Repository $repository): Response
