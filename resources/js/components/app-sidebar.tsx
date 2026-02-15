@@ -1,5 +1,4 @@
 import { NavMain } from '@/components/nav-main';
-import { NavUser } from '@/components/nav-user';
 import {
     Sidebar,
     SidebarContent,
@@ -9,7 +8,13 @@ import {
 import { dashboard } from '@/routes';
 import { type NavItem } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
-import { Box, GitBranch, LayoutDashboard, Settings } from 'lucide-react';
+import {
+    BookOpen,
+    Box,
+    GitBranch,
+    LayoutDashboard,
+    Settings,
+} from 'lucide-react';
 import { useMemo } from 'react';
 import AppLogoIcon from './app-logo-icon';
 
@@ -75,7 +80,15 @@ export function AppSidebar() {
             </SidebarContent>
 
             <SidebarFooter className="border-t border-sidebar-border pt-2">
-                <NavUser />
+                <a
+                    href="https://docs.pricore.dev"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex flex-col items-center gap-1 rounded-md px-2 py-2.5 text-center text-sidebar-foreground/70 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                >
+                    <BookOpen className="size-5" strokeWidth={1.75} />
+                    <span className="text-[10px] leading-tight">Docs</span>
+                </a>
             </SidebarFooter>
         </Sidebar>
     );

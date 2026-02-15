@@ -17,7 +17,7 @@ export function NavUser() {
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
                 <button
-                    className="flex w-full items-center justify-center rounded-md p-1.5 hover:bg-sidebar-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring"
+                    className="flex items-center gap-2 rounded-full py-1 pr-3 pl-1 transition-colors hover:bg-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     data-test="sidebar-menu-button"
                 >
                     <Avatar className="size-8">
@@ -25,16 +25,17 @@ export function NavUser() {
                             src={auth.user.avatar}
                             alt={auth.user.name}
                         />
-                        <AvatarFallback className="bg-sidebar-accent text-xs text-sidebar-accent-foreground">
+                        <AvatarFallback className="bg-primary text-xs text-primary-foreground">
                             {getInitials(auth.user.name)}
                         </AvatarFallback>
                     </Avatar>
+                    <span className="text-sm">{auth.user.name}</span>
                 </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent
                 className="min-w-56 rounded-lg bg-white dark:bg-neutral-950"
-                align="center"
-                side="right"
+                align="end"
+                side="bottom"
             >
                 <UserMenuContent user={auth.user} />
             </DropdownMenuContent>
