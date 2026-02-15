@@ -9,6 +9,12 @@ provider: string;
 providerLabel: string;
 isConfigured: boolean;
 };
+export type OnboardingChecklistData = {
+hasRepository: boolean;
+hasPersonalToken: boolean;
+hasOrgToken: boolean;
+isDismissed: boolean;
+};
 export type OrganizationData = {
 uuid: string;
 name: string;

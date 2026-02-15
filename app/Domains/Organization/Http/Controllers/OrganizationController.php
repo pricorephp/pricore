@@ -2,6 +2,7 @@
 
 namespace App\Domains\Organization\Http\Controllers;
 
+use App\Domains\Organization\Actions\BuildOnboardingChecklistAction;
 use App\Domains\Organization\Actions\BuildOrganizationStatsAction;
 use App\Domains\Organization\Actions\CreateOrganizationAction;
 use App\Domains\Organization\Contracts\Data\OrganizationData;
@@ -20,6 +21,7 @@ class OrganizationController extends Controller
     public function __construct(
         protected CreateOrganizationAction $createOrganization,
         protected BuildOrganizationStatsAction $buildStats,
+        protected BuildOnboardingChecklistAction $buildOnboarding,
     ) {}
 
     public function index(): RedirectResponse
@@ -29,9 +31,13 @@ class OrganizationController extends Controller
 
     public function show(Organization $organization): Response
     {
+        /** @var \App\Models\User $user */
+        $user = auth()->user();
+
         return Inertia::render('organizations/show', [
             'organization' => OrganizationData::fromModel($organization),
             'stats' => $this->buildStats->handle($organization),
+            'onboarding' => $this->buildOnboarding->handle($organization, $user),
         ]);
     }
 

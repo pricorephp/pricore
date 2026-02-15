@@ -27,6 +27,7 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @property string|null $github_token
  * @property string|null $github_nickname
  * @property string|null $avatar_url
+ * @property array<string, mixed>|null $preferences
  * @property Carbon|null $email_verified_at
  * @property string|null $password
  * @property string|null $two_factor_secret
@@ -95,6 +96,7 @@ class User extends Authenticatable implements MustVerifyEmail
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'preferences' => 'array',
             'two_factor_confirmed_at' => 'datetime',
         ];
     }
@@ -144,6 +146,27 @@ class User extends Authenticatable implements MustVerifyEmail
     public function hasGitHubConnected(): bool
     {
         return $this->github_id !== null && $this->github_token !== null;
+    }
+
+    public function hasOnboardingDismissed(string $organizationUuid): bool
+    {
+        $dismissed = $this->preferences['dismissed_onboarding'] ?? [];
+
+        return in_array($organizationUuid, $dismissed);
+    }
+
+    public function dismissOnboarding(string $organizationUuid): void
+    {
+        $preferences = $this->preferences ?? [];
+        $dismissed = $preferences['dismissed_onboarding'] ?? [];
+
+        if (! in_array($organizationUuid, $dismissed)) {
+            $dismissed[] = $organizationUuid;
+        }
+
+        $preferences['dismissed_onboarding'] = $dismissed;
+        $this->preferences = $preferences;
+        $this->save();
     }
 
     /**

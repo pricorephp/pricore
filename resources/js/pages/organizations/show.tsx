@@ -1,11 +1,13 @@
-import InfoBox from '@/components/info-box';
+import OnboardingChecklist from '@/components/onboarding-checklist';
 import { ActivityFeed } from '@/components/stats/activity-feed';
 import { StatCard } from '@/components/stats/stat-card';
-import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/app-layout';
 import { createOrganizationBreadcrumb } from '@/lib/breadcrumbs';
 import { Head, Link, usePage } from '@inertiajs/react';
 import { Box, GitBranch, Key, Users } from 'lucide-react';
+
+type OnboardingChecklistData =
+    App.Domains.Organization.Contracts.Data.OnboardingChecklistData;
 
 type OrganizationData =
     App.Domains.Organization.Contracts.Data.OrganizationData;
@@ -15,11 +17,13 @@ type OrganizationStatsData =
 interface OrganizationShowProps {
     organization: OrganizationData;
     stats: OrganizationStatsData;
+    onboarding: OnboardingChecklistData;
 }
 
 export default function OrganizationShow({
     organization,
     stats,
+    onboarding,
 }: OrganizationShowProps) {
     const { auth } = usePage<{
         auth: { organizations: OrganizationData[] };
@@ -79,38 +83,18 @@ export default function OrganizationShow({
                     </Link>
                 </div>
 
+                {/* Onboarding Checklist */}
+                <OnboardingChecklist
+                    organization={organization}
+                    onboarding={onboarding}
+                />
+
                 {/* Activity Feed */}
                 <ActivityFeed
                     organizationSlug={organization.slug}
                     recentReleases={stats.activityFeed.recentReleases}
                     recentSyncs={stats.activityFeed.recentSyncs}
                 />
-
-                {/* Getting Started Info Box */}
-                <InfoBox
-                    title="Getting Started"
-                    description="This organization hosts private Composer packages. Add
- packages from repositories, manage API tokens for
- authentication, and configure your composer.json to use
- this private registry."
-                >
-                    <div className="flex gap-2">
-                        <Button asChild>
-                            <Link
-                                href={`/organizations/${organization.slug}/packages`}
-                            >
-                                View Packages
-                            </Link>
-                        </Button>
-                        <Button variant="secondary" asChild>
-                            <Link
-                                href={`/organizations/${organization.slug}/repositories`}
-                            >
-                                Add Repository
-                            </Link>
-                        </Button>
-                    </div>
-                </InfoBox>
             </div>
         </AppLayout>
     );

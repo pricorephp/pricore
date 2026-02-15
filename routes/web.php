@@ -1,5 +1,6 @@
 <?php
 
+use App\Domains\Organization\Http\Controllers\DismissOnboardingController;
 use App\Domains\Organization\Http\Controllers\MemberController;
 use App\Domains\Organization\Http\Controllers\OrganizationController;
 use App\Domains\Organization\Http\Controllers\SettingsController;
@@ -29,6 +30,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::middleware('track.organization')->group(function () {
         Route::get('organizations/{organization:slug}', [OrganizationController::class, 'show'])->name('organizations.show');
         Route::delete('organizations/{organization:slug}', [OrganizationController::class, 'destroy'])->name('organizations.destroy');
+        Route::post('organizations/{organization:slug}/dismiss-onboarding', DismissOnboardingController::class)->name('organizations.dismiss-onboarding');
         Route::get('organizations/{organization:slug}/packages', [PackageController::class, 'index'])->name('organizations.packages.index');
         Route::get('organizations/{organization:slug}/packages/{package:uuid}', [PackageController::class, 'show'])->name('organizations.packages.show');
         Route::get('organizations/{organization:slug}/repositories', [RepositoryController::class, 'index'])->name('organizations.repositories.index');
