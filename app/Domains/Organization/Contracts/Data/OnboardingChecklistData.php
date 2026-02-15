@@ -9,6 +9,7 @@ use Spatie\TypeScriptTransformer\Attributes\TypeScript;
 class OnboardingChecklistData extends Data
 {
     public function __construct(
+        public bool $hasGitProvider,
         public bool $hasRepository,
         public bool $hasPersonalToken,
         public bool $hasOrgToken,

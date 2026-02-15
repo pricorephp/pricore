@@ -10,6 +10,7 @@ import {
     GitBranch,
     Import,
     Key,
+    Link2,
     X,
 } from 'lucide-react';
 import { useState } from 'react';
@@ -103,6 +104,20 @@ export default function OnboardingChecklist({
                     description="Your organization is ready to host private packages."
                     completed
                 />
+
+                <Step
+                    title="Register a Git provider"
+                    description="Add credentials for GitHub, GitLab, or Bitbucket to sync repositories."
+                    completed={onboarding.hasGitProvider}
+                >
+                    <Button size="sm" variant="secondary" asChild>
+                        <Link href="/settings/git-credentials">
+                            <Link2 className="size-4" />
+                            Configure Git Credentials
+                            <ExternalLink className="size-3" />
+                        </Link>
+                    </Button>
+                </Step>
 
                 <Step
                     title="Connect a repository"

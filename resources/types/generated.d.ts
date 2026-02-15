@@ -10,6 +10,7 @@ providerLabel: string;
 isConfigured: boolean;
 };
 export type OnboardingChecklistData = {
+hasGitProvider: boolean;
 hasRepository: boolean;
 hasPersonalToken: boolean;
 hasOrgToken: boolean;

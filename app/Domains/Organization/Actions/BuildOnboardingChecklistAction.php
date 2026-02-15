@@ -11,6 +11,7 @@ class BuildOnboardingChecklistAction
     public function handle(Organization $organization, User $user): OnboardingChecklistData
     {
         return new OnboardingChecklistData(
+            hasGitProvider: $user->gitCredentials()->exists(),
             hasRepository: $organization->repositories()->exists(),
             hasPersonalToken: $user->accessTokens()->whereNull('organization_uuid')->exists(),
             hasOrgToken: $organization->accessTokens()->exists(),

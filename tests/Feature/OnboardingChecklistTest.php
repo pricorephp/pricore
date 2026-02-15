@@ -4,6 +4,7 @@ use App\Models\AccessToken;
 use App\Models\Organization;
 use App\Models\Repository;
 use App\Models\User;
+use App\Models\UserGitCredential;
 use Illuminate\Support\Str;
 
 uses()->group('onboarding');
@@ -26,6 +27,26 @@ it('passes onboarding prop to organization show page', function () {
         ->component('organizations/show')
         ->has('onboarding')
         ->where('onboarding.isDismissed', false)
+    );
+});
+
+it('detects when user has a git provider configured', function () {
+    $response = $this->actingAs($this->user)
+        ->get("/organizations/{$this->organization->slug}");
+
+    $response->assertInertia(fn ($page) => $page
+        ->where('onboarding.hasGitProvider', false)
+    );
+
+    UserGitCredential::factory()->github()->create([
+        'user_uuid' => $this->user->uuid,
+    ]);
+
+    $response = $this->actingAs($this->user)
+        ->get("/organizations/{$this->organization->slug}");
+
+    $response->assertInertia(fn ($page) => $page
+        ->where('onboarding.hasGitProvider', true)
     );
 });
 
