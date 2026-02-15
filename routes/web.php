@@ -1,6 +1,7 @@
 <?php
 
 use App\Domains\Organization\Http\Controllers\DismissOnboardingController;
+use App\Domains\Organization\Http\Controllers\InvitationController;
 use App\Domains\Organization\Http\Controllers\MemberController;
 use App\Domains\Organization\Http\Controllers\OrganizationController;
 use App\Domains\Organization\Http\Controllers\SettingsController;
@@ -10,6 +11,7 @@ use App\Domains\Repository\Http\Controllers\RepositoryController;
 use App\Domains\Repository\Http\Controllers\SyncRepositoryController;
 use App\Domains\Repository\Http\Controllers\SyncWebhookController;
 use App\Domains\Token\Http\Controllers\TokenController;
+use App\Http\Controllers\AcceptInvitationController;
 use App\Http\Controllers\Auth\GitHubAuthController;
 use App\Http\Controllers\DashboardController;
 use Illuminate\Support\Facades\Route;
@@ -18,6 +20,12 @@ Route::middleware('guest')->group(function () {
     Route::get('auth/github/redirect', [GitHubAuthController::class, 'redirect'])->name('auth.github.redirect');
     Route::get('auth/github/callback', [GitHubAuthController::class, 'callback'])->name('auth.github.callback');
 });
+
+// Invitation acceptance (show page is public, accept requires auth)
+Route::get('invitations/{token}/accept', [AcceptInvitationController::class, 'show'])->name('invitations.show');
+Route::post('invitations/{token}/accept', [AcceptInvitationController::class, 'accept'])
+    ->middleware(['auth', 'verified'])
+    ->name('invitations.accept');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/', DashboardController::class)->name('dashboard');
@@ -54,6 +62,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::post('members', [MemberController::class, 'store'])->name('members.store');
             Route::patch('members/{member}', [MemberController::class, 'update'])->name('members.update');
             Route::delete('members/{member}', [MemberController::class, 'destroy'])->name('members.destroy');
+
+            Route::delete('invitations/{invitation}', [InvitationController::class, 'destroy'])->name('invitations.destroy');
+            Route::post('invitations/{invitation}/resend', [InvitationController::class, 'resend'])->name('invitations.resend');
 
             Route::get('tokens', [TokenController::class, 'index'])->name('tokens.index');
             Route::post('tokens', [TokenController::class, 'store'])->name('tokens.store');

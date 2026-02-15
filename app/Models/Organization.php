@@ -33,6 +33,8 @@ use Illuminate\Support\Carbon;
  * @property-read int|null $packages_count
  * @property-read Collection<int, Repository> $repositories
  * @property-read int|null $repositories_count
+ * @property-read Collection<int, OrganizationInvitation> $invitations
+ * @property-read int|null $invitations_count
  *
  * @method static OrganizationFactory factory($count = null, $state = [])
  * @method static Builder<static>|Organization newModelQuery()
@@ -98,5 +100,21 @@ class Organization extends Model
     public function accessTokens(): HasMany
     {
         return $this->hasMany(AccessToken::class, 'organization_uuid', 'uuid');
+    }
+
+    /**
+     * @return HasMany<OrganizationInvitation, $this>
+     */
+    public function invitations(): HasMany
+    {
+        return $this->hasMany(OrganizationInvitation::class, 'organization_uuid', 'uuid');
+    }
+
+    /**
+     * @return HasMany<OrganizationInvitation, $this>
+     */
+    public function pendingInvitations(): HasMany
+    {
+        return $this->invitations()->pending();
     }
 }

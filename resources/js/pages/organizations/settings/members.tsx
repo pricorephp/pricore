@@ -32,20 +32,23 @@ import {
 } from '@/components/ui/table';
 import { withOrganizationSettingsLayout } from '@/layouts/organization-settings-layout';
 import { Form, router, usePage } from '@inertiajs/react';
-import { Trash2, UserPlus } from 'lucide-react';
+import { Mail, RefreshCw, Trash2, UserPlus } from 'lucide-react';
 import { useState } from 'react';
 
 type OrganizationData =
     App.Domains.Organization.Contracts.Data.OrganizationData;
 type OrganizationMemberData =
     App.Domains.Organization.Contracts.Data.OrganizationMemberData;
+type OrganizationInvitationData =
+    App.Domains.Organization.Contracts.Data.OrganizationInvitationData;
 
 interface Props {
     members: OrganizationMemberData[];
+    invitations: OrganizationInvitationData[];
     roleOptions: Record<string, string>;
 }
 
-export default function Members({ members, roleOptions }: Props) {
+export default function Members({ members, invitations, roleOptions }: Props) {
     const page = usePage<{ organization: OrganizationData }>();
     const { organization } = page.props;
     const [addDialogOpen, setAddDialogOpen] = useState(false);
@@ -66,6 +69,23 @@ export default function Members({ members, roleOptions }: Props) {
                 preserveScroll: true,
             });
         }
+    };
+
+    const handleCancelInvitation = (invitationUuid: string) => {
+        if (confirm('Are you sure you want to cancel this invitation?')) {
+            router.delete(
+                `/organizations/${organization.slug}/settings/invitations/${invitationUuid}`,
+                { preserveScroll: true },
+            );
+        }
+    };
+
+    const handleResendInvitation = (invitationUuid: string) => {
+        router.post(
+            `/organizations/${organization.slug}/settings/invitations/${invitationUuid}/resend`,
+            {},
+            { preserveScroll: true },
+        );
     };
 
     const getRoleBadgeVariant = (role: string) => {
@@ -93,15 +113,15 @@ export default function Members({ members, roleOptions }: Props) {
                     <DialogTrigger asChild>
                         <Button>
                             <UserPlus className="h-4 w-4" />
-                            Add Member
+                            Invite
                         </Button>
                     </DialogTrigger>
                     <DialogContent>
                         <DialogHeader>
-                            <DialogTitle>Add Member</DialogTitle>
+                            <DialogTitle>Invite Member</DialogTitle>
                             <DialogDescription>
-                                Invite a user to this organization by their
-                                email address
+                                Invite a user by email. They'll receive an
+                                invitation email they need to accept.
                             </DialogDescription>
                         </DialogHeader>
 
@@ -173,8 +193,8 @@ export default function Members({ members, roleOptions }: Props) {
                                             disabled={processing}
                                         >
                                             {processing
-                                                ? 'Adding...'
-                                                : 'Add Member'}
+                                                ? 'Inviting...'
+                                                : 'Invite'}
                                         </Button>
                                     </div>
                                 </div>
@@ -274,6 +294,84 @@ export default function Members({ members, roleOptions }: Props) {
                     </TableBody>
                 </Table>
             </div>
+
+            {invitations.length > 0 && (
+                <div className="space-y-3">
+                    <h4 className="text-sm font-medium text-muted-foreground">
+                        Pending Invitations
+                    </h4>
+                    <div className="rounded-lg border bg-card">
+                        <Table>
+                            <TableHeader>
+                                <TableRow className="hover:bg-transparent">
+                                    <TableHead>Email</TableHead>
+                                    <TableHead>Role</TableHead>
+                                    <TableHead>Sent</TableHead>
+                                    <TableHead className="text-right">
+                                        Actions
+                                    </TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {invitations.map((invitation) => (
+                                    <TableRow key={invitation.uuid}>
+                                        <TableCell>
+                                            <div className="flex items-center gap-2 text-muted-foreground">
+                                                <Mail className="h-4 w-4 shrink-0" />
+                                                <span>{invitation.email}</span>
+                                            </div>
+                                        </TableCell>
+                                        <TableCell>
+                                            <Badge
+                                                variant={getRoleBadgeVariant(
+                                                    invitation.role,
+                                                )}
+                                            >
+                                                {roleOptions[invitation.role]}
+                                            </Badge>
+                                        </TableCell>
+                                        <TableCell>
+                                            {invitation.createdAt
+                                                ? new Date(
+                                                      invitation.createdAt,
+                                                  ).toLocaleDateString()
+                                                : '-'}
+                                        </TableCell>
+                                        <TableCell className="text-right">
+                                            <div className="flex items-center justify-end gap-1">
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    onClick={() =>
+                                                        handleResendInvitation(
+                                                            invitation.uuid,
+                                                        )
+                                                    }
+                                                    title="Resend invitation"
+                                                >
+                                                    <RefreshCw className="h-4 w-4" />
+                                                </Button>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    onClick={() =>
+                                                        handleCancelInvitation(
+                                                            invitation.uuid,
+                                                        )
+                                                    }
+                                                    title="Cancel invitation"
+                                                >
+                                                    <Trash2 className="h-4 w-4 text-red-600 dark:text-red-400" />
+                                                </Button>
+                                            </div>
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

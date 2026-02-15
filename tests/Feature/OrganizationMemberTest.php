@@ -2,8 +2,10 @@
 
 use App\Domains\Organization\Contracts\Enums\OrganizationRole;
 use App\Models\Organization;
+use App\Models\OrganizationInvitation;
 use App\Models\OrganizationUser;
 use App\Models\User;
+use Illuminate\Support\Facades\Notification;
 
 uses()->group('organizations', 'members');
 
@@ -23,6 +25,7 @@ it('admin can view members page', function () {
     $response->assertInertia(fn ($page) => $page
         ->component('organizations/settings/members')
         ->has('members')
+        ->has('invitations')
         ->has('roleOptions')
     );
 });
@@ -39,28 +42,49 @@ it('member cannot view members page', function () {
     $response->assertForbidden();
 });
 
-it('admin can add member by email', function () {
-    $newUser = User::factory()->create();
+it('admin can invite user by email', function () {
+    Notification::fake();
 
     $response = $this->actingAs($this->admin)->post("/organizations/{$this->organization->slug}/settings/members", [
-        'email' => $newUser->email,
+        'email' => 'newuser@example.com',
         'role' => OrganizationRole::Member->value,
     ]);
 
     $response->assertRedirect();
-    expect($this->organization->members()->where('user_uuid', $newUser->uuid)->exists())->toBeTrue();
+    $response->assertSessionHas('status');
+
+    expect(OrganizationInvitation::where('email', 'newuser@example.com')
+        ->where('organization_uuid', $this->organization->uuid)
+        ->exists()
+    )->toBeTrue();
+
+    Notification::assertSentOnDemand(
+        \App\Notifications\OrganizationInvitationNotification::class,
+    );
 });
 
-it('cannot add user that does not exist', function () {
+it('admin can invite existing user by email', function () {
+    Notification::fake();
+    $existingUser = User::factory()->create();
+
     $response = $this->actingAs($this->admin)->post("/organizations/{$this->organization->slug}/settings/members", [
-        'email' => 'nonexistent@example.com',
+        'email' => $existingUser->email,
         'role' => OrganizationRole::Member->value,
     ]);
 
-    $response->assertInvalid(['email']);
+    $response->assertRedirect();
+    $response->assertSessionHas('status');
+
+    expect(OrganizationInvitation::where('email', $existingUser->email)
+        ->where('organization_uuid', $this->organization->uuid)
+        ->exists()
+    )->toBeTrue();
+
+    // User should NOT be directly added as a member
+    expect($this->organization->members()->where('user_uuid', $existingUser->uuid)->exists())->toBeFalse();
 });
 
-it('cannot add user that is already a member', function () {
+it('cannot invite user that is already a member', function () {
     $existingMember = User::factory()->create();
     $this->organization->members()->attach($existingMember->uuid, [
         'uuid' => \Illuminate\Support\Str::uuid()->toString(),
@@ -76,11 +100,25 @@ it('cannot add user that is already a member', function () {
     $response->assertSessionHas('error');
 });
 
-it('validates role is required when adding member', function () {
-    $newUser = User::factory()->create();
+it('cannot send duplicate pending invitation', function () {
+    Notification::fake();
+
+    OrganizationInvitation::factory()->forOrganization($this->organization)->create([
+        'email' => 'duplicate@example.com',
+    ]);
 
     $response = $this->actingAs($this->admin)->post("/organizations/{$this->organization->slug}/settings/members", [
-        'email' => $newUser->email,
+        'email' => 'duplicate@example.com',
+        'role' => OrganizationRole::Member->value,
+    ]);
+
+    $response->assertRedirect();
+    $response->assertSessionHas('error');
+});
+
+it('validates role is required when adding member', function () {
+    $response = $this->actingAs($this->admin)->post("/organizations/{$this->organization->slug}/settings/members", [
+        'email' => 'test@example.com',
         'role' => '',
     ]);
 
@@ -170,10 +208,8 @@ it('member cannot add other members', function () {
         'role' => OrganizationRole::Member->value,
     ]);
 
-    $newUser = User::factory()->create();
-
     $response = $this->actingAs($member)->post("/organizations/{$this->organization->slug}/settings/members", [
-        'email' => $newUser->email,
+        'email' => 'new@example.com',
         'role' => OrganizationRole::Member->value,
     ]);
 
