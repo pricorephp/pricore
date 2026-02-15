@@ -62,7 +62,7 @@ export default function OrganizationShow({
                         href={`/organizations/${organization.slug}/settings/tokens`}
                     >
                         <StatCard
-                            title="API Tokens"
+                            title="Composer Tokens"
                             value={stats.tokensCount}
                             icon={Key}
                         />

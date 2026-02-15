@@ -1,3 +1,4 @@
+import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowUpRight, Globe, Lock } from 'lucide-react';
 import { DateTime } from 'luxon';
@@ -18,23 +19,19 @@ export default function PackageCard({ package: pkg }: PackageCardProps) {
                         {pkg.name}
                     </span>
                     <div className="flex shrink-0 items-center gap-2">
-                        <div className="flex items-center gap-1 rounded-full bg-muted/50 px-2 py-0.5">
+                        <Badge variant="outline">
                             {pkg.visibility === 'private' ? (
                                 <>
-                                    <Lock className="h-3 w-3 text-muted-foreground" />
-                                    <span className="text-xs text-muted-foreground">
-                                        Private
-                                    </span>
+                                    <Lock className="h-3 w-3" />
+                                    <span className="text-xs">Private</span>
                                 </>
                             ) : (
                                 <>
-                                    <Globe className="h-3 w-3 text-muted-foreground" />
-                                    <span className="text-xs text-muted-foreground">
-                                        Public
-                                    </span>
+                                    <Globe className="h-3 w-3" />
+                                    <span className="text-xs">Public</span>
                                 </>
                             )}
-                        </div>
+                        </Badge>
                         <ArrowUpRight className="h-4 w-4 text-muted-foreground/50 transition-all group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-muted-foreground" />
                     </div>
                 </CardTitle>

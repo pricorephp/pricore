@@ -36,7 +36,7 @@ function SettingsContent({ children }: PropsWithChildren) {
                 icon: Users,
             },
             {
-                title: 'API Tokens',
+                title: 'Composer Tokens',
                 href: `/organizations/${organization.slug}/settings/tokens`,
                 icon: Key,
             },

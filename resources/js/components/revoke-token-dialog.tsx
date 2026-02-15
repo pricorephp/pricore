@@ -10,22 +10,18 @@ import {
 import { Form } from '@inertiajs/react';
 
 interface RevokeTokenDialogProps {
-    tokenUuid: string;
     tokenName: string;
-    organizationSlug: string;
+    deleteUrl: string;
     isOpen: boolean;
     onClose: () => void;
 }
 
 export default function RevokeTokenDialog({
-    tokenUuid,
     tokenName,
-    organizationSlug,
+    deleteUrl,
     isOpen,
     onClose,
 }: RevokeTokenDialogProps) {
-    const deleteUrl = `/organizations/${organizationSlug}/settings/tokens/${tokenUuid}`;
-
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
             <DialogContent>

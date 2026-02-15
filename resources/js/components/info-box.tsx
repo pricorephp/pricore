@@ -12,7 +12,7 @@ export default function InfoBox({
     children,
 }: InfoBoxProps) {
     return (
-        <div className="rounded-xl border bg-muted/30 p-5 dark:bg-muted/10">
+        <div className="rounded-lg border bg-muted/30 p-5 dark:bg-muted/10">
             <div className="flex gap-3">
                 <div className="shrink-0 rounded-lg p-2">
                     <Info className="h-4 w-4 text-muted-foreground" />

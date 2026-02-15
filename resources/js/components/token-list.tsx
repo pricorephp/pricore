@@ -14,7 +14,7 @@ interface TokenListProps {
 export default function TokenList({ tokens, onRevoke }: TokenListProps) {
     if (tokens.length === 0) {
         return (
-            <div className="rounded-lg border border-dashed p-8 text-center">
+            <div className="my-2 rounded-lg border border-dashed p-8 text-center">
                 <p className="text-muted-foreground">
                     No access tokens yet. Create one to get started.
                 </p>

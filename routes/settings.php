@@ -1,5 +1,6 @@
 <?php
 
+use App\Domains\Token\Http\Controllers\UserTokenController;
 use App\Http\Controllers\Settings\ConnectGitHubController;
 use App\Http\Controllers\Settings\LeaveOrganizationController;
 use App\Http\Controllers\Settings\OrganizationsController;
@@ -40,4 +41,8 @@ Route::middleware('auth')->group(function () {
 
     Route::get('settings/git-credentials/github/connect', [ConnectGitHubController::class, 'redirect'])->name('settings.github.connect');
     Route::get('settings/git-credentials/github/callback', [ConnectGitHubController::class, 'callback'])->name('settings.github.callback');
+
+    Route::get('settings/tokens', [UserTokenController::class, 'index'])->name('settings.tokens.index');
+    Route::post('settings/tokens', [UserTokenController::class, 'store'])->name('settings.tokens.store');
+    Route::delete('settings/tokens/{token}', [UserTokenController::class, 'destroy'])->name('settings.tokens.destroy');
 });

@@ -1,3 +1,7 @@
+import {
+    destroy,
+    store,
+} from '@/actions/App/Domains/Token/Http/Controllers/TokenController';
 import CreateTokenDialog from '@/components/create-token-dialog';
 import InfoBox from '@/components/info-box';
 import RevokeTokenDialog from '@/components/revoke-token-dialog';
@@ -67,7 +71,7 @@ export default function Tokens({
         <div className="space-y-6">
             <div className="flex items-center justify-between">
                 <div>
-                    <h3 className="text-lg font-medium">API Tokens</h3>
+                    <h3 className="text-lg font-medium">Composer Tokens</h3>
                     <p className="text-muted-foreground">
                         Manage access tokens for Composer authentication
                     </p>
@@ -83,23 +87,24 @@ export default function Tokens({
             </div>
 
             <InfoBox
-                title="About API Tokens"
-                description="API tokens allow you to authenticate Composer requests to
- access private packages in this organization. Each token can
- be configured with an expiration date for security."
+                title="About Organization Tokens"
+                description="Organization tokens grant access to packages within this organization only. Each token can be configured with an expiration date for security. For tokens that work across all your organizations, visit your personal token settings."
             />
 
             <CreateTokenDialog
-                organizationSlug={organization.slug}
+                storeUrl={store.url(organization.slug)}
+                description="Create a new token for access to this organization's packages."
                 isOpen={createDialogOpen}
                 onClose={() => setCreateDialogOpen(false)}
             />
 
             {selectedToken && (
                 <RevokeTokenDialog
-                    tokenUuid={selectedToken.uuid}
                     tokenName={selectedToken.name}
-                    organizationSlug={organization.slug}
+                    deleteUrl={destroy.url([
+                        organization.slug,
+                        selectedToken.uuid,
+                    ])}
                     isOpen={revokeDialogOpen}
                     onClose={() => {
                         setRevokeDialogOpen(false);

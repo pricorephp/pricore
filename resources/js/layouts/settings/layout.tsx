@@ -4,12 +4,14 @@ import { cn, isSameUrl, resolveUrl } from '@/lib/utils';
 import { edit as editAppearance } from '@/routes/appearance';
 import { edit } from '@/routes/profile';
 import { gitCredentials, organizations } from '@/routes/settings';
+import { index as tokensIndex } from '@/routes/settings/tokens';
 import { show } from '@/routes/two-factor';
 import { edit as editPassword } from '@/routes/user-password';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/react';
 import {
     GitBranch,
+    Key,
     Lock,
     Paintbrush,
     ShieldCheck,
@@ -43,6 +45,11 @@ const sidebarNavItems: NavItem[] = [
         title: 'Git Providers',
         href: gitCredentials(),
         icon: GitBranch,
+    },
+    {
+        title: 'Tokens',
+        href: tokensIndex(),
+        icon: Key,
     },
     {
         title: 'Organizations',

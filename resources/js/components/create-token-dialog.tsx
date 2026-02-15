@@ -19,26 +19,24 @@ import {
 import { Form } from '@inertiajs/react';
 
 interface CreateTokenDialogProps {
-    organizationSlug: string;
+    storeUrl: string;
+    description: string;
     isOpen: boolean;
     onClose: () => void;
 }
 
 export default function CreateTokenDialog({
-    organizationSlug,
+    storeUrl,
+    description,
     isOpen,
     onClose,
 }: CreateTokenDialogProps) {
-    const storeUrl = `/organizations/${organizationSlug}/settings/tokens`;
-
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
             <DialogContent>
                 <DialogHeader>
                     <DialogTitle>Create Access Token</DialogTitle>
-                    <DialogDescription>
-                        Create a new token for API access to this organization.
-                    </DialogDescription>
+                    <DialogDescription>{description}</DialogDescription>
                 </DialogHeader>
 
                 <Form action={storeUrl} method="post" className="space-y-4">

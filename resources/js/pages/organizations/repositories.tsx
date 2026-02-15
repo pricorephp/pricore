@@ -105,7 +105,7 @@ export default function Repositories({
                                                 {repo.url ? (
                                                     <button
                                                         type="button"
-                                                        className="inline-block"
+                                                        className="inline-block cursor-pointer"
                                                         onClick={(e) => {
                                                             e.stopPropagation();
                                                             e.preventDefault();
@@ -164,7 +164,7 @@ export default function Repositories({
                                             </Badge>
                                         </div>
 
-                                        <div className="border-t pt-3 text-sm text-muted-foreground">
+                                        <div className="pt-3 text-sm text-muted-foreground">
                                             Last synced:{' '}
                                             {repo.lastSyncedAt
                                                 ? DateTime.fromISO(
