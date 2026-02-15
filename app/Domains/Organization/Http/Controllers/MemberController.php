@@ -73,7 +73,10 @@ class MemberController
                 ->with('error', 'An invitation has already been sent to this email address.');
         }
 
-        $sendInvitation->handle($organization, $email, $role, $request->user());
+        /** @var User $user */
+        $user = $request->user();
+
+        $sendInvitation->handle($organization, $email, $role, $user);
 
         return redirect()
             ->route('organizations.settings.members', $organization)

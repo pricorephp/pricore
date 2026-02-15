@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Domains\Organization\Actions\AcceptOrganizationInvitationAction;
 use App\Models\OrganizationInvitation;
+use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -54,6 +55,7 @@ class AcceptInvitationController
                 ->with('error', 'This invitation is no longer valid.');
         }
 
+        /** @var User $user */
         $user = $request->user();
 
         if ($invitation->organization->members()->where('user_uuid', $user->uuid)->exists()) {
