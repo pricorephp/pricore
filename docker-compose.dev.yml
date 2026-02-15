@@ -1,13 +1,15 @@
 services:
   app:
-    image: ghcr.io/pricorephp/pricore:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: pricore-app
     restart: unless-stopped
     ports:
       - "${APP_PORT:-8000}:8000"
     volumes:
-      - pricore-storage:/app/storage
-      - pricore-database:/app/database
+      - ./storage:/app/storage
+      - ./database:/app/database
     environment:
       - APP_ENV=${APP_ENV:-production}
       - APP_DEBUG=${APP_DEBUG:-false}
@@ -33,15 +35,17 @@ services:
       start_period: 30s
 
   horizon:
-    image: ghcr.io/pricorephp/pricore:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: pricore-horizon
     restart: unless-stopped
     command: php artisan horizon
     stop_signal: SIGTERM
     stop_grace_period: 30s
     volumes:
-      - pricore-storage:/app/storage
-      - pricore-database:/app/database
+      - ./storage:/app/storage
+      - ./database:/app/database
     environment:
       - APP_ENV=${APP_ENV:-production}
       - APP_DEBUG=${APP_DEBUG:-false}
@@ -65,13 +69,15 @@ services:
       start_period: 15s
 
   scheduler:
-    image: ghcr.io/pricorephp/pricore:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: pricore-scheduler
     restart: unless-stopped
     command: sh -c "while true; do php artisan schedule:run --verbose --no-interaction; sleep 60; done"
     volumes:
-      - pricore-storage:/app/storage
-      - pricore-database:/app/database
+      - ./storage:/app/storage
+      - ./database:/app/database
     environment:
       - APP_ENV=${APP_ENV:-production}
       - APP_DEBUG=${APP_DEBUG:-false}
@@ -93,6 +99,8 @@ services:
     container_name: pricore-redis
     restart: unless-stopped
     command: redis-server --appendonly yes --maxmemory 128mb --maxmemory-policy allkeys-lru
+    ports:
+      - "6379:6379"
     volumes:
       - redis-data:/data
     networks:
@@ -109,6 +117,4 @@ networks:
     driver: bridge
 
 volumes:
-  pricore-storage:
-  pricore-database:
   redis-data:

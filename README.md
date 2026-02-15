@@ -20,6 +20,7 @@ With Pricore, teams gain full ownership of their package ecosystem while keeping
 
 ### Why Pricore?
 
+- **Effortless Setup**: Two commands to go from zero to running — no cloning, no manual configuration
 - **Self-hosted**: Keep your packages on your own infrastructure
 - **Open Source**: Apache 2.0 licensed, fully transparent, no vendor lock-in
 - **Modern Stack**: Built with Laravel 12, React 19, and Inertia.js
@@ -36,37 +37,24 @@ With Pricore, teams gain full ownership of their package ecosystem while keeping
 - **Two-Factor Authentication** - Optional 2FA for enhanced account security
 - **Queue Dashboard** - Built-in Laravel Horizon for monitoring background jobs
 
-## Requirements
-
-- PHP 8.4+
-- Node.js 22+
-- Redis (for queues and caching)
-- SQLite, MySQL, or PostgreSQL
-
 ## Quick Start with Docker
 
-The fastest way to get started is with Docker:
+Get up and running in seconds — no cloning, no manual key generation, no running migrations:
 
 ```bash
-# Clone the repository
-git clone https://github.com/pricorephp/pricore.git
-cd pricore
+# Download the compose file
+curl -o docker-compose.yml https://raw.githubusercontent.com/pricorephp/pricore/main/docker-compose.yml
 
-# Copy environment file and set your APP_KEY
-cp .env.example .env
-# Generate a key: php -r "echo 'base64:'.base64_encode(random_bytes(32));"
-
-# Start the containers
+# Start Pricore
 docker compose up -d
-
-# Run migrations
-docker compose exec app php artisan migrate
 
 # Create your first user
 docker compose exec app php artisan make:user
 ```
 
 Pricore will be available at `http://localhost:8000`.
+
+> The entrypoint automatically generates an `APP_KEY`, creates the SQLite database, runs migrations, and caches configuration on first boot. For production, you can provide your own `APP_KEY` via environment variable.
 
 ### Docker Services
 
@@ -75,9 +63,11 @@ Pricore will be available at `http://localhost:8000`.
 | `app` | FrankenPHP web server | 8000 |
 | `horizon` | Queue worker with Horizon dashboard | - |
 | `scheduler` | Runs scheduled tasks | - |
-| `redis` | Cache, sessions, and queues | 6379 |
+| `redis` | Cache, sessions, and queues | - |
 
 ## Manual Installation
+
+For development or custom deployments. Requires PHP 8.4+, Node.js 22+, Redis, and SQLite/MySQL/PostgreSQL.
 
 ```bash
 # Clone the repository

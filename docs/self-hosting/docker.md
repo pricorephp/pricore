@@ -4,153 +4,66 @@ Deploy Pricore with Docker Compose for a simple, production-ready setup.
 
 ## Quick Start
 
+No cloning required — just download the compose file and start:
+
 ```bash
-# Clone the repository
-git clone https://github.com/pricorephp/pricore.git
-cd pricore
+# Download the compose file
+curl -o docker-compose.yml https://raw.githubusercontent.com/pricorephp/pricore/main/docker-compose.yml
 
-# Copy environment file
-cp .env.example .env
-
-# Generate APP_KEY
-php -r "echo 'APP_KEY=base64:'.base64_encode(random_bytes(32)).PHP_EOL;"
-# Add this to your .env file
-
-# Start containers
+# Start Pricore
 docker compose up -d
 
-# Run migrations
-docker compose exec app php artisan migrate
-
-# Create first user
+# Create your first user
 docker compose exec app php artisan make:user
 ```
 
-## Docker Compose Services
+Pricore will be available at `http://localhost:8000`.
 
-The default `docker-compose.yml` includes:
+## Automatic Setup
+
+On first boot, the entrypoint script automatically handles:
+
+1. **APP_KEY generation** — If no `APP_KEY` is provided, one is generated and persisted to `/app/storage/app_key` (survives restarts via the storage volume)
+2. **SQLite database creation** — Creates the database file if it doesn't exist
+3. **Database migrations** — Runs `php artisan migrate --force` (only on the main app container, not horizon/scheduler)
+4. **Cache warming** — Caches config, routes, views, and events for production performance
+
+Horizon and the scheduler wait for the app container to be healthy before starting, ensuring migrations are complete.
+
+## Providing Your Own APP_KEY
+
+For production, you should provide your own `APP_KEY` via environment variable:
+
+```bash
+# Generate a key
+php -r "echo 'base64:'.base64_encode(random_bytes(32)).PHP_EOL;"
+
+# Set it in your environment
+APP_KEY=base64:your-generated-key docker compose up -d
+```
+
+Or create a `.env` file next to your `docker-compose.yml`:
+
+```bash
+APP_KEY=base64:your-generated-key
+APP_URL=https://packages.yourcompany.com
+```
+
+## Docker Compose Services
 
 | Service | Description | Port |
 |---------|-------------|------|
 | `app` | FrankenPHP web server | 8000 |
 | `horizon` | Queue worker with Horizon | - |
 | `scheduler` | Scheduled task runner | - |
-| `redis` | Cache, sessions, and queues | 6379 |
+| `redis` | Cache, sessions, and queues | - |
 
-## Service Configuration
+## Configuration
 
-### App Service
-
-The main web application:
-
-```yaml
-app:
-  build:
-    context: .
-    dockerfile: Dockerfile
-  container_name: pricore-app
-  restart: unless-stopped
-  ports:
-    - "8000:8000"
-  volumes:
-    - ./storage:/app/storage
-    - ./database:/app/database
-  environment:
-    - APP_ENV=${APP_ENV:-production}
-    - APP_DEBUG=${APP_DEBUG:-false}
-    - APP_KEY=${APP_KEY}
-    - APP_URL=${APP_URL:-http://localhost:8000}
-    - DB_CONNECTION=${DB_CONNECTION:-sqlite}
-    - DB_DATABASE=${DB_DATABASE:-/app/database/database.sqlite}
-    - REDIS_HOST=redis
-    - REDIS_PORT=6379
-    - CACHE_STORE=redis
-    - SESSION_DRIVER=redis
-    - QUEUE_CONNECTION=redis
-  depends_on:
-    redis:
-      condition: service_healthy
-  healthcheck:
-    test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
-    interval: 30s
-    timeout: 3s
-    retries: 3
-```
-
-### Horizon Service
-
-Queue worker for background jobs:
-
-```yaml
-horizon:
-  build:
-    context: .
-    dockerfile: Dockerfile
-  container_name: pricore-horizon
-  restart: unless-stopped
-  command: php artisan horizon
-  stop_signal: SIGTERM
-  stop_grace_period: 30s
-  volumes:
-    - ./storage:/app/storage
-    - ./database:/app/database
-  # ... same environment as app
-  healthcheck:
-    test: ["CMD", "php", "artisan", "horizon:status"]
-    interval: 30s
-    timeout: 10s
-    retries: 3
-```
-
-### Scheduler Service
-
-Runs scheduled tasks every minute:
-
-```yaml
-scheduler:
-  build:
-    context: .
-    dockerfile: Dockerfile
-  container_name: pricore-scheduler
-  restart: unless-stopped
-  command: sh -c "while true; do php artisan schedule:run --verbose; sleep 60; done"
-  volumes:
-    - ./storage:/app/storage
-    - ./database:/app/database
-  # ... same environment as app
-```
-
-### Redis Service
-
-```yaml
-redis:
-  image: redis:7-alpine
-  container_name: pricore-redis
-  restart: unless-stopped
-  command: redis-server --appendonly yes --maxmemory 128mb --maxmemory-policy allkeys-lru
-  ports:
-    - "6379:6379"
-  volumes:
-    - redis-data:/data
-  healthcheck:
-    test: ["CMD", "redis-cli", "ping"]
-    interval: 10s
-    timeout: 3s
-    retries: 3
-```
-
-## Environment Configuration
-
-### Required Variables
+### Changing the Port
 
 ```bash
-# Application
-APP_KEY=base64:...  # Generate with php -r "echo base64_encode(random_bytes(32));"
-APP_URL=https://packages.yourcompany.com
-
-# Database (SQLite by default)
-DB_CONNECTION=sqlite
-DB_DATABASE=/app/database/database.sqlite
+APP_PORT=9000 docker compose up -d
 ```
 
 ### Using External Database
@@ -172,6 +85,16 @@ DB_PASSWORD=your-password
 REDIS_HOST=your-redis-host
 REDIS_PORT=6379
 REDIS_PASSWORD=your-redis-password
+```
+
+## Development Setup
+
+Contributors who clone the repo can use the development compose file which builds from source and uses bind mounts:
+
+```bash
+git clone https://github.com/pricorephp/pricore.git
+cd pricore
+docker compose -f docker-compose.dev.yml up -d --build
 ```
 
 ## Reverse Proxy Setup
@@ -222,19 +145,11 @@ labels:
 
 ## Updating
 
-To update to a new version:
-
 ```bash
-# Pull latest changes
-git pull
+# Pull the latest image
+docker compose pull
 
-# Rebuild containers
-docker compose build
-
-# Apply migrations
-docker compose exec app php artisan migrate --force
-
-# Restart services
+# Restart services (migrations run automatically)
 docker compose up -d
 ```
 
@@ -254,14 +169,11 @@ docker compose logs -f horizon
 ### Database Operations
 
 ```bash
-# Run migrations
-docker compose exec app php artisan migrate
+# Access tinker
+docker compose exec app php artisan tinker
 
 # Database backup (SQLite)
 docker compose exec app cp /app/database/database.sqlite /app/database/backup.sqlite
-
-# Access tinker
-docker compose exec app php artisan tinker
 ```
 
 ### Cache Operations

@@ -135,6 +135,7 @@ jobs:
         with:
           images: ghcr.io/${{ github.repository }}
           tags: |
+            type=raw,value=latest
             type=raw,value=${{ steps.tag_version.outputs.new_tag }}
             type=raw,value=v${{ steps.semver.outputs.major_minor }}
             type=raw,value=v${{ steps.semver.outputs.major }}

@@ -164,15 +164,22 @@ RUN echo ':8000 {' > /etc/caddy/Caddyfile && \
     echo '    php_server' >> /etc/caddy/Caddyfile && \
     echo '}' >> /etc/caddy/Caddyfile
 
+# Copy entrypoint script
+COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
 # Expose port
 EXPOSE 8000
 
 # Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
+HEALTHCHECK --interval=30s --timeout=3s --start-period=30s --retries=3 \
     CMD curl -f http://localhost:8000/health || exit 1
 
 # FrankenPHP handles graceful shutdown via SIGTERM
 STOPSIGNAL SIGTERM
+
+# Entrypoint handles APP_KEY generation, migrations, and cache warming
+ENTRYPOINT ["docker-entrypoint.sh"]
 
 # Start FrankenPHP
 CMD ["frankenphp", "run", "--config", "/etc/caddy/Caddyfile"]
