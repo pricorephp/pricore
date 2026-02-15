@@ -7,52 +7,61 @@
 </p>
 
 <p align="center">
-<strong>Self-hosted private Composer registry for teams</strong>
+<strong>A private Composer registry you can depend on.</strong><br>
+Fast, self-hosted, and built for PHP teams who are tired of fragile workarounds.<br>
+Manage your packages with a registry that just works.
 </p>
 
 ---
 
 ## About Pricore
 
-Pricore is an open-source private Composer registry designed to help teams securely manage and distribute their PHP packages. It provides a centralized, reliable way to store package metadata, control access with tokens, and integrate seamlessly with Git-based workflows.
+Managing private PHP packages should be simple. Pricore makes it that way. It provides a centralized, reliable way to store package metadata, control access with tokens, and integrate seamlessly with Git-based workflows.
 
 With Pricore, teams gain full ownership of their package ecosystem while keeping dependency management fast, consistent, and transparent.
 
 ### Why Pricore?
 
-- **Effortless Setup**: Two commands to go from zero to running — no cloning, no manual configuration
-- **Self-hosted**: Keep your packages on your own infrastructure
-- **Open Source**: Apache 2.0 licensed, fully transparent, no vendor lock-in
-- **Modern Stack**: Built with Laravel 12, React 19, and Inertia.js
-- **Production Ready**: Docker support with FrankenPHP for high performance
+- **Stay in control** - Keep your private packages on your own infrastructure. No third-party servers, no external dependencies.
+- **Skip the manual work** - Webhook-driven updates, a web dashboard, and full Composer v2 API support. Out of the box.
+- **Use what you know** - Built on Laravel. If your team already knows the stack, you can run, extend, and contribute to Pricore from day one.
 
 ## Features
 
-- **Private Package Hosting** - Host and serve private Composer packages with fine-grained access control
-- **Multi-Provider Git Integration** - Automatically sync packages from GitHub, GitLab, Bitbucket, or generic Git repositories
-- **Organization Management** - Multi-tenant architecture with organizations, teams, and role-based access
-- **Token-Based Authentication** - Secure API tokens with package-level permissions for Composer clients
-- **Automatic Package Discovery** - Webhooks and automated sync to detect new versions from connected repositories
-- **Composer-Compatible API** - Drop-in replacement for Packagist with full `composer.json` metadata support
-- **Two-Factor Authentication** - Optional 2FA for enhanced account security
-- **Queue Dashboard** - Built-in Laravel Horizon for monitoring background jobs
+- **Private & Secure** - Token-based auth, per-package access control. Your code stays yours.
+- **Git-Based Mirroring** - Point Pricore at any Git repo. It mirrors, indexes, and serves automatically.
+- **Built on Laravel** - Familiar stack, easy to extend. If you know Laravel, you know Pricore.
+- **Blazing Fast** - Packages resolve in milliseconds. No waiting on external APIs.
+- **Web Dashboard** - Browse packages, manage tokens, and view download stats from a clean UI.
+- **Webhook Support** - Auto-update packages when you push. Works with GitHub, GitLab, and Bitbucket.
+- **Composer v2 Native** - Full Composer v2 API support including metadata-url for lightning-fast resolves.
+- **Open Source** - Apache 2.0 licensed. Run it, fork it, contribute to it. No vendor lock-in, ever.
 
 ## Quick Start with Docker
 
-Get up and running in seconds — no cloning, no manual key generation, no running migrations:
+60 seconds to a working registry. Three commands. That's all it takes.
+
+**1. Download the compose file**
 
 ```bash
-# Download the compose file
 curl -o docker-compose.yml https://raw.githubusercontent.com/pricorephp/pricore/main/docker-compose.yml
-
-# Start Pricore
-docker compose up -d
-
-# Set up your first user and organization
-docker compose exec app php artisan pricore:install
 ```
 
-Pricore will be available at `http://localhost:8000`.
+**2. Start the application**
+
+Migrations and setup run automatically on first boot.
+
+```bash
+docker compose up -d
+```
+
+**3. Create your first user**
+
+Then open `http://localhost:8000` and start adding packages.
+
+```bash
+docker compose exec app php artisan pricore:install
+```
 
 > The entrypoint automatically generates an `APP_KEY`, creates the SQLite database, runs migrations, and caches configuration on first boot. For production, you can provide your own `APP_KEY` via environment variable.
 
