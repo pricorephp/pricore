@@ -11,8 +11,8 @@ curl -o docker-compose.yml https://raw.githubusercontent.com/pricorephp/pricore/
 # Start Pricore
 docker compose up -d
 
-# Create your first user
-docker compose exec app php artisan make:user
+# Set up your first user and organization
+docker compose exec app php artisan pricore:install
 ```
 
 Pricore will be available at `http://localhost:8000`.
