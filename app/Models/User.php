@@ -80,6 +80,11 @@ class User extends Authenticatable implements MustVerifyEmail
     /**
      * @var list<string>
      */
+    protected $appends = ['avatar'];
+
+    /**
+     * @var list<string>
+     */
     protected $hidden = [
         'password',
         'github_token',
@@ -167,6 +172,16 @@ class User extends Authenticatable implements MustVerifyEmail
         $preferences['dismissed_onboarding'] = $dismissed;
         $this->preferences = $preferences;
         $this->save();
+    }
+
+    /**
+     * @return Attribute<string|null, never>
+     */
+    protected function avatar(): Attribute
+    {
+        return Attribute::make(
+            get: fn () => $this->avatar_url,
+        );
     }
 
     /**
