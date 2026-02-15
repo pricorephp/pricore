@@ -89,9 +89,9 @@ class InstallCommand extends Command
         $appUrl = config('app.url');
 
         $this->newLine();
-        $this->components->twoColumnDetail('<fg=#22c55e;options=bold>User</>', "$user->name <fg=gray>($user->email)</>");
-        $this->components->twoColumnDetail('<fg=#22c55e;options=bold>Organization</>', "$organization->name <fg=gray>($organization->slug)</>");
-        $this->components->twoColumnDetail('<fg=#22c55e;options=bold>URL</>', "<href=$appUrl>$appUrl</>");
+        $this->components->twoColumnDetail('<fg=bright-green;options=bold>User</>', "$user->name <fg=gray>($user->email)</>");
+        $this->components->twoColumnDetail('<fg=bright-green;options=bold>Organization</>', "$organization->name <fg=gray>($organization->slug)</>");
+        $this->components->twoColumnDetail('<fg=bright-green;options=bold>URL</>', "<href=$appUrl>$appUrl</>");
         $this->newLine();
 
         $this->components->info('Pricore has been set up successfully! You can now sign in at the URL above.');
@@ -102,7 +102,6 @@ class InstallCommand extends Command
     protected function renderLogo(): void
     {
         $lines = [
-            '',
             '  ██████╗ ██████╗ ██╗ ██████╗ ██████╗ ██████╗ ███████╗',
             '  ██╔══██╗██╔══██╗██║██╔════╝██╔═══██╗██╔══██╗██╔════╝',
             '  ██████╔╝██████╔╝██║██║     ██║   ██║██████╔╝█████╗  ',
@@ -112,7 +111,7 @@ class InstallCommand extends Command
         ];
 
         // Red-to-orange gradient
-        $colors = ['#fca5a5', '#f87171', '#ef4444', '#ea580c', '#c2410c', '#9a3412'];
+        $colors = ['bright-red', 'bright-red', 'red', 'red', 'yellow', 'yellow'];
 
         $this->newLine();
         foreach ($lines as $index => $line) {
