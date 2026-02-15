@@ -2,6 +2,7 @@
 
 namespace App\Domains\Organization\Contracts\Data;
 
+use App\Domains\Repository\Contracts\Enums\SyncStatus;
 use App\Models\RepositorySyncLog;
 use Carbon\CarbonInterface;
 use Spatie\LaravelData\Data;
@@ -13,7 +14,7 @@ class RecentSyncData extends Data
     public function __construct(
         public string $repositoryName,
         public string $repositoryUuid,
-        public string $status,
+        public SyncStatus $status,
         public string $statusLabel,
         public CarbonInterface $startedAt,
         public int $versionsAdded,
@@ -25,7 +26,7 @@ class RecentSyncData extends Data
         return new self(
             repositoryName: $log->repository->name,
             repositoryUuid: $log->repository->uuid,
-            status: $log->status->value,
+            status: $log->status,
             statusLabel: $log->status->label(),
             startedAt: $log->started_at,
             versionsAdded: $log->versions_added,

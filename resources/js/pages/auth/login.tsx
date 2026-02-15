@@ -35,7 +35,7 @@ export default function Login({
                 <>
                     <a
                         href="/auth/github/redirect"
-                        className="inline-flex w-full items-center justify-center gap-2 rounded-md border bg-background px-4 py-2 text-sm font-medium shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground"
+                        className="inline-flex w-full items-center justify-center gap-2 rounded-md border bg-background px-4 py-2 font-medium shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground"
                     >
                         <svg
                             className="h-5 w-5"

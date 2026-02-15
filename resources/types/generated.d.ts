@@ -22,6 +22,15 @@ name: string;
 slug: string;
 ownerUuid: string;
 };
+export type OrganizationInvitationData = {
+uuid: string;
+email: string;
+role: App.Domains.Organization.Contracts.Enums.OrganizationRole;
+status: string;
+invitedByName: string | null;
+createdAt: string | null;
+expiresAt: string | null;
+};
 export type OrganizationMemberData = {
 uuid: string;
 name: string;
@@ -52,7 +61,7 @@ releasedAt: string | null;
 export type RecentSyncData = {
 repositoryName: string;
 repositoryUuid: string;
-status: string;
+status: App.Domains.Repository.Contracts.Enums.SyncStatus;
 statusLabel: string;
 startedAt: string;
 versionsAdded: number;
@@ -95,7 +104,7 @@ provider: string;
 providerLabel: string;
 repoIdentifier: string;
 url: string | null;
-syncStatus: string | null;
+syncStatus: App.Domains.Repository.Contracts.Enums.RepositorySyncStatus | null;
 syncStatusLabel: string | null;
 lastSyncedAt: string | null;
 packagesCount: number;
@@ -110,7 +119,7 @@ isConnected: boolean;
 };
 export type SyncLogData = {
 uuid: string;
-status: string;
+status: App.Domains.Repository.Contracts.Enums.SyncStatus;
 statusLabel: string;
 startedAt: string;
 completedAt: string | null;

@@ -2,6 +2,7 @@
 
 namespace App\Domains\Repository\Contracts\Data;
 
+use App\Domains\Repository\Contracts\Enums\SyncStatus;
 use App\Models\RepositorySyncLog;
 use Carbon\CarbonInterface;
 use Spatie\LaravelData\Data;
@@ -12,7 +13,7 @@ class SyncLogData extends Data
 {
     public function __construct(
         public string $uuid,
-        public string $status,
+        public SyncStatus $status,
         public string $statusLabel,
         public CarbonInterface $startedAt,
         public ?CarbonInterface $completedAt,
@@ -27,7 +28,7 @@ class SyncLogData extends Data
     {
         return new self(
             uuid: $syncLog->uuid,
-            status: $syncLog->status->value,
+            status: $syncLog->status,
             statusLabel: $syncLog->status->label(),
             startedAt: $syncLog->started_at,
             completedAt: $syncLog->completed_at,

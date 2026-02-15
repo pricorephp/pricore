@@ -9,6 +9,13 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
+import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
@@ -28,6 +35,7 @@ import { createOrganizationBreadcrumb } from '@/lib/breadcrumbs';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { EllipsisVertical, RefreshCw, Settings, Webhook } from 'lucide-react';
 import { DateTime } from 'luxon';
+import { useState } from 'react';
 
 type OrganizationData =
     App.Domains.Organization.Contracts.Data.OrganizationData;
@@ -53,11 +61,15 @@ function getProviderBadgeColor(provider: string): string {
     return colors[provider] || colors.git;
 }
 
+type RepositorySyncStatus =
+    App.Domains.Repository.Contracts.Enums.RepositorySyncStatus;
+type SyncStatus = App.Domains.Repository.Contracts.Enums.SyncStatus;
+
 function getSyncStatusVariant(
-    status: string | null,
+    status: RepositorySyncStatus | SyncStatus | null,
 ): 'default' | 'secondary' | 'destructive' | 'success' | 'outline' {
     if (!status) return 'secondary';
-    if (status === 'ok') return 'success';
+    if (status === 'ok' || status === 'success') return 'success';
     if (status === 'failed') return 'destructive';
     return 'secondary';
 }
@@ -85,6 +97,8 @@ export default function RepositoryShow({
     const { auth } = usePage<{
         auth: { organizations: OrganizationData[] };
     }>().props;
+
+    const [selectedLog, setSelectedLog] = useState<SyncLogData | null>(null);
 
     const breadcrumbs = [
         createOrganizationBreadcrumb(organization, auth.organizations),
@@ -277,7 +291,9 @@ export default function RepositoryShow({
                                         <TableHead className="w-1/8">
                                             Duration
                                         </TableHead>
-                                        <TableHead>Error</TableHead>
+                                        <TableHead className="w-1/8">
+                                            Log
+                                        </TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
@@ -314,9 +330,15 @@ export default function RepositoryShow({
                                             </TableCell>
                                             <TableCell>
                                                 {log.errorMessage ? (
-                                                    <span className="text-xs text-destructive">
-                                                        {log.errorMessage}
-                                                    </span>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() =>
+                                                            setSelectedLog(log)
+                                                        }
+                                                        className="text-sm text-destructive underline underline-offset-2 hover:text-destructive/80"
+                                                    >
+                                                        View error
+                                                    </button>
                                                 ) : (
                                                     <span className="text-xs text-muted-foreground">
                                                         —
@@ -330,6 +352,25 @@ export default function RepositoryShow({
                         </div>
                     )}
                 </div>
+                <Dialog
+                    open={!!selectedLog}
+                    onOpenChange={(open) => !open && setSelectedLog(null)}
+                >
+                    <DialogContent className="sm:max-w-2xl">
+                        <DialogHeader>
+                            <DialogTitle>Sync Error</DialogTitle>
+                            <DialogDescription>
+                                {selectedLog &&
+                                    DateTime.fromISO(
+                                        selectedLog.startedAt,
+                                    ).toLocaleString(DateTime.DATETIME_SHORT)}
+                            </DialogDescription>
+                        </DialogHeader>
+                        <pre className="max-h-80 overflow-auto rounded-md bg-muted p-4 text-sm whitespace-pre-wrap">
+                            {selectedLog?.errorMessage}
+                        </pre>
+                    </DialogContent>
+                </Dialog>
             </div>
         </AppLayout>
     );

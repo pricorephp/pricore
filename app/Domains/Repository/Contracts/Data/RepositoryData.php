@@ -2,6 +2,7 @@
 
 namespace App\Domains\Repository\Contracts\Data;
 
+use App\Domains\Repository\Contracts\Enums\RepositorySyncStatus;
 use App\Models\Repository;
 use Carbon\CarbonInterface;
 use Spatie\LaravelData\Data;
@@ -17,7 +18,7 @@ class RepositoryData extends Data
         public string $providerLabel,
         public string $repoIdentifier,
         public ?string $url,
-        public ?string $syncStatus,
+        public ?RepositorySyncStatus $syncStatus,
         public ?string $syncStatusLabel,
         public ?CarbonInterface $lastSyncedAt,
         public int $packagesCount,
@@ -33,7 +34,7 @@ class RepositoryData extends Data
             providerLabel: $repository->provider->label(),
             repoIdentifier: $repository->repo_identifier,
             url: $repository->provider->repositoryUrl($repository->repo_identifier),
-            syncStatus: $repository->sync_status?->value,
+            syncStatus: $repository->sync_status,
             syncStatusLabel: $repository->sync_status?->label(),
             lastSyncedAt: $repository->last_synced_at,
             packagesCount: $repository->packages_count ?? 0,

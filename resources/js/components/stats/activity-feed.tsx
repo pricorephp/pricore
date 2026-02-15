@@ -14,8 +14,10 @@ interface ActivityFeedProps {
     recentSyncs: RecentSyncData[];
 }
 
+type SyncStatus = App.Domains.Repository.Contracts.Enums.SyncStatus;
+
 function getSyncStatusVariant(
-    status: string,
+    status: SyncStatus,
 ): 'default' | 'secondary' | 'destructive' | 'success' | 'outline' {
     if (status === 'success') return 'success';
     if (status === 'failed') return 'destructive';

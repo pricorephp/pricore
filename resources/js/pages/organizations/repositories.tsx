@@ -36,8 +36,11 @@ function getProviderBadgeColor(provider: string): string {
     return colors[provider] || colors.git;
 }
 
+type RepositorySyncStatus =
+    App.Domains.Repository.Contracts.Enums.RepositorySyncStatus;
+
 function getSyncStatusVariant(
-    status: string | null,
+    status: RepositorySyncStatus | null,
 ): 'default' | 'secondary' | 'destructive' | 'success' | 'outline' {
     if (!status) return 'secondary';
     if (status === 'ok') return 'success';
