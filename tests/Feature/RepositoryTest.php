@@ -125,7 +125,7 @@ it('deletes sync logs when repository is deleted', function () {
     assertDatabaseMissing('repository_sync_logs', ['uuid' => $syncLog->uuid]);
 });
 
-it('unlinks packages when repository is deleted', function () {
+it('deletes packages when repository is deleted', function () {
     $user = User::factory()->create();
     $organization = Organization::factory()->create(['owner_uuid' => $user->uuid]);
     $organization->members()->attach($user->uuid, ['role' => 'owner', 'uuid' => (string) Str::uuid()]);
@@ -140,8 +140,5 @@ it('unlinks packages when repository is deleted', function () {
     actingAs($user)
         ->delete(route('organizations.repositories.destroy', [$organization->slug, $repository->uuid]));
 
-    assertDatabaseHas('packages', [
-        'uuid' => $package->uuid,
-        'repository_uuid' => null,
-    ]);
+    assertDatabaseMissing('packages', ['uuid' => $package->uuid]);
 });
