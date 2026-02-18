@@ -178,23 +178,23 @@ test('OAuth-only users have null password', function () {
     expect($user->getAttributes()['password'])->toBeNull();
 });
 
-test('callback refreshes user git credentials on login', function () {
+test('callback does not overwrite elevated git credentials on login', function () {
     $user = User::factory()->withGitHub()->create([
         'github_id' => '12345678',
     ]);
 
     $credential = UserGitCredential::factory()->github()->create([
         'user_uuid' => $user->uuid,
-        'credentials' => ['token' => 'old_token'],
+        'credentials' => ['token' => 'gho_elevated_repo_token'],
     ]);
 
-    $socialiteUser = mockSocialiteUser(['id' => '12345678', 'token' => 'gho_refreshed_token']);
+    $socialiteUser = mockSocialiteUser(['id' => '12345678', 'token' => 'gho_login_only_token']);
     mockSocialiteCallback($socialiteUser);
 
     $this->get(route('auth.github.callback'));
 
     $credential->refresh();
-    expect($credential->credentials['token'])->toBe('gho_refreshed_token');
+    expect($credential->credentials['token'])->toBe('gho_elevated_repo_token');
 });
 
 test('callback uses nickname as name when GitHub name is null', function () {

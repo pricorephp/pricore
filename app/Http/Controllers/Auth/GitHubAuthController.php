@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Domains\Auth\Actions\FindOrCreateGitHubUserAction;
-use App\Domains\Auth\Actions\SyncUserGitHubCredentialAction;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
@@ -26,7 +25,6 @@ class GitHubAuthController extends Controller
 
     public function callback(
         FindOrCreateGitHubUserAction $findOrCreateUser,
-        SyncUserGitHubCredentialAction $syncCredential,
     ): RedirectResponse {
         try {
             /** @var SocialiteUser $githubUser */
@@ -40,8 +38,6 @@ class GitHubAuthController extends Controller
         }
 
         $user = $findOrCreateUser->handle($githubUser, $githubUser->token);
-
-        $syncCredential->handle($user, $githubUser->token);
 
         Auth::login($user, remember: true);
 
