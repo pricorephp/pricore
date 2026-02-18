@@ -11,11 +11,16 @@ import HeadingSmall from '@/components/heading-small';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { edit as editProfile } from '@/routes/profile';
 import { edit } from '@/routes/user-password';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
-        title: 'Password settings',
+        title: 'Settings',
+        href: editProfile().url,
+    },
+    {
+        title: 'Password',
         href: edit().url,
     },
 ];

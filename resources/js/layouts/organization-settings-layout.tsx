@@ -50,7 +50,9 @@ function SettingsContent({ children }: PropsWithChildren) {
     return (
         <div className="mx-auto w-full max-w-7xl min-w-0 space-y-6 p-6">
             <div>
-                <h1 className="mb-2 text-xl">Organization Settings</h1>
+                <h1 className="mb-0.5 text-xl font-medium">
+                    Organization Settings
+                </h1>
                 <p className="text-muted-foreground">
                     Manage {organization.name} settings and preferences
                 </p>
@@ -103,24 +105,41 @@ function SettingsContent({ children }: PropsWithChildren) {
     );
 }
 
+const settingsPageTitles: Record<string, string> = {
+    general: 'General',
+    members: 'Members',
+    tokens: 'Composer Tokens',
+};
+
 function OrganizationSettingsLayoutWrapper({ children }: PropsWithChildren) {
     const page = usePage<{
         organization: OrganizationData;
         auth: { organizations: OrganizationData[] };
     }>();
     const { organization, auth } = page.props;
+    const currentUrl = page.url;
 
     const breadcrumbs = useMemo(() => {
         if (!organization) return [];
 
-        return [
+        const settingsBase = `/organizations/${organization.slug}/settings/general`;
+        const pageSlug = currentUrl.split('/').pop() ?? '';
+        const pageTitle = settingsPageTitles[pageSlug] ?? 'Settings';
+
+        const items = [
             createOrganizationBreadcrumb(organization, auth.organizations),
             {
                 title: 'Settings',
-                href: `/organizations/${organization.slug}/settings/general`,
+                href: settingsBase,
+            },
+            {
+                title: pageTitle,
+                href: currentUrl,
             },
         ];
-    }, [organization, auth.organizations]);
+
+        return items;
+    }, [organization, auth.organizations, currentUrl]);
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>

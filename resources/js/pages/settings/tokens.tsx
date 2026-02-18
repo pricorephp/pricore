@@ -10,6 +10,7 @@ import TokenList from '@/components/token-list';
 import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/app-layout';
 import SettingsLayout from '@/layouts/settings/layout';
+import { edit as editProfile } from '@/routes/profile';
 import { index as tokensIndex } from '@/routes/settings/tokens';
 import { type BreadcrumbItem } from '@/types';
 import { Plus } from 'lucide-react';
@@ -24,6 +25,10 @@ interface TokensPageProps {
 }
 
 const breadcrumbs: BreadcrumbItem[] = [
+    {
+        title: 'Settings',
+        href: editProfile().url,
+    },
     {
         title: 'Tokens',
         href: tokensIndex().url,

@@ -41,7 +41,7 @@ export default function OrganizationShow({
 
             <div className="mx-auto w-7xl space-y-6 p-6">
                 <div className="flex items-center justify-between">
-                    <h1 className="text-xl">{organization.name}</h1>
+                    <h1 className="text-xl font-medium">{organization.name}</h1>
                 </div>
 
                 {/* Quick Stats Row */}

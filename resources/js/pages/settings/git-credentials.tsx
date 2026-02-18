@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/card';
 import AppLayout from '@/layouts/app-layout';
 import SettingsLayout from '@/layouts/settings/layout';
+import { edit as editProfile } from '@/routes/profile';
 import { gitCredentials as gitCredentialsRoute } from '@/routes/settings';
 import { type BreadcrumbItem } from '@/types';
 import { router } from '@inertiajs/react';
@@ -27,6 +28,10 @@ interface GitCredentialsPageProps {
 }
 
 const breadcrumbs: BreadcrumbItem[] = [
+    {
+        title: 'Settings',
+        href: editProfile().url,
+    },
     {
         title: 'Git Providers',
         href: gitCredentialsRoute().url,

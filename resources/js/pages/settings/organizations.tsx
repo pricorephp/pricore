@@ -23,6 +23,7 @@ import {
 } from '@/components/ui/dialog';
 import AppLayout from '@/layouts/app-layout';
 import SettingsLayout from '@/layouts/settings/layout';
+import { edit as editProfile } from '@/routes/profile';
 import { organizations } from '@/routes/settings';
 import { LogOut, Users } from 'lucide-react';
 import { useState } from 'react';
@@ -32,7 +33,11 @@ type OrganizationWithRoleData =
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
-        title: 'Organizations settings',
+        title: 'Settings',
+        href: editProfile().url,
+    },
+    {
+        title: 'Organizations',
         href: organizations.url(),
     },
 ];
