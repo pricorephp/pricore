@@ -87,7 +87,9 @@ export function AppSidebar() {
                     className="flex flex-col items-center gap-1 rounded-md px-2 py-2.5 text-center text-sidebar-foreground/70 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                 >
                     <BookOpen className="size-5" strokeWidth={1.75} />
-                    <span className="text-[10px] leading-tight">Docs</span>
+                    <span className="text-[10px] leading-tight font-medium">
+                        Docs
+                    </span>
                 </a>
             </SidebarFooter>
         </Sidebar>

@@ -34,7 +34,7 @@ export function Breadcrumbs({
         <>
             {breadcrumbs.length > 0 && (
                 <Breadcrumb>
-                    <BreadcrumbList className="font-mono text-sm">
+                    <BreadcrumbList>
                         {breadcrumbs.map((item, index) => {
                             const isLast = index === breadcrumbs.length - 1;
                             return (
@@ -89,8 +89,9 @@ function BreadcrumbDropdown({ item, isLast }: BreadcrumbDropdownProps) {
                             'hover:bg-accent hover:text-accent-foreground',
                             'focus:outline-none focus-visible:ring-2 focus-visible:ring-ring',
                             'transition-colors',
+                            'font-medium',
                             isLast
-                                ? 'font-normal text-foreground'
+                                ? 'text-foreground'
                                 : 'text-muted-foreground hover:text-foreground',
                         )}
                     >

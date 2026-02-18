@@ -29,7 +29,7 @@ export function NavUser() {
                             {getInitials(auth.user.name)}
                         </AvatarFallback>
                     </Avatar>
-                    <span className="text-sm">{auth.user.name}</span>
+                    <span className="font-medium">{auth.user.name}</span>
                 </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent
