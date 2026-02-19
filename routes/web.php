@@ -18,8 +18,9 @@ use Illuminate\Support\Facades\Route;
 
 Route::middleware('guest')->group(function () {
     Route::get('auth/github/redirect', [GitHubAuthController::class, 'redirect'])->name('auth.github.redirect');
-    Route::get('auth/github/callback', [GitHubAuthController::class, 'callback'])->name('auth.github.callback');
 });
+
+Route::get('auth/github/callback', [GitHubAuthController::class, 'callback'])->name('auth.github.callback');
 
 // Invitation acceptance (show page is public, accept requires auth)
 Route::get('invitations/{token}/accept', [AcceptInvitationController::class, 'show'])->name('invitations.show');

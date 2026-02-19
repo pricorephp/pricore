@@ -1,5 +1,6 @@
 <?php
 
+use App\Domains\Auth\Contracts\Enums\GitHubOAuthIntent;
 use App\Models\User;
 use App\Models\UserGitCredential;
 use Laravel\Socialite\Contracts\User as SocialiteUser;
@@ -64,13 +65,15 @@ test('redirect sends user to GitHub with only user:email scope', function () {
     $response = $this->get(route('auth.github.redirect'));
 
     $response->assertRedirect();
+    $response->assertSessionHas('github_oauth_intent', GitHubOAuthIntent::Login);
 });
 
 test('callback creates new user from GitHub', function () {
     $socialiteUser = mockSocialiteUser();
     mockSocialiteCallback($socialiteUser);
 
-    $response = $this->get(route('auth.github.callback'));
+    $response = $this->withSession(['github_oauth_intent' => GitHubOAuthIntent::Login])
+        ->get(route('auth.github.callback'));
 
     $response->assertRedirect(route('dashboard'));
     $this->assertAuthenticated();
@@ -141,6 +144,22 @@ test('callback handles GitHub authentication failure', function () {
     $response->assertRedirect(route('login'));
     $response->assertSessionHas('error');
     $this->assertGuest();
+});
+
+test('callback handles GitHub authentication failure during connect', function () {
+    $user = User::factory()->create();
+
+    $provider = Mockery::mock(GithubProvider::class);
+    $provider->shouldReceive('user')->andThrow(new \Exception('OAuth failed'));
+
+    Socialite::shouldReceive('driver')->with('github')->andReturn($provider);
+
+    $response = $this->actingAs($user)
+        ->withSession(['github_oauth_intent' => GitHubOAuthIntent::Connect])
+        ->get(route('auth.github.callback'));
+
+    $response->assertRedirect(route('settings.git-credentials'));
+    $response->assertSessionHas('error');
 });
 
 test('callback updates GitHub token on subsequent logins', function () {
@@ -231,6 +250,7 @@ test('connect route redirects to GitHub with repo scope', function () {
         ->get(route('settings.github.connect'));
 
     $response->assertRedirect();
+    $response->assertSessionHas('github_oauth_intent', GitHubOAuthIntent::Connect);
 });
 
 test('connect callback creates git credential for user', function () {
@@ -240,7 +260,8 @@ test('connect callback creates git credential for user', function () {
     mockSocialiteCallback($socialiteUser);
 
     $response = $this->actingAs($user)
-        ->get(route('settings.github.callback'));
+        ->withSession(['github_oauth_intent' => GitHubOAuthIntent::Connect])
+        ->get(route('auth.github.callback'));
 
     $response->assertRedirect(route('settings.git-credentials'));
     $response->assertSessionHas('status', 'GitHub credentials connected successfully.');
@@ -264,12 +285,40 @@ test('connect callback updates existing credential', function () {
     mockSocialiteCallback($socialiteUser);
 
     $response = $this->actingAs($user)
-        ->get(route('settings.github.callback'));
+        ->withSession(['github_oauth_intent' => GitHubOAuthIntent::Connect])
+        ->get(route('auth.github.callback'));
 
     $response->assertRedirect(route('settings.git-credentials'));
     $response->assertSessionHas('status', 'GitHub credentials updated successfully.');
 
     expect(UserGitCredential::where('user_uuid', $user->uuid)->count())->toBe(1);
+});
+
+test('connect callback does not overwrite github_token on user', function () {
+    $user = User::factory()->withGitHub()->create([
+        'github_token' => 'gho_login_token',
+    ]);
+
+    $socialiteUser = mockSocialiteUser(['id' => $user->github_id, 'token' => 'gho_elevated_token']);
+    mockSocialiteCallback($socialiteUser);
+
+    $this->actingAs($user)
+        ->withSession(['github_oauth_intent' => GitHubOAuthIntent::Connect])
+        ->get(route('auth.github.callback'));
+
+    $user->refresh();
+    expect($user->github_token)->toBe('gho_login_token');
+});
+
+test('connect callback without auth redirects to login', function () {
+    $socialiteUser = mockSocialiteUser();
+    mockSocialiteCallback($socialiteUser);
+
+    $response = $this->withSession(['github_oauth_intent' => GitHubOAuthIntent::Connect])
+        ->get(route('auth.github.callback'));
+
+    $response->assertRedirect(route('login'));
+    $response->assertSessionHas('error');
 });
 
 test('callback without connect session performs normal login', function () {

@@ -40,7 +40,6 @@ Route::middleware('auth')->group(function () {
     Route::delete('settings/git-credentials/{credential}', [UserGitCredentialController::class, 'destroy'])->name('settings.git-credentials.destroy');
 
     Route::get('settings/git-credentials/github/connect', [ConnectGitHubController::class, 'redirect'])->name('settings.github.connect');
-    Route::get('settings/git-credentials/github/callback', [ConnectGitHubController::class, 'callback'])->name('settings.github.callback');
 
     Route::get('settings/tokens', [UserTokenController::class, 'index'])->name('settings.tokens.index');
     Route::post('settings/tokens', [UserTokenController::class, 'store'])->name('settings.tokens.store');

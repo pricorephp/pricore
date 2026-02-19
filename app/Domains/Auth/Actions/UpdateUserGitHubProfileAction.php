@@ -7,10 +7,9 @@ use Laravel\Socialite\Contracts\User as SocialiteUser;
 
 class UpdateUserGitHubProfileAction
 {
-    public function handle(User $user, SocialiteUser $githubUser, string $token): void
+    public function handle(User $user, SocialiteUser $githubUser): void
     {
         $user->update([
-            'github_token' => $token,
             'github_id' => $user->github_id ?? $githubUser->getId(),
             'github_nickname' => $githubUser->getNickname(),
             'avatar_url' => $githubUser->getAvatar(),
