@@ -13,7 +13,7 @@ import type { SharedData } from './types';
 // Set Luxon default locale to English
 Settings.defaultLocale = 'en';
 
-const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
+const appName = import.meta.env.VITE_APP_NAME || 'Pricore';
 
 // Handle flash messages via router events
 let previousFlash: SharedData['flash'] = undefined;
