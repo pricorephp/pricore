@@ -32,7 +32,7 @@ export default function CreateOrganizationDialog({
                     </DialogDescription>
                 </DialogHeader>
 
-                <Form action={store.url()} method="post">
+                <Form action={store.url()} method="post" onSuccess={onClose}>
                     {({ processing, errors }) => (
                         <>
                             <div className="mb-4 space-y-2">
@@ -48,7 +48,7 @@ export default function CreateOrganizationDialog({
                                     autoFocus
                                 />
                                 {errors.name && (
-                                    <p className="text-sm text-destructive">
+                                    <p className="text-destructive">
                                         {errors.name}
                                     </p>
                                 )}
@@ -61,7 +61,7 @@ export default function CreateOrganizationDialog({
                             <DialogFooter>
                                 <Button
                                     type="button"
-                                    variant="outline"
+                                    variant="secondary"
                                     onClick={onClose}
                                 >
                                     Cancel

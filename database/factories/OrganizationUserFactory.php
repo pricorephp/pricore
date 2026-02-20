@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Domains\Organization\Contracts\Enums\OrganizationRole;
 use App\Models\Organization;
 use App\Models\OrganizationUser;
 use App\Models\User;
@@ -29,7 +30,7 @@ class OrganizationUserFactory extends Factory
         return [
             'organization_uuid' => Organization::factory(),
             'user_uuid' => User::factory(),
-            'role' => fake()->randomElement(['member', 'admin']),
+            'role' => fake()->randomElement([OrganizationRole::Member, OrganizationRole::Admin]),
         ];
     }
 
@@ -59,7 +60,7 @@ class OrganizationUserFactory extends Factory
     public function owner(): static
     {
         return $this->state(fn (array $attributes) => [
-            'role' => 'owner',
+            'role' => OrganizationRole::Owner,
         ]);
     }
 
@@ -69,7 +70,7 @@ class OrganizationUserFactory extends Factory
     public function admin(): static
     {
         return $this->state(fn (array $attributes) => [
-            'role' => 'admin',
+            'role' => OrganizationRole::Admin,
         ]);
     }
 
@@ -79,7 +80,7 @@ class OrganizationUserFactory extends Factory
     public function member(): static
     {
         return $this->state(fn (array $attributes) => [
-            'role' => 'member',
+            'role' => OrganizationRole::Member,
         ]);
     }
 }

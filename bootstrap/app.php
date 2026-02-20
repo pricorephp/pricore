@@ -3,11 +3,13 @@
 use App\Http\Middleware\ComposerTokenAuth;
 use App\Http\Middleware\HandleAppearance;
 use App\Http\Middleware\HandleInertiaRequests;
+use App\Http\Middleware\TrackOrganizationAccess;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets;
 use Illuminate\Support\Facades\Route;
+use Sentry\Laravel\Integration;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -17,6 +19,9 @@ return Application::configure(basePath: dirname(__DIR__))
         then: function () {
             Route::middleware('api')
                 ->group(base_path('routes/composer.php'));
+
+            Route::middleware('api')
+                ->group(base_path('routes/webhooks.php'));
         },
     )
     ->withMiddleware(function (Middleware $middleware): void {
@@ -32,6 +37,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->alias([
             'composer.token' => ComposerTokenAuth::class,
+            'track.organization' => TrackOrganizationAccess::class,
         ]);
     })
     ->withCommands([
@@ -39,5 +45,5 @@ return Application::configure(basePath: dirname(__DIR__))
         __DIR__.'/../app/Domains/Token/Commands',
     ])
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        Integration::handles($exceptions);
     })->create();

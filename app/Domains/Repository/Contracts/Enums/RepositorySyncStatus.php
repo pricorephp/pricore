@@ -2,6 +2,9 @@
 
 namespace App\Domains\Repository\Contracts\Enums;
 
+use Spatie\TypeScriptTransformer\Attributes\TypeScript;
+
+#[TypeScript]
 enum RepositorySyncStatus: string
 {
     case Ok = 'ok';

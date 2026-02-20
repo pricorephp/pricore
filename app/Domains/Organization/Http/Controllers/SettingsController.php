@@ -23,19 +23,33 @@ class SettingsController
     {
         $this->authorize('viewSettings', $organization);
 
+        $user = auth()->user();
+        $isOwner = $user !== null && $organization->owner_uuid === $user->uuid;
+
         return Inertia::render('organizations/settings/general', [
             'organization' => OrganizationData::from($organization),
+            'isOwner' => $isOwner,
         ]);
     }
 
     public function update(UpdateOrganizationRequest $request, Organization $organization): RedirectResponse
     {
-        $organization->update([
+        $user = $request->user();
+        $isOwner = $user !== null && $organization->owner_uuid === $user->uuid;
+
+        $updateData = [
             'name' => $request->validated('name'),
-        ]);
+        ];
+
+        if ($isOwner && $request->has('slug')) {
+            $updateData['slug'] = $request->validated('slug');
+        }
+
+        $organization->update($updateData);
+        $organization->refresh();
 
         return redirect()
             ->route('organizations.settings.general', $organization)
-            ->with('success', 'Organization updated successfully.');
+            ->with('status', 'Organization updated successfully.');
     }
 }

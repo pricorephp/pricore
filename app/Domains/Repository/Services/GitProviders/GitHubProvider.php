@@ -182,6 +182,98 @@ class GitHubProvider extends AbstractGitProvider
     }
 
     /**
+     * @return array{id: int, active: bool, config: array<string, mixed>}
+     */
+    public function createWebhook(string $url, string $secret): array
+    {
+        try {
+            $response = $this->http->post("/repos/{$this->repositoryIdentifier}/hooks", [
+                'name' => 'web',
+                'active' => true,
+                'events' => ['push', 'release'],
+                'config' => [
+                    'url' => $url,
+                    'content_type' => 'json',
+                    'secret' => $secret,
+                    'insecure_ssl' => '0',
+                ],
+            ]);
+
+            if ($response->failed()) {
+                throw new GitProviderException(
+                    "Failed to create webhook at GitHub: {$response->body()}"
+                );
+            }
+
+            return $response->json();
+        } catch (GitProviderException $e) {
+            throw $e;
+        } catch (\Exception $e) {
+            Log::error('GitHub API error creating webhook', [
+                'repository' => $this->repositoryIdentifier,
+                'error' => $e->getMessage(),
+            ]);
+
+            throw new GitProviderException(
+                "Failed to create webhook: {$e->getMessage()}",
+                previous: $e
+            );
+        }
+    }
+
+    public function deleteWebhook(int $hookId): void
+    {
+        try {
+            $response = $this->http->delete("/repos/{$this->repositoryIdentifier}/hooks/{$hookId}");
+
+            if ($response->status() !== 404 && $response->failed()) {
+                throw new GitProviderException(
+                    "Failed to delete webhook at GitHub: {$response->body()}"
+                );
+            }
+        } catch (GitProviderException $e) {
+            throw $e;
+        } catch (\Exception $e) {
+            Log::error('GitHub API error deleting webhook', [
+                'repository' => $this->repositoryIdentifier,
+                'hookId' => $hookId,
+                'error' => $e->getMessage(),
+            ]);
+
+            throw new GitProviderException(
+                "Failed to delete webhook: {$e->getMessage()}",
+                previous: $e
+            );
+        }
+    }
+
+    public function pingWebhook(int $hookId): void
+    {
+        try {
+            $response = $this->http->post("/repos/{$this->repositoryIdentifier}/hooks/{$hookId}/pings");
+
+            if ($response->failed()) {
+                throw new GitProviderException(
+                    "Failed to ping webhook at GitHub: {$response->body()}"
+                );
+            }
+        } catch (GitProviderException $e) {
+            throw $e;
+        } catch (\Exception $e) {
+            Log::error('GitHub API error pinging webhook', [
+                'repository' => $this->repositoryIdentifier,
+                'hookId' => $hookId,
+                'error' => $e->getMessage(),
+            ]);
+
+            throw new GitProviderException(
+                "Failed to ping webhook: {$e->getMessage()}",
+                previous: $e
+            );
+        }
+    }
+
+    /**
      * @return array<int, RepositorySuggestionData>
      */
     public function getRepositories(): array

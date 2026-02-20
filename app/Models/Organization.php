@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
 
 /**
@@ -21,10 +22,9 @@ use Illuminate\Support\Carbon;
  * @property string $owner_uuid
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
+ * @property Carbon|null $deleted_at
  * @property-read Collection<int, AccessToken> $accessTokens
  * @property-read int|null $access_tokens_count
- * @property-read Collection<int, OrganizationGitCredential> $gitCredentials
- * @property-read int|null $git_credentials_count
  * @property-read OrganizationUserPivot|null $pivot
  * @property-read Collection<int, User> $members
  * @property-read int|null $members_count
@@ -33,6 +33,8 @@ use Illuminate\Support\Carbon;
  * @property-read int|null $packages_count
  * @property-read Collection<int, Repository> $repositories
  * @property-read int|null $repositories_count
+ * @property-read Collection<int, OrganizationInvitation> $invitations
+ * @property-read int|null $invitations_count
  *
  * @method static OrganizationFactory factory($count = null, $state = [])
  * @method static Builder<static>|Organization newModelQuery()
@@ -53,6 +55,7 @@ class Organization extends Model
     use HasFactory;
 
     use HasUuids;
+    use SoftDeletes;
 
     protected $guarded = ['uuid'];
 
@@ -100,10 +103,18 @@ class Organization extends Model
     }
 
     /**
-     * @return HasMany<OrganizationGitCredential, $this>
+     * @return HasMany<OrganizationInvitation, $this>
      */
-    public function gitCredentials(): HasMany
+    public function invitations(): HasMany
     {
-        return $this->hasMany(OrganizationGitCredential::class, 'organization_uuid', 'uuid');
+        return $this->hasMany(OrganizationInvitation::class, 'organization_uuid', 'uuid');
+    }
+
+    /**
+     * @return HasMany<OrganizationInvitation, $this>
+     */
+    public function pendingInvitations(): HasMany
+    {
+        return $this->invitations()->pending();
     }
 }

@@ -1,54 +1,44 @@
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import {
-    SidebarMenu,
-    SidebarMenuButton,
-    SidebarMenuItem,
-    useSidebar,
-} from '@/components/ui/sidebar';
-import { UserInfo } from '@/components/user-info';
 import { UserMenuContent } from '@/components/user-menu-content';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { useInitials } from '@/hooks/use-initials';
 import { type SharedData } from '@/types';
 import { usePage } from '@inertiajs/react';
-import { ChevronsUpDown } from 'lucide-react';
 
 export function NavUser() {
     const { auth } = usePage<SharedData>().props;
-    const { state } = useSidebar();
-    const isMobile = useIsMobile();
-    const isCollapsed = state === 'collapsed';
+    const getInitials = useInitials();
 
     return (
-        <SidebarMenu>
-            <SidebarMenuItem>
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild disabled={isCollapsed}>
-                        <SidebarMenuButton
-                            size="lg"
-                            className="group text-sidebar-accent-foreground data-[state=open]:bg-sidebar-accent"
-                            data-test="sidebar-menu-button"
-                        >
-                            <UserInfo user={auth.user} />
-                            {!isCollapsed && (
-                                <ChevronsUpDown className="ml-auto size-4" />
-                            )}
-                        </SidebarMenuButton>
-                    </DropdownMenuTrigger>
-                    {!isCollapsed && (
-                        <DropdownMenuContent
-                            className="w-(--radix-dropdown-menu-trigger-width) min-w-56 rounded-lg bg-white dark:bg-neutral-950"
-                            align="end"
-                            side={isMobile ? 'bottom' : 'bottom'}
-                        >
-                            <UserMenuContent user={auth.user} />
-                        </DropdownMenuContent>
-                    )}
-                </DropdownMenu>
-            </SidebarMenuItem>
-        </SidebarMenu>
+        <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <button
+                    className="flex items-center gap-2 rounded-full py-1 pr-3 pl-1 transition-colors hover:bg-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    data-test="sidebar-menu-button"
+                >
+                    <Avatar className="size-8">
+                        <AvatarImage
+                            src={auth.user.avatar}
+                            alt={auth.user.name}
+                        />
+                        <AvatarFallback className="bg-primary text-xs text-primary-foreground">
+                            {getInitials(auth.user.name)}
+                        </AvatarFallback>
+                    </Avatar>
+                    <span className="font-medium">{auth.user.name}</span>
+                </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+                className="min-w-56 rounded-lg bg-white dark:bg-neutral-950"
+                align="end"
+                side="bottom"
+            >
+                <UserMenuContent user={auth.user} />
+            </DropdownMenuContent>
+        </DropdownMenu>
     );
 }

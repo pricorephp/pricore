@@ -1,0 +1,40 @@
+/* Custom theme overrides */
+
+:root {
+  --vp-font-family-base: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --vp-font-family-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Monaco,
+    Consolas, 'Liberation Mono', 'Courier New', monospace;
+  --vp-c-brand-1: #f03f03;
+  --vp-c-brand-2: #e52916;
+  --vp-c-brand-3: #cc240f;
+  --vp-c-brand-soft: rgba(255, 45, 32, 0.14);
+  --vp-button-brand-bg: #f03f03;
+}
+
+.dark {
+  --vp-c-brand-1: #f03f03;
+  --vp-c-brand-2: #ff2d20;
+  --vp-c-brand-3: #e52916;
+  --vp-c-brand-soft: rgba(255, 45, 32, 0.16);
+}
+
+/* Home page hero */
+:root {
+  --vp-home-hero-name-color: transparent;
+  --vp-home-hero-name-background: -webkit-linear-gradient(
+    120deg,
+    #ff2d20 30%,
+    #ff7a70
+  );
+}
+
+/* Button colors */
+.VPButton.brand {
+  border-color: var(--vp-c-brand-1);
+  background-color: var(--vp-c-brand-1);
+}
+
+.VPButton.brand:hover {
+  border-color: var(--vp-c-brand-2);
+  background-color: var(--vp-c-brand-2);
+}

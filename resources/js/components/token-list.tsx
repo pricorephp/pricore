@@ -14,8 +14,8 @@ interface TokenListProps {
 export default function TokenList({ tokens, onRevoke }: TokenListProps) {
     if (tokens.length === 0) {
         return (
-            <div className="rounded-lg border border-dashed p-8 text-center">
-                <p className="text-sm text-muted-foreground">
+            <div className="my-2 rounded-lg border border-dashed p-8 text-center">
+                <p className="text-muted-foreground">
                     No access tokens yet. Create one to get started.
                 </p>
             </div>
@@ -23,7 +23,7 @@ export default function TokenList({ tokens, onRevoke }: TokenListProps) {
     }
 
     return (
-        <div className="space-y-2">
+        <div className="grid space-y-2">
             {tokens.map((token, index) => (
                 <div key={token.uuid}>
                     {index > 0 && <Separator />}

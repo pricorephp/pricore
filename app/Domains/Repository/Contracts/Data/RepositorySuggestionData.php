@@ -13,6 +13,7 @@ class RepositorySuggestionData extends Data
         public string $fullName,
         public bool $isPrivate,
         public ?string $description,
+        public bool $isConnected = false,
     ) {}
 
     /**

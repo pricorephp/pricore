@@ -11,11 +11,16 @@ import HeadingSmall from '@/components/heading-small';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { edit as editProfile } from '@/routes/profile';
 import { edit } from '@/routes/user-password';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
-        title: 'Password settings',
+        title: 'Settings',
+        href: editProfile().url,
+    },
+    {
+        title: 'Password',
         href: edit().url,
     },
 ];
@@ -131,7 +136,7 @@ export default function Password() {
                                         leave="transition ease-in-out"
                                         leaveTo="opacity-0"
                                     >
-                                        <p className="text-sm text-neutral-600">
+                                        <p className="text-neutral-600">
                                             Saved
                                         </p>
                                     </Transition>

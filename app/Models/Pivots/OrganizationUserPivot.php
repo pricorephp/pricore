@@ -2,6 +2,7 @@
 
 namespace App\Models\Pivots;
 
+use App\Domains\Organization\Contracts\Enums\OrganizationRole;
 use Illuminate\Database\Eloquent\Relations\Pivot;
 use Illuminate\Support\Carbon;
 
@@ -9,7 +10,8 @@ use Illuminate\Support\Carbon;
  * @property string $uuid
  * @property string $organization_uuid
  * @property string $user_uuid
- * @property string $role
+ * @property OrganizationRole $role
+ * @property Carbon|null $last_accessed_at
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  *
@@ -32,5 +34,7 @@ class OrganizationUserPivot extends Pivot
     protected $casts = [
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
+        'last_accessed_at' => 'datetime',
+        'role' => OrganizationRole::class,
     ];
 }

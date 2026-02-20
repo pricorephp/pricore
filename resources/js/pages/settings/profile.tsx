@@ -16,7 +16,11 @@ import { edit } from '@/routes/profile';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
-        title: 'Profile settings',
+        title: 'Settings',
+        href: edit().url,
+    },
+    {
+        title: 'Profile',
         href: edit().url,
     },
 ];
@@ -35,7 +39,7 @@ export default function Profile({
             <Head title="Profile settings" />
 
             <SettingsLayout>
-                <div className="space-y-6">
+                <div className="mb-8 space-y-6">
                     <HeadingSmall
                         title="Profile information"
                         description="Update your name and email address"
@@ -92,7 +96,7 @@ export default function Profile({
                                 {mustVerifyEmail &&
                                     auth.user.email_verified_at === null && (
                                         <div>
-                                            <p className="-mt-4 text-sm text-muted-foreground">
+                                            <p className="-mt-4 text-muted-foreground">
                                                 Your email address is
                                                 unverified.{' '}
                                                 <Link
@@ -107,7 +111,7 @@ export default function Profile({
 
                                             {status ===
                                                 'verification-link-sent' && (
-                                                <div className="mt-2 text-sm font-medium text-green-600">
+                                                <div className="mt-2 font-medium text-green-600">
                                                     A new verification link has
                                                     been sent to your email
                                                     address.
@@ -131,7 +135,7 @@ export default function Profile({
                                         leave="transition ease-in-out"
                                         leaveTo="opacity-0"
                                     >
-                                        <p className="text-sm text-neutral-600">
+                                        <p className="text-neutral-600">
                                             Saved
                                         </p>
                                     </Transition>

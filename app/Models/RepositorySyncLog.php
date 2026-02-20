@@ -15,6 +15,7 @@ use Illuminate\Support\Carbon;
 /**
  * @property string $uuid
  * @property string $repository_uuid
+ * @property string|null $batch_id
  * @property SyncStatus $status
  * @property Carbon $started_at
  * @property Carbon|null $completed_at
@@ -22,6 +23,8 @@ use Illuminate\Support\Carbon;
  * @property array<array-key, mixed>|null $details
  * @property int $versions_added
  * @property int $versions_updated
+ * @property int $versions_skipped
+ * @property int $versions_failed
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property-read Repository $repository
@@ -58,6 +61,8 @@ class RepositorySyncLog extends Model
         'details' => 'array',
         'versions_added' => 'integer',
         'versions_updated' => 'integer',
+        'versions_skipped' => 'integer',
+        'versions_failed' => 'integer',
     ];
 
     /**

@@ -19,36 +19,30 @@ import {
 import { Form } from '@inertiajs/react';
 
 interface CreateTokenDialogProps {
-    organizationSlug: string;
+    storeUrl: string;
+    description: string;
     isOpen: boolean;
     onClose: () => void;
 }
 
 export default function CreateTokenDialog({
-    organizationSlug,
+    storeUrl,
+    description,
     isOpen,
     onClose,
 }: CreateTokenDialogProps) {
-    const storeUrl = `/organizations/${organizationSlug}/settings/tokens`;
-
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
             <DialogContent>
                 <DialogHeader>
                     <DialogTitle>Create Access Token</DialogTitle>
-                    <DialogDescription>
-                        Create a new token for API access to this organization.
-                    </DialogDescription>
+                    <DialogDescription>{description}</DialogDescription>
                 </DialogHeader>
 
-                <Form
-                    action={storeUrl}
-                    method="post"
-                    className="space-y-4"
-                >
+                <Form action={storeUrl} method="post" className="space-y-4">
                     {({ processing, errors }) => (
                         <>
-                            <div className="space-y-2">
+                            <div className="grid space-y-2">
                                 <Label htmlFor="name">
                                     Token Name{' '}
                                     <span className="text-red-500">*</span>
@@ -61,13 +55,13 @@ export default function CreateTokenDialog({
                                     autoFocus
                                 />
                                 {errors.name && (
-                                    <p className="text-sm text-destructive">
+                                    <p className="text-destructive">
                                         {errors.name}
                                     </p>
                                 )}
                             </div>
 
-                            <div className="space-y-2">
+                            <div className="grid space-y-2">
                                 <Label htmlFor="expires_at">
                                     Expiration (optional)
                                 </Label>
@@ -91,7 +85,7 @@ export default function CreateTokenDialog({
                                     </SelectContent>
                                 </Select>
                                 {errors.expires_at && (
-                                    <p className="text-sm text-destructive">
+                                    <p className="text-destructive">
                                         {errors.expires_at}
                                     </p>
                                 )}
@@ -100,7 +94,7 @@ export default function CreateTokenDialog({
                             <DialogFooter>
                                 <Button
                                     type="button"
-                                    variant="outline"
+                                    variant="secondary"
                                     onClick={onClose}
                                 >
                                     Cancel

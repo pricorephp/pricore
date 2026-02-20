@@ -55,4 +55,17 @@ class UserFactory extends Factory
             'two_factor_confirmed_at' => null,
         ]);
     }
+
+    /**
+     * Indicate that the user has a connected GitHub account.
+     */
+    public function withGitHub(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'github_id' => (string) fake()->unique()->randomNumber(8),
+            'github_token' => 'gho_'.Str::random(36),
+            'github_nickname' => fake()->userName(),
+            'avatar_url' => fake()->imageUrl(200, 200),
+        ]);
+    }
 }

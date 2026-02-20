@@ -2,7 +2,9 @@
 
 namespace App\Domains\Organization\Http\Controllers;
 
+use App\Domains\Organization\Actions\SendOrganizationInvitationAction;
 use App\Domains\Organization\Contracts\Data\OrganizationData;
+use App\Domains\Organization\Contracts\Data\OrganizationInvitationData;
 use App\Domains\Organization\Contracts\Data\OrganizationMemberData;
 use App\Domains\Organization\Contracts\Enums\OrganizationRole;
 use App\Domains\Organization\Requests\AddMemberRequest;
@@ -37,31 +39,48 @@ class MemberController
                 return OrganizationMemberData::fromUserAndPivot($user, $pivot);
             });
 
+        $invitations = $organization->pendingInvitations()
+            ->with('invitedBy')
+            ->latest()
+            ->get()
+            ->map(fn ($invitation) => OrganizationInvitationData::fromModel($invitation));
+
         return Inertia::render('organizations/settings/members', [
             'organization' => OrganizationData::from($organization),
             'members' => $members,
+            'invitations' => $invitations,
             'roleOptions' => OrganizationRole::options(),
         ]);
     }
 
-    public function store(AddMemberRequest $request, Organization $organization): RedirectResponse
+    public function store(AddMemberRequest $request, Organization $organization, SendOrganizationInvitationAction $sendInvitation): RedirectResponse
     {
-        $user = User::where('email', $request->validated('email'))->firstOrFail();
+        $email = $request->validated('email');
+        $role = OrganizationRole::from($request->validated('role'));
 
-        if ($organization->members()->where('user_uuid', $user->uuid)->exists()) {
+        // Check if email belongs to an existing member
+        $existingUser = User::where('email', $email)->first();
+        if ($existingUser && $organization->members()->where('user_uuid', $existingUser->uuid)->exists()) {
             return redirect()
                 ->route('organizations.settings.members', $organization)
                 ->with('error', 'User is already a member of this organization.');
         }
 
-        $organization->members()->attach($user->uuid, [
-            'uuid' => \Illuminate\Support\Str::uuid()->toString(),
-            'role' => $request->validated('role'),
-        ]);
+        // Check for existing pending invitation
+        if ($organization->pendingInvitations()->where('email', $email)->exists()) {
+            return redirect()
+                ->route('organizations.settings.members', $organization)
+                ->with('error', 'An invitation has already been sent to this email address.');
+        }
+
+        /** @var User $user */
+        $user = $request->user();
+
+        $sendInvitation->handle($organization, $email, $role, $user);
 
         return redirect()
             ->route('organizations.settings.members', $organization)
-            ->with('success', 'Member added successfully.');
+            ->with('status', "Invitation sent to {$email}.");
     }
 
     public function update(UpdateMemberRoleRequest $request, Organization $organization, OrganizationUser $member): RedirectResponse
@@ -70,9 +89,7 @@ class MemberController
             abort(404);
         }
 
-        $role = OrganizationRole::from($member->role);
-
-        if ($role->isOwner()) {
+        if ($member->role->isOwner()) {
             return redirect()
                 ->route('organizations.settings.members', $organization)
                 ->with('error', 'Cannot change the role of the organization owner.');
@@ -84,7 +101,7 @@ class MemberController
 
         return redirect()
             ->route('organizations.settings.members', $organization)
-            ->with('success', 'Member role updated successfully.');
+            ->with('status', 'Member role updated successfully.');
     }
 
     public function destroy(Organization $organization, OrganizationUser $member): RedirectResponse
@@ -95,9 +112,7 @@ class MemberController
             abort(404);
         }
 
-        $role = OrganizationRole::from($member->role);
-
-        if ($role->isOwner()) {
+        if ($member->role->isOwner()) {
             return redirect()
                 ->route('organizations.settings.members', $organization)
                 ->with('error', 'Cannot remove the organization owner.');
@@ -107,6 +122,6 @@ class MemberController
 
         return redirect()
             ->route('organizations.settings.members', $organization)
-            ->with('success', 'Member removed successfully.');
+            ->with('status', 'Member removed successfully.');
     }
 }

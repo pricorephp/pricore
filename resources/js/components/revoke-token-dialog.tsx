@@ -10,22 +10,18 @@ import {
 import { Form } from '@inertiajs/react';
 
 interface RevokeTokenDialogProps {
-    tokenUuid: string;
     tokenName: string;
-    organizationSlug: string;
+    deleteUrl: string;
     isOpen: boolean;
     onClose: () => void;
 }
 
 export default function RevokeTokenDialog({
-    tokenUuid,
     tokenName,
-    organizationSlug,
+    deleteUrl,
     isOpen,
     onClose,
 }: RevokeTokenDialogProps) {
-    const deleteUrl = `/organizations/${organizationSlug}/settings/tokens/${tokenUuid}`;
-
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
             <DialogContent>
@@ -38,17 +34,17 @@ export default function RevokeTokenDialog({
                 </DialogHeader>
 
                 <div className="rounded-md border border-red-200 bg-red-50 p-4 dark:border-red-900 dark:bg-red-950">
-                    <p className="text-sm font-medium text-red-900 dark:text-red-100">
+                    <p className="font-medium text-red-900 dark:text-red-100">
                         Token: {tokenName}
                     </p>
-                    <p className="mt-1 text-sm text-red-700 dark:text-red-300">
+                    <p className="mt-1 text-red-700 dark:text-red-300">
                         Any applications using this token will immediately lose
                         access.
                     </p>
                 </div>
 
                 <DialogFooter>
-                    <Button type="button" variant="outline" onClick={onClose}>
+                    <Button type="button" variant="secondary" onClick={onClose}>
                         Cancel
                     </Button>
                     <Form

@@ -1,9 +1,20 @@
 declare namespace App.Domains.Organization.Contracts.Data {
+export type ActivityFeedData = {
+recentReleases: Array<any>;
+recentSyncs: Array<any>;
+};
 export type GitCredentialData = {
 uuid: string;
 provider: string;
 providerLabel: string;
 isConfigured: boolean;
+};
+export type OnboardingChecklistData = {
+hasGitProvider: boolean;
+hasRepository: boolean;
+hasPersonalToken: boolean;
+hasOrgToken: boolean;
+isDismissed: boolean;
 };
 export type OrganizationData = {
 uuid: string;
@@ -11,17 +22,50 @@ name: string;
 slug: string;
 ownerUuid: string;
 };
+export type OrganizationInvitationData = {
+uuid: string;
+email: string;
+role: App.Domains.Organization.Contracts.Enums.OrganizationRole;
+status: string;
+invitedByName: string | null;
+createdAt: string | null;
+expiresAt: string | null;
+};
 export type OrganizationMemberData = {
 uuid: string;
 name: string;
 email: string;
-role: string;
+role: App.Domains.Organization.Contracts.Enums.OrganizationRole;
 joinedAt: string | null;
 };
 export type OrganizationStatsData = {
 packagesCount: number;
 repositoriesCount: number;
 tokensCount: number;
+membersCount: number;
+activityFeed: App.Domains.Organization.Contracts.Data.ActivityFeedData;
+};
+export type OrganizationWithRoleData = {
+organization: App.Domains.Organization.Contracts.Data.OrganizationData;
+role: App.Domains.Organization.Contracts.Enums.OrganizationRole;
+isOwner: boolean;
+pivotUuid: string;
+};
+export type RecentReleaseData = {
+packageName: string;
+packageUuid: string;
+version: string;
+isStable: boolean;
+releasedAt: string | null;
+};
+export type RecentSyncData = {
+repositoryName: string;
+repositoryUuid: string;
+status: App.Domains.Repository.Contracts.Enums.SyncStatus;
+statusLabel: string;
+startedAt: string;
+versionsAdded: number;
+versionsUpdated: number;
 };
 }
 declare namespace App.Domains.Organization.Contracts.Enums {
@@ -60,20 +104,22 @@ provider: string;
 providerLabel: string;
 repoIdentifier: string;
 url: string | null;
-syncStatus: string | null;
+syncStatus: App.Domains.Repository.Contracts.Enums.RepositorySyncStatus | null;
 syncStatusLabel: string | null;
 lastSyncedAt: string | null;
 packagesCount: number;
+webhookActive: boolean;
 };
 export type RepositorySuggestionData = {
 name: string;
 fullName: string;
 isPrivate: boolean;
 description: string | null;
+isConnected: boolean;
 };
 export type SyncLogData = {
 uuid: string;
-status: string;
+status: App.Domains.Repository.Contracts.Enums.SyncStatus;
 statusLabel: string;
 startedAt: string;
 completedAt: string | null;

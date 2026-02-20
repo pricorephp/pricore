@@ -1,35 +1,60 @@
-import Heading from '@/components/heading';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { cn, isSameUrl, resolveUrl } from '@/lib/utils';
 import { edit as editAppearance } from '@/routes/appearance';
 import { edit } from '@/routes/profile';
+import { gitCredentials, organizations } from '@/routes/settings';
+import { index as tokensIndex } from '@/routes/settings/tokens';
 import { show } from '@/routes/two-factor';
 import { edit as editPassword } from '@/routes/user-password';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/react';
+import {
+    GitBranch,
+    Key,
+    Lock,
+    Paintbrush,
+    ShieldCheck,
+    User,
+    Users,
+} from 'lucide-react';
 import { type PropsWithChildren } from 'react';
 
 const sidebarNavItems: NavItem[] = [
     {
         title: 'Profile',
         href: edit(),
-        icon: null,
+        icon: User,
     },
     {
         title: 'Password',
         href: editPassword(),
-        icon: null,
+        icon: Lock,
     },
     {
         title: 'Two-Factor Auth',
         href: show(),
-        icon: null,
+        icon: ShieldCheck,
     },
     {
         title: 'Appearance',
         href: editAppearance(),
-        icon: null,
+        icon: Paintbrush,
+    },
+    {
+        title: 'Git Providers',
+        href: gitCredentials(),
+        icon: GitBranch,
+    },
+    {
+        title: 'Tokens',
+        href: tokensIndex(),
+        icon: Key,
+    },
+    {
+        title: 'Organizations',
+        href: organizations.url(),
+        icon: Users,
     },
 ];
 
@@ -42,15 +67,19 @@ export default function SettingsLayout({ children }: PropsWithChildren) {
     const currentPath = window.location.pathname;
 
     return (
-        <div className="px-4 py-6">
-            <Heading
-                title="Settings"
-                description="Manage your profile and account settings"
-            />
+        <div className="mx-auto w-full max-w-7xl min-w-0 space-y-6 p-6">
+            <div>
+                <h1 className="mb-0.5 text-xl font-medium">Settings</h1>
+                <p className="text-muted-foreground">
+                    Manage your profile and account settings
+                </p>
+            </div>
 
-            <div className="flex flex-col lg:flex-row lg:space-x-12">
-                <aside className="w-full max-w-xl lg:w-48">
-                    <nav className="flex flex-col space-y-1 space-x-0">
+            <Separator />
+
+            <div className="flex flex-col space-y-8 lg:flex-row lg:space-y-0 lg:space-x-12">
+                <aside className="w-full shrink-0 lg:w-48">
+                    <nav className="flex space-x-2 lg:flex-col lg:space-y-1 lg:space-x-0">
                         {sidebarNavItems.map((item, index) => (
                             <Button
                                 key={`${resolveUrl(item.href)}-${index}`}
@@ -75,13 +104,7 @@ export default function SettingsLayout({ children }: PropsWithChildren) {
                     </nav>
                 </aside>
 
-                <Separator className="my-6 lg:hidden" />
-
-                <div className="flex-1 md:max-w-2xl">
-                    <section className="max-w-xl space-y-12">
-                        {children}
-                    </section>
-                </div>
+                <div className="w-full min-w-0 flex-1">{children}</div>
             </div>
         </div>
     );

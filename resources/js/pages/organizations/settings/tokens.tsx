@@ -1,10 +1,14 @@
+import {
+    destroy,
+    store,
+} from '@/actions/App/Domains/Token/Http/Controllers/TokenController';
 import CreateTokenDialog from '@/components/create-token-dialog';
+import InfoBox from '@/components/info-box';
 import RevokeTokenDialog from '@/components/revoke-token-dialog';
 import TokenCreatedDialog from '@/components/token-created-dialog';
 import TokenList from '@/components/token-list';
 import { Button } from '@/components/ui/button';
-import AppLayout from '@/layouts/app-layout';
-import OrganizationSettingsLayout from '@/layouts/organization-settings-layout';
+import { withOrganizationSettingsLayout } from '@/layouts/organization-settings-layout';
 import { Plus } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
@@ -67,8 +71,8 @@ export default function Tokens({
         <div className="space-y-6">
             <div className="flex items-center justify-between">
                 <div>
-                    <h3 className="text-lg font-medium">API Tokens</h3>
-                    <p className="text-sm text-muted-foreground">
+                    <h3 className="text-lg font-medium">Composer Tokens</h3>
+                    <p className="text-muted-foreground">
                         Manage access tokens for Composer authentication
                     </p>
                 </div>
@@ -78,32 +82,29 @@ export default function Tokens({
                 </Button>
             </div>
 
-            <div className="rounded-lg border bg-card p-4">
+            <div className="rounded-lg border bg-card px-4 py-2">
                 <TokenList tokens={tokens} onRevoke={handleRevoke} />
             </div>
 
-            <div className="rounded-md border border-neutral-200 bg-neutral-50 p-3 dark:border-neutral-800 dark:bg-neutral-950">
-                <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
-                    About API Tokens
-                </p>
-                <p className="mt-1 text-sm text-neutral-700 dark:text-neutral-300">
-                    API tokens allow you to authenticate Composer requests to
-                    access private packages in this organization. Each token can
-                    be configured with an expiration date for security.
-                </p>
-            </div>
+            <InfoBox
+                title="About Organization Tokens"
+                description="Organization tokens grant access to packages within this organization only. Each token can be configured with an expiration date for security. For tokens that work across all your organizations, visit your personal token settings."
+            />
 
             <CreateTokenDialog
-                organizationSlug={organization.slug}
+                storeUrl={store.url(organization.slug)}
+                description="Create a new token for access to this organization's packages."
                 isOpen={createDialogOpen}
                 onClose={() => setCreateDialogOpen(false)}
             />
 
             {selectedToken && (
                 <RevokeTokenDialog
-                    tokenUuid={selectedToken.uuid}
                     tokenName={selectedToken.name}
-                    organizationSlug={organization.slug}
+                    deleteUrl={destroy.url([
+                        organization.slug,
+                        selectedToken.uuid,
+                    ])}
                     isOpen={revokeDialogOpen}
                     onClose={() => {
                         setRevokeDialogOpen(false);
@@ -125,8 +126,4 @@ export default function Tokens({
     );
 }
 
-Tokens.layout = (page: React.ReactNode) => (
-    <AppLayout>
-        <OrganizationSettingsLayout>{page}</OrganizationSettingsLayout>
-    </AppLayout>
-);
+Tokens.layout = withOrganizationSettingsLayout;

@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Domains\Organization\Contracts\Enums\OrganizationRole;
 use App\Models\AccessToken;
 use App\Models\Organization;
 use App\Models\OrganizationUser;
@@ -50,19 +51,19 @@ class DatabaseSeeder extends Seeder
         // Add members to organization 1
         OrganizationUser::firstOrCreate(
             ['organization_uuid' => $org1->uuid, 'user_uuid' => $testUser->uuid],
-            ['role' => 'owner']
+            ['role' => OrganizationRole::Owner]
         );
         OrganizationUser::firstOrCreate(
             ['organization_uuid' => $org1->uuid, 'user_uuid' => $users[0]?->uuid],
-            ['role' => 'admin']
+            ['role' => OrganizationRole::Admin]
         );
         OrganizationUser::firstOrCreate(
             ['organization_uuid' => $org1->uuid, 'user_uuid' => $users[1]?->uuid],
-            ['role' => 'member']
+            ['role' => OrganizationRole::Member]
         );
         OrganizationUser::firstOrCreate(
             ['organization_uuid' => $org1->uuid, 'user_uuid' => $users[2]?->uuid],
-            ['role' => 'member']
+            ['role' => OrganizationRole::Member]
         );
 
         // Organization 2-4: Create additional organizations
@@ -75,15 +76,15 @@ class DatabaseSeeder extends Seeder
 
         OrganizationUser::firstOrCreate(
             ['organization_uuid' => $org2->uuid, 'user_uuid' => $users[3]?->uuid],
-            ['role' => 'owner']
+            ['role' => OrganizationRole::Owner]
         );
         OrganizationUser::firstOrCreate(
             ['organization_uuid' => $org2->uuid, 'user_uuid' => $users[4]?->uuid],
-            ['role' => 'admin']
+            ['role' => OrganizationRole::Admin]
         );
         OrganizationUser::firstOrCreate(
             ['organization_uuid' => $org2->uuid, 'user_uuid' => $testUser->uuid],
-            ['role' => 'member']
+            ['role' => OrganizationRole::Member]
         );
 
         $org3 = Organization::factory()
@@ -93,11 +94,11 @@ class DatabaseSeeder extends Seeder
 
         OrganizationUser::firstOrCreate(
             ['organization_uuid' => $org3->uuid, 'user_uuid' => $users[5]?->uuid],
-            ['role' => 'owner']
+            ['role' => OrganizationRole::Owner]
         );
         OrganizationUser::firstOrCreate(
             ['organization_uuid' => $org3->uuid, 'user_uuid' => $users[6]?->uuid],
-            ['role' => 'member']
+            ['role' => OrganizationRole::Member]
         );
 
         // Create repositories for each organization

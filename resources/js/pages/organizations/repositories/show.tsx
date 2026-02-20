@@ -1,11 +1,27 @@
 import { show } from '@/actions/App/Domains/Package/Http/Controllers/PackageController';
+import { edit } from '@/actions/App/Domains/Repository/Http/Controllers/RepositoryController';
 import SyncRepository from '@/actions/App/Domains/Repository/Http/Controllers/SyncRepositoryController';
+import SyncWebhook from '@/actions/App/Domains/Repository/Http/Controllers/SyncWebhookController';
 import GitProviderIcon from '@/components/git-provider-icon';
 import HeadingSmall from '@/components/heading-small';
 import PackageCard from '@/components/package-card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import {
     Table,
     TableBody,
@@ -15,10 +31,11 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import AppLayout from '@/layouts/app-layout';
-import { type BreadcrumbItem } from '@/types';
-import { Form, Head, Link } from '@inertiajs/react';
-import { RefreshCw } from 'lucide-react';
+import { createOrganizationBreadcrumb } from '@/lib/breadcrumbs';
+import { Head, Link, router, usePage } from '@inertiajs/react';
+import { EllipsisVertical, RefreshCw, Settings, Webhook } from 'lucide-react';
 import { DateTime } from 'luxon';
+import { useState } from 'react';
 
 type OrganizationData =
     App.Domains.Organization.Contracts.Data.OrganizationData;
@@ -44,11 +61,15 @@ function getProviderBadgeColor(provider: string): string {
     return colors[provider] || colors.git;
 }
 
+type RepositorySyncStatus =
+    App.Domains.Repository.Contracts.Enums.RepositorySyncStatus;
+type SyncStatus = App.Domains.Repository.Contracts.Enums.SyncStatus;
+
 function getSyncStatusVariant(
-    status: string | null,
+    status: RepositorySyncStatus | SyncStatus | null,
 ): 'default' | 'secondary' | 'destructive' | 'success' | 'outline' {
     if (!status) return 'secondary';
-    if (status === 'ok') return 'success';
+    if (status === 'ok' || status === 'success') return 'success';
     if (status === 'failed') return 'destructive';
     return 'secondary';
 }
@@ -73,11 +94,14 @@ export default function RepositoryShow({
     packages,
     syncLogs,
 }: RepositoryShowProps) {
-    const breadcrumbs: BreadcrumbItem[] = [
-        {
-            title: organization.name,
-            href: `/organizations/${organization.slug}`,
-        },
+    const { auth } = usePage<{
+        auth: { organizations: OrganizationData[] };
+    }>().props;
+
+    const [selectedLog, setSelectedLog] = useState<SyncLogData | null>(null);
+
+    const breadcrumbs = [
+        createOrganizationBreadcrumb(organization, auth.organizations),
         {
             title: 'Repositories',
             href: `/organizations/${organization.slug}/repositories`,
@@ -141,9 +165,23 @@ export default function RepositoryShow({
                                     {repository.syncStatusLabel ?? 'Pending'}
                                 </Badge>
                             )}
+                            {repository.provider === 'github' && (
+                                <Badge
+                                    variant={
+                                        repository.webhookActive
+                                            ? 'success'
+                                            : 'outline'
+                                    }
+                                >
+                                    <Webhook className="mr-0.5 size-3" />
+                                    {repository.webhookActive
+                                        ? 'Webhook Active'
+                                        : 'No Webhook'}
+                                </Badge>
+                            )}
                         </div>
                         {repository.lastSyncedAt && (
-                            <p className="text-sm text-muted-foreground">
+                            <p className="text-muted-foreground">
                                 Last synced{' '}
                                 {DateTime.fromISO(
                                     repository.lastSyncedAt,
@@ -151,28 +189,58 @@ export default function RepositoryShow({
                             </p>
                         )}
                     </div>
-                    <Form
-                        action={SyncRepository.url([
-                            organization.slug,
-                            repository.uuid,
-                        ])}
-                        method="post"
-                    >
-                        {({ processing }) => (
-                            <Button
-                                type="submit"
-                                disabled={processing}
-                                variant="outline"
-                            >
-                                <RefreshCw
-                                    className={`mr-2 h-4 w-4 ${
-                                        processing ? 'animate-spin' : ''
-                                    }`}
-                                />
-                                {processing ? 'Syncing...' : 'Sync Now'}
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="secondary">
+                                Actions
+                                <EllipsisVertical className="size-4" />
                             </Button>
-                        )}
-                    </Form>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                            <DropdownMenuItem
+                                onSelect={() =>
+                                    router.post(
+                                        SyncRepository.url([
+                                            organization.slug,
+                                            repository.uuid,
+                                        ]),
+                                    )
+                                }
+                            >
+                                <RefreshCw />
+                                Sync Now
+                            </DropdownMenuItem>
+                            {repository.provider === 'github' && (
+                                <DropdownMenuItem
+                                    onSelect={() =>
+                                        router.post(
+                                            SyncWebhook.url([
+                                                organization.slug,
+                                                repository.uuid,
+                                            ]),
+                                        )
+                                    }
+                                >
+                                    <Webhook />
+                                    {repository.webhookActive
+                                        ? 'Re-register Webhook'
+                                        : 'Register Webhook'}
+                                </DropdownMenuItem>
+                            )}
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem asChild>
+                                <Link
+                                    href={edit.url({
+                                        organization: organization.slug,
+                                        repository: repository.uuid,
+                                    })}
+                                >
+                                    <Settings />
+                                    Edit
+                                </Link>
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
                 </div>
 
                 {packages.length > 0 && (
@@ -204,22 +272,28 @@ export default function RepositoryShow({
                     />
                     {syncLogs.length === 0 ? (
                         <Card>
-                            <CardContent className="py-8 text-center text-sm text-muted-foreground">
+                            <CardContent className="py-8 text-center text-muted-foreground">
                                 No sync history yet. Click "Sync Now" to perform
                                 the first synchronization.
                             </CardContent>
                         </Card>
                     ) : (
-                        <Card>
+                        <div className="rounded-lg border bg-card">
                             <Table>
                                 <TableHeader>
                                     <TableRow className="hover:bg-transparent">
-                                        <TableHead>Status</TableHead>
-                                        <TableHead>Started</TableHead>
-                                        <TableHead>Duration</TableHead>
-                                        <TableHead>Versions Added</TableHead>
-                                        <TableHead>Versions Updated</TableHead>
-                                        <TableHead>Error</TableHead>
+                                        <TableHead className="w-1/8">
+                                            Status
+                                        </TableHead>
+                                        <TableHead className="w-1/8">
+                                            Started
+                                        </TableHead>
+                                        <TableHead className="w-1/8">
+                                            Duration
+                                        </TableHead>
+                                        <TableHead className="w-1/8">
+                                            Log
+                                        </TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
@@ -235,7 +309,7 @@ export default function RepositoryShow({
                                                 </Badge>
                                             </TableCell>
                                             <TableCell>
-                                                <div className="text-sm">
+                                                <div className="">
                                                     {DateTime.fromISO(
                                                         log.startedAt,
                                                     ).toRelative()}
@@ -255,16 +329,16 @@ export default function RepositoryShow({
                                                 )}
                                             </TableCell>
                                             <TableCell>
-                                                {log.versionsAdded}
-                                            </TableCell>
-                                            <TableCell>
-                                                {log.versionsUpdated}
-                                            </TableCell>
-                                            <TableCell>
                                                 {log.errorMessage ? (
-                                                    <span className="text-xs text-destructive">
-                                                        {log.errorMessage}
-                                                    </span>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() =>
+                                                            setSelectedLog(log)
+                                                        }
+                                                        className="text-sm text-destructive underline underline-offset-2 hover:text-destructive/80"
+                                                    >
+                                                        View error
+                                                    </button>
                                                 ) : (
                                                     <span className="text-xs text-muted-foreground">
                                                         —
@@ -275,9 +349,28 @@ export default function RepositoryShow({
                                     ))}
                                 </TableBody>
                             </Table>
-                        </Card>
+                        </div>
                     )}
                 </div>
+                <Dialog
+                    open={!!selectedLog}
+                    onOpenChange={(open) => !open && setSelectedLog(null)}
+                >
+                    <DialogContent className="sm:max-w-2xl">
+                        <DialogHeader>
+                            <DialogTitle>Sync Error</DialogTitle>
+                            <DialogDescription>
+                                {selectedLog &&
+                                    DateTime.fromISO(
+                                        selectedLog.startedAt,
+                                    ).toLocaleString(DateTime.DATETIME_SHORT)}
+                            </DialogDescription>
+                        </DialogHeader>
+                        <pre className="max-h-80 overflow-auto rounded-md bg-muted p-4 text-sm whitespace-pre-wrap">
+                            {selectedLog?.errorMessage}
+                        </pre>
+                    </DialogContent>
+                </Dialog>
             </div>
         </AppLayout>
     );

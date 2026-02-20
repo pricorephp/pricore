@@ -3,24 +3,22 @@
 namespace App\Domains\Repository\Jobs;
 
 use App\Domains\Repository\Actions\CollectRefsAction;
-use App\Domains\Repository\Actions\CompleteSyncLogAction;
+use App\Domains\Repository\Actions\CreateGitCloneAction;
 use App\Domains\Repository\Actions\CreateSyncLogAction;
-use App\Domains\Repository\Actions\SyncRefAction;
 use App\Domains\Repository\Contracts\Data\RefData;
-use App\Domains\Repository\Contracts\Data\SyncResultData;
 use App\Domains\Repository\Contracts\Enums\RepositorySyncStatus;
 use App\Domains\Repository\Contracts\Enums\SyncStatus;
 use App\Domains\Repository\Contracts\Interfaces\GitProviderInterface;
 use App\Domains\Repository\Exceptions\GitProviderException;
 use App\Domains\Repository\Services\GitProviders\GitProviderFactory;
-use App\Exceptions\ComposerMetadataException;
 use App\Models\Repository;
 use App\Models\RepositorySyncLog;
+use Illuminate\Bus\Batch;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
+use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Log;
-use Spatie\LaravelData\DataCollection;
 use Throwable;
 
 class SyncRepositoryJob implements ShouldBeUnique, ShouldQueue
@@ -29,11 +27,10 @@ class SyncRepositoryJob implements ShouldBeUnique, ShouldQueue
 
     public int $timeout = 300;
 
-    public int $tries = 3;
+    public int $tries = 1;
 
-    /**
-     * Create a new job instance.
-     */
+    public int $uniqueFor = 300;
+
     public function __construct(
         public Repository $repository
     ) {}
@@ -43,14 +40,10 @@ class SyncRepositoryJob implements ShouldBeUnique, ShouldQueue
         return "sync-repository-{$this->repository->uuid}";
     }
 
-    /**
-     * Execute the job.
-     */
     public function handle(
         CreateSyncLogAction $createSyncLogAction,
         CollectRefsAction $collectRefsAction,
-        SyncRefAction $syncRefAction,
-        CompleteSyncLogAction $completeSyncLogAction
+        CreateGitCloneAction $createGitCloneAction,
     ): void {
         $syncLog = $createSyncLogAction->handle($this->repository);
 
@@ -69,19 +62,45 @@ class SyncRepositoryJob implements ShouldBeUnique, ShouldQueue
                 ],
             ]);
 
-            $result = $this->syncRefs($syncRefAction, $provider, $refs->all);
+            if ($refs->all->count() === 0) {
+                $this->completeSyncLogEmpty($syncLog);
 
-            $completeSyncLogAction->handle($syncLog, SyncStatus::Success, $result);
+                return;
+            }
 
-            $this->repository->update([
-                'sync_status' => RepositorySyncStatus::Ok,
-                'last_synced_at' => now(),
-            ]);
+            $clonePath = $createGitCloneAction->handle($this->repository);
 
-            Log::info('Repository synced successfully', [
+            $jobs = collect($refs->all->toArray())->map(
+                fn (array $refData) => new SyncRefJob(
+                    $this->repository,
+                    RefData::from($refData),
+                    $clonePath,
+                )
+            )->all();
+
+            // Capture only primitive values for the closure to avoid serialization issues
+            $syncLogUuid = $syncLog->uuid;
+            $repositoryUuid = $this->repository->uuid;
+
+            $batch = Bus::batch($jobs)
+                ->name("sync-repository:{$this->repository->uuid}")
+                ->allowFailures()
+                ->finally(function (Batch $batch) use ($syncLogUuid, $repositoryUuid, $clonePath) {
+                    CompleteSyncBatchJob::dispatchSync(
+                        $syncLogUuid,
+                        $repositoryUuid,
+                        $clonePath,
+                        $batch->id,
+                    );
+                })
+                ->dispatch();
+
+            $syncLog->update(['batch_id' => $batch->id]);
+
+            Log::info('Repository sync batch dispatched', [
                 'repository' => $this->repository->name,
-                'versions_added' => $result->added,
-                'versions_updated' => $result->updated,
+                'batch_id' => $batch->id,
+                'total_jobs' => count($jobs),
             ]);
         } catch (Throwable $e) {
             $this->handleSyncFailure($syncLog, $e);
@@ -90,9 +109,6 @@ class SyncRepositoryJob implements ShouldBeUnique, ShouldQueue
         }
     }
 
-    /**
-     * Validate that the provider can access the repository.
-     */
     protected function validateProvider(GitProviderInterface $provider): void
     {
         if (! $provider->validateCredentials()) {
@@ -100,50 +116,27 @@ class SyncRepositoryJob implements ShouldBeUnique, ShouldQueue
         }
     }
 
-    /**
-     * Sync all refs (tags and branches).
-     *
-     * @param  DataCollection<int, RefData>  $refs
-     */
-    protected function syncRefs(
-        SyncRefAction $syncRefAction,
-        GitProviderInterface $provider,
-        DataCollection $refs
-    ): SyncResultData {
-        $added = 0;
-        $updated = 0;
-        $skipped = 0;
+    protected function completeSyncLogEmpty(RepositorySyncLog $syncLog): void
+    {
+        $syncLog->update([
+            'status' => SyncStatus::Success,
+            'completed_at' => now(),
+            'versions_added' => 0,
+            'versions_updated' => 0,
+            'versions_skipped' => 0,
+            'versions_failed' => 0,
+        ]);
 
-        foreach ($refs as $ref) {
-            try {
-                $result = $syncRefAction->handle($provider, $this->repository, $ref);
+        $this->repository->update([
+            'sync_status' => RepositorySyncStatus::Ok,
+            'last_synced_at' => now(),
+        ]);
 
-                match ($result) {
-                    'added' => $added++,
-                    'updated' => $updated++,
-                    'skipped' => $skipped++,
-                    default => throw new \UnexpectedValueException("Unexpected sync result: {$result}"),
-                };
-            } catch (ComposerMetadataException $e) {
-                Log::warning('Skipping ref due to invalid composer.json', [
-                    'repository' => $this->repository->name,
-                    'ref' => $ref->name,
-                    'error' => $e->getMessage(),
-                ]);
-                $skipped++;
-            }
-        }
-
-        return new SyncResultData(
-            added: $added,
-            updated: $updated,
-            skipped: $skipped,
-        );
+        Log::info('Repository sync completed (no refs)', [
+            'repository' => $this->repository->name,
+        ]);
     }
 
-    /**
-     * Handle sync failure.
-     */
     protected function handleSyncFailure(RepositorySyncLog $syncLog, Throwable $e): void
     {
         $syncLog->update([

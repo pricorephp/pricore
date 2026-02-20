@@ -7,6 +7,7 @@ use App\Models\Pivots\OrganizationUserPivot;
 use Database\Factories\UserFactory;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -22,8 +23,13 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @property string $uuid
  * @property string $name
  * @property string $email
+ * @property string|null $github_id
+ * @property string|null $github_token
+ * @property string|null $github_nickname
+ * @property string|null $avatar_url
+ * @property array<string, mixed>|null $preferences
  * @property Carbon|null $email_verified_at
- * @property string $password
+ * @property string|null $password
  * @property string|null $two_factor_secret
  * @property string|null $two_factor_recovery_codes
  * @property Carbon|null $two_factor_confirmed_at
@@ -37,6 +43,8 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @property-read int|null $notifications_count
  * @property-read Collection<int, Organization> $organizations
  * @property-read int|null $organizations_count
+ * @property-read Collection<int, UserGitCredential> $gitCredentials
+ * @property-read int|null $git_credentials_count
  * @property-read Collection<int, Organization> $ownedOrganizations
  * @property-read int|null $owned_organizations_count
  *
@@ -72,8 +80,14 @@ class User extends Authenticatable implements MustVerifyEmail
     /**
      * @var list<string>
      */
+    protected $appends = ['avatar'];
+
+    /**
+     * @var list<string>
+     */
     protected $hidden = [
         'password',
+        'github_token',
         'two_factor_secret',
         'two_factor_recovery_codes',
         'remember_token',
@@ -87,6 +101,7 @@ class User extends Authenticatable implements MustVerifyEmail
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'preferences' => 'array',
             'two_factor_confirmed_at' => 'datetime',
         ];
     }
@@ -100,13 +115,21 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
-     * @return BelongsToMany<Organization, $this>
+     * @return BelongsToMany<Organization, $this, OrganizationUserPivot, 'pivot'>
      */
     public function organizations(): BelongsToMany
     {
         return $this->belongsToMany(Organization::class, 'organization_users', 'user_uuid', 'organization_uuid', 'uuid', 'uuid')
-            ->withPivot('role')
+            ->using(OrganizationUserPivot::class)
+            ->withPivot('role', 'uuid', 'last_accessed_at')
             ->withTimestamps();
+    }
+
+    public function lastAccessedOrganization(): ?Organization
+    {
+        return $this->organizations()
+            ->orderByDesc('organization_users.last_accessed_at')
+            ->first();
     }
 
     /**
@@ -115,5 +138,60 @@ class User extends Authenticatable implements MustVerifyEmail
     public function accessTokens(): HasMany
     {
         return $this->hasMany(AccessToken::class, 'user_uuid', 'uuid');
+    }
+
+    /**
+     * @return HasMany<UserGitCredential, $this>
+     */
+    public function gitCredentials(): HasMany
+    {
+        return $this->hasMany(UserGitCredential::class, 'user_uuid', 'uuid');
+    }
+
+    public function hasGitHubConnected(): bool
+    {
+        return $this->github_id !== null && $this->github_token !== null;
+    }
+
+    public function hasOnboardingDismissed(string $organizationUuid): bool
+    {
+        $dismissed = $this->preferences['dismissed_onboarding'] ?? [];
+
+        return in_array($organizationUuid, $dismissed);
+    }
+
+    public function dismissOnboarding(string $organizationUuid): void
+    {
+        $preferences = $this->preferences ?? [];
+        $dismissed = $preferences['dismissed_onboarding'] ?? [];
+
+        if (! in_array($organizationUuid, $dismissed)) {
+            $dismissed[] = $organizationUuid;
+        }
+
+        $preferences['dismissed_onboarding'] = $dismissed;
+        $this->preferences = $preferences;
+        $this->save();
+    }
+
+    /**
+     * @return Attribute<string|null, never>
+     */
+    protected function avatar(): Attribute
+    {
+        return Attribute::make(
+            get: fn () => $this->avatar_url,
+        );
+    }
+
+    /**
+     * @return Attribute<string|null, string|null>
+     */
+    protected function githubToken(): Attribute
+    {
+        return Attribute::make(
+            get: fn (?string $value) => $value ? decrypt($value) : null,
+            set: fn (?string $value) => $value ? encrypt($value) : null,
+        );
     }
 }

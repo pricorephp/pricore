@@ -1,116 +1,96 @@
-import { NavFooter } from '@/components/nav-footer';
 import { NavMain } from '@/components/nav-main';
-import { NavUser } from '@/components/nav-user';
-import OrganizationSwitcher from '@/components/organization-switcher';
 import {
     Sidebar,
     SidebarContent,
     SidebarFooter,
     SidebarHeader,
-    SidebarMenu,
-    SidebarMenuButton,
-    SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { dashboard } from '@/routes';
 import { type NavItem } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
-import { Box, GitBranch, LayoutDashboard, Settings } from 'lucide-react';
+import {
+    BookOpen,
+    Box,
+    GitBranch,
+    LayoutDashboard,
+    Settings,
+} from 'lucide-react';
 import { useMemo } from 'react';
-import AppLogo from './app-logo';
+import AppLogoIcon from './app-logo-icon';
 
 type OrganizationData =
     App.Domains.Organization.Contracts.Data.OrganizationData;
-
-const mainNavItems: NavItem[] = [];
-
-const footerNavItems: NavItem[] = [];
 
 export function AppSidebar() {
     const page = usePage<{
         auth: { organizations: OrganizationData[] };
     }>();
-    const { auth } = page.props;
     const url = page.url;
+    const organizations = page.props.auth.organizations;
 
-    // Detect if we're viewing an organization
-    const currentOrganization = useMemo(() => {
+    // Extract organization slug from URL, or fall back to first organization
+    const currentOrgSlug = useMemo(() => {
         const match = url.match(/^\/organizations\/([^/]+)/);
-        if (match) {
-            const slug = match[1];
-            return auth.organizations.find((org) => org.slug === slug) || null;
-        }
-
-        // No organization selected (e.g., on dashboard)
-        return null;
-    }, [url, auth.organizations]);
+        if (match) return match[1];
+        // Fall back to first organization if available
+        return organizations.length > 0 ? organizations[0].slug : null;
+    }, [url, organizations]);
 
     // Build organization-specific navigation
     const orgNavItems: NavItem[] = useMemo(() => {
-        if (!currentOrganization) return [];
+        if (!currentOrgSlug) return [];
 
         return [
             {
                 title: 'Overview',
-                href: `/organizations/${currentOrganization.slug}`,
+                href: `/organizations/${currentOrgSlug}`,
                 icon: LayoutDashboard,
             },
             {
                 title: 'Packages',
-                href: `/organizations/${currentOrganization.slug}/packages`,
+                href: `/organizations/${currentOrgSlug}/packages`,
                 icon: Box,
             },
             {
-                title: 'Repositories',
-                href: `/organizations/${currentOrganization.slug}/repositories`,
+                title: 'Repos',
+                href: `/organizations/${currentOrgSlug}/repositories`,
                 icon: GitBranch,
             },
             {
                 title: 'Settings',
-                href: `/organizations/${currentOrganization.slug}/settings/general`,
+                href: `/organizations/${currentOrgSlug}/settings/general`,
                 icon: Settings,
             },
         ];
-    }, [currentOrganization]);
-
-    const navigationItems = currentOrganization
-        ? [...mainNavItems, ...orgNavItems]
-        : mainNavItems;
+    }, [currentOrgSlug]);
 
     return (
-        <Sidebar collapsible="icon" variant="inset">
-            <SidebarHeader>
-                <SidebarMenu>
-                    <SidebarMenuItem>
-                        <SidebarMenuButton size="lg" asChild>
-                            <Link href={dashboard()} prefetch>
-                                <AppLogo />
-                            </Link>
-                        </SidebarMenuButton>
-                    </SidebarMenuItem>
-                </SidebarMenu>
-
-                {auth.organizations.length > 0 && (
-                    <>
-                        <OrganizationSwitcher
-                            organizations={auth.organizations}
-                            currentOrganization={
-                                currentOrganization || undefined
-                            }
-                        />
-                    </>
-                )}
+        <Sidebar>
+            <SidebarHeader className="h-16 items-center justify-center border-b border-sidebar-border">
+                <Link
+                    href={dashboard()}
+                    className="flex items-center justify-center"
+                >
+                    <AppLogoIcon className="size-7 fill-current text-white dark:text-black" />
+                </Link>
             </SidebarHeader>
 
-            <SidebarContent>
-                <NavMain
-                    items={navigationItems}
-                    showLabel={!!currentOrganization}
-                />
+            <SidebarContent className="pt-2">
+                <NavMain items={orgNavItems} />
             </SidebarContent>
 
-            <SidebarFooter>
-                <NavFooter items={footerNavItems} className="mt-auto" />
-                <NavUser />
+            <SidebarFooter className="border-t border-sidebar-border pt-2">
+                <a
+                    href="https://docs.pricore.dev"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex flex-col items-center gap-1 rounded-md px-2 py-2.5 text-center text-sidebar-foreground/70 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                >
+                    <BookOpen className="size-5" strokeWidth={1.75} />
+                    <span className="text-[10px] leading-tight font-medium">
+                        Docs
+                    </span>
+                </a>
             </SidebarFooter>
         </Sidebar>
     );

@@ -27,3 +27,13 @@ yarn-error.log
 /.vscode
 /.zed
 /PLAN.md
+.claude
+.mcp.json
+CLAUDE.md
+/.cursor
+boost.json
+/.interface-design/system.md
+
+# VitePress
+docs/.vitepress/dist
+docs/.vitepress/cache

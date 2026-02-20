@@ -5,9 +5,26 @@ export interface Auth {
     user: User;
 }
 
+export interface BreadcrumbDropdownItem {
+    id: string;
+    title: string;
+    href: string;
+    active?: boolean;
+}
+
 export interface BreadcrumbItem {
     title: string;
     href: string;
+    dropdown?: {
+        items: BreadcrumbDropdownItem[];
+        action?: {
+            label: string;
+            dialog?: React.ComponentType<{
+                isOpen: boolean;
+                onClose: () => void;
+            }>;
+        };
+    };
 }
 
 export interface NavGroup {
@@ -40,6 +57,9 @@ export interface User {
     name: string;
     email: string;
     avatar?: string;
+    avatar_url?: string | null;
+    github_nickname?: string | null;
+    has_github_connected?: boolean;
     email_verified_at: string | null;
     two_factor_enabled?: boolean;
     created_at: string;

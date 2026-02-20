@@ -108,6 +108,17 @@ class RepositoryFactory extends Factory
     }
 
     /**
+     * Indicate that the repository has an active webhook.
+     */
+    public function withWebhook(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'webhook_id' => (string) fake()->numberBetween(100000, 999999),
+            'webhook_secret' => fake()->sha256(),
+        ]);
+    }
+
+    /**
      * Indicate that the repository sync has failed.
      */
     public function syncFailed(): static

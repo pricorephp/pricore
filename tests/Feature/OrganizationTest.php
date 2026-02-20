@@ -1,5 +1,6 @@
 <?php
 
+use App\Domains\Organization\Contracts\Enums\OrganizationRole;
 use App\Models\Organization;
 use App\Models\Package;
 use App\Models\Repository;
@@ -64,7 +65,7 @@ it('requires authentication to view organization pages', function () {
 });
 
 it('shares organizations in inertia props', function () {
-    $response = $this->actingAs($this->user)->get('/dashboard');
+    $response = $this->actingAs($this->user)->get("/organizations/{$this->organization->slug}");
 
     $response->assertSuccessful();
     $response->assertInertia(fn ($page) => $page
@@ -115,7 +116,7 @@ it('adds creator to organization members', function () {
 
     $org = Organization::where('name', 'Test Org')->first();
     expect($org->members()->where('user_uuid', $this->user->uuid)->exists())->toBeTrue();
-    expect($org->members()->where('user_uuid', $this->user->uuid)->first()->pivot->role)->toBe('owner');
+    expect($org->members()->where('user_uuid', $this->user->uuid)->first()->pivot->role)->toBe(OrganizationRole::Owner);
 });
 
 it('requires authentication to create organization', function () {
