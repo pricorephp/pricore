@@ -27,7 +27,7 @@ export default function Register({ githubEnabled }: RegisterProps) {
                 <>
                     <a
                         href="/auth/github/redirect"
-                        className="inline-flex w-full items-center justify-center gap-2 rounded-md border bg-background px-4 py-2 font-medium shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground"
+                        className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-md border bg-background font-medium shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground"
                     >
                         <svg
                             className="h-5 w-5"
@@ -128,7 +128,7 @@ export default function Register({ githubEnabled }: RegisterProps) {
 
                             <Button
                                 type="submit"
-                                className="mt-2 w-full"
+                                className="mt-2 h-10 w-full"
                                 tabIndex={5}
                                 data-test="register-user-button"
                             >

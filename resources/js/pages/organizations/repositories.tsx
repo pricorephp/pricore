@@ -133,9 +133,12 @@ export default function Repositories({
                                                         }}
                                                     >
                                                         <Badge
-                                                            className={getProviderBadgeColor(
-                                                                repo.provider,
-                                                            )}
+                                                            className={
+                                                                getProviderBadgeColor(
+                                                                    repo.provider,
+                                                                ) +
+                                                                ' border-none'
+                                                            }
                                                         >
                                                             <GitProviderIcon
                                                                 provider={
@@ -148,9 +151,12 @@ export default function Repositories({
                                                     </button>
                                                 ) : (
                                                     <Badge
-                                                        className={getProviderBadgeColor(
-                                                            repo.provider,
-                                                        )}
+                                                        className={
+                                                            getProviderBadgeColor(
+                                                                repo.provider,
+                                                            ) + ' border-none'
+                                                        }
+                                                        variant="secondary"
                                                     >
                                                         <GitProviderIcon
                                                             provider={
