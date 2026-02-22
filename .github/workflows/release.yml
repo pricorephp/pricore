@@ -213,9 +213,6 @@ jobs:
         with:
           tag: ${{ needs.tag.outputs.new_tag }}
           name: Release ${{ needs.tag.outputs.new_tag }}
-          body: |
-            ## Release ${{ needs.tag.outputs.new_tag }}
-
-            ${{ needs.tag.outputs.changelog }}
+          body: ${{ needs.tag.outputs.changelog }}
           draft: false
           prerelease: false
