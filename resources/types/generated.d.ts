@@ -1,7 +1,14 @@
+declare namespace App.Domains.Auth.Contracts.Enums {
+export type GitHubOAuthIntent = 'login' | 'connect';
+}
 declare namespace App.Domains.Organization.Contracts.Data {
 export type ActivityFeedData = {
 recentReleases: Array<any>;
 recentSyncs: Array<any>;
+};
+export type DailyDownloadData = {
+date: string;
+downloads: number;
 };
 export type GitCredentialData = {
 uuid: string;
@@ -43,6 +50,8 @@ packagesCount: number;
 repositoriesCount: number;
 tokensCount: number;
 membersCount: number;
+totalDownloads: number;
+dailyDownloads: Array<any>;
 activityFeed: App.Domains.Organization.Contracts.Data.ActivityFeedData;
 };
 export type OrganizationWithRoleData = {
@@ -86,6 +95,11 @@ repositoryName: string | null;
 repositoryIdentifier: string | null;
 repositoryUuid: string | null;
 };
+export type PackageDownloadStatsData = {
+totalDownloads: number;
+dailyDownloads: Array<any>;
+versionBreakdown: Array<any>;
+};
 export type PackageVersionData = {
 uuid: string;
 version: string;
@@ -94,6 +108,10 @@ releasedAt: string | null;
 sourceUrl: string | null;
 sourceReference: string | null;
 commitUrl: string | null;
+};
+export type VersionDownloadData = {
+version: string;
+downloads: number;
 };
 }
 declare namespace App.Domains.Repository.Contracts.Data {

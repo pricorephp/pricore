@@ -1,5 +1,7 @@
 import { show } from '@/actions/App/Domains/Repository/Http/Controllers/RepositoryController';
 import HeadingSmall from '@/components/heading-small';
+import { DownloadChart } from '@/components/stats/download-chart';
+import { VersionDownloads } from '@/components/stats/version-downloads';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,7 +16,7 @@ import {
 import AppLayout from '@/layouts/app-layout';
 import { createOrganizationBreadcrumb } from '@/lib/breadcrumbs';
 import { Head, Link, usePage } from '@inertiajs/react';
-import { Check, Copy, GitBranch, Globe, Lock } from 'lucide-react';
+import { Check, Copy, Download, GitBranch, Globe, Lock } from 'lucide-react';
 import { DateTime } from 'luxon';
 import { useState } from 'react';
 
@@ -22,10 +24,13 @@ type OrganizationData =
     App.Domains.Organization.Contracts.Data.OrganizationData;
 type PackageData = App.Domains.Package.Contracts.Data.PackageData;
 type PackageVersionData = App.Domains.Package.Contracts.Data.PackageVersionData;
+type PackageDownloadStatsData =
+    App.Domains.Package.Contracts.Data.PackageDownloadStatsData;
 
 interface PackageShowProps {
     organization: OrganizationData;
     package: PackageData;
+    downloadStats: PackageDownloadStatsData;
     versions: {
         data: PackageVersionData[];
         links: Array<{
@@ -115,6 +120,7 @@ function isDevVersion(version: PackageVersionData): boolean {
 export default function PackageShow({
     organization,
     package: pkg,
+    downloadStats,
     versions,
     composerRepositoryUrl,
 }: PackageShowProps) {
@@ -202,6 +208,14 @@ export default function PackageShow({
                                     {versions.total} version
                                     {versions.total === 1 ? '' : 's'}
                                 </span>
+                                <span className="flex items-center gap-1">
+                                    <Download className="h-3.5 w-3.5" />
+                                    {downloadStats.totalDownloads.toLocaleString()}{' '}
+                                    download
+                                    {downloadStats.totalDownloads === 1
+                                        ? ''
+                                        : 's'}
+                                </span>
                             </div>
                         </div>
                     </div>
@@ -229,6 +243,15 @@ export default function PackageShow({
                         </div>
                     </CardContent>
                 </Card>
+
+                <div className="grid gap-6 lg:grid-cols-2">
+                    <DownloadChart
+                        title="Downloads (Last 30 Days)"
+                        data={downloadStats.dailyDownloads}
+                        compact
+                    />
+                    <VersionDownloads data={downloadStats.versionBreakdown} />
+                </div>
 
                 <div className="space-y-4">
                     <HeadingSmall
@@ -424,7 +447,7 @@ export default function PackageShow({
                                                     className={`rounded px-3 py-2 transition-colors ${
                                                         link.active
                                                             ? 'bg-primary text-primary-foreground'
-                                                            : 'bg-white text-muted-foreground/110 hover:bg-muted/80'
+                                                            : 'bg-card text-muted-foreground/110 hover:bg-muted/80'
                                                     }`}
                                                 >
                                                     <span

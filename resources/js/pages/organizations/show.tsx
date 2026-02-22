@@ -1,10 +1,11 @@
 import OnboardingChecklist from '@/components/onboarding-checklist';
 import { ActivityFeed } from '@/components/stats/activity-feed';
+import { DownloadChart } from '@/components/stats/download-chart';
 import { StatCard } from '@/components/stats/stat-card';
 import AppLayout from '@/layouts/app-layout';
 import { createOrganizationBreadcrumb } from '@/lib/breadcrumbs';
 import { Head, Link, usePage } from '@inertiajs/react';
-import { Box, GitBranch, Key, Users } from 'lucide-react';
+import { Box, Download, GitBranch, Users } from 'lucide-react';
 
 type OnboardingChecklistData =
     App.Domains.Organization.Contracts.Data.OnboardingChecklistData;
@@ -65,16 +66,6 @@ export default function OrganizationShow({
                     </Link>
 
                     <Link
-                        href={`/organizations/${organization.slug}/settings/tokens`}
-                    >
-                        <StatCard
-                            title="Composer Tokens"
-                            value={stats.tokensCount}
-                            icon={Key}
-                        />
-                    </Link>
-
-                    <Link
                         href={`/organizations/${organization.slug}/settings/members`}
                     >
                         <StatCard
@@ -83,7 +74,19 @@ export default function OrganizationShow({
                             icon={Users}
                         />
                     </Link>
+
+                    <StatCard
+                        title="Total Downloads"
+                        value={stats.totalDownloads.toLocaleString()}
+                        icon={Download}
+                    />
                 </div>
+
+                {/* Download Chart */}
+                <DownloadChart
+                    title="Downloads (Last 30 Days)"
+                    data={stats.dailyDownloads}
+                />
 
                 {/* Onboarding Checklist */}
                 <OnboardingChecklist
