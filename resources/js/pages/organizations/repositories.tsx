@@ -7,7 +7,6 @@ import ImportRepositoriesDialog from '@/components/import-repositories-dialog';
 import InfoBox from '@/components/info-box';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import AppLayout from '@/layouts/app-layout';
 import { createOrganizationBreadcrumb } from '@/lib/breadcrumbs';
 import { Head, Link, usePage } from '@inertiajs/react';
@@ -25,12 +24,12 @@ interface RepositoriesPageProps {
     configuredProviders?: string[];
 }
 
-function getProviderBadgeColor(provider: string): string {
+function getProviderIconColor(provider: string): string {
     const colors: Record<string, string> = {
-        github: 'bg-gray-800 text-white hover:bg-gray-800',
-        gitlab: 'bg-orange-600 text-white hover:bg-orange-600',
-        bitbucket: 'bg-blue-600 text-white hover:bg-blue-600',
-        git: 'bg-gray-600 text-white hover:bg-gray-600',
+        github: 'text-gray-800 dark:text-gray-300',
+        gitlab: 'text-orange-600',
+        bitbucket: 'text-blue-600',
+        git: 'text-gray-600',
     };
 
     return colors[provider] || colors.git;
@@ -105,97 +104,42 @@ export default function Repositories({
                         }}
                     />
                 ) : (
-                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    <div className="divide-y divide-border rounded-lg border bg-card">
                         {repositories.map((repo) => (
                             <Link
                                 key={repo.uuid}
                                 href={show.url([organization.slug, repo.uuid])}
+                                className="group flex items-center gap-4 px-4 py-3 transition-colors hover:bg-accent/50"
                             >
-                                <Card className="group">
-                                    <CardHeader>
-                                        <CardTitle className="flex items-start justify-between gap-2">
-                                            <span className="text-base transition-colors group-hover:text-primary">
-                                                {repo.name}
-                                            </span>
-                                            <div className="flex items-center gap-2">
-                                                {repo.url ? (
-                                                    <button
-                                                        type="button"
-                                                        className="inline-block cursor-pointer"
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            e.preventDefault();
-                                                            window.open(
-                                                                repo.url!,
-                                                                '_blank',
-                                                                'noopener,noreferrer',
-                                                            );
-                                                        }}
-                                                    >
-                                                        <Badge
-                                                            className={
-                                                                getProviderBadgeColor(
-                                                                    repo.provider,
-                                                                ) +
-                                                                ' border-none'
-                                                            }
-                                                        >
-                                                            <GitProviderIcon
-                                                                provider={
-                                                                    repo.provider
-                                                                }
-                                                                className="mr-0.5 size-3"
-                                                            />
-                                                            {repo.providerLabel}
-                                                        </Badge>
-                                                    </button>
-                                                ) : (
-                                                    <Badge
-                                                        className={
-                                                            getProviderBadgeColor(
-                                                                repo.provider,
-                                                            ) + ' border-none'
-                                                        }
-                                                        variant="secondary"
-                                                    >
-                                                        <GitProviderIcon
-                                                            provider={
-                                                                repo.provider
-                                                            }
-                                                            className="mr-0.5 size-3"
-                                                        />
-                                                        {repo.providerLabel}
-                                                    </Badge>
-                                                )}
-                                                <ArrowUpRight className="h-4 w-4 text-muted-foreground/50 transition-all group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-muted-foreground" />
-                                            </div>
-                                        </CardTitle>
-                                    </CardHeader>
-                                    <CardContent className="space-y-3">
-                                        <div className="flex items-center justify-between text-sm">
-                                            <span className="text-muted-foreground">
-                                                Sync Status
-                                            </span>
-                                            <Badge
-                                                variant={getSyncStatusVariant(
-                                                    repo.syncStatus,
-                                                )}
-                                            >
-                                                {repo.syncStatusLabel ??
-                                                    'Pending'}
-                                            </Badge>
-                                        </div>
-
-                                        <div className="pt-3 text-sm text-muted-foreground">
+                                <GitProviderIcon
+                                    provider={repo.provider}
+                                    className={`size-8 shrink-0 ${getProviderIconColor(repo.provider)}`}
+                                />
+                                <div className="min-w-0 flex-1 space-y-1">
+                                    <div className="flex items-center gap-2">
+                                        <span className="font-medium transition-colors group-hover:text-primary">
+                                            {repo.name}
+                                        </span>
+                                    </div>
+                                    <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                                        <Badge
+                                            variant={getSyncStatusVariant(
+                                                repo.syncStatus,
+                                            )}
+                                        >
+                                            {repo.syncStatusLabel ?? 'Pending'}
+                                        </Badge>
+                                        <span>
                                             Last synced:{' '}
                                             {repo.lastSyncedAt
                                                 ? DateTime.fromISO(
                                                       repo.lastSyncedAt,
                                                   ).toRelative()
                                                 : 'Never'}
-                                        </div>
-                                    </CardContent>
-                                </Card>
+                                        </span>
+                                    </div>
+                                </div>
+                                <ArrowUpRight className="h-4 w-4 shrink-0 text-muted-foreground/50 transition-all group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-muted-foreground" />
                             </Link>
                         ))}
                     </div>

@@ -64,11 +64,12 @@ export default function Packages({
                         }}
                     />
                 ) : (
-                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    <div className="divide-y divide-border rounded-lg border bg-card">
                         {packages.map((pkg) => (
                             <Link
                                 key={pkg.uuid}
                                 href={show.url([organization.slug, pkg.uuid])}
+                                className="group flex items-center justify-between px-4 py-3 transition-colors hover:bg-accent/50"
                             >
                                 <PackageCard package={pkg} />
                             </Link>

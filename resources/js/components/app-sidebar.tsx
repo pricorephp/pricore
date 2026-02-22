@@ -53,14 +53,14 @@ export function AppSidebar() {
                 icon: LayoutDashboard,
             },
             {
-                title: 'Packages',
-                href: `/organizations/${currentOrgSlug}/packages`,
-                icon: Box,
-            },
-            {
                 title: 'Repos',
                 href: `/organizations/${currentOrgSlug}/repositories`,
                 icon: GitBranch,
+            },
+            {
+                title: 'Packages',
+                href: `/organizations/${currentOrgSlug}/packages`,
+                icon: Box,
             },
             {
                 title: 'Settings',

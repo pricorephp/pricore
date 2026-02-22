@@ -149,7 +149,7 @@
     /* Button depth styling - dark mode */
     --button-primary-from: oklch(0.68 0.2 35);
     --button-primary-to: oklch(0.58 0.22 35);
-    --button-primary-border: oklch(0.52 0.2 35);
+    --button-primary-border: oklch(0.394 0.147 32.608);
     --button-secondary-from: oklch(0.3 0.01 260);
     --button-secondary-to: oklch(0.25 0.01 260);
     --button-secondary-border: oklch(0.38 0.01 260);
@@ -186,5 +186,9 @@
     html {
         font-size: 13px;
         scrollbar-gutter: stable;
+    }
+
+    ::selection {
+        @apply bg-primary text-primary-foreground;
     }
 }

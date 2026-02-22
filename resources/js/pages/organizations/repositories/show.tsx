@@ -32,6 +32,7 @@ import {
 } from '@/components/ui/table';
 import AppLayout from '@/layouts/app-layout';
 import { createOrganizationBreadcrumb } from '@/lib/breadcrumbs';
+import { cn } from '@/lib/utils';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { EllipsisVertical, RefreshCw, Settings, Webhook } from 'lucide-react';
 import { DateTime } from 'luxon';
@@ -132,8 +133,11 @@ export default function RepositoryShow({
                                     className="inline-block"
                                 >
                                     <Badge
-                                        className={getProviderBadgeColor(
-                                            repository.provider,
+                                        className={cn(
+                                            getProviderBadgeColor(
+                                                repository.provider,
+                                            ),
+                                            'border-transparent',
                                         )}
                                     >
                                         <GitProviderIcon
@@ -145,8 +149,11 @@ export default function RepositoryShow({
                                 </a>
                             ) : (
                                 <Badge
-                                    className={getProviderBadgeColor(
-                                        repository.provider,
+                                    className={cn(
+                                        getProviderBadgeColor(
+                                            repository.provider,
+                                        ),
+                                        'border-transparent',
                                     )}
                                 >
                                     <GitProviderIcon
@@ -249,7 +256,7 @@ export default function RepositoryShow({
                             title="Linked Packages"
                             description={`${packages.length} package${packages.length === 1 ? '' : 's'} discovered from this repository`}
                         />
-                        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                        <div className="divide-y divide-border rounded-lg border bg-card">
                             {packages.map((pkg) => (
                                 <Link
                                     key={pkg.uuid}
@@ -257,6 +264,7 @@ export default function RepositoryShow({
                                         organization.slug,
                                         pkg.uuid,
                                     ])}
+                                    className="group flex items-center justify-between px-4 py-3 transition-colors hover:bg-accent/50"
                                 >
                                     <PackageCard package={pkg} hideRepository />
                                 </Link>
