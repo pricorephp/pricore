@@ -8,7 +8,7 @@ After logging in, you can create a new organization:
 
 1. Click **Create Organization** from the dashboard
 2. Enter a name and unique slug (used in URLs)
-3. The slug becomes part of your Composer repository URL: `https://packages.yourcompany.com/org/{slug}`
+3. The slug becomes part of your Composer repository URL: `https://pricore.yourcompany.com/org/{slug}`
 
 ## Organization Structure
 

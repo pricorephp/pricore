@@ -129,7 +129,7 @@ export default function TokenCreatedDialog({
                         <div className="mt-2 flex items-start gap-2">
                             <code className="min-w-0 flex-1 rounded border border-border bg-muted p-2 font-mono text-xs break-all">
                                 composer config --global --auth http-basic.
-                                {domain} {token} ""
+                                {domain} token {token}
                             </code>
                             <Button
                                 type="button"
@@ -137,7 +137,7 @@ export default function TokenCreatedDialog({
                                 size="icon"
                                 onClick={() =>
                                     copyToClipboard(
-                                        `composer config --global --auth http-basic.${domain} ${token} ""`,
+                                        `composer config --global --auth http-basic.${domain} token ${token}`,
                                         'composer',
                                     )
                                 }

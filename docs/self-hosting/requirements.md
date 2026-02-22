@@ -156,7 +156,7 @@ frankenphp run
 ```nginx
 server {
     listen 80;
-    server_name packages.yourcompany.com;
+    server_name pricore.yourcompany.com;
     root /var/www/pricore/public;
 
     add_header X-Frame-Options "SAMEORIGIN";

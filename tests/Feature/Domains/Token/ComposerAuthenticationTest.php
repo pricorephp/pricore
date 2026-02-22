@@ -89,7 +89,7 @@ it('accepts valid Bearer authentication', function () {
     $response->assertOk();
 });
 
-it('accepts valid Basic authentication with token as username', function () {
+it('accepts valid Basic authentication with token as password', function () {
     $plainToken = 'valid-basic-token-'.uniqid();
 
     AccessToken::factory()
@@ -98,7 +98,7 @@ it('accepts valid Basic authentication with token as username', function () {
         ->neverExpires()
         ->create();
 
-    $credentials = base64_encode("{$plainToken}:");
+    $credentials = base64_encode("token:{$plainToken}");
 
     $response = $this->withHeaders([
         'Authorization' => "Basic {$credentials}",

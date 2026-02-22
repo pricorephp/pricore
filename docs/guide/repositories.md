@@ -52,20 +52,20 @@ For OAuth-connected repositories, webhooks are configured automatically. For man
 
 **GitHub:**
 ```
-URL: https://packages.yourcompany.com/webhooks/github/{repository-id}
+URL: https://pricore.yourcompany.com/webhooks/github/{repository-id}
 Content-type: application/json
 Events: Push, Create (tags)
 ```
 
 **GitLab:**
 ```
-URL: https://packages.yourcompany.com/webhooks/gitlab/{repository-id}
+URL: https://pricore.yourcompany.com/webhooks/gitlab/{repository-id}
 Trigger: Push events, Tag push events
 ```
 
 **Bitbucket:**
 ```
-URL: https://packages.yourcompany.com/webhooks/bitbucket/{repository-id}
+URL: https://pricore.yourcompany.com/webhooks/bitbucket/{repository-id}
 Events: Repository push
 ```
 

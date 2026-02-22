@@ -50,7 +50,7 @@ class ComposerTokenAuth
             return $matches[1];
         }
 
-        // Check for Basic auth (token as username, password can be empty or token)
+        // Check for Basic auth (token as password, username is ignored)
         if (preg_match('/^Basic\s+(.+)$/i', $header, $matches)) {
             $decoded = base64_decode($matches[1], true);
             if ($decoded === false) {
@@ -58,10 +58,10 @@ class ComposerTokenAuth
             }
 
             // Basic auth format: username:password
-            // We accept token as username (password can be empty or same as token)
-            [$username] = explode(':', $decoded, 2) + [null, null];
+            // The token must be in the password field (e.g., "token:YOUR_TOKEN")
+            $parts = explode(':', $decoded, 2);
 
-            return $username;
+            return $parts[1] ?? null;
         }
 
         return null;

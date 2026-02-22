@@ -55,7 +55,7 @@ After creation, a dialog shows the plain token along with a pre-filled Composer 
 When you create a token, Pricore shows the exact Composer command to configure authentication. The format is:
 
 ```bash
-composer config --global --auth http-basic.packages.yourcompany.com YOUR_ACCESS_TOKEN ""
+composer config --global --auth http-basic.pricore.yourcompany.com token YOUR_ACCESS_TOKEN
 ```
 
 This creates or updates `~/.composer/auth.json`:
@@ -63,9 +63,9 @@ This creates or updates `~/.composer/auth.json`:
 ```json
 {
     "http-basic": {
-        "packages.yourcompany.com": {
-            "username": "YOUR_ACCESS_TOKEN",
-            "password": ""
+        "pricore.yourcompany.com": {
+            "username": "token",
+            "password": "YOUR_ACCESS_TOKEN"
         }
     }
 }
@@ -78,9 +78,9 @@ For project-specific tokens, create `auth.json` in your project root:
 ```json
 {
     "http-basic": {
-        "packages.yourcompany.com": {
-            "username": "YOUR_ACCESS_TOKEN",
-            "password": ""
+        "pricore.yourcompany.com": {
+            "username": "token",
+            "password": "YOUR_ACCESS_TOKEN"
         }
     }
 }
@@ -95,7 +95,7 @@ Add `auth.json` to your `.gitignore` to avoid committing tokens to version contr
 For CI/CD, use environment variables:
 
 ```bash
-export COMPOSER_AUTH='{"http-basic":{"packages.yourcompany.com":{"username":"'"$PRICORE_TOKEN"'","password":""}}}'
+export COMPOSER_AUTH='{"http-basic":{"pricore.yourcompany.com":{"username":"token","password":"'"$PRICORE_TOKEN"'"}}}'
 ```
 
 Or in your CI configuration:
@@ -104,7 +104,7 @@ Or in your CI configuration:
 # GitHub Actions example
 - name: Configure Composer
   run: |
-    composer config --global --auth http-basic.packages.yourcompany.com ${{ secrets.PRICORE_TOKEN }} ""
+    composer config --global --auth http-basic.pricore.yourcompany.com token ${{ secrets.PRICORE_TOKEN }}
 ```
 
 ## Token Security
@@ -162,7 +162,7 @@ jobs:
           php-version: '8.4'
 
       - name: Configure Pricore
-        run: composer config --global --auth http-basic.packages.yourcompany.com ${{ secrets.PRICORE_TOKEN }} ""
+        run: composer config --global --auth http-basic.pricore.yourcompany.com token ${{ secrets.PRICORE_TOKEN }}
 
       - name: Install dependencies
         run: composer install
@@ -174,7 +174,7 @@ jobs:
 install:
   stage: build
   before_script:
-    - composer config --global --auth http-basic.packages.yourcompany.com $PRICORE_TOKEN ""
+    - composer config --global --auth http-basic.pricore.yourcompany.com token $PRICORE_TOKEN
   script:
     - composer install
 ```
@@ -186,7 +186,7 @@ pipelines:
   default:
     - step:
         script:
-          - composer config --global --auth http-basic.packages.yourcompany.com $PRICORE_TOKEN ""
+          - composer config --global --auth http-basic.pricore.yourcompany.com token $PRICORE_TOKEN
           - composer install
 ```
 
@@ -197,7 +197,7 @@ pipelines:
 1. Verify the token is correct (no extra spaces)
 2. Check that the token hasn't been revoked or expired
 3. Verify the domain in `auth.json` matches your Pricore URL
-4. Ensure the token is used as the username (not the password)
+4. Ensure the token is used as the password (not the username)
 
 ### Token Not Working for Specific Package
 
