@@ -8,10 +8,10 @@ The Composer API requires authentication via access token. Two methods are suppo
 
 ### HTTP Basic Auth
 
-Use your access token as the username with an empty password:
+Use `token` as the username and your access token as the password:
 
 ```bash
-curl -u "YOUR_ACCESS_TOKEN:" https://packages.yourcompany.com/your-org/packages.json
+curl -u "token:YOUR_ACCESS_TOKEN" https://pricore.yourcompany.com/your-org/packages.json
 ```
 
 ### Authorization Header
@@ -19,7 +19,7 @@ curl -u "YOUR_ACCESS_TOKEN:" https://packages.yourcompany.com/your-org/packages.
 Alternatively, use the Bearer token format:
 
 ```bash
-curl -H "Authorization: Bearer YOUR_ACCESS_TOKEN" https://packages.yourcompany.com/your-org/packages.json
+curl -H "Authorization: Bearer YOUR_ACCESS_TOKEN" https://pricore.yourcompany.com/your-org/packages.json
 ```
 
 ## Composer Repository API
@@ -38,7 +38,7 @@ GET /{organization}/packages.json
 
 ```json
 {
-    "metadata-url": "https://packages.yourcompany.com/your-org/p2/%package%.json"
+    "metadata-url": "https://pricore.yourcompany.com/your-org/p2/%package%.json"
 }
 ```
 
@@ -118,7 +118,7 @@ Add Pricore as a repository in your project's `composer.json`:
     "repositories": [
         {
             "type": "composer",
-            "url": "https://packages.yourcompany.com/your-org"
+            "url": "https://pricore.yourcompany.com/your-org"
         }
     ]
 }
@@ -127,7 +127,7 @@ Add Pricore as a repository in your project's `composer.json`:
 Then authenticate:
 
 ```bash
-composer config --global --auth http-basic.packages.yourcompany.com YOUR_ACCESS_TOKEN ""
+composer config --global --auth http-basic.pricore.yourcompany.com token YOUR_ACCESS_TOKEN
 ```
 
 ## Error Responses

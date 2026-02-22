@@ -111,7 +111,7 @@ Key configuration options in your `.env` file:
 # Application
 APP_NAME=Pricore
 APP_ENV=production
-APP_URL=https://packages.yourcompany.com
+APP_URL=https://pricore.yourcompany.com
 
 # Database (SQLite, MySQL, or PostgreSQL)
 DB_CONNECTION=sqlite
@@ -144,7 +144,7 @@ Add Pricore as a repository in your project's `composer.json`:
     "repositories": [
         {
             "type": "composer",
-            "url": "https://packages.yourcompany.com/org/your-organization"
+            "url": "https://pricore.yourcompany.com/org/your-organization"
         }
     ]
 }
@@ -153,7 +153,7 @@ Add Pricore as a repository in your project's `composer.json`:
 ### 3. Authenticate
 
 ```bash
-composer config --global --auth http-basic.packages.yourcompany.com token YOUR_ACCESS_TOKEN
+composer config --global --auth http-basic.pricore.yourcompany.com token YOUR_ACCESS_TOKEN
 ```
 
 ### 4. Install Packages

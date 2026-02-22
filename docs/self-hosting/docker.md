@@ -46,7 +46,7 @@ Or create a `.env` file next to your `docker-compose.yml`:
 
 ```bash
 APP_KEY=base64:your-generated-key
-APP_URL=https://packages.yourcompany.com
+APP_URL=https://pricore.yourcompany.com
 ```
 
 ## Docker Compose Services
@@ -104,13 +104,13 @@ docker compose -f docker-compose.dev.yml up -d --build
 ```nginx
 server {
     listen 80;
-    server_name packages.yourcompany.com;
+    server_name pricore.yourcompany.com;
     return 301 https://$server_name$request_uri;
 }
 
 server {
     listen 443 ssl http2;
-    server_name packages.yourcompany.com;
+    server_name pricore.yourcompany.com;
 
     ssl_certificate /etc/nginx/ssl/cert.pem;
     ssl_certificate_key /etc/nginx/ssl/key.pem;
@@ -128,7 +128,7 @@ server {
 ### Caddy
 
 ```caddyfile
-packages.yourcompany.com {
+pricore.yourcompany.com {
     reverse_proxy localhost:8000
 }
 ```
@@ -138,7 +138,7 @@ packages.yourcompany.com {
 ```yaml
 labels:
   - "traefik.enable=true"
-  - "traefik.http.routers.pricore.rule=Host(`packages.yourcompany.com`)"
+  - "traefik.http.routers.pricore.rule=Host(`pricore.yourcompany.com`)"
   - "traefik.http.routers.pricore.tls=true"
   - "traefik.http.routers.pricore.tls.certresolver=letsencrypt"
 ```

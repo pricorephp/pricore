@@ -10,7 +10,7 @@ Pricore is configured through environment variables in your `.env` file.
 APP_NAME=Pricore
 APP_ENV=production
 APP_DEBUG=false
-APP_URL=https://packages.yourcompany.com
+APP_URL=https://pricore.yourcompany.com
 ```
 
 | Variable | Description | Default |
@@ -154,7 +154,7 @@ APP_NAME=Pricore
 APP_ENV=production
 APP_KEY=base64:your-generated-key
 APP_DEBUG=false
-APP_URL=https://packages.yourcompany.com
+APP_URL=https://pricore.yourcompany.com
 
 DB_CONNECTION=pgsql
 DB_HOST=127.0.0.1
