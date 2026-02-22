@@ -15,6 +15,7 @@ export default defineConfig({
       { text: 'Guide', link: '/getting-started/' },
       { text: 'Self-Hosting', link: '/self-hosting/' },
       { text: 'API', link: '/api/' },
+      { text: 'Releases', link: 'https://github.com/pricorephp/pricore/releases' },
       { text: 'GitHub', link: 'https://github.com/pricorephp/pricore' },
     ],
 

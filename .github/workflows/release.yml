@@ -1,9 +1,6 @@
 name: Release
 
 on:
-  push:
-    branches:
-      - main
   workflow_dispatch:
     inputs:
       version_type:
@@ -83,8 +80,6 @@ jobs:
     name: Bump Version
     needs: [tests, lint]
     if: |
-      github.ref == 'refs/heads/main' &&
-      github.event_name == 'push' &&
       needs.tests.result == 'success' &&
       needs.lint.result == 'success'
     runs-on: ubuntu-latest
