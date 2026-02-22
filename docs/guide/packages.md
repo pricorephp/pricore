@@ -67,7 +67,7 @@ Add your Pricore organization as a Composer repository:
     "repositories": [
         {
             "type": "composer",
-            "url": "https://packages.yourcompany.com/org/your-organization"
+            "url": "https://pricore.yourcompany.com/org/your-organization"
         }
     ]
 }
@@ -78,7 +78,7 @@ Add your Pricore organization as a Composer repository:
 Configure Composer with your access token:
 
 ```bash
-composer config --global --auth http-basic.packages.yourcompany.com token YOUR_ACCESS_TOKEN
+composer config --global --auth http-basic.pricore.yourcompany.com token YOUR_ACCESS_TOKEN
 ```
 
 Or add to `auth.json`:
@@ -86,7 +86,7 @@ Or add to `auth.json`:
 ```json
 {
     "http-basic": {
-        "packages.yourcompany.com": {
+        "pricore.yourcompany.com": {
             "username": "token",
             "password": "YOUR_ACCESS_TOKEN"
         }
@@ -136,6 +136,10 @@ Package owners and admins can:
 - Change visibility settings
 - Link/unlink repositories
 - Delete the package
+
+## Download Statistics
+
+Pricore automatically tracks download counts per package version via the Composer `notify-batch` protocol. When Composer installs packages from your Pricore registry, it sends download notifications that are recorded for each version. No additional configuration is needed — this works out of the box with Composer 2.
 
 ## Best Practices
 
