@@ -35,7 +35,7 @@ export default function TokenList({ tokens, onRevoke }: TokenListProps) {
                                     <Badge variant="destructive">Expired</Badge>
                                 )}
                             </div>
-                            <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
+                            <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-sm text-muted-foreground">
                                 <span>
                                     Last used:{' '}
                                     {token.lastUsedAt
