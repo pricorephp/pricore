@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Composer\MetadataController;
+use App\Http\Controllers\Composer\NotifyBatchController;
 use App\Http\Controllers\Composer\PackageController;
 use Illuminate\Support\Facades\Route;
 
@@ -20,4 +21,8 @@ Route::prefix('{organization:slug}')
         Route::get('p2/{vendor}/{package}~dev.json', [MetadataController::class, 'showDev'])
             ->name('composer.metadata.showDev')
             ->where(['vendor' => '[a-z0-9_.-]+', 'package' => '[a-z0-9_.-]+']);
+
+        // Download notification endpoint
+        Route::post('notify-batch', NotifyBatchController::class)
+            ->name('composer.notify-batch');
     });

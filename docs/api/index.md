@@ -28,7 +28,7 @@ These endpoints implement the [Composer v2 Repository](https://getcomposer.org/d
 
 ### Get Package List
 
-Returns the metadata URL template for an organization.
+Returns the root configuration for an organization's Composer repository.
 
 ```
 GET /{organization}/packages.json
@@ -38,11 +38,19 @@ GET /{organization}/packages.json
 
 ```json
 {
-    "metadata-url": "https://pricore.yourcompany.com/your-org/p2/%package%.json"
+    "metadata-url": "https://pricore.yourcompany.com/your-org/p2/%package%.json",
+    "available-packages": ["acme/billing", "acme/utils"],
+    "notify-batch": "https://pricore.yourcompany.com/your-org/notify-batch"
 }
 ```
 
-Composer uses this template to resolve individual package metadata.
+| Field | Description |
+|-------|-------------|
+| `metadata-url` | URL template Composer uses to resolve individual package metadata |
+| `available-packages` | Exhaustive list of packages in this repository — lets Composer skip unnecessary metadata lookups for packages that don't exist here |
+| `notify-batch` | URL where Composer sends download notifications after installing packages |
+
+Responses include caching headers (`Cache-Control`, `ETag`, `Last-Modified`). Clients can send `If-None-Match` with a previously received `ETag` to receive a `304 Not Modified` response when content hasn't changed.
 
 ### Get Package Metadata (Stable)
 
@@ -73,11 +81,14 @@ GET /{organization}/p2/{vendor}/{package}.json
                 }
             }
         ]
-    }
+    },
+    "minified": "composer/2.0"
 }
 ```
 
-Responses include caching headers (`Cache-Control: max-age=3600`).
+Responses use **minified metadata** (`"minified": "composer/2.0"`) per the Composer 2 spec — only the first version entry contains all keys; subsequent entries omit keys whose values match the previous entry, reducing payload size.
+
+Responses include caching headers (`Cache-Control`, `ETag`, `Last-Modified`). Clients can send `If-None-Match` with a previously received `ETag` to receive a `304 Not Modified` response when content hasn't changed.
 
 ### Get Package Metadata (Dev)
 
@@ -87,7 +98,30 @@ Returns metadata for dev versions only.
 GET /{organization}/p2/{vendor}/{package}~dev.json
 ```
 
-Same response format as the stable endpoint, filtered to dev versions (e.g., `dev-main`).
+Same response format and caching behavior as the stable endpoint, filtered to dev versions (e.g., `dev-main`).
+
+### Notify Batch (Download Tracking)
+
+Receives download notifications from Composer after packages are installed.
+
+```
+POST /{organization}/notify-batch
+```
+
+**Request body:**
+
+```json
+{
+    "downloads": [
+        { "name": "vendor/package", "version": "1.0.0" },
+        { "name": "vendor/other-package", "version": "2.3.1" }
+    ]
+}
+```
+
+**Response:** `204 No Content`
+
+Composer calls this endpoint automatically when the `notify-batch` URL is present in the root `packages.json`. Download counts are tracked per package version.
 
 ## Webhooks
 
@@ -145,6 +179,8 @@ All errors return a consistent format:
 | Code | Description |
 |------|-------------|
 | `200` | Success |
+| `204` | No Content — notify-batch accepted |
+| `304` | Not Modified — content unchanged (conditional request) |
 | `401` | Unauthorized — invalid or missing token |
 | `403` | Forbidden — token lacks access to this organization |
 | `404` | Not found |

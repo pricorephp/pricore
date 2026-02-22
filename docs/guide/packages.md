@@ -137,6 +137,10 @@ Package owners and admins can:
 - Link/unlink repositories
 - Delete the package
 
+## Download Statistics
+
+Pricore automatically tracks download counts per package version via the Composer `notify-batch` protocol. When Composer installs packages from your Pricore registry, it sends download notifications that are recorded for each version. No additional configuration is needed — this works out of the box with Composer 2.
+
 ## Best Practices
 
 1. **Follow Composer naming** - Use lowercase, hyphenated names: `acme/my-package`
