@@ -74,7 +74,14 @@ To sync packages from Git repositories, configure your provider credentials.
 ```bash
 GITHUB_CLIENT_ID=your-github-client-id
 GITHUB_CLIENT_SECRET=your-github-client-secret
+GITHUB_REDIRECT_URI=${APP_URL}/auth/github/callback
 ```
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `GITHUB_CLIENT_ID` | GitHub OAuth App client ID | - |
+| `GITHUB_CLIENT_SECRET` | GitHub OAuth App client secret | - |
+| `GITHUB_REDIRECT_URI` | OAuth callback URL | `{APP_URL}/auth/github/callback` |
 
 Create a GitHub OAuth App:
 1. Go to GitHub Settings > Developer settings > OAuth Apps
@@ -111,7 +118,72 @@ MAIL_FROM_ADDRESS=noreply@yourcompany.com
 MAIL_FROM_NAME="${APP_NAME}"
 ```
 
+## Horizon (Queue Dashboard)
+
+Pricore uses [Laravel Horizon](https://laravel.com/docs/horizon) to manage queue workers. The following variables configure the Horizon dashboard:
+
+```bash
+HORIZON_ALLOWED_EMAILS=admin@yourcompany.com,ops@yourcompany.com
+HORIZON_PATH=horizon
+```
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `HORIZON_ALLOWED_EMAILS` | Comma-separated list of emails allowed to access the Horizon dashboard (in non-local environments) | `''` (empty) |
+| `HORIZON_NAME` | Name displayed in the Horizon UI and notifications | - |
+| `HORIZON_DOMAIN` | Subdomain to serve Horizon from (e.g., `horizon.yourcompany.com`) | `null` (same domain) |
+| `HORIZON_PATH` | URI path for the Horizon dashboard | `horizon` |
+| `HORIZON_PREFIX` | Redis key prefix for Horizon data | `{app_name}_horizon:` |
+
+## Slack Notifications
+
+To send notifications to Slack, configure a bot token:
+
+```bash
+SLACK_BOT_USER_OAUTH_TOKEN=xoxb-your-bot-token
+SLACK_BOT_USER_DEFAULT_CHANNEL=#packages
+```
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `SLACK_BOT_USER_OAUTH_TOKEN` | Slack bot user OAuth token | - |
+| `SLACK_BOT_USER_DEFAULT_CHANNEL` | Default Slack channel for notifications | - |
+
+## Error Tracking (Sentry)
+
+Pricore supports [Sentry](https://sentry.io/) for error tracking and performance monitoring:
+
+```bash
+SENTRY_LARAVEL_DSN=https://examplePublicKey@o0.ingest.sentry.io/0
+SENTRY_ENVIRONMENT=production
+SENTRY_TRACES_SAMPLE_RATE=0.2
+```
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `SENTRY_LARAVEL_DSN` | Sentry DSN URL (falls back to `SENTRY_DSN`) | - |
+| `SENTRY_RELEASE` | Release version tag sent to Sentry | - |
+| `SENTRY_ENVIRONMENT` | Environment name in Sentry | `APP_ENV` value |
+| `SENTRY_SAMPLE_RATE` | Error event sample rate (`0.0` to `1.0`) | `1.0` |
+| `SENTRY_TRACES_SAMPLE_RATE` | Performance traces sample rate (`0.0` to `1.0`) | `null` (disabled) |
+| `SENTRY_PROFILES_SAMPLE_RATE` | Profiling sample rate (`0.0` to `1.0`) | `null` (disabled) |
+| `SENTRY_ENABLE_LOGS` | Send logs to Sentry | `false` |
+| `SENTRY_LOG_LEVEL` | Minimum log level sent to Sentry | `debug` |
+| `SENTRY_SEND_DEFAULT_PII` | Include personally identifiable information | `false` |
+
 ## Security Settings
+
+### Trusted Proxies
+
+When running behind a load balancer or reverse proxy, configure trusted proxies:
+
+```bash
+TRUSTED_PROXIES=192.168.1.0/24,10.0.0.0/8
+```
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `TRUSTED_PROXIES` | Comma-separated list of trusted proxy IP addresses or CIDR ranges. Use `*` to trust all proxies. | `''` (empty) |
 
 ### Two-Factor Authentication
 
@@ -181,4 +253,10 @@ MAIL_FROM_NAME="${APP_NAME}"
 
 GITHUB_CLIENT_ID=your-github-client-id
 GITHUB_CLIENT_SECRET=your-github-client-secret
+
+HORIZON_ALLOWED_EMAILS=admin@yourcompany.com
+
+SENTRY_LARAVEL_DSN=https://examplePublicKey@o0.ingest.sentry.io/0
+
+TRUSTED_PROXIES=
 ```
