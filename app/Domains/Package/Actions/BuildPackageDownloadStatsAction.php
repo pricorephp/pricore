@@ -32,13 +32,20 @@ class BuildPackageDownloadStatsAction
         }
 
         $versionBreakdown = $package->downloads()
-            ->select('version', DB::raw('COUNT(*) as downloads'))
-            ->groupBy('version')
+            ->leftJoin('package_versions', function ($join) use ($package) {
+                $join->on('package_downloads.version', '=', 'package_versions.normalized_version')
+                    ->where('package_versions.package_uuid', '=', $package->uuid);
+            })
+            ->select(
+                DB::raw('COALESCE(package_versions.version, package_downloads.version) as display_version'),
+                DB::raw('COUNT(*) as downloads'),
+            )
+            ->groupBy('display_version')
             ->orderByDesc('downloads')
             ->limit(10)
             ->get()
             ->map(fn ($row) => new VersionDownloadData(
-                version: $row->version,
+                version: $row->display_version,
                 downloads: (int) $row->getAttribute('downloads'),
             ))
             ->all();
