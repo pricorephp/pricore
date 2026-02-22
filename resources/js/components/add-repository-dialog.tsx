@@ -80,7 +80,7 @@ export default function AddRepositoryDialog({
         setSelectedRepo('');
         setRepoIdentifier('');
         setSearchQuery('');
-    }, [isOpen]);
+    }, [isOpen, defaultProvider]);
 
     useEffect(() => {
         if (!isOpen || provider === 'git') {

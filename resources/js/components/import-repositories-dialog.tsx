@@ -69,7 +69,7 @@ export default function ImportRepositoriesDialog({
         setSelectedRepos(new Set());
         setSearchQuery('');
         setProcessing(false);
-    }, [isOpen]);
+    }, [isOpen, defaultProvider]);
 
     useEffect(() => {
         if (!isOpen || !provider) {
