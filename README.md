@@ -12,6 +12,10 @@ Fast, self-hosted, and built for PHP teams who are tired of fragile workarounds.
 Manage your packages with a registry that just works.
 </p>
 
+<p align="center">
+<img src="./docs/public/pricore-landing.png" alt="Pricore Dashboard">
+</p>
+
 ---
 
 ## About Pricore

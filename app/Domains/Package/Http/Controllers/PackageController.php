@@ -3,6 +3,7 @@
 namespace App\Domains\Package\Http\Controllers;
 
 use App\Domains\Organization\Contracts\Data\OrganizationData;
+use App\Domains\Package\Actions\BuildPackageDownloadStatsAction;
 use App\Domains\Package\Contracts\Data\PackageData;
 use App\Domains\Package\Contracts\Data\PackageVersionData;
 use App\Http\Controllers\Controller;
@@ -13,6 +14,10 @@ use Inertia\Response;
 
 class PackageController extends Controller
 {
+    public function __construct(
+        protected BuildPackageDownloadStatsAction $downloadStats,
+    ) {}
+
     public function index(Organization $organization): Response
     {
         $packages = $organization->packages()
@@ -48,6 +53,7 @@ class PackageController extends Controller
             'package' => PackageData::fromModel($package),
             'versions' => $versions,
             'composerRepositoryUrl' => $composerRepositoryUrl,
+            'downloadStats' => $this->downloadStats->handle($package),
         ]);
     }
 }
