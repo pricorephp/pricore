@@ -24,15 +24,21 @@ type OrganizationData =
 export function AppSidebar() {
     const page = usePage<{
         auth: { organizations: OrganizationData[] };
+        version: string | null;
     }>();
     const url = page.url;
+    const version = page.props.version;
     const organizations = page.props.auth.organizations;
 
-    // Extract organization slug from URL, or fall back to first organization
+    // Extract organization slug from URL
     const currentOrgSlug = useMemo(() => {
         const match = url.match(/^\/organizations\/([^/]+)/);
-        if (match) return match[1];
-        // Fall back to first organization if available
+
+        if (match) {
+            return match[1];
+        }
+
+        // Fall back to the first organization if available
         return organizations.length > 0 ? organizations[0].slug : null;
     }, [url, organizations]);
 
@@ -80,6 +86,16 @@ export function AppSidebar() {
             </SidebarContent>
 
             <SidebarFooter className="border-t border-sidebar-border pt-2">
+                {version && (
+                    <a
+                        href="https://github.com/pricorephp/pricore/releases"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-center text-[10.5px] text-sidebar-foreground/50 transition-colors hover:text-sidebar-foreground/70"
+                    >
+                        v{version}
+                    </a>
+                )}
                 <a
                     href="https://docs.pricore.dev"
                     target="_blank"

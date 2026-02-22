@@ -163,6 +163,8 @@ jobs:
           labels: |
             org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
             org.opencontainers.image.version=${{ needs.tag.outputs.version }}
+          build-args: |
+            APP_VERSION=${{ needs.tag.outputs.version }}
           cache-from: type=gha,scope=${{ matrix.suffix }}
           cache-to: type=gha,scope=${{ matrix.suffix }},mode=max
           platforms: ${{ matrix.platform }}

@@ -41,6 +41,7 @@ export interface NavItem {
 
 export interface SharedData {
     name: string;
+    version: string | null;
     quote: { message: string; author: string };
     auth: Auth;
     sidebarOpen: boolean;

@@ -15,6 +15,8 @@ return [
 
     'name' => 'Pricore',
 
+    'version' => env('APP_VERSION'),
+
     /*
     |--------------------------------------------------------------------------
     | Application Environment

@@ -71,6 +71,9 @@ RUN npm run build
 # Stage 2: Production application with FrankenPHP
 FROM dunglas/frankenphp:1-php8.4-alpine AS application
 
+ARG APP_VERSION=dev
+ENV APP_VERSION=${APP_VERSION}
+
 # Install system dependencies and PHP extensions
 RUN apk add --no-cache \
     curl \
