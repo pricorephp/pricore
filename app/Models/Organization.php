@@ -35,6 +35,8 @@ use Illuminate\Support\Carbon;
  * @property-read int|null $repositories_count
  * @property-read Collection<int, OrganizationInvitation> $invitations
  * @property-read int|null $invitations_count
+ * @property-read Collection<int, PackageDownload> $downloads
+ * @property-read int|null $downloads_count
  *
  * @method static OrganizationFactory factory($count = null, $state = [])
  * @method static Builder<static>|Organization newModelQuery()
@@ -116,5 +118,13 @@ class Organization extends Model
     public function pendingInvitations(): HasMany
     {
         return $this->invitations()->pending();
+    }
+
+    /**
+     * @return HasMany<PackageDownload, $this>
+     */
+    public function downloads(): HasMany
+    {
+        return $this->hasMany(PackageDownload::class, 'organization_uuid', 'uuid');
     }
 }

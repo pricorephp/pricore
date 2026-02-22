@@ -11,6 +11,7 @@
     "require": {
         "php": "^8.4",
         "aws/aws-sdk-php": "^3.369",
+        "composer/metadata-minifier": "^1.0",
         "composer/semver": "^3.4",
         "inertiajs/inertia-laravel": "^2.0",
         "laravel/fortify": "^1.30",

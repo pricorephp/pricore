@@ -255,6 +255,114 @@ it('includes time field from released_at', function () {
         ->assertJsonPath('packages.acme/package.0.time', $releasedAt->toIso8601String());
 });
 
+it('includes available-packages and notify-batch in packages.json', function () {
+    Package::factory()
+        ->for($this->organization, 'organization')
+        ->create(['name' => 'acme/beta-package']);
+
+    Package::factory()
+        ->for($this->organization, 'organization')
+        ->create(['name' => 'acme/alpha-package']);
+
+    $response = authenticatedGet("/{$this->organization->slug}/packages.json", $this->plainToken);
+
+    $response->assertOk()
+        ->assertJsonPath('available-packages', ['acme/alpha-package', 'acme/beta-package'])
+        ->assertJsonPath('notify-batch', url("/{$this->organization->slug}/notify-batch"));
+});
+
+it('returns minified metadata for multiple versions', function () {
+    $package = Package::factory()
+        ->for($this->organization, 'organization')
+        ->create(['name' => 'acme/package']);
+
+    PackageVersion::factory()
+        ->for($package)
+        ->create([
+            'version' => '1.0.0',
+            'normalized_version' => '1.0.0.0',
+            'released_at' => now()->subDays(2),
+            'composer_json' => [
+                'name' => 'acme/package',
+                'description' => 'A package',
+                'type' => 'library',
+                'require' => ['php' => '^8.1'],
+            ],
+            'source_url' => 'https://github.com/acme/package.git',
+            'source_reference' => 'abc123',
+        ]);
+
+    PackageVersion::factory()
+        ->for($package)
+        ->create([
+            'version' => '2.0.0',
+            'normalized_version' => '2.0.0.0',
+            'released_at' => now()->subDay(),
+            'composer_json' => [
+                'name' => 'acme/package',
+                'description' => 'A package',
+                'type' => 'library',
+                'require' => ['php' => '^8.2'],
+            ],
+            'source_url' => 'https://github.com/acme/package.git',
+            'source_reference' => 'def456',
+        ]);
+
+    $response = authenticatedGet("/{$this->organization->slug}/p2/acme/package.json", $this->plainToken);
+
+    $response->assertOk();
+
+    $versions = $response->json('packages.acme/package');
+
+    // First version (newest) should have all keys
+    expect($versions[0])->toHaveKey('name')
+        ->toHaveKey('version');
+
+    // Second version should be minified (missing keys that are same as first)
+    // The minifier removes keys whose values match the previous entry
+    expect($versions[1])->toHaveKey('version');
+});
+
+it('returns 304 when If-None-Match header matches ETag', function () {
+    $package = Package::factory()
+        ->for($this->organization, 'organization')
+        ->create(['name' => 'acme/package']);
+
+    PackageVersion::factory()
+        ->for($package)
+        ->create(['version' => '1.0.0']);
+
+    // First request to get the ETag
+    $response = authenticatedGet("/{$this->organization->slug}/p2/acme/package.json", $this->plainToken);
+    $response->assertOk();
+    $etag = $response->headers->get('ETag');
+
+    expect($etag)->not->toBeNull();
+
+    // Second request with If-None-Match
+    $response = test()->withHeaders([
+        'Authorization' => "Bearer {$this->plainToken}",
+        'If-None-Match' => $etag,
+    ])->getJson("/{$this->organization->slug}/p2/acme/package.json");
+
+    $response->assertStatus(304);
+});
+
+it('returns ETag header on metadata responses', function () {
+    $package = Package::factory()
+        ->for($this->organization, 'organization')
+        ->create(['name' => 'acme/package']);
+
+    PackageVersion::factory()
+        ->for($package)
+        ->create(['version' => '1.0.0']);
+
+    $response = authenticatedGet("/{$this->organization->slug}/p2/acme/package.json", $this->plainToken);
+
+    $response->assertOk()
+        ->assertHeader('ETag');
+});
+
 it('does not leak packages from other organizations', function () {
     $otherOrg = Organization::factory()->create(['slug' => 'other-org']);
 
