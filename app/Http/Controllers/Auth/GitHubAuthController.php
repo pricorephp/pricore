@@ -62,6 +62,15 @@ class GitHubAuthController extends Controller
             return redirect()->route('login')->with('error', 'We could not retrieve your email address from GitHub. Please ensure your email is public or try another sign-in method.');
         }
 
+        $existingUser = User::where('github_id', $githubUser->getId())
+            ->orWhere('email', $githubUser->getEmail())
+            ->first();
+
+        if (! $existingUser && ! config('fortify.sign_up_enabled') && ! session('invitation_token')) {
+            return redirect()->route('login')
+                ->with('error', 'Registration is currently closed. You need an invitation to create an account.');
+        }
+
         /** @var TwoUser $githubUser */
         $user = $findOrCreateUser->handle($githubUser, $githubUser->token);
 

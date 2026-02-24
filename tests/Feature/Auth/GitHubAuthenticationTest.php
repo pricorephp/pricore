@@ -69,6 +69,8 @@ test('redirect sends user to GitHub with only user:email scope', function () {
 });
 
 test('callback creates new user from GitHub', function () {
+    config()->set('fortify.sign_up_enabled', true);
+
     $socialiteUser = mockSocialiteUser();
     mockSocialiteCallback($socialiteUser);
 
@@ -178,6 +180,8 @@ test('callback updates GitHub token on subsequent logins', function () {
 });
 
 test('callback sets email_verified_at for new GitHub users', function () {
+    config()->set('fortify.sign_up_enabled', true);
+
     $socialiteUser = mockSocialiteUser();
     mockSocialiteCallback($socialiteUser);
 
@@ -188,6 +192,8 @@ test('callback sets email_verified_at for new GitHub users', function () {
 });
 
 test('OAuth-only users have null password', function () {
+    config()->set('fortify.sign_up_enabled', true);
+
     $socialiteUser = mockSocialiteUser();
     mockSocialiteCallback($socialiteUser);
 
@@ -217,6 +223,8 @@ test('callback does not overwrite elevated git credentials on login', function (
 });
 
 test('callback uses nickname as name when GitHub name is null', function () {
+    config()->set('fortify.sign_up_enabled', true);
+
     $socialiteUser = mockSocialiteUser(['name' => null, 'nickname' => 'johndoe']);
     mockSocialiteCallback($socialiteUser);
 
@@ -224,6 +232,55 @@ test('callback uses nickname as name when GitHub name is null', function () {
 
     $user = User::where('email', 'john@example.com')->first();
     expect($user->name)->toBe('johndoe');
+});
+
+test('callback blocks new GitHub user when sign up is disabled', function () {
+    config()->set('fortify.sign_up_enabled', false);
+
+    $socialiteUser = mockSocialiteUser();
+    mockSocialiteCallback($socialiteUser);
+
+    $response = $this->withSession(['github_oauth_intent' => GitHubOAuthIntent::Login])
+        ->get(route('auth.github.callback'));
+
+    $response->assertRedirect(route('login'));
+    $response->assertSessionHas('error', 'Registration is currently closed. You need an invitation to create an account.');
+    $this->assertGuest();
+
+    expect(User::where('email', 'john@example.com')->exists())->toBeFalse();
+});
+
+test('callback allows new GitHub user with invitation token when sign up is disabled', function () {
+    config()->set('fortify.sign_up_enabled', false);
+
+    $socialiteUser = mockSocialiteUser();
+    mockSocialiteCallback($socialiteUser);
+
+    $response = $this->withSession([
+        'github_oauth_intent' => GitHubOAuthIntent::Login,
+        'invitation_token' => 'test-token',
+    ])->get(route('auth.github.callback'));
+
+    $response->assertRedirect(route('dashboard'));
+    $this->assertAuthenticated();
+
+    expect(User::where('email', 'john@example.com')->exists())->toBeTrue();
+});
+
+test('callback allows existing GitHub user login when sign up is disabled', function () {
+    config()->set('fortify.sign_up_enabled', false);
+
+    $user = User::factory()->withGitHub()->create([
+        'github_id' => '12345678',
+    ]);
+
+    $socialiteUser = mockSocialiteUser(['id' => '12345678']);
+    mockSocialiteCallback($socialiteUser);
+
+    $response = $this->get(route('auth.github.callback'));
+
+    $response->assertRedirect(route('dashboard'));
+    $this->assertAuthenticatedAs($user);
 });
 
 test('connect route requires authentication', function () {

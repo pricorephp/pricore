@@ -22,7 +22,7 @@ class InstallCommand extends Command
      */
     protected $description = 'Set up the first user and organization for Pricore';
 
-    public function handle(CreateOrganizationAction $createOrganization): int
+    public function handle(CreateOrganizationAction $createOrganizationAction): int
     {
         $this->renderLogo();
         $this->components->info('Let\'s set up your first user and organization.');
@@ -84,7 +84,10 @@ class InstallCommand extends Command
             required: true,
         );
 
-        $organization = $createOrganization->handle($organizationName, $user->uuid);
+        $organization = $createOrganizationAction->handle(
+            name: $organizationName,
+            ownerUuid: $user->uuid
+        );
 
         $appUrl = config('app.url');
 

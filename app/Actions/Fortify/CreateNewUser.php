@@ -18,6 +18,10 @@ class CreateNewUser implements CreatesNewUsers
      */
     public function create(array $input): User
     {
+        if (! config('fortify.sign_up_enabled') && ! session('invitation_token')) {
+            abort(403, 'Registration is currently closed.');
+        }
+
         Validator::make($input, [
             'name' => ['required', 'string', 'max:255'],
             'email' => [

@@ -49,7 +49,8 @@ class FortifyServiceProvider extends ServiceProvider
     {
         Fortify::loginView(fn (Request $request) => Inertia::render('auth/login', [
             'canResetPassword' => Features::enabled(Features::resetPasswords()),
-            'canRegister' => Features::enabled(Features::registration()),
+            'canRegister' => Features::enabled(Features::registration())
+                && (config('fortify.sign_up_enabled') || session('invitation_token')),
             'githubEnabled' => ! empty(config('services.github.client_id')),
             'status' => $request->session()->get('status'),
         ]));
@@ -67,9 +68,15 @@ class FortifyServiceProvider extends ServiceProvider
             'status' => $request->session()->get('status'),
         ]));
 
-        Fortify::registerView(fn () => Inertia::render('auth/register', [
-            'githubEnabled' => ! empty(config('services.github.client_id')),
-        ]));
+        Fortify::registerView(function () {
+            if (! config('fortify.sign_up_enabled') && ! session('invitation_token')) {
+                return redirect()->route('login');
+            }
+
+            return Inertia::render('auth/register', [
+                'githubEnabled' => ! empty(config('services.github.client_id')),
+            ]);
+        });
 
         Fortify::twoFactorChallengeView(fn () => Inertia::render('auth/two-factor-challenge'));
 
