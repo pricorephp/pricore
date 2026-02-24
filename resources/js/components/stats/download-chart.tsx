@@ -26,7 +26,12 @@ const chartConfig: ChartConfig = {
     },
 };
 
-export function DownloadChart({ title, data, compact = false, className }: DownloadChartProps) {
+export function DownloadChart({
+    title,
+    data,
+    compact = false,
+    className,
+}: DownloadChartProps) {
     const hasDownloads = data.some((d) => d.downloads > 0);
 
     return (
@@ -40,7 +45,10 @@ export function DownloadChart({ title, data, compact = false, className }: Downl
                         No downloads yet
                     </div>
                 ) : (
-                    <ChartContainer config={chartConfig} className="min-h-[200px] flex-1">
+                    <ChartContainer
+                        config={chartConfig}
+                        className="min-h-[200px] flex-1"
+                    >
                         <AreaChart
                             data={data}
                             margin={{ top: 4, right: 4, bottom: 0, left: 0 }}

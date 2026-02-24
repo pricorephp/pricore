@@ -181,7 +181,12 @@
 
     body {
         @apply bg-background text-foreground;
-        font-feature-settings: "calt" 0, "cv01", "cv02", "cv03", "cv04";
+        font-feature-settings:
+            'calt' 0,
+            'cv01',
+            'cv02',
+            'cv03',
+            'cv04';
     }
 
     html {
