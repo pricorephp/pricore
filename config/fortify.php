@@ -143,6 +143,8 @@ return [
     |
     */
 
+    'sign_up_enabled' => env('SIGN_UP_ENABLED', false),
+
     'features' => [
         Features::registration(),
         Features::resetPasswords(),

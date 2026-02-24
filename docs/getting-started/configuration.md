@@ -20,6 +20,18 @@ APP_URL=https://pricore.yourcompany.com
 | `APP_DEBUG` | Enable debug mode (disable in production) | `false` |
 | `APP_URL` | Public URL of your Pricore instance | - |
 
+### Registration
+
+```bash
+SIGN_UP_ENABLED=false
+```
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `SIGN_UP_ENABLED` | Allow public registration without an invitation | `false` |
+
+By default, registration is invite-only. Users can only create accounts after receiving an organization invitation. Set `SIGN_UP_ENABLED=true` to allow anyone to register.
+
 ### Database Configuration
 
 Pricore supports SQLite, MySQL, and PostgreSQL:
@@ -227,6 +239,8 @@ APP_ENV=production
 APP_KEY=base64:your-generated-key
 APP_DEBUG=false
 APP_URL=https://pricore.yourcompany.com
+
+SIGN_UP_ENABLED=false
 
 DB_CONNECTION=pgsql
 DB_HOST=127.0.0.1
