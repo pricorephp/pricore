@@ -11,17 +11,24 @@ use Inertia\Response;
 
 class PasswordController extends Controller
 {
-    public function edit(): Response
+    public function edit(Request $request): Response
     {
-        return Inertia::render('settings/password');
+        return Inertia::render('settings/password', [
+            'hasPassword' => $request->user()?->has_password,
+        ]);
     }
 
     public function update(Request $request): RedirectResponse
     {
-        $validated = $request->validate([
-            'current_password' => ['required', 'current_password'],
+        $rules = [
             'password' => ['required', Password::defaults(), 'confirmed'],
-        ]);
+        ];
+
+        if ($request->user()?->has_password) {
+            $rules['current_password'] = ['required', 'current_password'];
+        }
+
+        $validated = $request->validate($rules);
 
         $request->user()?->update([
             'password' => $validated['password'],

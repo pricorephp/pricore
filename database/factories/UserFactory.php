@@ -57,6 +57,16 @@ class UserFactory extends Factory
     }
 
     /**
+     * Indicate that the user signed up via OAuth and has no password.
+     */
+    public function withoutPassword(): static
+    {
+        return $this->withGitHub()->state(fn (array $attributes) => [
+            'password' => null,
+        ]);
+    }
+
+    /**
      * Indicate that the user has a connected GitHub account.
      */
     public function withGitHub(): static

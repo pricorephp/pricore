@@ -25,7 +25,7 @@ const breadcrumbs: BreadcrumbItem[] = [
     },
 ];
 
-export default function Password() {
+export default function Password({ hasPassword }: { hasPassword: boolean }) {
     const passwordInput = useRef<HTMLInputElement>(null);
     const currentPasswordInput = useRef<HTMLInputElement>(null);
 
@@ -36,7 +36,9 @@ export default function Password() {
             <SettingsLayout>
                 <div className="space-y-6">
                     <HeadingSmall
-                        title="Update password"
+                        title={
+                            hasPassword ? 'Update password' : 'Set password'
+                        }
                         description="Ensure your account is using a long, random password to stay secure"
                     />
 
@@ -64,29 +66,33 @@ export default function Password() {
                     >
                         {({ errors, processing, recentlySuccessful }) => (
                             <>
-                                <div className="grid gap-2">
-                                    <Label htmlFor="current_password">
-                                        Current password
-                                    </Label>
+                                {hasPassword && (
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="current_password">
+                                            Current password
+                                        </Label>
 
-                                    <Input
-                                        id="current_password"
-                                        ref={currentPasswordInput}
-                                        name="current_password"
-                                        type="password"
-                                        className="mt-1 block w-full"
-                                        autoComplete="current-password"
-                                        placeholder="Current password"
-                                    />
+                                        <Input
+                                            id="current_password"
+                                            ref={currentPasswordInput}
+                                            name="current_password"
+                                            type="password"
+                                            className="mt-1 block w-full"
+                                            autoComplete="current-password"
+                                            placeholder="Current password"
+                                        />
 
-                                    <InputError
-                                        message={errors.current_password}
-                                    />
-                                </div>
+                                        <InputError
+                                            message={errors.current_password}
+                                        />
+                                    </div>
+                                )}
 
                                 <div className="grid gap-2">
                                     <Label htmlFor="password">
-                                        New password
+                                        {hasPassword
+                                            ? 'New password'
+                                            : 'Password'}
                                     </Label>
 
                                     <Input
@@ -96,7 +102,11 @@ export default function Password() {
                                         type="password"
                                         className="mt-1 block w-full"
                                         autoComplete="new-password"
-                                        placeholder="New password"
+                                        placeholder={
+                                            hasPassword
+                                                ? 'New password'
+                                                : 'Password'
+                                        }
                                     />
 
                                     <InputError message={errors.password} />
@@ -126,7 +136,9 @@ export default function Password() {
                                         disabled={processing}
                                         data-test="update-password-button"
                                     >
-                                        Save password
+                                        {hasPassword
+                                            ? 'Save password'
+                                            : 'Set password'}
                                     </Button>
 
                                     <Transition

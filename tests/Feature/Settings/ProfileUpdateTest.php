@@ -82,3 +82,17 @@ test('correct password must be provided to delete account', function () {
 
     expect($user->fresh())->not->toBeNull();
 });
+
+test('oauth user can delete account without password', function () {
+    $user = User::factory()->withoutPassword()->create();
+
+    $response = $this
+        ->actingAs($user)
+        ->delete(route('profile.destroy'));
+
+    $response->assertSessionHasNoErrors();
+    $response->assertRedirect(route('login'));
+
+    $this->assertGuest();
+    expect($user->fresh())->toBeNull();
+});

@@ -61,6 +61,7 @@ export interface User {
     avatar_url?: string | null;
     github_nickname?: string | null;
     has_github_connected?: boolean;
+    has_password: boolean;
     email_verified_at: string | null;
     two_factor_enabled?: boolean;
     created_at: string;

@@ -77,3 +77,23 @@ test('two factor settings page returns forbidden response when two factor is dis
         ->get(route('two-factor.show'))
         ->assertForbidden();
 });
+
+test('oauth user can pass password confirmation for two factor', function () {
+    if (! Features::canManageTwoFactorAuthentication()) {
+        $this->markTestSkipped('Two-factor authentication is not enabled.');
+    }
+
+    Features::twoFactorAuthentication([
+        'confirm' => true,
+        'confirmPassword' => true,
+    ]);
+
+    $user = User::factory()->withoutPassword()->withoutTwoFactor()->create();
+
+    $this->actingAs($user)
+        ->post(route('password.confirm.store'), [
+            'password' => '',
+        ])
+        ->assertRedirect()
+        ->assertSessionHasNoErrors();
+});
