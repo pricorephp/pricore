@@ -68,6 +68,16 @@
         "typescript": "^5.7.2",
         "vite": "^7.0.4"
     },
+    "overrides": {
+        "@docsearch/react": {
+            "@types/react": "$@types/react",
+            "react": "$react",
+            "react-dom": "$react-dom"
+        },
+        "@vitejs/plugin-vue": {
+            "vite": "$vite"
+        }
+    },
     "optionalDependencies": {
         "@rollup/rollup-linux-x64-gnu": "4.59.0",
         "@rollup/rollup-win32-x64-msvc": "4.59.0",
