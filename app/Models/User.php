@@ -80,7 +80,7 @@ class User extends Authenticatable implements MustVerifyEmail
     /**
      * @var list<string>
      */
-    protected $appends = ['avatar'];
+    protected $appends = ['avatar', 'has_password'];
 
     /**
      * @var list<string>
@@ -172,6 +172,16 @@ class User extends Authenticatable implements MustVerifyEmail
         $preferences['dismissed_onboarding'] = $dismissed;
         $this->preferences = $preferences;
         $this->save();
+    }
+
+    /**
+     * @return Attribute<bool, never>
+     */
+    protected function hasPassword(): Attribute
+    {
+        return Attribute::make(
+            get: fn () => $this->password !== null,
+        );
     }
 
     /**

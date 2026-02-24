@@ -6,10 +6,11 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Spinner } from '@/components/ui/spinner';
 import AuthLayout from '@/layouts/auth-layout';
+import { SharedData } from '@/types';
 import { register } from '@/routes';
 import { store } from '@/routes/login';
 import { request } from '@/routes/password';
-import { Form, Head } from '@inertiajs/react';
+import { Form, Head, usePage } from '@inertiajs/react';
 
 interface LoginProps {
     status?: string;
@@ -24,6 +25,8 @@ export default function Login({
     canRegister,
     githubEnabled,
 }: LoginProps) {
+    const { flash } = usePage<SharedData>().props;
+
     return (
         <AuthLayout
             title="Log in to your account"
@@ -124,6 +127,12 @@ export default function Login({
                     </>
                 )}
             </Form>
+
+            {flash?.error && (
+                <div className="text-center text-sm font-medium text-red-600">
+                    {flash.error}
+                </div>
+            )}
 
             {status && (
                 <div className="text-center text-sm font-medium text-green-600">
