@@ -126,6 +126,7 @@ class RepositoryController extends Controller
             'repository' => RepositoryData::fromModel($repository),
             'packages' => $packages,
             'syncLogs' => $syncLogs,
+            'canManageRepository' => auth()->user()?->can('deleteRepository', $organization) ?? false,
         ]);
     }
 

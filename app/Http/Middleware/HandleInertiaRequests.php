@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Domains\Organization\Contracts\Data\OrganizationData;
+use App\Domains\Organization\Contracts\Data\OrganizationPermissionsData;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -43,7 +44,12 @@ class HandleInertiaRequests extends Middleware
             'auth' => [
                 'user' => $request->user(),
                 'organizations' => $request->user()
-                    ? $request->user()->organizations()->get()->map(fn ($org) => OrganizationData::fromModel($org))
+                    ? $request->user()->organizations()->get()->map(function ($org) use ($request) {
+                        $data = OrganizationData::fromModel($org);
+                        $data->permissions = OrganizationPermissionsData::fromUserAndOrganization($request->user(), $org);
+
+                        return $data;
+                    })
                     : [],
             ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',

@@ -49,6 +49,7 @@ interface RepositoryShowProps {
     repository: RepositoryData;
     packages: PackageData[];
     syncLogs: SyncLogData[];
+    canManageRepository: boolean;
 }
 
 function getProviderBadgeColor(provider: string): string {
@@ -94,6 +95,7 @@ export default function RepositoryShow({
     repository,
     packages,
     syncLogs,
+    canManageRepository,
 }: RepositoryShowProps) {
     const { auth } = usePage<{
         auth: { organizations: OrganizationData[] };
@@ -234,18 +236,23 @@ export default function RepositoryShow({
                                         : 'Register Webhook'}
                                 </DropdownMenuItem>
                             )}
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem asChild>
-                                <Link
-                                    href={edit.url({
-                                        organization: organization.slug,
-                                        repository: repository.uuid,
-                                    })}
-                                >
-                                    <Settings />
-                                    Edit
-                                </Link>
-                            </DropdownMenuItem>
+                            {canManageRepository && (
+                                <>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem asChild>
+                                        <Link
+                                            href={edit.url({
+                                                organization:
+                                                    organization.slug,
+                                                repository: repository.uuid,
+                                            })}
+                                        >
+                                            <Settings />
+                                            Edit
+                                        </Link>
+                                    </DropdownMenuItem>
+                                </>
+                            )}
                         </DropdownMenuContent>
                     </DropdownMenu>
                 </div>
