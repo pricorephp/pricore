@@ -49,7 +49,7 @@ class MetadataController extends Controller
                 'minified' => 'composer/2.0',
             ])
             ->setLastModified($package->updated_at)
-            ->setPublic()
+            ->setPrivate()
             ->setMaxAge(3600);
 
         $response->setEtag(md5((string) $response->getContent()));
@@ -99,7 +99,7 @@ class MetadataController extends Controller
                 'minified' => 'composer/2.0',
             ])
             ->setLastModified($package->updated_at)
-            ->setPublic()
+            ->setPrivate()
             ->setMaxAge(3600);
 
         $response->setEtag(md5((string) $response->getContent()));

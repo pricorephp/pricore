@@ -210,7 +210,7 @@ it('includes caching headers', function () {
         ->assertHeader('Cache-Control')
         ->assertHeader('Last-Modified');
 
-    expect($response->headers->get('Cache-Control'))->toContain('max-age=3600', 'public');
+    expect($response->headers->get('Cache-Control'))->toContain('max-age=3600', 'private');
 });
 
 it('includes dist information when available', function () {
