@@ -28,6 +28,7 @@ uuid: string;
 name: string;
 slug: string;
 ownerUuid: string;
+permissions: App.Domains.Organization.Contracts.Data.OrganizationPermissionsData | null;
 };
 export type OrganizationInvitationData = {
 uuid: string;
@@ -44,6 +45,13 @@ name: string;
 email: string;
 role: App.Domains.Organization.Contracts.Enums.OrganizationRole;
 joinedAt: string | null;
+};
+export type OrganizationPermissionsData = {
+canViewSettings: boolean;
+canManageMembers: boolean;
+canDeleteOrganization: boolean;
+canUpdateSlug: boolean;
+canManageRepository: boolean;
 };
 export type OrganizationStatsData = {
 packagesCount: number;

@@ -42,11 +42,16 @@ export function AppSidebar() {
         return organizations.length > 0 ? organizations[0].slug : null;
     }, [url, organizations]);
 
+    const currentOrg = useMemo(
+        () => organizations.find((org) => org.slug === currentOrgSlug),
+        [organizations, currentOrgSlug],
+    );
+
     // Build organization-specific navigation
     const orgNavItems: NavItem[] = useMemo(() => {
         if (!currentOrgSlug) return [];
 
-        return [
+        const items: NavItem[] = [
             {
                 title: 'Overview',
                 href: `/organizations/${currentOrgSlug}`,
@@ -62,13 +67,18 @@ export function AppSidebar() {
                 href: `/organizations/${currentOrgSlug}/packages`,
                 icon: Box,
             },
-            {
+        ];
+
+        if (currentOrg?.permissions?.canViewSettings) {
+            items.push({
                 title: 'Settings',
                 href: `/organizations/${currentOrgSlug}/settings/general`,
                 icon: Settings,
-            },
-        ];
-    }, [currentOrgSlug]);
+            });
+        }
+
+        return items;
+    }, [currentOrgSlug, currentOrg]);
 
     return (
         <Sidebar>
