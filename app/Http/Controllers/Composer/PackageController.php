@@ -32,7 +32,7 @@ class PackageController extends Controller
             $response->setLastModified(new \DateTime($lastModified));
         }
 
-        $response->setPublic()
+        $response->setPrivate()
             ->setMaxAge(300);
 
         $response->setEtag(md5((string) $response->getContent()));
