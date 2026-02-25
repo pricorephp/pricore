@@ -84,12 +84,18 @@ class ComposerMetadataData extends Data
 
     /**
      * Extract version from reference (tag or branch name).
+     * Branch names are prefixed with "dev-" for Composer compatibility.
      */
     protected static function extractVersion(string $ref): string
     {
         // Remove 'v' prefix if present (e.g., v1.0.0 -> 1.0.0)
         if (str_starts_with($ref, 'v') && preg_match('/^v\d/', $ref)) {
             return substr($ref, 1);
+        }
+
+        // Branch names need dev- prefix for Composer compatibility
+        if (! preg_match('/^\d+\.\d+/', $ref)) {
+            return "dev-{$ref}";
         }
 
         return $ref;
@@ -103,11 +109,6 @@ class ComposerMetadataData extends Data
         $versionParser = new VersionParser;
 
         try {
-            // Handle branch names (e.g., main, develop) as dev versions
-            if (! preg_match('/^\d+\.\d+/', $version)) {
-                return $versionParser->normalize("dev-{$version}");
-            }
-
             return $versionParser->normalize($version);
         } catch (\Exception $e) {
             // If version parsing fails, treat as dev version

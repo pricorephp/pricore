@@ -33,9 +33,26 @@ it('parses composer.json with branch name', function () {
 
     $result = ComposerMetadataData::fromComposerJson($composerJson, 'main');
 
-    expect($result->version)->toBe('main')
-        ->and($result->normalizedVersion)->toContain('dev-main');
+    expect($result->version)->toBe('dev-main')
+        ->and($result->normalizedVersion)->toBe('dev-main');
 });
+
+it('adds dev- prefix to non-semver branch names', function (string $ref, string $expectedVersion) {
+    $composerJson = json_encode([
+        'name' => 'vendor/package',
+        'type' => 'library',
+    ]);
+
+    $result = ComposerMetadataData::fromComposerJson($composerJson, $ref);
+
+    expect($result->version)->toBe($expectedVersion);
+})->with([
+    'simple branch' => ['develop', 'dev-develop'],
+    'branch with slash' => ['feature/my-feature', 'dev-feature/my-feature'],
+    'release branch' => ['carconnect-release', 'dev-carconnect-release'],
+    'tag version' => ['v1.0.0', '1.0.0'],
+    'tag without v' => ['1.2.3', '1.2.3'],
+]);
 
 it('throws exception for invalid JSON', function () {
     ComposerMetadataData::fromComposerJson('invalid json', 'v1.0.0');
