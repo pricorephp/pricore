@@ -179,6 +179,17 @@
         @apply border-border;
     }
 
+    button,
+    [role='button'],
+    a,
+    select,
+    summary,
+    [type='button'],
+    [type='reset'],
+    [type='submit'] {
+        cursor: pointer;
+    }
+
     body {
         @apply bg-background text-foreground;
         font-feature-settings:
