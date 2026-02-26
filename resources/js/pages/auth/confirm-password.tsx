@@ -53,9 +53,7 @@ export default function ConfirmPassword({
                                 data-test="confirm-password-button"
                             >
                                 {processing && <Spinner />}
-                                {hasPassword
-                                    ? 'Confirm password'
-                                    : 'Continue'}
+                                {hasPassword ? 'Confirm password' : 'Continue'}
                             </Button>
                         </div>
                     </div>

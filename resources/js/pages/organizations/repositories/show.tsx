@@ -242,8 +242,7 @@ export default function RepositoryShow({
                                     <DropdownMenuItem asChild>
                                         <Link
                                             href={edit.url({
-                                                organization:
-                                                    organization.slug,
+                                                organization: organization.slug,
                                                 repository: repository.uuid,
                                             })}
                                         >

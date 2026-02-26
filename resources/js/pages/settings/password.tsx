@@ -36,9 +36,7 @@ export default function Password({ hasPassword }: { hasPassword: boolean }) {
             <SettingsLayout>
                 <div className="space-y-6">
                     <HeadingSmall
-                        title={
-                            hasPassword ? 'Update password' : 'Set password'
-                        }
+                        title={hasPassword ? 'Update password' : 'Set password'}
                         description="Ensure your account is using a long, random password to stay secure"
                     />
 
