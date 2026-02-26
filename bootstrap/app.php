@@ -56,6 +56,10 @@ return Application::configure(basePath: dirname(__DIR__))
         Integration::handles($exceptions);
 
         $exceptions->respond(function (Response $response) {
+            if (app()->hasDebugModeEnabled() && $response->getStatusCode() === 500) {
+                return $response;
+            }
+
             if (in_array($response->getStatusCode(), [403, 404, 500, 503])) {
                 return Inertia::render('error', [
                     'status' => $response->getStatusCode(),

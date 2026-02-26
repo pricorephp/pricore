@@ -5,6 +5,8 @@ namespace App\Domains\Repository\Services\GitProviders;
 use App\Domains\Repository\Contracts\Data\RepositorySuggestionData;
 use App\Domains\Repository\Exceptions\GitProviderException;
 use Illuminate\Http\Client\PendingRequest;
+use Illuminate\Http\Client\RequestException;
+use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -21,7 +23,70 @@ class GitHubProvider extends AbstractGitProvider
             ])
             ->when($token, fn (PendingRequest $http) => $http->withToken($token))
             ->timeout(30)
-            ->retry(3, 1000);
+            ->retry(
+                times: 3,
+                sleepMilliseconds: function (int $attempt, \Throwable $exception) {
+                    $response = $exception instanceof RequestException ? $exception->response : null;
+
+                    if ($response && $this->isRateLimited($response)) {
+                        return $this->calculateRateLimitDelay($response);
+                    }
+
+                    // Exponential backoff: 1s, 5s, 15s
+                    return (int) (1000 * pow(5, $attempt - 1));
+                },
+                when: function (\Throwable $exception): bool {
+                    $response = $exception instanceof RequestException ? $exception->response : null;
+
+                    if ($response && $this->isRateLimited($response)) {
+                        Log::warning('GitHub API rate limit hit, retrying after delay', [
+                            'repository' => $this->repositoryIdentifier,
+                            'remaining' => $response->header('X-RateLimit-Remaining'),
+                            'reset' => $response->header('X-RateLimit-Reset'),
+                        ]);
+
+                        return true;
+                    }
+
+                    // Retry on server errors
+                    if ($response) {
+                        return $response->serverError();
+                    }
+
+                    return false;
+                },
+                throw: true,
+            )
+            ->withResponseMiddleware(function (\Psr\Http\Message\ResponseInterface $response) {
+                $remaining = $response->getHeaderLine('X-RateLimit-Remaining');
+
+                if ($remaining !== '' && (int) $remaining < 100) {
+                    Log::warning('GitHub API rate limit running low', [
+                        'repository' => $this->repositoryIdentifier,
+                        'remaining' => $remaining,
+                        'reset' => $response->getHeaderLine('X-RateLimit-Reset'),
+                    ]);
+                }
+
+                return $response;
+            });
+    }
+
+    protected function isRateLimited(Response $response): bool
+    {
+        return in_array($response->status(), [403, 429])
+            && $response->header('X-RateLimit-Remaining') === '0';
+    }
+
+    /**
+     * Calculate delay in milliseconds until the rate limit resets (capped at 60s).
+     */
+    protected function calculateRateLimitDelay(Response $response): int
+    {
+        $resetTimestamp = (int) $response->header('X-RateLimit-Reset');
+        $delaySeconds = max(0, $resetTimestamp - time());
+
+        return min($delaySeconds, 60) * 1000;
     }
 
     /**

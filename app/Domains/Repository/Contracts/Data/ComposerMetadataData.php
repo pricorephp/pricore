@@ -86,7 +86,7 @@ class ComposerMetadataData extends Data
      * Extract version from reference (tag or branch name).
      * Branch names are prefixed with "dev-" for Composer compatibility.
      */
-    protected static function extractVersion(string $ref): string
+    public static function extractVersion(string $ref): string
     {
         // Remove 'v' prefix if present (e.g., v1.0.0 -> 1.0.0)
         if (str_starts_with($ref, 'v') && preg_match('/^v\d/', $ref)) {
