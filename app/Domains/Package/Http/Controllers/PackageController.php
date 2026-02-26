@@ -9,6 +9,7 @@ use App\Domains\Package\Contracts\Data\PackageVersionData;
 use App\Http\Controllers\Controller;
 use App\Models\Organization;
 use App\Models\Package;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -33,13 +34,25 @@ class PackageController extends Controller
         ]);
     }
 
-    public function show(Organization $organization, Package $package): Response
+    public function show(Request $request, Organization $organization, Package $package): Response
     {
         $package->load('organization', 'repository');
 
-        $versions = $package->versions()
-            ->orderBySemanticVersion('desc')
+        $query = $request->query('query', '');
+        $type = $request->query('type', '');
+
+        $versionsQuery = $package->versions()
+            ->when($query, fn ($q) => $q->where(function ($q) use ($query) {
+                $q->whereLike('version', "%{$query}%")
+                    ->orWhereLike('source_reference', "%{$query}%");
+            }))
+            ->when($type === 'stable', fn ($q) => $q->stable())
+            ->when($type === 'dev', fn ($q) => $q->dev())
+            ->orderBySemanticVersion('desc');
+
+        $versions = $versionsQuery
             ->paginate(15)
+            ->withQueryString()
             ->through(fn ($version) => PackageVersionData::fromModel(
                 $version,
                 $package->repository?->provider,
@@ -52,6 +65,10 @@ class PackageController extends Controller
             'organization' => OrganizationData::fromModel($organization),
             'package' => PackageData::fromModel($package),
             'versions' => $versions,
+            'filters' => [
+                'query' => $query,
+                'type' => $type,
+            ],
             'composerRepositoryUrl' => $composerRepositoryUrl,
             'downloadStats' => $this->downloadStats->handle($package),
         ]);

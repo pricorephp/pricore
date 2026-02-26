@@ -5,6 +5,14 @@ import { VersionDownloads } from '@/components/stats/version-downloads';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import {
     Table,
     TableBody,
@@ -13,12 +21,22 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
+import { useDebounce } from '@/hooks/use-debounce';
 import AppLayout from '@/layouts/app-layout';
 import { createOrganizationBreadcrumb } from '@/lib/breadcrumbs';
-import { Head, Link, usePage } from '@inertiajs/react';
-import { Check, Copy, Download, GitBranch, Globe, Lock } from 'lucide-react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
+import {
+    Check,
+    Copy,
+    Download,
+    GitBranch,
+    Globe,
+    Lock,
+    Search,
+    X,
+} from 'lucide-react';
 import { DateTime } from 'luxon';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 type OrganizationData =
     App.Domains.Organization.Contracts.Data.OrganizationData;
@@ -42,6 +60,10 @@ interface PackageShowProps {
         last_page: number;
         per_page: number;
         total: number;
+    };
+    filters: {
+        query: string;
+        type: string;
     };
     composerRepositoryUrl: string;
 }
@@ -122,11 +144,53 @@ export default function PackageShow({
     package: pkg,
     downloadStats,
     versions,
+    filters,
     composerRepositoryUrl,
 }: PackageShowProps) {
     const { auth } = usePage<{
         auth: { organizations: OrganizationData[] };
     }>().props;
+
+    const [queryFilter, setQueryFilter] = useState(filters.query);
+    const [typeFilter, setTypeFilter] = useState(filters.type || 'all');
+
+    const debouncedQuery = useDebounce(queryFilter, 300);
+
+    const isInitialMount = useRef(true);
+
+    useEffect(() => {
+        if (isInitialMount.current) {
+            isInitialMount.current = false;
+
+            return;
+        }
+
+        const params: Record<string, string> = {};
+        if (debouncedQuery) {
+            params.query = debouncedQuery;
+        }
+        if (typeFilter && typeFilter !== 'all') {
+            params.type = typeFilter;
+        }
+
+        router.get(
+            `/organizations/${organization.slug}/packages/${pkg.uuid}`,
+            params,
+            {
+                preserveScroll: true,
+                preserveState: true,
+                replace: true,
+            },
+        );
+    }, [debouncedQuery, typeFilter, organization.slug, pkg.uuid]);
+
+    const hasActiveFilters =
+        queryFilter !== '' || typeFilter !== 'all';
+
+    const clearFilters = () => {
+        setQueryFilter('');
+        setTypeFilter('all');
+    };
 
     const breadcrumbs = [
         createOrganizationBreadcrumb(organization, auth.organizations),
@@ -258,10 +322,50 @@ export default function PackageShow({
                         title="Versions"
                         description={`${versions.total} version${versions.total === 1 ? '' : 's'} available`}
                     />
+
+                    <div className="flex flex-wrap items-center gap-3">
+                        <div className="relative min-w-48 flex-1">
+                            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                            <Input
+                                placeholder="Filter by version or source hash..."
+                                value={queryFilter}
+                                onChange={(e) =>
+                                    setQueryFilter(e.target.value)
+                                }
+                                className="pl-9"
+                            />
+                        </div>
+                        <Select
+                            value={typeFilter}
+                            onValueChange={setTypeFilter}
+                        >
+                            <SelectTrigger className="w-40">
+                                <SelectValue placeholder="All types" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">All types</SelectItem>
+                                <SelectItem value="stable">Stable</SelectItem>
+                                <SelectItem value="dev">Dev</SelectItem>
+                            </SelectContent>
+                        </Select>
+                        {hasActiveFilters && (
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={clearFilters}
+                            >
+                                <X className="mr-1 h-4 w-4" />
+                                Clear filters
+                            </Button>
+                        )}
+                    </div>
+
                     {versions.data.length === 0 ? (
                         <Card>
                             <CardContent className="py-8 text-center text-muted-foreground">
-                                No versions available yet.
+                                {hasActiveFilters
+                                    ? 'No versions match the current filters.'
+                                    : 'No versions available yet.'}
                             </CardContent>
                         </Card>
                     ) : (
