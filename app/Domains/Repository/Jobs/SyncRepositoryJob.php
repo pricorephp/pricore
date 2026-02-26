@@ -5,6 +5,7 @@ namespace App\Domains\Repository\Jobs;
 use App\Domains\Repository\Actions\CollectRefsAction;
 use App\Domains\Repository\Actions\CreateGitCloneAction;
 use App\Domains\Repository\Actions\CreateSyncLogAction;
+use App\Domains\Repository\Actions\FilterChangedRefsAction;
 use App\Domains\Repository\Contracts\Data\RefData;
 use App\Domains\Repository\Contracts\Enums\RepositorySyncStatus;
 use App\Domains\Repository\Contracts\Enums\SyncStatus;
@@ -44,6 +45,7 @@ class SyncRepositoryJob implements ShouldBeUnique, ShouldQueue
         CreateSyncLogAction $createSyncLogAction,
         CollectRefsAction $collectRefsAction,
         CreateGitCloneAction $createGitCloneAction,
+        FilterChangedRefsAction $filterChangedRefsAction,
     ): void {
         $syncLog = $createSyncLogAction->handle($this->repository);
 
@@ -54,15 +56,30 @@ class SyncRepositoryJob implements ShouldBeUnique, ShouldQueue
 
             $refs = $collectRefsAction->handle($provider);
 
+            $totalRefs = $refs->all->count();
+            $filteredRefs = $filterChangedRefsAction->handle($refs, $this->repository);
+            $skippedCount = $totalRefs - $filteredRefs->all->count();
+
             $syncLog->update([
                 'details' => [
                     'tags_found' => $refs->tags->count(),
                     'branches_found' => $refs->branches->count(),
-                    'total_refs' => $refs->all->count(),
+                    'total_refs' => $totalRefs,
+                    'refs_filtered' => $skippedCount,
+                    'refs_to_sync' => $filteredRefs->all->count(),
                 ],
             ]);
 
-            if ($refs->all->count() === 0) {
+            if ($skippedCount > 0) {
+                Log::info('Filtered unchanged refs', [
+                    'repository' => $this->repository->name,
+                    'total_refs' => $totalRefs,
+                    'filtered' => $skippedCount,
+                    'remaining' => $filteredRefs->all->count(),
+                ]);
+            }
+
+            if ($filteredRefs->all->count() === 0) {
                 $this->completeSyncLogEmpty($syncLog);
 
                 return;
@@ -70,7 +87,7 @@ class SyncRepositoryJob implements ShouldBeUnique, ShouldQueue
 
             $clonePath = $createGitCloneAction->handle($this->repository);
 
-            $jobs = collect($refs->all->toArray())->map(
+            $jobs = collect($filteredRefs->all->toArray())->map(
                 fn (array $refData) => new SyncRefJob(
                     $this->repository,
                     RefData::from($refData),
@@ -111,9 +128,11 @@ class SyncRepositoryJob implements ShouldBeUnique, ShouldQueue
 
     protected function validateProvider(GitProviderInterface $provider): void
     {
-        if (! $provider->validateCredentials()) {
-            throw new GitProviderException('Failed to validate repository access');
+        if ($provider->validateCredentials()) {
+            return;
         }
+
+        throw new GitProviderException('Failed to validate repository access');
     }
 
     protected function completeSyncLogEmpty(RepositorySyncLog $syncLog): void
