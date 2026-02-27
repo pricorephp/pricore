@@ -16,7 +16,7 @@ class GitHubWebhookController extends Controller
 
         return match ($event) {
             'ping' => response()->json(['message' => 'pong']),
-            'push', 'release' => $this->handleSyncEvent($repository),
+            'push', 'release', 'delete' => $this->handleSyncEvent($repository),
             default => response()->json(['message' => 'Event ignored.'], 200),
         };
     }

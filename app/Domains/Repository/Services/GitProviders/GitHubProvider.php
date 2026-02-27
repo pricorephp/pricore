@@ -255,7 +255,7 @@ class GitHubProvider extends AbstractGitProvider
             $response = $this->http->post("/repos/{$this->repositoryIdentifier}/hooks", [
                 'name' => 'web',
                 'active' => true,
-                'events' => ['push', 'release'],
+                'events' => ['push', 'release', 'delete'],
                 'config' => [
                     'url' => $url,
                     'content_type' => 'json',
