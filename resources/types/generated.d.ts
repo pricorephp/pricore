@@ -162,6 +162,23 @@ export type GitProvider = 'github' | 'gitlab' | 'bitbucket' | 'git';
 export type RepositorySyncStatus = 'ok' | 'failed' | 'pending';
 export type SyncStatus = 'pending' | 'success' | 'failed';
 }
+declare namespace App.Domains.Search.Contracts.Data {
+export type SearchPackageData = {
+uuid: string;
+name: string;
+description: string | null;
+organizationName: string;
+organizationSlug: string;
+};
+export type SearchRepositoryData = {
+uuid: string;
+name: string;
+provider: string;
+providerLabel: string;
+organizationName: string;
+organizationSlug: string;
+};
+}
 declare namespace App.Domains.Token.Contracts.Data {
 export type AccessTokenData = {
 uuid: string;
