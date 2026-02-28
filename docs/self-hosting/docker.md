@@ -1,5 +1,9 @@
 # Docker Deployment
 
+::: tip Don't want to self-host?
+[Pricore Cloud](https://pricore.dev) provides a fully managed registry with zero setup, so you can focus on building, not infrastructure.
+:::
+
 Deploy Pricore with Docker Compose for a simple, production-ready setup.
 
 ## Quick Start

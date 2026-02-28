@@ -38,3 +38,34 @@
   border-color: var(--vp-c-brand-2);
   background-color: var(--vp-c-brand-2);
 }
+
+/* Tip container - force green instead of brand color */
+:root {
+  --vp-custom-block-tip-border: #10b981;
+  --vp-custom-block-tip-text: #059669;
+  --vp-custom-block-tip-bg: rgba(16, 185, 129, 0.1);
+  --vp-custom-block-tip-code-bg: rgba(16, 185, 129, 0.12);
+}
+
+.dark {
+  --vp-custom-block-tip-border: #34d399;
+  --vp-custom-block-tip-text: #6ee7b7;
+  --vp-custom-block-tip-bg: rgba(16, 185, 129, 0.14);
+  --vp-custom-block-tip-code-bg: rgba(16, 185, 129, 0.16);
+}
+
+.custom-block.tip a {
+  color: #059669;
+}
+
+.custom-block.tip a:hover {
+  color: #047857;
+}
+
+.dark .custom-block.tip a {
+  color: #6ee7b7;
+}
+
+.dark .custom-block.tip a:hover {
+  color: #a7f3d0;
+}

@@ -1,36 +1,10 @@
 # Self-Hosting Overview
 
+::: tip Don't want to self-host?
+[Pricore Cloud](https://pricore.dev) provides a fully managed registry with zero setup, so you can focus on building, not infrastructure.
+:::
+
 Pricore is designed for self-hosting, giving you complete control over your private package registry.
-
-## Architecture
-
-Pricore consists of several components:
-
-```
-┌─────────────────────────────────────────────────────────┐
-│                    Load Balancer                        │
-│                   (nginx/Caddy)                         │
-└─────────────────────────────────────────────────────────┘
-                           │
-                           ▼
-┌─────────────────────────────────────────────────────────┐
-│                    FrankenPHP                           │
-│              (Web Server + PHP Runtime)                 │
-│                                                         │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────┐  │
-│  │   Web UI    │  │  Composer   │  │     Webhook     │  │
-│  │  (Inertia)  │  │     API     │  │    Endpoints    │  │
-│  └─────────────┘  └─────────────┘  └─────────────────┘  │
-└─────────────────────────────────────────────────────────┘
-         │                  │                  │
-         ▼                  ▼                  ▼
-┌─────────────┐    ┌─────────────┐    ┌─────────────────┐
-│  Database   │    │    Redis    │    │   Git Providers │
-│  (SQLite/   │    │  (Queues,   │    │  (GitHub/GitLab │
-│   MySQL/    │    │   Cache,    │    │   /Bitbucket)   │
-│   Postgres) │    │  Sessions)  │    │                 │
-└─────────────┘    └─────────────┘    └─────────────────┘
-```
 
 ## Components
 
