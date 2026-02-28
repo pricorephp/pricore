@@ -82,8 +82,11 @@ repositoryUuid: string;
 status: App.Domains.Repository.Contracts.Enums.SyncStatus;
 statusLabel: string;
 startedAt: string;
+completedAt: string | null;
 versionsAdded: number;
 versionsUpdated: number;
+versionsRemoved: number;
+errorMessage: string | null;
 };
 }
 declare namespace App.Domains.Organization.Contracts.Enums {
