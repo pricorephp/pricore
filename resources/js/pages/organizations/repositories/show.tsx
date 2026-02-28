@@ -338,7 +338,7 @@ export default function RepositoryShow({
                                         <span className="text-sm font-medium">
                                             {log.statusLabel}
                                         </span>
-                                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                             <span>
                                                 {DateTime.fromISO(
                                                     log.startedAt,
