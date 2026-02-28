@@ -17,7 +17,7 @@ Manage your packages with a registry that just works.
 </p>
 
 <p align="center">
-<img src="./docs/public/pricore-landing.png" alt="Pricore Dashboard">
+<img src="./docs/public/pricore-landing.png?v=20260228" alt="Pricore Dashboard">
 </p>
 
 ---
