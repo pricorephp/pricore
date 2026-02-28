@@ -11,6 +11,7 @@ import { usePage } from '@inertiajs/react';
 
 export function NavUser() {
     const { auth } = usePage<SharedData>().props;
+    const user = auth.user!;
     const getInitials = useInitials();
 
     return (
@@ -22,14 +23,14 @@ export function NavUser() {
                 >
                     <Avatar className="size-8">
                         <AvatarImage
-                            src={auth.user.avatar}
-                            alt={auth.user.name}
+                            src={user.avatar ?? undefined}
+                            alt={user.name}
                         />
                         <AvatarFallback className="bg-primary text-xs text-primary-foreground">
-                            {getInitials(auth.user.name)}
+                            {getInitials(user.name)}
                         </AvatarFallback>
                     </Avatar>
-                    <span className="font-medium">{auth.user.name}</span>
+                    <span className="font-medium">{user.name}</span>
                 </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent
@@ -37,7 +38,7 @@ export function NavUser() {
                 align="end"
                 side="bottom"
             >
-                <UserMenuContent user={auth.user} />
+                <UserMenuContent user={user} />
             </DropdownMenuContent>
         </DropdownMenu>
     );

@@ -16,7 +16,7 @@ Settings.defaultLocale = 'en';
 const appName = import.meta.env.VITE_APP_NAME || 'Pricore';
 
 // Handle flash messages via router events
-let previousFlash: SharedData['flash'] = undefined;
+let previousFlash: SharedData['flash'] = null;
 
 router.on('success', (event) => {
     const props = event.detail.page.props as unknown as SharedData;

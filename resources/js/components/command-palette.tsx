@@ -6,6 +6,7 @@ import {
     CommandItem,
     CommandList,
 } from '@/components/ui/command';
+import { type SharedData } from '@/types';
 import { router, usePage } from '@inertiajs/react';
 import {
     GitBranch,
@@ -19,26 +20,6 @@ import {
     Wrench,
 } from 'lucide-react';
 import { useCallback } from 'react';
-
-type OrganizationData =
-    App.Domains.Organization.Contracts.Data.OrganizationData;
-
-interface SearchPackageData {
-    uuid: string;
-    name: string;
-    description: string | null;
-    organizationName: string;
-    organizationSlug: string;
-}
-
-interface SearchRepositoryData {
-    uuid: string;
-    name: string;
-    provider: string;
-    providerLabel: string;
-    organizationName: string;
-    organizationSlug: string;
-}
 
 const staticPages = [
     { name: 'Dashboard', href: '/', icon: LayoutDashboard },
@@ -66,15 +47,10 @@ export function CommandPalette({
     open: boolean;
     onOpenChange: (open: boolean) => void;
 }) {
-    const page = usePage<{
-        auth: { organizations: OrganizationData[] };
-        search: {
-            packages: SearchPackageData[];
-            repositories: SearchRepositoryData[];
-        };
-    }>();
+    const page = usePage<SharedData>();
     const organizations = page.props.auth.organizations;
-    const { packages, repositories } = page.props.search;
+    const packages = page.props.search?.packages ?? [];
+    const repositories = page.props.search?.repositories ?? [];
 
     const navigate = useCallback(
         (href: string) => {

@@ -6,6 +6,10 @@ use App\Domains\Organization\Contracts\Data\OrganizationData;
 use App\Domains\Organization\Contracts\Data\OrganizationPermissionsData;
 use App\Domains\Search\Contracts\Data\SearchPackageData;
 use App\Domains\Search\Contracts\Data\SearchRepositoryData;
+use App\Http\Data\AuthData;
+use App\Http\Data\FlashData;
+use App\Http\Data\SearchData;
+use App\Http\Data\UserData;
 use App\Models\Package;
 use App\Models\Repository;
 use Illuminate\Http\Request;
@@ -41,34 +45,33 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
+        $user = $request->user();
+
         return [
             ...parent::share($request),
             'name' => config('app.name'),
             'version' => config('app.version'),
-            'auth' => [
-                'user' => $request->user(),
-                'organizations' => $request->user()
-                    ? $request->user()->organizations()->get()->map(function ($org) use ($request) {
+            'auth' => new AuthData(
+                user: $user ? UserData::fromModel($user) : null,
+                organizations: $user
+                    ? $user->organizations()->get()->map(function ($org) use ($user) {
                         $data = OrganizationData::fromModel($org);
-                        $data->permissions = OrganizationPermissionsData::fromUserAndOrganization($request->user(), $org);
+                        $data->permissions = OrganizationPermissionsData::fromUserAndOrganization($user, $org);
 
                         return $data;
-                    })
+                    })->all()
                     : [],
-            ],
-            'search' => $request->user() ? fn () => $this->searchData($request) : [],
+            ),
+            'search' => $user ? fn () => $this->searchData($request) : new SearchData(packages: [], repositories: []),
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
-            'flash' => [
-                'status' => $request->session()->get('status') ?? $request->session()->get('success'),
-                'error' => $request->session()->get('error'),
-            ],
+            'flash' => new FlashData(
+                status: $request->session()->get('status') ?? $request->session()->get('success'),
+                error: $request->session()->get('error'),
+            ),
         ];
     }
 
-    /**
-     * @return array{packages: array<int, SearchPackageData>, repositories: array<int, SearchRepositoryData>}
-     */
-    private function searchData(Request $request): array
+    private function searchData(Request $request): SearchData
     {
         /** @var \App\Models\User $user */
         $user = $request->user();
@@ -88,9 +91,9 @@ class HandleInertiaRequests extends Middleware
             ->map(fn (Repository $repository) => SearchRepositoryData::fromModel($repository))
             ->all();
 
-        return [
-            'packages' => $packages,
-            'repositories' => $repositories,
-        ];
+        return new SearchData(
+            packages: $packages,
+            repositories: $repositories,
+        );
     }
 }

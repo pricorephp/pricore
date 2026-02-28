@@ -194,3 +194,36 @@ expiresAt: string | null;
 organizationUuid: string | null;
 };
 }
+declare namespace App.Http.Data {
+export type AuthData = {
+user: App.Http.Data.UserData | null;
+organizations: Array<any>;
+};
+export type FlashData = {
+status: string | null;
+error: string | null;
+};
+export type SearchData = {
+packages: Array<any>;
+repositories: Array<any>;
+};
+export type SharedData = {
+name: string;
+version: string | null;
+auth: App.Http.Data.AuthData;
+search: App.Http.Data.SearchData | null;
+sidebarOpen: boolean;
+flash: App.Http.Data.FlashData | null;
+};
+export type UserData = {
+uuid: string;
+name: string;
+email: string;
+avatar: string | null;
+hasPassword: boolean;
+emailVerifiedAt: string | null;
+twoFactorEnabled: boolean;
+createdAt: string | null;
+updatedAt: string | null;
+};
+}

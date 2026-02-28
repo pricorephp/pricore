@@ -6,7 +6,7 @@ import {
     SidebarHeader,
 } from '@/components/ui/sidebar';
 import { dashboard } from '@/routes';
-import { type NavItem } from '@/types';
+import { type NavItem, type SharedData } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
 import {
     BookOpen,
@@ -18,14 +18,8 @@ import {
 import { useMemo } from 'react';
 import AppLogoIcon from './app-logo-icon';
 
-type OrganizationData =
-    App.Domains.Organization.Contracts.Data.OrganizationData;
-
 export function AppSidebar() {
-    const page = usePage<{
-        auth: { organizations: OrganizationData[] };
-        version: string | null;
-    }>();
+    const page = usePage<SharedData>();
     const url = page.url;
     const version = page.props.version;
     const organizations = page.props.auth.organizations;
