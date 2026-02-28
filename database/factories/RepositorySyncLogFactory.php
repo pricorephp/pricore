@@ -30,6 +30,7 @@ class RepositorySyncLogFactory extends Factory
             'details' => null,
             'versions_added' => fake()->numberBetween(0, 10),
             'versions_updated' => fake()->numberBetween(0, 5),
+            'versions_removed' => fake()->numberBetween(0, 3),
         ];
     }
 
@@ -44,6 +45,7 @@ class RepositorySyncLogFactory extends Factory
             'error_message' => null,
             'versions_added' => 0,
             'versions_updated' => 0,
+            'versions_removed' => 0,
         ]);
     }
 
@@ -80,6 +82,7 @@ class RepositorySyncLogFactory extends Factory
             ]),
             'versions_added' => 0,
             'versions_updated' => 0,
+            'versions_removed' => 0,
         ]);
     }
 }

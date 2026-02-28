@@ -65,6 +65,7 @@ class SyncRepositoryJob implements ShouldBeUnique, ShouldQueue
             $staleVersionsRemoved = $removeStaleVersionsAction->handle($this->repository, $refs);
 
             $syncLog->update([
+                'versions_removed' => $staleVersionsRemoved,
                 'details' => [
                     'tags_found' => $refs->tags->count(),
                     'branches_found' => $refs->branches->count(),

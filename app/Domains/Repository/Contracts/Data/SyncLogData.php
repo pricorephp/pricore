@@ -20,6 +20,7 @@ class SyncLogData extends Data
         public ?string $errorMessage,
         public int $versionsAdded,
         public int $versionsUpdated,
+        public int $versionsRemoved,
         /** @var array<string, mixed>|null */
         public ?array $details,
     ) {}
@@ -35,6 +36,7 @@ class SyncLogData extends Data
             errorMessage: $syncLog->error_message,
             versionsAdded: $syncLog->versions_added,
             versionsUpdated: $syncLog->versions_updated,
+            versionsRemoved: $syncLog->versions_removed,
             details: $syncLog->details,
         );
     }
