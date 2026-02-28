@@ -15,7 +15,7 @@ class RecordPackageViewTask
             'package_uuid' => $package->uuid,
         ]);
 
-        if ($view->exists && $view->last_viewed_at?->isAfter(now()->subMinute())) {
+        if ($view->exists && $view->last_viewed_at->isAfter(now()->subMinute())) {
             return;
         }
 
