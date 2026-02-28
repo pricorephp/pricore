@@ -1,4 +1,4 @@
-import { ArrowUpRight } from 'lucide-react';
+import { ArrowUpRight, Package } from 'lucide-react';
 import { DateTime } from 'luxon';
 
 type PackageData = App.Domains.Package.Contracts.Data.PackageData;
@@ -12,6 +12,7 @@ export default function PackageCard({ package: pkg }: PackageCardProps) {
     return (
         <>
             <div className="flex items-center gap-2">
+                <Package className="size-4 text-muted-foreground" />
                 <span className="font-medium transition-colors group-hover:text-primary">
                     {pkg.name}
                 </span>

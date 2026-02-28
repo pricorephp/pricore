@@ -10,9 +10,9 @@ import { type NavItem } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
 import {
     BookOpen,
-    Box,
     GitBranch,
     LayoutDashboard,
+    Package,
     Settings,
 } from 'lucide-react';
 import { useMemo } from 'react';
@@ -65,7 +65,7 @@ export function AppSidebar() {
             {
                 title: 'Packages',
                 href: `/organizations/${currentOrgSlug}/packages`,
-                icon: Box,
+                icon: Package,
             },
         ];
 
