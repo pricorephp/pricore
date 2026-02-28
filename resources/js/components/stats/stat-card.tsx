@@ -90,7 +90,7 @@ export function StatCard({
                 </div>
             </CardHeader>
             <CardContent className="pt-1">
-                <div className="text-3xl font-semibold tracking-tight">
+                <div className="text-3xl font-semibold tracking-tight tabular-nums">
                     {value}
                 </div>
                 {description && (
