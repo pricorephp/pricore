@@ -13,6 +13,10 @@ Manage your packages with a registry that just works.
 </p>
 
 <p align="center">
+<a href="https://pricore.dev">Website</a> · <a href="https://docs.pricore.dev">Documentation</a> · <a href="https://app.pricore.dev">Hosted Pricore</a>
+</p>
+
+<p align="center">
 <img src="./docs/public/pricore-landing.png" alt="Pricore Dashboard">
 </p>
 
@@ -23,6 +27,8 @@ Manage your packages with a registry that just works.
 Managing private PHP packages should be simple. Pricore makes it that way. It provides a centralized, reliable way to store package metadata, control access with tokens, and integrate seamlessly with Git-based workflows.
 
 With Pricore, teams gain full ownership of their package ecosystem while keeping dependency management fast, consistent, and transparent.
+
+Don't want to self-host? Try [Hosted Pricore](https://app.pricore.dev) — a fully managed registry with zero setup.
 
 ### Why Pricore?
 
@@ -69,183 +75,11 @@ docker compose exec app php artisan pricore:install
 
 > The entrypoint automatically generates an `APP_KEY`, creates the SQLite database, runs migrations, and caches configuration on first boot. For production, you can provide your own `APP_KEY` via environment variable.
 
-### Docker Services
-
-| Service | Description | Port |
-|---------|-------------|------|
-| `app` | FrankenPHP web server | 8000 |
-| `horizon` | Queue worker with Horizon dashboard | - |
-| `scheduler` | Runs scheduled tasks | - |
-| `redis` | Cache, sessions, and queues | - |
-
-## Manual Installation
-
-For development or custom deployments. Requires PHP 8.4+, Node.js 22+, Redis, and SQLite/MySQL/PostgreSQL.
-
-```bash
-# Clone the repository
-git clone https://github.com/pricorephp/pricore.git
-cd pricore
-
-# Install dependencies
-composer install
-npm install
-
-# Configure environment
-cp .env.example .env
-php artisan key:generate
-
-# Run migrations
-php artisan migrate
-
-# Build frontend assets
-npm run build
-
-# Start the development server
-composer run dev
-```
-
-## Configuration
-
-### Environment Variables
-
-Key configuration options in your `.env` file:
-
-```bash
-# Application
-APP_NAME=Pricore
-APP_ENV=production
-APP_URL=https://pricore.yourcompany.com
-
-# Database (SQLite, MySQL, or PostgreSQL)
-DB_CONNECTION=sqlite
-DB_DATABASE=/path/to/database.sqlite
-
-# Redis (required for queues)
-REDIS_HOST=127.0.0.1
-REDIS_PORT=6379
-
-# Queue & Cache
-QUEUE_CONNECTION=redis
-CACHE_STORE=redis
-SESSION_DRIVER=redis
-```
-
-## Using Pricore with Composer
-
-### 1. Create an Access Token
-
-1. Log in to your Pricore instance
-2. Navigate to your organization settings
-3. Create a new access token with the required scopes
-
-### 2. Configure Composer
-
-Add Pricore as a repository in your project's `composer.json`:
-
-```json
-{
-    "repositories": [
-        {
-            "type": "composer",
-            "url": "https://pricore.yourcompany.com/org/your-organization"
-        }
-    ]
-}
-```
-
-### 3. Authenticate
-
-```bash
-composer config --global --auth http-basic.pricore.yourcompany.com token YOUR_ACCESS_TOKEN
-```
-
-### 4. Install Packages
-
-```bash
-composer require your-vendor/your-private-package
-```
-
-## Development
-
-### Running the Development Server
-
-```bash
-# Start all services (server, queue, logs, vite)
-composer run dev
-
-# Or with SSR support
-composer run dev:ssr
-```
-
-### Code Quality
-
-```bash
-# Run tests
-composer test
-
-# Static analysis
-composer run phpstan
-
-# Format PHP code
-composer run pint
-
-# Format frontend code
-npm run format
-
-# Type-check TypeScript
-npm run types
-```
-
-### Project Structure
-
-```
-app/
-├── Domains/           # Domain-driven design modules
-│   └── Repository/    # Git repository syncing logic
-├── Http/Controllers/  # HTTP controllers
-├── Models/            # Eloquent models
-└── Services/          # Application services
-
-resources/
-├── js/
-│   ├── components/    # React components
-│   ├── layouts/       # Page layouts
-│   └── pages/         # Inertia pages
-└── views/             # Blade templates (minimal)
-```
-
-## Testing
-
-```bash
-# Run all tests
-php artisan test
-
-# Run specific test file
-php artisan test tests/Feature/ExampleTest.php
-
-# Run with coverage
-php artisan test --coverage
-```
+For manual installation, configuration, and production deployment guides, see the [documentation](https://docs.pricore.dev).
 
 ## Contributing
 
-We welcome contributions! Please follow these steps:
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Make your changes
-4. Run tests and linting (`composer test && composer run pint`)
-5. Commit your changes (`git commit -m 'feat: add amazing feature'`)
-6. Push to the branch (`git push origin feature/amazing-feature`)
-7. Open a Pull Request
-
-### Development Guidelines
-
-- Follow PSR-12 coding standards (enforced by Pint)
-- Write tests for new features
-- Update documentation as needed
-- Keep commits focused and atomic
+We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup, guidelines, and how to get started.
 
 ## Security
 
@@ -254,16 +88,6 @@ If you discover a security vulnerability, please send an email to pricore@maarte
 ## License
 
 Pricore is open-source software licensed under the [Apache License 2.0](LICENSE).
-
-## Acknowledgments
-
-Pricore is built on the shoulders of giants:
-
-- [Laravel](https://laravel.com) - The PHP framework
-- [Inertia.js](https://inertiajs.com) - Modern monolith approach
-- [React](https://react.dev) - UI library
-- [Tailwind CSS](https://tailwindcss.com) - Utility-first CSS
-- [FrankenPHP](https://frankenphp.dev) - Modern PHP app server
 
 ---
 
