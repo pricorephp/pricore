@@ -6,6 +6,7 @@ use App\Domains\Repository\Actions\CollectRefsAction;
 use App\Domains\Repository\Actions\CreateGitCloneAction;
 use App\Domains\Repository\Actions\CreateSyncLogAction;
 use App\Domains\Repository\Actions\FilterChangedRefsAction;
+use App\Domains\Repository\Actions\RemoveStaleVersionsAction;
 use App\Domains\Repository\Contracts\Data\RefData;
 use App\Domains\Repository\Contracts\Enums\RepositorySyncStatus;
 use App\Domains\Repository\Contracts\Enums\SyncStatus;
@@ -46,6 +47,7 @@ class SyncRepositoryJob implements ShouldBeUnique, ShouldQueue
         CollectRefsAction $collectRefsAction,
         CreateGitCloneAction $createGitCloneAction,
         FilterChangedRefsAction $filterChangedRefsAction,
+        RemoveStaleVersionsAction $removeStaleVersionsAction,
     ): void {
         $syncLog = $createSyncLogAction->handle($this->repository);
 
@@ -60,6 +62,8 @@ class SyncRepositoryJob implements ShouldBeUnique, ShouldQueue
             $filteredRefs = $filterChangedRefsAction->handle($refs, $this->repository);
             $skippedCount = $totalRefs - $filteredRefs->all->count();
 
+            $staleVersionsRemoved = $removeStaleVersionsAction->handle($this->repository, $refs);
+
             $syncLog->update([
                 'details' => [
                     'tags_found' => $refs->tags->count(),
@@ -67,6 +71,7 @@ class SyncRepositoryJob implements ShouldBeUnique, ShouldQueue
                     'total_refs' => $totalRefs,
                     'refs_filtered' => $skippedCount,
                     'refs_to_sync' => $filteredRefs->all->count(),
+                    'stale_versions_removed' => $staleVersionsRemoved,
                 ],
             ]);
 

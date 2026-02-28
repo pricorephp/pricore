@@ -141,6 +141,28 @@ it('rejects request when repository has no webhook secret', function () {
     )->assertForbidden();
 });
 
+it('accepts a delete event and dispatches sync', function () {
+    Queue::fake();
+
+    $repository = createRepositoryWithWebhook();
+    $payload = json_encode(['ref' => 'feature-branch', 'ref_type' => 'branch']);
+    $signature = signPayload($payload, 'test-webhook-secret');
+
+    $this->postJson(
+        route('webhooks.github', $repository->uuid),
+        json_decode($payload, true),
+        [
+            'X-Hub-Signature-256' => $signature,
+            'X-GitHub-Event' => 'delete',
+        ]
+    )->assertOk()
+        ->assertJson(['message' => 'Sync dispatched.']);
+
+    Queue::assertPushed(SyncRepositoryJob::class, function ($job) use ($repository) {
+        return $job->repository->uuid === $repository->uuid;
+    });
+});
+
 it('gracefully handles unknown event types', function () {
     $repository = createRepositoryWithWebhook();
     $payload = json_encode(['action' => 'created']);
