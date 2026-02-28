@@ -4,6 +4,7 @@ import { SidebarTrigger } from '@/components/ui/sidebar';
 import { useCommandPalette } from '@/hooks/use-command-palette';
 import { type BreadcrumbItem as BreadcrumbItemType } from '@/types';
 import { SearchIcon } from 'lucide-react';
+import { useMemo } from 'react';
 
 export function AppSidebarHeader({
     breadcrumbs = [],
@@ -11,6 +12,10 @@ export function AppSidebarHeader({
     breadcrumbs?: BreadcrumbItemType[];
 }) {
     const { setOpen } = useCommandPalette();
+    const isMac = useMemo(
+        () => navigator.platform.toUpperCase().includes('MAC'),
+        [],
+    );
 
     return (
         <header className="flex h-16 shrink-0 items-center justify-between gap-2 border-b px-6 md:px-4">
@@ -27,7 +32,7 @@ export function AppSidebarHeader({
                     <SearchIcon className="size-4" />
                     <span className="hidden lg:inline">Search...</span>
                     <kbd className="pointer-events-none hidden rounded border bg-muted px-1.5 font-mono text-[10px] font-medium select-none lg:inline">
-                        ⌘K
+                        {isMac ? '⌘K' : 'Ctrl+K'}
                     </kbd>
                 </button>
                 <NavUser />

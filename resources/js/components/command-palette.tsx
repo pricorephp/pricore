@@ -10,33 +10,33 @@ import { type SharedData } from '@/types';
 import { router, usePage } from '@inertiajs/react';
 import {
     GitBranch,
-    KeyRound,
-    LayoutDashboard,
+    Key,
+    LayoutGrid,
+    Lock,
     Package,
-    Palette,
+    Paintbrush,
     ShieldCheck,
     User,
     Users,
-    Wrench,
 } from 'lucide-react';
 import { useCallback } from 'react';
 
 const staticPages = [
-    { name: 'Dashboard', href: '/', icon: LayoutDashboard },
+    { name: 'Dashboard', href: '/', icon: LayoutGrid },
     { name: 'Profile', href: '/settings/profile', icon: User },
-    { name: 'Password', href: '/settings/password', icon: KeyRound },
-    { name: 'Appearance', href: '/settings/appearance', icon: Palette },
+    { name: 'Password', href: '/settings/password', icon: Lock },
+    { name: 'Appearance', href: '/settings/appearance', icon: Paintbrush },
     {
-        name: 'Two-Factor Authentication',
+        name: 'Two-Factor Auth',
         href: '/settings/two-factor',
         icon: ShieldCheck,
     },
     {
-        name: 'Git Credentials',
+        name: 'Git Providers',
         href: '/settings/git-credentials',
-        icon: Wrench,
+        icon: GitBranch,
     },
-    { name: 'Tokens', href: '/settings/tokens', icon: KeyRound },
+    { name: 'Tokens', href: '/settings/tokens', icon: Key },
     { name: 'Organizations', href: '/settings/organizations', icon: Users },
 ];
 
@@ -66,29 +66,23 @@ export function CommandPalette({
             <CommandList>
                 <CommandEmpty>No results found.</CommandEmpty>
 
-                <CommandGroup heading="Pages">
-                    {staticPages.map((page) => (
-                        <CommandItem
-                            key={page.href}
-                            onSelect={() => navigate(page.href)}
-                        >
-                            <page.icon className="size-4 opacity-60" />
-                            <span>{page.name}</span>
-                        </CommandItem>
-                    ))}
-                </CommandGroup>
-
-                {organizations.length > 0 && (
-                    <CommandGroup heading="Organizations">
-                        {organizations.map((org) => (
+                {repositories.length > 0 && (
+                    <CommandGroup heading="Repositories">
+                        {repositories.map((repo) => (
                             <CommandItem
-                                key={org.uuid}
+                                key={repo.uuid}
                                 onSelect={() =>
-                                    navigate(`/organizations/${org.slug}`)
+                                    navigate(
+                                        `/organizations/${repo.organizationSlug}/repositories/${repo.uuid}`,
+                                    )
                                 }
                             >
-                                <Users className="size-4 opacity-60" />
-                                <span>{org.name}</span>
+                                <GitBranch className="size-4 opacity-60" />
+                                <span>{repo.name}</span>
+                                <span className="ml-auto text-xs text-muted-foreground">
+                                    {repo.providerLabel} &middot;{' '}
+                                    {repo.organizationName}
+                                </span>
                             </CommandItem>
                         ))}
                     </CommandGroup>
@@ -115,27 +109,33 @@ export function CommandPalette({
                     </CommandGroup>
                 )}
 
-                {repositories.length > 0 && (
-                    <CommandGroup heading="Repositories">
-                        {repositories.map((repo) => (
+                {organizations.length > 0 && (
+                    <CommandGroup heading="Organizations">
+                        {organizations.map((org) => (
                             <CommandItem
-                                key={repo.uuid}
+                                key={org.uuid}
                                 onSelect={() =>
-                                    navigate(
-                                        `/organizations/${repo.organizationSlug}/repositories/${repo.uuid}`,
-                                    )
+                                    navigate(`/organizations/${org.slug}`)
                                 }
                             >
-                                <GitBranch className="size-4 opacity-60" />
-                                <span>{repo.name}</span>
-                                <span className="ml-auto text-xs text-muted-foreground">
-                                    {repo.providerLabel} &middot;{' '}
-                                    {repo.organizationName}
-                                </span>
+                                <Users className="size-4 opacity-60" />
+                                <span>{org.name}</span>
                             </CommandItem>
                         ))}
                     </CommandGroup>
                 )}
+
+                <CommandGroup heading="Pages">
+                    {staticPages.map((page) => (
+                        <CommandItem
+                            key={page.href}
+                            onSelect={() => navigate(page.href)}
+                        >
+                            <page.icon className="size-4 opacity-60" />
+                            <span>{page.name}</span>
+                        </CommandItem>
+                    ))}
+                </CommandGroup>
             </CommandList>
         </CommandDialog>
     );
