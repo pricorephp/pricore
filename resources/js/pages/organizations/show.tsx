@@ -52,6 +52,7 @@ export default function OrganizationShow({
                             title="Packages"
                             value={stats.packagesCount}
                             icon={Box}
+                            clickable
                         />
                     </Link>
 
@@ -62,6 +63,7 @@ export default function OrganizationShow({
                             title="Repositories"
                             value={stats.repositoriesCount}
                             icon={GitBranch}
+                            clickable
                         />
                     </Link>
 
@@ -72,6 +74,7 @@ export default function OrganizationShow({
                             title="Members"
                             value={stats.membersCount}
                             icon={Users}
+                            clickable
                         />
                     </Link>
 

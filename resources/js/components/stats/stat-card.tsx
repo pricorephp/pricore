@@ -13,6 +13,7 @@ interface StatCardProps {
     description?: string;
     icon?: LucideIcon;
     variant?: 'default' | 'success' | 'warning' | 'danger';
+    clickable?: boolean;
     className?: string;
 }
 
@@ -47,13 +48,20 @@ export function StatCard({
     description,
     icon: Icon,
     variant = 'default',
+    clickable = false,
     className,
 }: StatCardProps) {
     const StatusIcon = variant !== 'default' ? variantIcons[variant] : null;
     const styles = variantStyles[variant];
 
     return (
-        <Card className={cn('group cursor-pointer', styles.bg, className)}>
+        <Card
+            className={cn(
+                clickable && 'group cursor-pointer',
+                styles.bg,
+                className,
+            )}
+        >
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="font-medium text-muted-foreground">
                     {title}
@@ -63,8 +71,20 @@ export function StatCard({
                         <StatusIcon className={cn('h-4 w-4', styles.icon)} />
                     )}
                     {Icon && (
-                        <div className="rounded-md bg-muted/50 p-1.5 transition-colors group-hover:bg-primary/10">
-                            <Icon className="h-4 w-4 text-muted-foreground transition-colors group-hover:text-primary" />
+                        <div
+                            className={cn(
+                                'rounded-md bg-muted/50 p-1.5',
+                                clickable &&
+                                    'transition-colors group-hover:bg-primary/10',
+                            )}
+                        >
+                            <Icon
+                                className={cn(
+                                    'h-4 w-4 text-muted-foreground',
+                                    clickable &&
+                                        'transition-colors group-hover:text-primary',
+                                )}
+                            />
                         </div>
                     )}
                 </div>
