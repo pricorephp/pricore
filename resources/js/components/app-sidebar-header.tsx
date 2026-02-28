@@ -27,10 +27,10 @@ export function AppSidebarHeader({
                 <button
                     type="button"
                     onClick={() => setOpen(true)}
-                    className="flex items-center gap-2 rounded-md border px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
+                    className="flex h-8 cursor-pointer items-center gap-2 rounded-lg border border-input bg-background px-3 text-sm text-muted-foreground transition-all duration-150 hover:bg-accent hover:text-accent-foreground active:scale-[0.98]"
                 >
                     <SearchIcon className="size-4" />
-                    <span className="hidden lg:inline">Search...</span>
+                    <span className="mr-1 hidden lg:inline">Search...</span>
                     <kbd className="pointer-events-none hidden rounded border bg-muted px-1.5 font-mono text-[10px] font-medium select-none lg:inline">
                         {isMac ? '⌘K' : 'Ctrl+K'}
                     </kbd>
