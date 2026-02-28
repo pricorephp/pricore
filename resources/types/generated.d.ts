@@ -153,6 +153,7 @@ completedAt: string | null;
 errorMessage: string | null;
 versionsAdded: number;
 versionsUpdated: number;
+versionsRemoved: number;
 details: { [key: string]: any } | null;
 };
 }

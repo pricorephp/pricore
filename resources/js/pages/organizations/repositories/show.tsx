@@ -23,18 +23,27 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from '@/components/ui/table';
+    Tooltip,
+    TooltipContent,
+    TooltipTrigger,
+} from '@/components/ui/tooltip';
 import AppLayout from '@/layouts/app-layout';
 import { createOrganizationBreadcrumb } from '@/lib/breadcrumbs';
 import { cn } from '@/lib/utils';
 import { Head, Link, router, usePage } from '@inertiajs/react';
-import { EllipsisVertical, Package, RefreshCw, Settings, Webhook } from 'lucide-react';
+import {
+    AlertCircle,
+    CheckCircle2,
+    EllipsisVertical,
+    Loader2,
+    Package,
+    PackageCheck,
+    PackageMinus,
+    PackagePlus,
+    RefreshCw,
+    Settings,
+    Webhook,
+} from 'lucide-react';
 import { DateTime } from 'luxon';
 import { useState } from 'react';
 
@@ -259,9 +268,11 @@ export default function RepositoryShow({
                 <div className="space-y-4">
                     <HeadingSmall
                         title="Packages"
-                        description={packages.length > 0
-                            ? `${packages.length} package${packages.length === 1 ? '' : 's'} discovered from this repository`
-                            : 'Packages discovered from this repository will appear here'}
+                        description={
+                            packages.length > 0
+                                ? `${packages.length} package${packages.length === 1 ? '' : 's'} discovered from this repository`
+                                : 'Packages discovered from this repository will appear here'
+                        }
                     />
                     {packages.length > 0 ? (
                         <div className="divide-y divide-border rounded-lg border bg-card">
@@ -284,7 +295,9 @@ export default function RepositoryShow({
                                 <Package className="mx-auto mb-3 size-8 text-muted-foreground" />
                                 <p className="font-medium">No packages found</p>
                                 <p className="mt-1 text-sm text-muted-foreground">
-                                    No packages have been discovered from this repository yet. Try syncing to discover packages.
+                                    No packages have been discovered from this
+                                    repository yet. Try syncing to discover
+                                    packages.
                                 </p>
                             </CardContent>
                         </Card>
@@ -304,77 +317,137 @@ export default function RepositoryShow({
                             </CardContent>
                         </Card>
                     ) : (
-                        <div className="rounded-lg border bg-card">
-                            <Table>
-                                <TableHeader>
-                                    <TableRow className="hover:bg-transparent">
-                                        <TableHead className="w-1/8">
-                                            Status
-                                        </TableHead>
-                                        <TableHead className="w-1/8">
-                                            Started
-                                        </TableHead>
-                                        <TableHead className="w-1/8">
-                                            Duration
-                                        </TableHead>
-                                        <TableHead className="w-1/8">
-                                            Log
-                                        </TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {syncLogs.map((log) => (
-                                        <TableRow key={log.uuid}>
-                                            <TableCell>
-                                                <Badge
-                                                    variant={getSyncStatusVariant(
-                                                        log.status,
-                                                    )}
-                                                >
-                                                    {log.statusLabel}
-                                                </Badge>
-                                            </TableCell>
-                                            <TableCell>
-                                                <div className="">
-                                                    {DateTime.fromISO(
-                                                        log.startedAt,
-                                                    ).toRelative()}
-                                                </div>
-                                                <div className="text-xs text-muted-foreground">
-                                                    {DateTime.fromISO(
-                                                        log.startedAt,
-                                                    ).toLocaleString(
-                                                        DateTime.DATETIME_SHORT,
-                                                    )}
-                                                </div>
-                                            </TableCell>
-                                            <TableCell>
+                        <div className="divide-y divide-border rounded-lg border bg-card">
+                            {syncLogs.map((log) => (
+                                <div
+                                    key={log.uuid}
+                                    className="flex items-center gap-3 px-4 py-3"
+                                >
+                                    <div>
+                                        {log.status === 'success' && (
+                                            <CheckCircle2 className="size-5 text-emerald-500" />
+                                        )}
+                                        {log.status === 'failed' && (
+                                            <AlertCircle className="size-5 text-destructive" />
+                                        )}
+                                        {log.status === 'pending' && (
+                                            <Loader2 className="size-5 animate-spin text-muted-foreground" />
+                                        )}
+                                    </div>
+                                    <div className="min-w-0 flex-1">
+                                        <span className="text-sm font-medium">
+                                            {log.statusLabel}
+                                        </span>
+                                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                            <span>
+                                                {DateTime.fromISO(
+                                                    log.startedAt,
+                                                ).toRelative()}
+                                            </span>
+                                            <span>&middot;</span>
+                                            <span>
                                                 {formatDuration(
                                                     log.startedAt,
                                                     log.completedAt,
                                                 )}
-                                            </TableCell>
-                                            <TableCell>
-                                                {log.errorMessage ? (
-                                                    <button
-                                                        type="button"
-                                                        onClick={() =>
-                                                            setSelectedLog(log)
-                                                        }
-                                                        className="text-sm text-destructive underline underline-offset-2 hover:text-destructive/80"
-                                                    >
-                                                        View error
-                                                    </button>
-                                                ) : (
-                                                    <span className="text-xs text-muted-foreground">
-                                                        —
-                                                    </span>
-                                                )}
-                                            </TableCell>
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div className="flex shrink-0 items-center gap-3">
+                                        {log.status !== 'failed' && (
+                                            <div className="flex items-center gap-2.5 text-sm tabular-nums">
+                                                <Tooltip>
+                                                    <TooltipTrigger asChild>
+                                                        <span
+                                                            className={cn(
+                                                                'inline-flex items-center gap-1.5',
+                                                                log.versionsAdded >
+                                                                    0
+                                                                    ? 'text-emerald-600 dark:text-emerald-400'
+                                                                    : 'text-muted-foreground/40',
+                                                            )}
+                                                        >
+                                                            <PackagePlus className="size-4" />
+                                                            +{log.versionsAdded}
+                                                        </span>
+                                                    </TooltipTrigger>
+                                                    <TooltipContent>
+                                                        {log.versionsAdded}{' '}
+                                                        {log.versionsAdded === 1
+                                                            ? 'version'
+                                                            : 'versions'}{' '}
+                                                        added
+                                                    </TooltipContent>
+                                                </Tooltip>
+                                                <Tooltip>
+                                                    <TooltipTrigger asChild>
+                                                        <span
+                                                            className={cn(
+                                                                'inline-flex items-center gap-1.5',
+                                                                log.versionsUpdated >
+                                                                    0
+                                                                    ? 'text-amber-600 dark:text-amber-400'
+                                                                    : 'text-muted-foreground/40',
+                                                            )}
+                                                        >
+                                                            <PackageCheck className="size-4" />
+                                                            {
+                                                                log.versionsUpdated
+                                                            }
+                                                        </span>
+                                                    </TooltipTrigger>
+                                                    <TooltipContent>
+                                                        {log.versionsUpdated}{' '}
+                                                        {log.versionsUpdated ===
+                                                        1
+                                                            ? 'version'
+                                                            : 'versions'}{' '}
+                                                        updated
+                                                    </TooltipContent>
+                                                </Tooltip>
+                                                <Tooltip>
+                                                    <TooltipTrigger asChild>
+                                                        <span
+                                                            className={cn(
+                                                                'inline-flex items-center gap-1.5',
+                                                                log.versionsRemoved >
+                                                                    0
+                                                                    ? 'text-red-600 dark:text-red-400'
+                                                                    : 'text-muted-foreground/40',
+                                                            )}
+                                                        >
+                                                            <PackageMinus className="size-4" />
+                                                            -
+                                                            {
+                                                                log.versionsRemoved
+                                                            }
+                                                        </span>
+                                                    </TooltipTrigger>
+                                                    <TooltipContent>
+                                                        {log.versionsRemoved}{' '}
+                                                        {log.versionsRemoved ===
+                                                        1
+                                                            ? 'version'
+                                                            : 'versions'}{' '}
+                                                        removed
+                                                    </TooltipContent>
+                                                </Tooltip>
+                                            </div>
+                                        )}
+                                        {log.errorMessage && (
+                                            <button
+                                                type="button"
+                                                onClick={() =>
+                                                    setSelectedLog(log)
+                                                }
+                                                className="text-sm text-destructive underline underline-offset-2 hover:text-destructive/80"
+                                            >
+                                                View error
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+                            ))}
                         </div>
                     )}
                 </div>
