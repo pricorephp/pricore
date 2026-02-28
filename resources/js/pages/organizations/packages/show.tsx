@@ -139,18 +139,6 @@ function CopyButton({ text }: { text: string }) {
     );
 }
 
-function isStableVersion(version: PackageVersionData): boolean {
-    return (
-        !version.version.includes('dev') && /^\d+\.\d+/.test(version.version)
-    );
-}
-
-function isDevVersion(version: PackageVersionData): boolean {
-    return (
-        version.version.includes('dev') ||
-        version.normalizedVersion.startsWith('dev-')
-    );
-}
 
 export default function PackageShow({
     organization,
@@ -202,16 +190,22 @@ export default function PackageShow({
         );
     }, [debouncedQuery, typeFilter, page, organization.slug, pkg.uuid]);
 
-    // Reset page when filters change
-    useEffect(() => {
-        setPage(1);
-    }, [debouncedQuery, typeFilter]);
-
     const hasActiveFilters = queryFilter !== '' || typeFilter !== 'all';
+
+    const handleQueryChange = (value: string) => {
+        setQueryFilter(value);
+        setPage(1);
+    };
+
+    const handleTypeChange = (value: string) => {
+        setTypeFilter(value);
+        setPage(1);
+    };
 
     const clearFilters = () => {
         setQueryFilter('');
         setTypeFilter('all');
+        setPage(1);
     };
 
     const breadcrumbs = [
@@ -351,13 +345,13 @@ export default function PackageShow({
                             <Input
                                 placeholder="Filter by version or source hash..."
                                 value={queryFilter}
-                                onChange={(e) => setQueryFilter(e.target.value)}
+                                onChange={(e) => handleQueryChange(e.target.value)}
                                 className="pl-9"
                             />
                         </div>
                         <Select
                             value={typeFilter}
-                            onValueChange={setTypeFilter}
+                            onValueChange={handleTypeChange}
                         >
                             <SelectTrigger className="w-40">
                                 <SelectValue placeholder="All types" />
