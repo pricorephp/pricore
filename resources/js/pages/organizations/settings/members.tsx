@@ -3,6 +3,7 @@ import {
     store,
     update,
 } from '@/actions/App/Domains/Organization/Http/Controllers/MemberController';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -30,6 +31,7 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
+import { useInitials } from '@/hooks/use-initials';
 import { withOrganizationSettingsLayout } from '@/layouts/organization-settings-layout';
 import { Form, router, usePage } from '@inertiajs/react';
 import { Mail, RefreshCw, Trash2, UserPlus } from 'lucide-react';
@@ -52,6 +54,7 @@ export default function Members({ members, invitations, roleOptions }: Props) {
     const page = usePage<{ organization: OrganizationData }>();
     const { organization } = page.props;
     const [addDialogOpen, setAddDialogOpen] = useState(false);
+    const getInitials = useInitials();
 
     const handleRoleChange = (memberUuid: string, role: string) => {
         router.patch(
@@ -220,13 +223,24 @@ export default function Members({ members, invitations, roleOptions }: Props) {
                         {members.map((member) => (
                             <TableRow key={member.uuid}>
                                 <TableCell>
-                                    <div className="flex flex-col">
-                                        <span className="font-medium">
-                                            {member.name}
-                                        </span>
-                                        <span className="text-muted-foreground">
-                                            {member.email}
-                                        </span>
+                                    <div className="flex items-center gap-3">
+                                        <Avatar className="h-8 w-8">
+                                            <AvatarImage
+                                                src={member.avatar ?? undefined}
+                                                alt={member.name}
+                                            />
+                                            <AvatarFallback className="bg-gradient-to-br from-neutral-200 to-neutral-300 text-xs text-neutral-600 dark:from-neutral-600 dark:to-neutral-700 dark:text-neutral-300">
+                                                {getInitials(member.name)}
+                                            </AvatarFallback>
+                                        </Avatar>
+                                        <div className="flex flex-col">
+                                            <span className="font-medium">
+                                                {member.name}
+                                            </span>
+                                            <span className="text-muted-foreground">
+                                                {member.email}
+                                            </span>
+                                        </div>
                                     </div>
                                 </TableCell>
                                 <TableCell>

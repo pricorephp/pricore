@@ -34,7 +34,7 @@ import AppLayout from '@/layouts/app-layout';
 import { createOrganizationBreadcrumb } from '@/lib/breadcrumbs';
 import { cn } from '@/lib/utils';
 import { Head, Link, router, usePage } from '@inertiajs/react';
-import { EllipsisVertical, RefreshCw, Settings, Webhook } from 'lucide-react';
+import { EllipsisVertical, Package, RefreshCw, Settings, Webhook } from 'lucide-react';
 import { DateTime } from 'luxon';
 import { useState } from 'react';
 
@@ -256,12 +256,14 @@ export default function RepositoryShow({
                     </DropdownMenu>
                 </div>
 
-                {packages.length > 0 && (
-                    <div className="space-y-4">
-                        <HeadingSmall
-                            title="Linked Packages"
-                            description={`${packages.length} package${packages.length === 1 ? '' : 's'} discovered from this repository`}
-                        />
+                <div className="space-y-4">
+                    <HeadingSmall
+                        title="Packages"
+                        description={packages.length > 0
+                            ? `${packages.length} package${packages.length === 1 ? '' : 's'} discovered from this repository`
+                            : 'Packages discovered from this repository will appear here'}
+                    />
+                    {packages.length > 0 ? (
                         <div className="divide-y divide-border rounded-lg border bg-card">
                             {packages.map((pkg) => (
                                 <Link
@@ -276,8 +278,18 @@ export default function RepositoryShow({
                                 </Link>
                             ))}
                         </div>
-                    </div>
-                )}
+                    ) : (
+                        <Card>
+                            <CardContent className="py-8 text-center">
+                                <Package className="mx-auto mb-3 size-8 text-muted-foreground" />
+                                <p className="font-medium">No packages found</p>
+                                <p className="mt-1 text-sm text-muted-foreground">
+                                    No packages have been discovered from this repository yet. Try syncing to discover packages.
+                                </p>
+                            </CardContent>
+                        </Card>
+                    )}
+                </div>
 
                 <div className="space-y-4">
                     <HeadingSmall

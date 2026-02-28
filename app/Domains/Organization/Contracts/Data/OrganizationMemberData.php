@@ -16,6 +16,7 @@ class OrganizationMemberData extends Data
         public string $uuid,
         public string $name,
         public string $email,
+        public ?string $avatar,
         public OrganizationRole $role,
         public ?CarbonInterface $joinedAt,
     ) {}
@@ -26,6 +27,7 @@ class OrganizationMemberData extends Data
             uuid: $pivot->uuid,
             name: $user->name,
             email: $user->email,
+            avatar: $user->avatar,
             role: $pivot->role,
             joinedAt: $pivot->created_at,
         );

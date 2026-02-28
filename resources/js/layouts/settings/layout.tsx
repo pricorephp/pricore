@@ -69,7 +69,9 @@ export default function SettingsLayout({ children }: PropsWithChildren) {
     return (
         <div className="mx-auto w-full max-w-7xl min-w-0 space-y-6 p-6">
             <div>
-                <h1 className="mb-0.5 text-xl font-medium">Settings</h1>
+                <h1 className="mb-0.5 text-xl font-medium">
+                    Personal Settings
+                </h1>
                 <p className="text-muted-foreground">
                     Manage your profile and account settings
                 </p>

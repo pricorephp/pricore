@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/app-layout';
 import { createOrganizationBreadcrumb } from '@/lib/breadcrumbs';
 import { Head, Link, usePage } from '@inertiajs/react';
-import { Box, GitBranch } from 'lucide-react';
+import { GitBranch, Package } from 'lucide-react';
 
 type OrganizationData =
     App.Domains.Organization.Contracts.Data.OrganizationData;
@@ -55,7 +55,7 @@ export default function Packages({
 
                 {packages.length === 0 ? (
                     <EmptyState
-                        icon={Box}
+                        icon={Package}
                         title="No packages yet"
                         description="Connect a Git repository to automatically discover and sync Composer packages."
                         action={{

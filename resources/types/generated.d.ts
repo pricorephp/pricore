@@ -43,6 +43,7 @@ export type OrganizationMemberData = {
 uuid: string;
 name: string;
 email: string;
+avatar: string | null;
 role: App.Domains.Organization.Contracts.Enums.OrganizationRole;
 joinedAt: string | null;
 };

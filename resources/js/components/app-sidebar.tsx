@@ -10,8 +10,8 @@ import { type NavItem } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
 import {
     BookOpen,
+    ChartLine,
     GitBranch,
-    LayoutDashboard,
     Package,
     Settings,
 } from 'lucide-react';
@@ -55,7 +55,7 @@ export function AppSidebar() {
             {
                 title: 'Overview',
                 href: `/organizations/${currentOrgSlug}`,
-                icon: LayoutDashboard,
+                icon: ChartLine,
             },
             {
                 title: 'Repos',
