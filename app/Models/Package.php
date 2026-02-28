@@ -29,6 +29,8 @@ use Illuminate\Support\Carbon;
  * @property-read int|null $versions_count
  * @property-read Collection<int, PackageDownload> $downloads
  * @property-read int|null $downloads_count
+ * @property-read Collection<int, PackageView> $views
+ * @property-read int|null $views_count
  *
  * @method static \Database\Factories\PackageFactory factory($count = null, $state = [])
  * @method static Builder<static>|Package newModelQuery()
@@ -88,5 +90,13 @@ class Package extends Model
     public function downloads(): HasMany
     {
         return $this->hasMany(PackageDownload::class, 'package_uuid', 'uuid');
+    }
+
+    /**
+     * @return HasMany<PackageView, $this>
+     */
+    public function views(): HasMany
+    {
+        return $this->hasMany(PackageView::class, 'package_uuid', 'uuid');
     }
 }
