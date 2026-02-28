@@ -18,6 +18,5 @@ class OrganizationStatsData extends Data
         public int $membersCount,
         public int $totalDownloads,
         public array $dailyDownloads,
-        public ActivityFeedData $activityFeed,
     ) {}
 }

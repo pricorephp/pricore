@@ -2,6 +2,8 @@
 
 namespace App\Domains\Repository\Http\Controllers;
 
+use App\Domains\Activity\Actions\RecordActivityTask;
+use App\Domains\Activity\Contracts\Enums\ActivityType;
 use App\Domains\Organization\Contracts\Data\OrganizationData;
 use App\Domains\Package\Contracts\Data\PackageData;
 use App\Domains\Repository\Actions\BulkCreateRepositoriesAction;
@@ -28,6 +30,7 @@ class RepositoryController extends Controller
         protected ExtractRepositoryNameAction $extractRepositoryNameAction,
         protected RegisterWebhookAction $registerWebhookAction,
         protected DeleteWebhookAction $deleteWebhookAction,
+        protected RecordActivityTask $recordActivity,
     ) {}
 
     public function index(Organization $organization): Response
@@ -68,6 +71,14 @@ class RepositoryController extends Controller
             'repo_identifier' => $request->repo_identifier,
             'default_branch' => $request->default_branch,
         ]);
+
+        $this->recordActivity->handle(
+            organization: $organization,
+            type: ActivityType::RepositoryAdded,
+            subject: $repository,
+            actor: $request->user(),
+            properties: ['name' => $repository->name, 'provider' => $repository->provider->value],
+        );
 
         SyncRepositoryJob::dispatch($repository);
 
@@ -162,6 +173,14 @@ class RepositoryController extends Controller
         if (! $request->user()?->can('deleteRepository', $organization)) {
             abort(403);
         }
+
+        $this->recordActivity->handle(
+            organization: $organization,
+            type: ActivityType::RepositoryRemoved,
+            subject: $repository,
+            actor: $request->user(),
+            properties: ['name' => $repository->name],
+        );
 
         $this->deleteWebhookAction->handle($repository);
 

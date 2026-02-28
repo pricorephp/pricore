@@ -2,6 +2,8 @@
 
 namespace App\Domains\Repository\Jobs;
 
+use App\Domains\Activity\Actions\RecordActivityTask;
+use App\Domains\Activity\Contracts\Enums\ActivityType;
 use App\Domains\Repository\Actions\CleanupGitCloneAction;
 use App\Domains\Repository\Contracts\Enums\RepositorySyncStatus;
 use App\Domains\Repository\Contracts\Enums\SyncStatus;
@@ -24,7 +26,7 @@ class CompleteSyncBatchJob implements ShouldQueue
         public string $batchId,
     ) {}
 
-    public function handle(CleanupGitCloneAction $cleanupGitCloneAction): void
+    public function handle(CleanupGitCloneAction $cleanupGitCloneAction, RecordActivityTask $recordActivity): void
     {
         $syncLog = RepositorySyncLog::findOrFail($this->syncLogUuid);
         $repository = Repository::findOrFail($this->repositoryUuid);
@@ -33,6 +35,7 @@ class CompleteSyncBatchJob implements ShouldQueue
         $this->completeSyncLog($syncLog, $batch);
         $cleanupGitCloneAction->handle($this->clonePath);
         $this->updateRepositoryStatus($repository, $batch);
+        $this->recordActivity($repository, $syncLog, $recordActivity);
     }
 
     protected function getBatch(): ?Batch
@@ -95,5 +98,31 @@ class CompleteSyncBatchJob implements ShouldQueue
             'sync_status' => $status,
             'last_synced_at' => now(),
         ]);
+    }
+
+    protected function recordActivity(Repository $repository, RepositorySyncLog $syncLog, RecordActivityTask $recordActivity): void
+    {
+        $type = $syncLog->status->isFailed()
+            ? ActivityType::RepositorySyncFailed
+            : ActivityType::RepositorySynced;
+
+        $properties = [
+            'name' => $repository->name,
+            'versions_added' => $syncLog->versions_added,
+            'versions_updated' => $syncLog->versions_updated,
+            'versions_removed' => $syncLog->versions_removed,
+            'sync_log_uuid' => $syncLog->uuid,
+        ];
+
+        if ($syncLog->status->isFailed()) {
+            $properties['error_message'] = $syncLog->error_message;
+        }
+
+        $recordActivity->handle(
+            organization: $repository->organization,
+            type: $type,
+            subject: $repository,
+            properties: $properties,
+        );
     }
 }

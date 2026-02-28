@@ -2,6 +2,8 @@
 
 namespace App\Domains\Organization\Http\Controllers;
 
+use App\Domains\Activity\Actions\RecordActivityTask;
+use App\Domains\Activity\Contracts\Enums\ActivityType;
 use App\Domains\Organization\Actions\SendOrganizationInvitationAction;
 use App\Domains\Organization\Contracts\Data\OrganizationData;
 use App\Domains\Organization\Contracts\Data\OrganizationInvitationData;
@@ -83,7 +85,7 @@ class MemberController
             ->with('status', "Invitation sent to {$email}.");
     }
 
-    public function update(UpdateMemberRoleRequest $request, Organization $organization, OrganizationUser $member): RedirectResponse
+    public function update(UpdateMemberRoleRequest $request, Organization $organization, OrganizationUser $member, RecordActivityTask $recordActivity): RedirectResponse
     {
         if ($member->organization_uuid !== $organization->uuid) {
             abort(404);
@@ -95,16 +97,31 @@ class MemberController
                 ->with('error', 'Cannot change the role of the organization owner.');
         }
 
+        $oldRole = $member->role->value;
+
         $member->update([
             'role' => $request->validated('role'),
         ]);
+
+        $memberUser = $member->user;
+        $recordActivity->handle(
+            organization: $organization,
+            type: ActivityType::MemberRoleChanged,
+            subject: $memberUser,
+            actor: $request->user(),
+            properties: [
+                'member_name' => $memberUser->name,
+                'old_role' => $oldRole,
+                'new_role' => $request->validated('role'),
+            ],
+        );
 
         return redirect()
             ->route('organizations.settings.members', $organization)
             ->with('status', 'Member role updated successfully.');
     }
 
-    public function destroy(Organization $organization, OrganizationUser $member): RedirectResponse
+    public function destroy(Organization $organization, OrganizationUser $member, RecordActivityTask $recordActivity): RedirectResponse
     {
         $this->authorize('manageMembers', $organization);
 
@@ -117,6 +134,19 @@ class MemberController
                 ->route('organizations.settings.members', $organization)
                 ->with('error', 'Cannot remove the organization owner.');
         }
+
+        $memberUser = $member->user;
+
+        $recordActivity->handle(
+            organization: $organization,
+            type: ActivityType::MemberRemoved,
+            subject: $memberUser,
+            actor: auth()->user(),
+            properties: [
+                'member_name' => $memberUser->name,
+                'member_email' => $memberUser->email,
+            ],
+        );
 
         $member->delete();
 
