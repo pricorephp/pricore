@@ -9,9 +9,9 @@ import {
 import { type SharedData } from '@/types';
 import { router, usePage } from '@inertiajs/react';
 import {
+    ChartLine,
     GitBranch,
     Key,
-    LayoutGrid,
     Lock,
     Package,
     Paintbrush,
@@ -22,7 +22,7 @@ import {
 import { useCallback } from 'react';
 
 const staticPages = [
-    { name: 'Dashboard', href: '/', icon: LayoutGrid },
+    { name: 'Overview', href: '/', icon: ChartLine },
     { name: 'Profile', href: '/settings/profile', icon: User },
     { name: 'Password', href: '/settings/password', icon: Lock },
     { name: 'Appearance', href: '/settings/appearance', icon: Paintbrush },
