@@ -18,7 +18,7 @@ import { Form, usePage } from '@inertiajs/react';
 import { useRef } from 'react';
 
 export default function DeleteUser() {
-    const { has_password } = usePage<SharedData>().props.auth.user;
+    const { hasPassword } = usePage<SharedData>().props.auth.user!;
     const passwordInput = useRef<HTMLInputElement>(null);
 
     return (
@@ -49,7 +49,7 @@ export default function DeleteUser() {
                             Are you sure you want to delete your account?
                         </DialogTitle>
                         <DialogDescription>
-                            {has_password
+                            {hasPassword
                                 ? 'Once your account is deleted, all of its resources and data will also be permanently deleted. Please enter your password to confirm you would like to permanently delete your account.'
                                 : 'Once your account is deleted, all of its resources and data will also be permanently deleted.'}
                         </DialogDescription>
@@ -65,7 +65,7 @@ export default function DeleteUser() {
                         >
                             {({ resetAndClearErrors, processing, errors }) => (
                                 <>
-                                    {has_password && (
+                                    {hasPassword && (
                                         <div className="grid gap-2">
                                             <Label
                                                 htmlFor="password"

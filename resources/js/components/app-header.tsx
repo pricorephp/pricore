@@ -67,6 +67,7 @@ interface AppHeaderProps {
 export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
     const page = usePage<SharedData>();
     const { auth } = page.props;
+    const user = auth.user!;
     const getInitials = useInitials();
     return (
         <>
@@ -233,17 +234,17 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
                                 >
                                     <Avatar className="size-8 overflow-hidden rounded-full">
                                         <AvatarImage
-                                            src={auth.user.avatar}
-                                            alt={auth.user.name}
+                                            src={user.avatar ?? undefined}
+                                            alt={user.name}
                                         />
                                         <AvatarFallback className="rounded-lg bg-neutral-200 text-black dark:bg-neutral-700 dark:text-white">
-                                            {getInitials(auth.user.name)}
+                                            {getInitials(user.name)}
                                         </AvatarFallback>
                                     </Avatar>
                                 </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent className="w-56" align="end">
-                                <UserMenuContent user={auth.user} />
+                                <UserMenuContent user={user} />
                             </DropdownMenuContent>
                         </DropdownMenu>
                     </div>

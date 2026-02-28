@@ -17,8 +17,11 @@ class RecentSyncData extends Data
         public SyncStatus $status,
         public string $statusLabel,
         public CarbonInterface $startedAt,
+        public ?CarbonInterface $completedAt,
         public int $versionsAdded,
         public int $versionsUpdated,
+        public int $versionsRemoved,
+        public ?string $errorMessage,
     ) {}
 
     public static function fromModel(RepositorySyncLog $log): self
@@ -29,8 +32,11 @@ class RecentSyncData extends Data
             status: $log->status,
             statusLabel: $log->status->label(),
             startedAt: $log->started_at,
+            completedAt: $log->completed_at,
             versionsAdded: $log->versions_added,
             versionsUpdated: $log->versions_updated,
+            versionsRemoved: $log->versions_removed,
+            errorMessage: $log->error_message,
         );
     }
 }

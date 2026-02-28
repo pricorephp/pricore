@@ -82,8 +82,11 @@ repositoryUuid: string;
 status: App.Domains.Repository.Contracts.Enums.SyncStatus;
 statusLabel: string;
 startedAt: string;
+completedAt: string | null;
 versionsAdded: number;
 versionsUpdated: number;
+versionsRemoved: number;
+errorMessage: string | null;
 };
 }
 declare namespace App.Domains.Organization.Contracts.Enums {
@@ -162,6 +165,23 @@ export type GitProvider = 'github' | 'gitlab' | 'bitbucket' | 'git';
 export type RepositorySyncStatus = 'ok' | 'failed' | 'pending';
 export type SyncStatus = 'pending' | 'success' | 'failed';
 }
+declare namespace App.Domains.Search.Contracts.Data {
+export type SearchPackageData = {
+uuid: string;
+name: string;
+description: string | null;
+organizationName: string;
+organizationSlug: string;
+};
+export type SearchRepositoryData = {
+uuid: string;
+name: string;
+provider: string;
+providerLabel: string;
+organizationName: string;
+organizationSlug: string;
+};
+}
 declare namespace App.Domains.Token.Contracts.Data {
 export type AccessTokenData = {
 uuid: string;
@@ -175,5 +195,38 @@ plainToken: string;
 name: string;
 expiresAt: string | null;
 organizationUuid: string | null;
+};
+}
+declare namespace App.Http.Data {
+export type AuthData = {
+user: App.Http.Data.UserData | null;
+organizations: Array<any>;
+};
+export type FlashData = {
+status: string | null;
+error: string | null;
+};
+export type SearchData = {
+packages: Array<any>;
+repositories: Array<any>;
+};
+export type SharedData = {
+name: string;
+version: string | null;
+auth: App.Http.Data.AuthData;
+search: App.Http.Data.SearchData | null;
+sidebarOpen: boolean;
+flash: App.Http.Data.FlashData | null;
+};
+export type UserData = {
+uuid: string;
+name: string;
+email: string;
+avatar: string | null;
+hasPassword: boolean;
+emailVerifiedAt: string | null;
+twoFactorEnabled: boolean;
+createdAt: string | null;
+updatedAt: string | null;
 };
 }
