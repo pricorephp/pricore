@@ -14,7 +14,15 @@ import { gitCredentials } from '@/routes/settings';
 import tokens from '@/routes/settings/tokens';
 import { type User } from '@/types';
 import { Link, router } from '@inertiajs/react';
-import { GitBranch, Key, LogOut, Monitor, Moon, Settings, Sun } from 'lucide-react';
+import {
+    GitBranch,
+    Key,
+    LogOut,
+    Monitor,
+    Moon,
+    Settings,
+    Sun,
+} from 'lucide-react';
 
 interface UserMenuContentProps {
     user: User;
