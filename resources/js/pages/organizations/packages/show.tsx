@@ -647,11 +647,6 @@ export default function PackageShow({
                                             <p className="font-medium">
                                                 {DateTime.fromISO(
                                                     activeVersion.releasedAt,
-                                                ).toRelative()}
-                                            </p>
-                                            <p className="text-sm text-muted-foreground">
-                                                {DateTime.fromISO(
-                                                    activeVersion.releasedAt,
                                                 ).toLocaleString(
                                                     DateTime.DATETIME_MED,
                                                 )}
