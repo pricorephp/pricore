@@ -139,7 +139,6 @@ function CopyButton({ text }: { text: string }) {
     );
 }
 
-
 export default function PackageShow({
     organization,
     package: pkg,
@@ -345,7 +344,9 @@ export default function PackageShow({
                             <Input
                                 placeholder="Filter by version or source hash..."
                                 value={queryFilter}
-                                onChange={(e) => handleQueryChange(e.target.value)}
+                                onChange={(e) =>
+                                    handleQueryChange(e.target.value)
+                                }
                                 className="pl-9"
                             />
                         </div>

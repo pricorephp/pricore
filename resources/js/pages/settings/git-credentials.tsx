@@ -141,8 +141,12 @@ export default function GitCredentials({
                                                             {
                                                                 credential.providerLabel
                                                             }
-                                                            {credential.provider !== 'github' && (
-                                                                <Badge variant="outline" className="text-xs">
+                                                            {credential.provider !==
+                                                                'github' && (
+                                                                <Badge
+                                                                    variant="outline"
+                                                                    className="text-xs"
+                                                                >
                                                                     <FlaskConical className="size-3" />
                                                                     Experimental
                                                                 </Badge>
@@ -212,8 +216,12 @@ export default function GitCredentials({
                                                             />
                                                             <CardTitle className="flex items-center gap-2 text-base">
                                                                 {label}
-                                                                {provider !== 'github' && (
-                                                                    <Badge variant="outline" className="text-xs">
+                                                                {provider !==
+                                                                    'github' && (
+                                                                    <Badge
+                                                                        variant="outline"
+                                                                        className="text-xs"
+                                                                    >
                                                                         <FlaskConical className="size-3" />
                                                                         Experimental
                                                                     </Badge>
