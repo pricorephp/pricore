@@ -14,6 +14,14 @@ import {
     DialogTitle,
     DialogTrigger,
 } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import {
     Table,
     TableBody,
@@ -22,6 +30,12 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipTrigger,
+} from '@/components/ui/tooltip';
+import { useDebounce } from '@/hooks/use-debounce';
 import AppLayout from '@/layouts/app-layout';
 import { createOrganizationBreadcrumb } from '@/lib/breadcrumbs';
 import { Head, Link, router, usePage } from '@inertiajs/react';
@@ -32,10 +46,12 @@ import {
     GitBranch,
     Globe,
     Lock,
+    Search,
     Trash2,
+    X,
 } from 'lucide-react';
 import { DateTime } from 'luxon';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 type OrganizationData =
     App.Domains.Organization.Contracts.Data.OrganizationData;
@@ -59,6 +75,10 @@ interface PackageShowProps {
         last_page: number;
         per_page: number;
         total: number;
+    };
+    filters: {
+        query: string;
+        type: string;
     };
     composerRepositoryUrl: string;
     canManageVersions: boolean;
@@ -98,54 +118,95 @@ function CopyButton({ text }: { text: string }) {
     };
 
     return (
-        <div className="relative">
-            <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="h-6 w-6"
-                onClick={copyToClipboard}
-            >
-                {copied ? (
-                    <Check className="h-3 w-3 text-green-600 dark:text-green-400" />
-                ) : (
-                    <Copy className="h-3 w-3" />
-                )}
-            </Button>
-            {copied && (
-                <div className="absolute -top-9 left-1/2 z-50 -translate-x-1/2 rounded-md bg-green-600 px-2 py-1 text-xs font-medium whitespace-nowrap text-white shadow-lg dark:bg-green-500">
-                    Copied!
-                    <div className="absolute -bottom-1 left-1/2 h-2 w-2 -translate-x-1/2 rotate-45 bg-green-600 dark:bg-green-500" />
-                </div>
-            )}
-        </div>
+        <Tooltip open={copied}>
+            <TooltipTrigger asChild>
+                <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6"
+                    onClick={copyToClipboard}
+                >
+                    {copied ? (
+                        <Check className="h-3 w-3 text-green-600 dark:text-green-400" />
+                    ) : (
+                        <Copy className="h-3 w-3" />
+                    )}
+                </Button>
+            </TooltipTrigger>
+            <TooltipContent>Copied!</TooltipContent>
+        </Tooltip>
     );
 }
 
-function isStableVersion(version: PackageVersionData): boolean {
-    return (
-        !version.version.includes('dev') && /^\d+\.\d+/.test(version.version)
-    );
-}
-
-function isDevVersion(version: PackageVersionData): boolean {
-    return (
-        version.version.includes('dev') ||
-        version.normalizedVersion.startsWith('dev-')
-    );
-}
 
 export default function PackageShow({
     organization,
     package: pkg,
     downloadStats,
     versions,
+    filters,
     composerRepositoryUrl,
     canManageVersions,
 }: PackageShowProps) {
     const { auth } = usePage<{
         auth: { organizations: OrganizationData[] };
     }>().props;
+
+    const [queryFilter, setQueryFilter] = useState(filters.query);
+    const [typeFilter, setTypeFilter] = useState(filters.type || 'all');
+    const [page, setPage] = useState(versions.current_page);
+
+    const debouncedQuery = useDebounce(queryFilter, 300);
+
+    const isInitialMount = useRef(true);
+
+    useEffect(() => {
+        if (isInitialMount.current) {
+            isInitialMount.current = false;
+
+            return;
+        }
+
+        const params: Record<string, string> = {};
+        if (debouncedQuery) {
+            params.query = debouncedQuery;
+        }
+        if (typeFilter && typeFilter !== 'all') {
+            params.type = typeFilter;
+        }
+        if (page > 1) {
+            params.page = String(page);
+        }
+
+        router.get(
+            `/organizations/${organization.slug}/packages/${pkg.uuid}`,
+            params,
+            {
+                preserveScroll: true,
+                preserveState: true,
+                replace: true,
+            },
+        );
+    }, [debouncedQuery, typeFilter, page, organization.slug, pkg.uuid]);
+
+    const hasActiveFilters = queryFilter !== '' || typeFilter !== 'all';
+
+    const handleQueryChange = (value: string) => {
+        setQueryFilter(value);
+        setPage(1);
+    };
+
+    const handleTypeChange = (value: string) => {
+        setTypeFilter(value);
+        setPage(1);
+    };
+
+    const clearFilters = () => {
+        setQueryFilter('');
+        setTypeFilter('all');
+        setPage(1);
+    };
 
     const breadcrumbs = [
         createOrganizationBreadcrumb(organization, auth.organizations),
@@ -277,27 +338,68 @@ export default function PackageShow({
                         title="Versions"
                         description={`${versions.total} version${versions.total === 1 ? '' : 's'} available`}
                     />
+
+                    <div className="flex flex-wrap items-center gap-3">
+                        <div className="relative min-w-48 flex-1">
+                            <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                            <Input
+                                placeholder="Filter by version or source hash..."
+                                value={queryFilter}
+                                onChange={(e) => handleQueryChange(e.target.value)}
+                                className="pl-9"
+                            />
+                        </div>
+                        <Select
+                            value={typeFilter}
+                            onValueChange={handleTypeChange}
+                        >
+                            <SelectTrigger className="w-40">
+                                <SelectValue placeholder="All types" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">All types</SelectItem>
+                                <SelectItem value="stable">Stable</SelectItem>
+                                <SelectItem value="dev">Dev</SelectItem>
+                            </SelectContent>
+                        </Select>
+                        {hasActiveFilters && (
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={clearFilters}
+                            >
+                                <X className="mr-1 h-4 w-4" />
+                                Clear filters
+                            </Button>
+                        )}
+                    </div>
+
                     {versions.data.length === 0 ? (
                         <Card>
                             <CardContent className="py-8 text-center text-muted-foreground">
-                                No versions available yet.
+                                {hasActiveFilters
+                                    ? 'No versions match the current filters.'
+                                    : 'No versions available yet.'}
                             </CardContent>
                         </Card>
                     ) : (
                         <>
                             <div className="rounded-lg border bg-card">
-                                <Table>
+                                <Table className="table-fixed">
                                     <TableHeader>
                                         <TableRow className="hover:bg-transparent">
-                                            <TableHead>Version</TableHead>
-                                            <TableHead>Released</TableHead>
+                                            <TableHead className="w-[20%]">
+                                                Version
+                                            </TableHead>
+                                            <TableHead className="w-[20%]">
+                                                Released
+                                            </TableHead>
                                             <TableHead>
                                                 Install Command
                                             </TableHead>
-                                            <TableHead>Source</TableHead>
-                                            {canManageVersions && (
-                                                <TableHead className="w-12" />
-                                            )}
+                                            <TableHead className="w-[13%]">
+                                                Source
+                                            </TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
@@ -307,32 +409,24 @@ export default function PackageShow({
                                             return (
                                                 <TableRow key={version.uuid}>
                                                     <TableCell>
-                                                        <div className="flex items-center gap-2">
-                                                            <code className="font-mono">
-                                                                {
-                                                                    version.version
-                                                                }
-                                                            </code>
-                                                            {isStableVersion(
-                                                                version,
-                                                            ) ? (
-                                                                <Badge
-                                                                    variant="secondary"
-                                                                    className="text-xs"
-                                                                >
-                                                                    Stable
-                                                                </Badge>
-                                                            ) : isDevVersion(
-                                                                  version,
-                                                              ) ? (
-                                                                <Badge
-                                                                    variant="secondary"
-                                                                    className="text-xs"
-                                                                >
-                                                                    Dev
-                                                                </Badge>
-                                                            ) : null}
-                                                        </div>
+                                                        <Tooltip>
+                                                            <TooltipTrigger
+                                                                asChild
+                                                            >
+                                                                <code className="block truncate font-mono text-sm">
+                                                                    {
+                                                                        version.version
+                                                                    }
+                                                                </code>
+                                                            </TooltipTrigger>
+                                                            <TooltipContent>
+                                                                <span className="font-mono">
+                                                                    {
+                                                                        version.version
+                                                                    }
+                                                                </span>
+                                                            </TooltipContent>
+                                                        </Tooltip>
                                                     </TableCell>
                                                     <TableCell>
                                                         {version.releasedAt ? (
@@ -362,7 +456,7 @@ export default function PackageShow({
                                                                 value={
                                                                     installCommand
                                                                 }
-                                                                className="w-80 rounded border border-input bg-background px-3 py-1.5 font-mono text-sm"
+                                                                className="w-full rounded border border-input bg-background px-3 py-1.5 font-mono text-sm"
                                                                 onClick={(e) =>
                                                                     (
                                                                         e.target as HTMLInputElement
@@ -377,119 +471,122 @@ export default function PackageShow({
                                                         </div>
                                                     </TableCell>
                                                     <TableCell>
-                                                        {version.commitUrl ? (
-                                                            <a
-                                                                href={
-                                                                    version.commitUrl
-                                                                }
-                                                                target="_blank"
-                                                                rel="noopener noreferrer"
-                                                                className="inline-flex items-center gap-1 rounded bg-muted px-2 py-1 font-mono text-xs transition-colors hover:bg-muted/80"
-                                                            >
-                                                                {version.sourceReference?.substring(
-                                                                    0,
-                                                                    7,
-                                                                )}
-                                                                <svg
-                                                                    className="h-3 w-3"
-                                                                    fill="none"
-                                                                    stroke="currentColor"
-                                                                    viewBox="0 0 24 24"
-                                                                >
-                                                                    <path
-                                                                        strokeLinecap="round"
-                                                                        strokeLinejoin="round"
-                                                                        strokeWidth={
-                                                                            2
+                                                        <div className="flex items-center justify-between">
+                                                            <div>
+                                                                {version.commitUrl ? (
+                                                                    <a
+                                                                        href={
+                                                                            version.commitUrl
                                                                         }
-                                                                        d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
-                                                                    />
-                                                                </svg>
-                                                            </a>
-                                                        ) : version.sourceReference ? (
-                                                            <code className="rounded bg-muted px-2 py-1 font-mono text-xs">
-                                                                {version.sourceReference.substring(
-                                                                    0,
-                                                                    7,
-                                                                )}
-                                                            </code>
-                                                        ) : (
-                                                            <span className="text-muted-foreground">
-                                                                —
-                                                            </span>
-                                                        )}
-                                                    </TableCell>
-                                                    {canManageVersions && (
-                                                        <TableCell>
-                                                            <Dialog>
-                                                                <DialogTrigger
-                                                                    asChild
-                                                                >
-                                                                    <Button
-                                                                        variant="ghost"
-                                                                        size="icon"
-                                                                        className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                                                                        target="_blank"
+                                                                        rel="noopener noreferrer"
+                                                                        className="inline-flex items-center gap-1 rounded bg-muted px-2 py-1 font-mono text-xs transition-colors hover:bg-muted/80"
                                                                     >
-                                                                        <Trash2 className="h-4 w-4" />
-                                                                    </Button>
-                                                                </DialogTrigger>
-                                                                <DialogContent>
-                                                                    <DialogTitle>
-                                                                        Delete
-                                                                        version{' '}
-                                                                        {
-                                                                            version.version
-                                                                        }
-                                                                        ?
-                                                                    </DialogTitle>
-                                                                    <DialogDescription>
-                                                                        This
-                                                                        will
-                                                                        permanently
-                                                                        remove
-                                                                        version{' '}
-                                                                        <strong>
+                                                                        {version.sourceReference?.substring(
+                                                                            0,
+                                                                            7,
+                                                                        )}
+                                                                        <svg
+                                                                            className="h-3 w-3"
+                                                                            fill="none"
+                                                                            stroke="currentColor"
+                                                                            viewBox="0 0 24 24"
+                                                                        >
+                                                                            <path
+                                                                                strokeLinecap="round"
+                                                                                strokeLinejoin="round"
+                                                                                strokeWidth={
+                                                                                    2
+                                                                                }
+                                                                                d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                                                                            />
+                                                                        </svg>
+                                                                    </a>
+                                                                ) : version.sourceReference ? (
+                                                                    <code className="rounded bg-muted px-2 py-1 font-mono text-xs">
+                                                                        {version.sourceReference.substring(
+                                                                            0,
+                                                                            7,
+                                                                        )}
+                                                                    </code>
+                                                                ) : (
+                                                                    <span className="text-muted-foreground">
+                                                                        —
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                            {canManageVersions && (
+                                                                <Dialog>
+                                                                    <DialogTrigger
+                                                                        asChild
+                                                                    >
+                                                                        <Button
+                                                                            variant="ghost"
+                                                                            size="icon"
+                                                                            className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                                                                        >
+                                                                            <Trash2 className="h-4 w-4" />
+                                                                        </Button>
+                                                                    </DialogTrigger>
+                                                                    <DialogContent>
+                                                                        <DialogTitle>
+                                                                            Delete
+                                                                            version{' '}
                                                                             {
                                                                                 version.version
                                                                             }
-                                                                        </strong>{' '}
-                                                                        from{' '}
-                                                                        {
-                                                                            pkg.name
-                                                                        }
-                                                                        . This
-                                                                        action
-                                                                        cannot
-                                                                        be
-                                                                        undone.
-                                                                    </DialogDescription>
-                                                                    <DialogFooter className="gap-2">
-                                                                        <DialogClose
-                                                                            asChild
-                                                                        >
-                                                                            <Button variant="secondary">
-                                                                                Cancel
-                                                                            </Button>
-                                                                        </DialogClose>
-                                                                        <Button
-                                                                            variant="destructive"
-                                                                            onClick={() =>
-                                                                                router.delete(
-                                                                                    `/organizations/${organization.slug}/packages/${pkg.uuid}/versions/${version.uuid}`,
-                                                                                    {
-                                                                                        preserveScroll: true,
-                                                                                    },
-                                                                                )
+                                                                            ?
+                                                                        </DialogTitle>
+                                                                        <DialogDescription>
+                                                                            This
+                                                                            will
+                                                                            permanently
+                                                                            remove
+                                                                            version{' '}
+                                                                            <strong>
+                                                                                {
+                                                                                    version.version
+                                                                                }
+                                                                            </strong>{' '}
+                                                                            from{' '}
+                                                                            {
+                                                                                pkg.name
                                                                             }
-                                                                        >
-                                                                            Delete
-                                                                            version
-                                                                        </Button>
-                                                                    </DialogFooter>
-                                                                </DialogContent>
-                                                            </Dialog>
-                                                        </TableCell>
-                                                    )}
+                                                                            .
+                                                                            This
+                                                                            action
+                                                                            cannot
+                                                                            be
+                                                                            undone.
+                                                                        </DialogDescription>
+                                                                        <DialogFooter className="gap-2">
+                                                                            <DialogClose
+                                                                                asChild
+                                                                            >
+                                                                                <Button variant="secondary">
+                                                                                    Cancel
+                                                                                </Button>
+                                                                            </DialogClose>
+                                                                            <Button
+                                                                                variant="destructive"
+                                                                                onClick={() =>
+                                                                                    router.delete(
+                                                                                        `/organizations/${organization.slug}/packages/${pkg.uuid}/versions/${version.uuid}`,
+                                                                                        {
+                                                                                            preserveScroll: true,
+                                                                                        },
+                                                                                    )
+                                                                                }
+                                                                            >
+                                                                                Delete
+                                                                                version
+                                                                            </Button>
+                                                                        </DialogFooter>
+                                                                    </DialogContent>
+                                                                </Dialog>
+                                                            )}
+                                                        </div>
+                                                    </TableCell>
                                                 </TableRow>
                                             );
                                         })}
@@ -532,11 +629,23 @@ export default function PackageShow({
                                                 );
                                             }
 
+                                            const pageNumber = new URL(
+                                                link.url,
+                                            ).searchParams.get('page');
+
                                             return (
-                                                <Link
+                                                <button
                                                     key={index}
-                                                    href={link.url}
-                                                    preserveScroll
+                                                    type="button"
+                                                    onClick={() =>
+                                                        setPage(
+                                                            pageNumber
+                                                                ? Number(
+                                                                      pageNumber,
+                                                                  )
+                                                                : 1,
+                                                        )
+                                                    }
                                                     className={`rounded px-3 py-2 transition-colors ${
                                                         link.active
                                                             ? 'bg-primary text-primary-foreground'
@@ -548,7 +657,7 @@ export default function PackageShow({
                                                             __html: link.label,
                                                         }}
                                                     />
-                                                </Link>
+                                                </button>
                                             );
                                         })}
                                     </div>
