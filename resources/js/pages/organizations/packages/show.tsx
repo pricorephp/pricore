@@ -14,6 +14,15 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import {
+    Dialog,
+    DialogClose,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogTitle,
+    DialogTrigger,
+} from '@/components/ui/dialog';
+import {
     Table,
     TableBody,
     TableCell,
@@ -33,6 +42,7 @@ import {
     Globe,
     Lock,
     Search,
+    Trash2,
     X,
 } from 'lucide-react';
 import { DateTime } from 'luxon';
@@ -66,6 +76,7 @@ interface PackageShowProps {
         type: string;
     };
     composerRepositoryUrl: string;
+    canManageVersions: boolean;
 }
 
 function CopyButton({ text }: { text: string }) {
@@ -146,6 +157,7 @@ export default function PackageShow({
     versions,
     filters,
     composerRepositoryUrl,
+    canManageVersions,
 }: PackageShowProps) {
     const { auth } = usePage<{
         auth: { organizations: OrganizationData[] };
@@ -380,6 +392,9 @@ export default function PackageShow({
                                                 Install Command
                                             </TableHead>
                                             <TableHead>Source</TableHead>
+                                            {canManageVersions && (
+                                                <TableHead className="w-12" />
+                                            )}
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
@@ -501,6 +516,77 @@ export default function PackageShow({
                                                             </span>
                                                         )}
                                                     </TableCell>
+                                                    {canManageVersions && (
+                                                        <TableCell>
+                                                            <Dialog>
+                                                                <DialogTrigger
+                                                                    asChild
+                                                                >
+                                                                    <Button
+                                                                        variant="ghost"
+                                                                        size="icon"
+                                                                        className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                                                                    >
+                                                                        <Trash2 className="h-4 w-4" />
+                                                                    </Button>
+                                                                </DialogTrigger>
+                                                                <DialogContent>
+                                                                    <DialogTitle>
+                                                                        Delete
+                                                                        version{' '}
+                                                                        {
+                                                                            version.version
+                                                                        }
+                                                                        ?
+                                                                    </DialogTitle>
+                                                                    <DialogDescription>
+                                                                        This
+                                                                        will
+                                                                        permanently
+                                                                        remove
+                                                                        version{' '}
+                                                                        <strong>
+                                                                            {
+                                                                                version.version
+                                                                            }
+                                                                        </strong>{' '}
+                                                                        from{' '}
+                                                                        {
+                                                                            pkg.name
+                                                                        }
+                                                                        . This
+                                                                        action
+                                                                        cannot
+                                                                        be
+                                                                        undone.
+                                                                    </DialogDescription>
+                                                                    <DialogFooter className="gap-2">
+                                                                        <DialogClose
+                                                                            asChild
+                                                                        >
+                                                                            <Button variant="secondary">
+                                                                                Cancel
+                                                                            </Button>
+                                                                        </DialogClose>
+                                                                        <Button
+                                                                            variant="destructive"
+                                                                            onClick={() =>
+                                                                                router.delete(
+                                                                                    `/organizations/${organization.slug}/packages/${pkg.uuid}/versions/${version.uuid}`,
+                                                                                    {
+                                                                                        preserveScroll: true,
+                                                                                    },
+                                                                                )
+                                                                            }
+                                                                        >
+                                                                            Delete
+                                                                            version
+                                                                        </Button>
+                                                                    </DialogFooter>
+                                                                </DialogContent>
+                                                            </Dialog>
+                                                        </TableCell>
+                                                    )}
                                                 </TableRow>
                                             );
                                         })}

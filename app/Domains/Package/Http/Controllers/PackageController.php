@@ -71,6 +71,7 @@ class PackageController extends Controller
             ],
             'composerRepositoryUrl' => $composerRepositoryUrl,
             'downloadStats' => $this->downloadStats->handle($package),
+            'canManageVersions' => request()->user()?->can('deleteRepository', $organization) ?? false,
         ]);
     }
 }
