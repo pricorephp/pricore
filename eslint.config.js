@@ -35,6 +35,7 @@ export default [
             'node_modules',
             'public',
             'bootstrap/ssr',
+            'docs',
             'tailwind.config.js',
             'resources/types/generated.d.ts',
         ],
