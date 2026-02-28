@@ -227,7 +227,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag: ${{ needs.tag.outputs.new_tag }}
-          name: Release ${{ needs.tag.outputs.new_tag }}
+          name: ${{ needs.tag.outputs.new_tag }}
           body: ${{ needs.tag.outputs.changelog }}
           draft: false
           prerelease: false
