@@ -121,6 +121,25 @@ sourceUrl: string | null;
 sourceReference: string | null;
 commitUrl: string | null;
 };
+export type PackageVersionDetailData = {
+uuid: string;
+version: string;
+normalizedVersion: string;
+releasedAt: string | null;
+sourceUrl: string | null;
+sourceReference: string | null;
+commitUrl: string | null;
+description: string | null;
+type: string | null;
+license: string | null;
+require: Array<any> | null;
+requireDev: Array<any> | null;
+autoload: Array<any> | null;
+authors: Array<any> | null;
+keywords: Array<any> | null;
+isStable: boolean;
+isDev: boolean;
+};
 export type VersionDownloadData = {
 version: string;
 downloads: number;

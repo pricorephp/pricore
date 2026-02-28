@@ -6,6 +6,7 @@ use App\Domains\Organization\Contracts\Data\OrganizationData;
 use App\Domains\Package\Actions\BuildPackageDownloadStatsAction;
 use App\Domains\Package\Contracts\Data\PackageData;
 use App\Domains\Package\Contracts\Data\PackageVersionData;
+use App\Domains\Package\Contracts\Data\PackageVersionDetailData;
 use App\Http\Controllers\Controller;
 use App\Models\Organization;
 use App\Models\Package;
@@ -61,6 +62,21 @@ class PackageController extends Controller
 
         $composerRepositoryUrl = url("/{$organization->slug}/packages.json");
 
+        $versionUuid = $request->query('version');
+        $activeVersion = null;
+
+        if ($versionUuid) {
+            $versionModel = $package->versions()->where('uuid', $versionUuid)->first();
+
+            if ($versionModel) {
+                $activeVersion = PackageVersionDetailData::fromModel(
+                    $versionModel,
+                    $package->repository?->provider,
+                    $package->repository?->repo_identifier,
+                );
+            }
+        }
+
         return Inertia::render('organizations/packages/show', [
             'organization' => OrganizationData::fromModel($organization),
             'package' => PackageData::fromModel($package),
@@ -72,6 +88,7 @@ class PackageController extends Controller
             'composerRepositoryUrl' => $composerRepositoryUrl,
             'downloadStats' => $this->downloadStats->handle($package),
             'canManageVersions' => request()->user()?->can('deleteRepository', $organization) ?? false,
+            'activeVersion' => $activeVersion,
         ]);
     }
 }

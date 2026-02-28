@@ -37,10 +37,7 @@ interface ActivityFeedProps {
     recentSyncs: RecentSyncData[];
 }
 
-function formatDuration(
-    startedAt: string,
-    completedAt: string | null,
-): string {
+function formatDuration(startedAt: string, completedAt: string | null): string {
     if (!completedAt) return 'In progress...';
 
     const start = DateTime.fromISO(startedAt);
@@ -131,160 +128,150 @@ export function ActivityFeed({
                             </p>
                         ) : (
                             <div className="space-y-0.5">
-                                {recentSyncs
-                                    .slice(0, 5)
-                                    .map((sync, index) => (
-                                        <div
-                                            key={index}
-                                            className="flex items-center gap-3 border-b border-border py-2 last:border-0"
-                                        >
-                                            <div className="shrink-0">
-                                                {sync.status === 'success' && (
-                                                    <CheckCircle2 className="size-5 text-emerald-500" />
-                                                )}
-                                                {sync.status === 'failed' && (
-                                                    <AlertCircle className="size-5 text-destructive" />
-                                                )}
-                                                {sync.status === 'pending' && (
-                                                    <Loader2 className="size-5 animate-spin text-muted-foreground" />
-                                                )}
-                                            </div>
-                                            <div className="min-w-0 flex-1">
-                                                <Link
-                                                    href={`/organizations/${organizationSlug}/repositories/${sync.repositoryUuid}`}
-                                                    className="flex items-center gap-1 truncate text-sm font-medium hover:underline"
-                                                >
-                                                    <GitBranch className="size-3.5 shrink-0" />
-                                                    {sync.repositoryName}
-                                                </Link>
-                                                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                                    <span>
-                                                        {DateTime.fromISO(
-                                                            sync.startedAt as unknown as string,
-                                                        ).toRelative()}
-                                                    </span>
-                                                    <span>&middot;</span>
-                                                    <span>
-                                                        {formatDuration(
-                                                            sync.startedAt as unknown as string,
-                                                            sync.completedAt as unknown as string | null,
-                                                        )}
-                                                    </span>
-                                                </div>
-                                            </div>
-                                            <div className="flex shrink-0 items-center gap-3">
-                                                {sync.status !== 'failed' && (
-                                                    <div className="flex items-center gap-2.5 text-sm tabular-nums">
-                                                        <Tooltip>
-                                                            <TooltipTrigger
-                                                                asChild
-                                                            >
-                                                                <span
-                                                                    className={cn(
-                                                                        'inline-flex items-center gap-1',
-                                                                        sync.versionsAdded >
-                                                                            0
-                                                                            ? 'text-emerald-600 dark:text-emerald-400'
-                                                                            : 'text-muted-foreground/40',
-                                                                    )}
-                                                                >
-                                                                    <PackagePlus className="size-3.5" />
-                                                                    +
-                                                                    {
-                                                                        sync.versionsAdded
-                                                                    }
-                                                                </span>
-                                                            </TooltipTrigger>
-                                                            <TooltipContent>
-                                                                {
-                                                                    sync.versionsAdded
-                                                                }{' '}
-                                                                {sync.versionsAdded ===
-                                                                1
-                                                                    ? 'version'
-                                                                    : 'versions'}{' '}
-                                                                added
-                                                            </TooltipContent>
-                                                        </Tooltip>
-                                                        <Tooltip>
-                                                            <TooltipTrigger
-                                                                asChild
-                                                            >
-                                                                <span
-                                                                    className={cn(
-                                                                        'inline-flex items-center gap-1',
-                                                                        sync.versionsUpdated >
-                                                                            0
-                                                                            ? 'text-amber-600 dark:text-amber-400'
-                                                                            : 'text-muted-foreground/40',
-                                                                    )}
-                                                                >
-                                                                    <PackageCheck className="size-3.5" />
-                                                                    {
-                                                                        sync.versionsUpdated
-                                                                    }
-                                                                </span>
-                                                            </TooltipTrigger>
-                                                            <TooltipContent>
-                                                                {
-                                                                    sync.versionsUpdated
-                                                                }{' '}
-                                                                {sync.versionsUpdated ===
-                                                                1
-                                                                    ? 'version'
-                                                                    : 'versions'}{' '}
-                                                                updated
-                                                            </TooltipContent>
-                                                        </Tooltip>
-                                                        <Tooltip>
-                                                            <TooltipTrigger
-                                                                asChild
-                                                            >
-                                                                <span
-                                                                    className={cn(
-                                                                        'inline-flex items-center gap-1',
-                                                                        sync.versionsRemoved >
-                                                                            0
-                                                                            ? 'text-red-600 dark:text-red-400'
-                                                                            : 'text-muted-foreground/40',
-                                                                    )}
-                                                                >
-                                                                    <PackageMinus className="size-3.5" />
-                                                                    -
-                                                                    {
-                                                                        sync.versionsRemoved
-                                                                    }
-                                                                </span>
-                                                            </TooltipTrigger>
-                                                            <TooltipContent>
-                                                                {
-                                                                    sync.versionsRemoved
-                                                                }{' '}
-                                                                {sync.versionsRemoved ===
-                                                                1
-                                                                    ? 'version'
-                                                                    : 'versions'}{' '}
-                                                                removed
-                                                            </TooltipContent>
-                                                        </Tooltip>
-                                                    </div>
-                                                )}
-                                                {sync.errorMessage && (
-                                                    <button
-                                                        type="button"
-                                                        onClick={() =>
-                                                            setSelectedSync(
-                                                                sync,
-                                                            )
-                                                        }
-                                                        className="text-sm text-destructive underline underline-offset-2 hover:text-destructive/80"
-                                                    >
-                                                        View error
-                                                    </button>
-                                                )}
+                                {recentSyncs.slice(0, 5).map((sync, index) => (
+                                    <div
+                                        key={index}
+                                        className="flex items-center gap-3 border-b border-border py-2 last:border-0"
+                                    >
+                                        <div className="shrink-0">
+                                            {sync.status === 'success' && (
+                                                <CheckCircle2 className="size-5 text-emerald-500" />
+                                            )}
+                                            {sync.status === 'failed' && (
+                                                <AlertCircle className="size-5 text-destructive" />
+                                            )}
+                                            {sync.status === 'pending' && (
+                                                <Loader2 className="size-5 animate-spin text-muted-foreground" />
+                                            )}
+                                        </div>
+                                        <div className="min-w-0 flex-1">
+                                            <Link
+                                                href={`/organizations/${organizationSlug}/repositories/${sync.repositoryUuid}`}
+                                                className="flex items-center gap-1 truncate text-sm font-medium hover:underline"
+                                            >
+                                                <GitBranch className="size-3.5 shrink-0" />
+                                                {sync.repositoryName}
+                                            </Link>
+                                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                                <span>
+                                                    {DateTime.fromISO(
+                                                        sync.startedAt as unknown as string,
+                                                    ).toRelative()}
+                                                </span>
+                                                <span>&middot;</span>
+                                                <span>
+                                                    {formatDuration(
+                                                        sync.startedAt as unknown as string,
+                                                        sync.completedAt as unknown as
+                                                            | string
+                                                            | null,
+                                                    )}
+                                                </span>
                                             </div>
                                         </div>
-                                    ))}
+                                        <div className="flex shrink-0 items-center gap-3">
+                                            {sync.status !== 'failed' && (
+                                                <div className="flex items-center gap-2.5 text-sm tabular-nums">
+                                                    <Tooltip>
+                                                        <TooltipTrigger asChild>
+                                                            <span
+                                                                className={cn(
+                                                                    'inline-flex items-center gap-1',
+                                                                    sync.versionsAdded >
+                                                                        0
+                                                                        ? 'text-emerald-600 dark:text-emerald-400'
+                                                                        : 'text-muted-foreground/40',
+                                                                )}
+                                                            >
+                                                                <PackagePlus className="size-3.5" />
+                                                                +
+                                                                {
+                                                                    sync.versionsAdded
+                                                                }
+                                                            </span>
+                                                        </TooltipTrigger>
+                                                        <TooltipContent>
+                                                            {sync.versionsAdded}{' '}
+                                                            {sync.versionsAdded ===
+                                                            1
+                                                                ? 'version'
+                                                                : 'versions'}{' '}
+                                                            added
+                                                        </TooltipContent>
+                                                    </Tooltip>
+                                                    <Tooltip>
+                                                        <TooltipTrigger asChild>
+                                                            <span
+                                                                className={cn(
+                                                                    'inline-flex items-center gap-1',
+                                                                    sync.versionsUpdated >
+                                                                        0
+                                                                        ? 'text-amber-600 dark:text-amber-400'
+                                                                        : 'text-muted-foreground/40',
+                                                                )}
+                                                            >
+                                                                <PackageCheck className="size-3.5" />
+                                                                {
+                                                                    sync.versionsUpdated
+                                                                }
+                                                            </span>
+                                                        </TooltipTrigger>
+                                                        <TooltipContent>
+                                                            {
+                                                                sync.versionsUpdated
+                                                            }{' '}
+                                                            {sync.versionsUpdated ===
+                                                            1
+                                                                ? 'version'
+                                                                : 'versions'}{' '}
+                                                            updated
+                                                        </TooltipContent>
+                                                    </Tooltip>
+                                                    <Tooltip>
+                                                        <TooltipTrigger asChild>
+                                                            <span
+                                                                className={cn(
+                                                                    'inline-flex items-center gap-1',
+                                                                    sync.versionsRemoved >
+                                                                        0
+                                                                        ? 'text-red-600 dark:text-red-400'
+                                                                        : 'text-muted-foreground/40',
+                                                                )}
+                                                            >
+                                                                <PackageMinus className="size-3.5" />
+                                                                -
+                                                                {
+                                                                    sync.versionsRemoved
+                                                                }
+                                                            </span>
+                                                        </TooltipTrigger>
+                                                        <TooltipContent>
+                                                            {
+                                                                sync.versionsRemoved
+                                                            }{' '}
+                                                            {sync.versionsRemoved ===
+                                                            1
+                                                                ? 'version'
+                                                                : 'versions'}{' '}
+                                                            removed
+                                                        </TooltipContent>
+                                                    </Tooltip>
+                                                </div>
+                                            )}
+                                            {sync.errorMessage && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() =>
+                                                        setSelectedSync(sync)
+                                                    }
+                                                    className="text-sm text-destructive underline underline-offset-2 hover:text-destructive/80"
+                                                >
+                                                    View error
+                                                </button>
+                                            )}
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
                         )}
                     </CardContent>

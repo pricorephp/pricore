@@ -22,14 +22,16 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { Separator } from '@/components/ui/separator';
 import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from '@/components/ui/table';
+    Sheet,
+    SheetClose,
+    SheetContent,
+    SheetDescription,
+    SheetFooter,
+    SheetHeader,
+    SheetTitle,
+} from '@/components/ui/sheet';
 import {
     Tooltip,
     TooltipContent,
@@ -40,14 +42,22 @@ import AppLayout from '@/layouts/app-layout';
 import { createOrganizationBreadcrumb } from '@/lib/breadcrumbs';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import {
+    Calendar,
     Check,
+    ChevronRight,
     Copy,
     Download,
+    ExternalLink,
     GitBranch,
+    GitCommit,
     Globe,
+    Link2,
     Lock,
+    Package as PackageIcon,
     Search,
+    Terminal,
     Trash2,
+    Users,
     X,
 } from 'lucide-react';
 import { DateTime } from 'luxon';
@@ -59,6 +69,8 @@ type PackageData = App.Domains.Package.Contracts.Data.PackageData;
 type PackageVersionData = App.Domains.Package.Contracts.Data.PackageVersionData;
 type PackageDownloadStatsData =
     App.Domains.Package.Contracts.Data.PackageDownloadStatsData;
+type PackageVersionDetailData =
+    App.Domains.Package.Contracts.Data.PackageVersionDetailData;
 
 interface PackageShowProps {
     organization: OrganizationData;
@@ -82,14 +94,25 @@ interface PackageShowProps {
     };
     composerRepositoryUrl: string;
     canManageVersions: boolean;
+    activeVersion: PackageVersionDetailData | null;
 }
 
-function CopyButton({ text }: { text: string }) {
+function CopyButton({
+    text,
+    icon: Icon = Copy,
+    tooltip = 'Copied!',
+    variant = 'ghost',
+}: {
+    text: string;
+    icon?: React.ComponentType<React.SVGProps<SVGSVGElement>>;
+    tooltip?: string;
+    variant?: 'ghost' | 'outline';
+}) {
     const [copied, setCopied] = useState(false);
+    const isOutline = variant === 'outline';
 
     const copyToClipboard = async () => {
         if (!navigator?.clipboard) {
-            // Fallback for browsers that don't support clipboard API
             const textArea = document.createElement('textarea');
             textArea.value = text;
             textArea.style.position = 'fixed';
@@ -122,19 +145,21 @@ function CopyButton({ text }: { text: string }) {
             <TooltipTrigger asChild>
                 <Button
                     type="button"
-                    variant="ghost"
+                    variant={variant}
                     size="icon"
-                    className="h-6 w-6"
+                    className={isOutline ? 'h-8 w-8' : 'h-6 w-6'}
                     onClick={copyToClipboard}
                 >
                     {copied ? (
-                        <Check className="h-3 w-3 text-green-600 dark:text-green-400" />
+                        <Check
+                            className={`text-green-600 dark:text-green-400 ${isOutline ? 'h-4 w-4' : 'h-3 w-3'}`}
+                        />
                     ) : (
-                        <Copy className="h-3 w-3" />
+                        <Icon className={isOutline ? 'h-4 w-4' : 'h-3 w-3'} />
                     )}
                 </Button>
             </TooltipTrigger>
-            <TooltipContent>Copied!</TooltipContent>
+            <TooltipContent>{tooltip}</TooltipContent>
         </Tooltip>
     );
 }
@@ -147,6 +172,7 @@ export default function PackageShow({
     filters,
     composerRepositoryUrl,
     canManageVersions,
+    activeVersion,
 }: PackageShowProps) {
     const { auth } = usePage<{
         auth: { organizations: OrganizationData[] };
@@ -205,6 +231,31 @@ export default function PackageShow({
         setQueryFilter('');
         setTypeFilter('all');
         setPage(1);
+    };
+
+    const openVersion = (versionUuid: string) => {
+        router.get(
+            `/organizations/${organization.slug}/packages/${pkg.uuid}`,
+            {
+                ...Object.fromEntries(
+                    new URLSearchParams(window.location.search),
+                ),
+                version: versionUuid,
+            },
+            { preserveScroll: true, preserveState: true },
+        );
+    };
+
+    const closeVersionPanel = () => {
+        const params = new URLSearchParams(window.location.search);
+        params.delete('version');
+        const query = Object.fromEntries(params);
+
+        router.get(
+            `/organizations/${organization.slug}/packages/${pkg.uuid}`,
+            query,
+            { preserveScroll: true, preserveState: true, replace: true },
+        );
     };
 
     const breadcrumbs = [
@@ -386,213 +437,64 @@ export default function PackageShow({
                     ) : (
                         <>
                             <div className="rounded-lg border bg-card">
-                                <Table className="table-fixed">
-                                    <TableHeader>
-                                        <TableRow className="hover:bg-transparent">
-                                            <TableHead className="w-[20%]">
-                                                Version
-                                            </TableHead>
-                                            <TableHead className="w-[20%]">
-                                                Released
-                                            </TableHead>
-                                            <TableHead>
-                                                Install Command
-                                            </TableHead>
-                                            <TableHead className="w-[13%]">
-                                                Source
-                                            </TableHead>
-                                        </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                        {versions.data.map((version) => {
-                                            const installCommand = `composer require ${pkg.name}:${version.version}`;
-
-                                            return (
-                                                <TableRow key={version.uuid}>
-                                                    <TableCell>
-                                                        <Tooltip>
-                                                            <TooltipTrigger
-                                                                asChild
-                                                            >
-                                                                <code className="block truncate font-mono text-sm">
-                                                                    {
-                                                                        version.version
-                                                                    }
-                                                                </code>
-                                                            </TooltipTrigger>
-                                                            <TooltipContent>
-                                                                <span className="font-mono">
-                                                                    {
-                                                                        version.version
-                                                                    }
-                                                                </span>
-                                                            </TooltipContent>
-                                                        </Tooltip>
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        {version.releasedAt ? (
-                                                            <div className="">
-                                                                {DateTime.fromISO(
-                                                                    version.releasedAt,
-                                                                ).toRelative()}
-                                                                <div className="text-sm text-muted-foreground">
-                                                                    {DateTime.fromISO(
-                                                                        version.releasedAt,
-                                                                    ).toLocaleString(
-                                                                        DateTime.DATETIME_SHORT,
-                                                                    )}
-                                                                </div>
-                                                            </div>
-                                                        ) : (
-                                                            <span className="text-muted-foreground">
-                                                                —
-                                                            </span>
+                                {versions.data.map((version, index) => (
+                                    <button
+                                        key={version.uuid}
+                                        type="button"
+                                        onClick={() =>
+                                            openVersion(version.uuid)
+                                        }
+                                        className={`flex w-full items-center gap-4 px-5 py-4 text-left transition-colors hover:bg-muted/50 ${index < versions.data.length - 1 ? 'border-b' : ''}`}
+                                    >
+                                        <div className="min-w-0 flex-1">
+                                            <div className="flex items-center gap-2">
+                                                <code className="truncate font-mono text-sm font-medium">
+                                                    {version.version}
+                                                </code>
+                                                {version.version.includes(
+                                                    'dev',
+                                                ) ||
+                                                version.normalizedVersion.startsWith(
+                                                    'dev-',
+                                                ) ? (
+                                                    <Badge variant="secondary">
+                                                        dev
+                                                    </Badge>
+                                                ) : (
+                                                    <Badge variant="success">
+                                                        stable
+                                                    </Badge>
+                                                )}
+                                            </div>
+                                            <div className="mt-1 flex items-center gap-3 text-sm text-muted-foreground">
+                                                {version.releasedAt && (
+                                                    <span className="flex items-center gap-1">
+                                                        <Calendar className="h-3.5 w-3.5" />
+                                                        {DateTime.fromISO(
+                                                            version.releasedAt,
+                                                        ).toRelative()}
+                                                        <span>&middot;</span>
+                                                        {DateTime.fromISO(
+                                                            version.releasedAt,
+                                                        ).toLocaleString(
+                                                            DateTime.DATETIME_MED,
                                                         )}
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        <div className="flex items-center gap-2">
-                                                            <input
-                                                                type="text"
-                                                                readOnly
-                                                                value={
-                                                                    installCommand
-                                                                }
-                                                                className="w-full rounded border border-input bg-background px-3 py-1.5 font-mono text-sm"
-                                                                onClick={(e) =>
-                                                                    (
-                                                                        e.target as HTMLInputElement
-                                                                    ).select()
-                                                                }
-                                                            />
-                                                            <CopyButton
-                                                                text={
-                                                                    installCommand
-                                                                }
-                                                            />
-                                                        </div>
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        <div className="flex items-center justify-between">
-                                                            <div>
-                                                                {version.commitUrl ? (
-                                                                    <a
-                                                                        href={
-                                                                            version.commitUrl
-                                                                        }
-                                                                        target="_blank"
-                                                                        rel="noopener noreferrer"
-                                                                        className="inline-flex items-center gap-1 rounded bg-muted px-2 py-1 font-mono text-xs transition-colors hover:bg-muted/80"
-                                                                    >
-                                                                        {version.sourceReference?.substring(
-                                                                            0,
-                                                                            7,
-                                                                        )}
-                                                                        <svg
-                                                                            className="h-3 w-3"
-                                                                            fill="none"
-                                                                            stroke="currentColor"
-                                                                            viewBox="0 0 24 24"
-                                                                        >
-                                                                            <path
-                                                                                strokeLinecap="round"
-                                                                                strokeLinejoin="round"
-                                                                                strokeWidth={
-                                                                                    2
-                                                                                }
-                                                                                d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
-                                                                            />
-                                                                        </svg>
-                                                                    </a>
-                                                                ) : version.sourceReference ? (
-                                                                    <code className="rounded bg-muted px-2 py-1 font-mono text-xs">
-                                                                        {version.sourceReference.substring(
-                                                                            0,
-                                                                            7,
-                                                                        )}
-                                                                    </code>
-                                                                ) : (
-                                                                    <span className="text-muted-foreground">
-                                                                        —
-                                                                    </span>
-                                                                )}
-                                                            </div>
-                                                            {canManageVersions && (
-                                                                <Dialog>
-                                                                    <DialogTrigger
-                                                                        asChild
-                                                                    >
-                                                                        <Button
-                                                                            variant="ghost"
-                                                                            size="icon"
-                                                                            className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                                                                        >
-                                                                            <Trash2 className="h-4 w-4" />
-                                                                        </Button>
-                                                                    </DialogTrigger>
-                                                                    <DialogContent>
-                                                                        <DialogTitle>
-                                                                            Delete
-                                                                            version{' '}
-                                                                            {
-                                                                                version.version
-                                                                            }
-                                                                            ?
-                                                                        </DialogTitle>
-                                                                        <DialogDescription>
-                                                                            This
-                                                                            will
-                                                                            permanently
-                                                                            remove
-                                                                            version{' '}
-                                                                            <strong>
-                                                                                {
-                                                                                    version.version
-                                                                                }
-                                                                            </strong>{' '}
-                                                                            from{' '}
-                                                                            {
-                                                                                pkg.name
-                                                                            }
-                                                                            .
-                                                                            This
-                                                                            action
-                                                                            cannot
-                                                                            be
-                                                                            undone.
-                                                                        </DialogDescription>
-                                                                        <DialogFooter className="gap-2">
-                                                                            <DialogClose
-                                                                                asChild
-                                                                            >
-                                                                                <Button variant="secondary">
-                                                                                    Cancel
-                                                                                </Button>
-                                                                            </DialogClose>
-                                                                            <Button
-                                                                                variant="destructive"
-                                                                                onClick={() =>
-                                                                                    router.delete(
-                                                                                        `/organizations/${organization.slug}/packages/${pkg.uuid}/versions/${version.uuid}`,
-                                                                                        {
-                                                                                            preserveScroll: true,
-                                                                                        },
-                                                                                    )
-                                                                                }
-                                                                            >
-                                                                                Delete
-                                                                                version
-                                                                            </Button>
-                                                                        </DialogFooter>
-                                                                    </DialogContent>
-                                                                </Dialog>
-                                                            )}
-                                                        </div>
-                                                    </TableCell>
-                                                </TableRow>
-                                            );
-                                        })}
-                                    </TableBody>
-                                </Table>
+                                                    </span>
+                                                )}
+                                                {version.sourceReference && (
+                                                    <span className="flex items-center gap-1 font-mono">
+                                                        <GitCommit className="h-3.5 w-3.5" />
+                                                        {version.sourceReference.substring(
+                                                            0,
+                                                            7,
+                                                        )}
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </div>
+                                        <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+                                    </button>
+                                ))}
                             </div>
 
                             {versions.last_page > 1 && (
@@ -668,6 +570,290 @@ export default function PackageShow({
                     )}
                 </div>
             </div>
+
+            <Sheet
+                open={activeVersion !== null}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        closeVersionPanel();
+                    }
+                }}
+            >
+                <SheetContent className="overflow-y-auto sm:max-w-xl [&>button.absolute]:hidden">
+                    {activeVersion && (
+                        <>
+                            <SheetHeader className="p-6">
+                                <div className="flex items-start justify-between gap-4">
+                                    <div className="flex min-w-0 items-start gap-3">
+                                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                                            <PackageIcon className="h-5 w-5" />
+                                        </div>
+                                        <div className="min-w-0 space-y-1">
+                                            <SheetTitle className="truncate font-mono text-lg">
+                                                {activeVersion.version}
+                                            </SheetTitle>
+                                            <div className="flex items-center gap-2">
+                                                {activeVersion.isDev ? (
+                                                    <Badge variant="secondary">
+                                                        dev
+                                                    </Badge>
+                                                ) : (
+                                                    <Badge variant="success">
+                                                        stable
+                                                    </Badge>
+                                                )}
+                                                {activeVersion.description && (
+                                                    <SheetDescription className="truncate">
+                                                        {
+                                                            activeVersion.description
+                                                        }
+                                                    </SheetDescription>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="flex shrink-0 items-center gap-2">
+                                        <CopyButton
+                                            text={`${window.location.origin}/organizations/${organization.slug}/packages/${pkg.uuid}?version=${activeVersion.uuid}`}
+                                            icon={Link2}
+                                            tooltip="Link copied!"
+                                            variant="outline"
+                                        />
+                                        <SheetClose asChild>
+                                            <Button
+                                                variant="outline"
+                                                size="icon"
+                                                className="h-8 w-8"
+                                            >
+                                                <X className="h-4 w-4" />
+                                                <span className="sr-only">
+                                                    Close
+                                                </span>
+                                            </Button>
+                                        </SheetClose>
+                                    </div>
+                                </div>
+                            </SheetHeader>
+
+                            <div className="space-y-6 p-6 pt-0">
+                                {/* Quick info row */}
+                                <div className="grid grid-cols-2 gap-4">
+                                    {activeVersion.releasedAt && (
+                                        <div className="rounded-lg border p-4">
+                                            <div className="mb-1.5 flex items-center gap-1.5 text-sm font-medium text-muted-foreground">
+                                                <Calendar className="h-4 w-4" />
+                                                Released
+                                            </div>
+                                            <p className="font-medium">
+                                                {DateTime.fromISO(
+                                                    activeVersion.releasedAt,
+                                                ).toRelative()}
+                                            </p>
+                                            <p className="text-sm text-muted-foreground">
+                                                {DateTime.fromISO(
+                                                    activeVersion.releasedAt,
+                                                ).toLocaleString(
+                                                    DateTime.DATETIME_MED,
+                                                )}
+                                            </p>
+                                        </div>
+                                    )}
+                                    {activeVersion.sourceReference && (
+                                        <div className="rounded-lg border p-4">
+                                            <div className="mb-1.5 flex items-center gap-1.5 text-sm font-medium text-muted-foreground">
+                                                <GitCommit className="h-4 w-4" />
+                                                Commit
+                                            </div>
+                                            {activeVersion.commitUrl ? (
+                                                <a
+                                                    href={
+                                                        activeVersion.commitUrl
+                                                    }
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="inline-flex items-center gap-1.5 font-mono font-medium text-primary transition-colors hover:underline"
+                                                >
+                                                    {activeVersion.sourceReference.substring(
+                                                        0,
+                                                        7,
+                                                    )}
+                                                    <ExternalLink className="h-3.5 w-3.5" />
+                                                </a>
+                                            ) : (
+                                                <code className="font-mono font-medium">
+                                                    {activeVersion.sourceReference.substring(
+                                                        0,
+                                                        7,
+                                                    )}
+                                                </code>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Install command */}
+                                <div>
+                                    <div className="mb-2 flex items-center gap-1.5 text-sm font-medium text-muted-foreground">
+                                        <Terminal className="h-4 w-4" />
+                                        Install
+                                    </div>
+                                    <div className="flex items-center gap-2 rounded-lg border bg-muted/50 px-4 py-3">
+                                        <code className="flex-1 truncate font-mono text-sm">
+                                            composer require {pkg.name}:
+                                            {activeVersion.version}
+                                        </code>
+                                        <CopyButton
+                                            text={`composer require ${pkg.name}:${activeVersion.version}`}
+                                        />
+                                    </div>
+                                </div>
+
+                                {/* Metadata section */}
+                                {(activeVersion.license ||
+                                    activeVersion.type ||
+                                    activeVersion.authors ||
+                                    activeVersion.keywords) && (
+                                    <>
+                                        <Separator />
+                                        <div className="space-y-4">
+                                            {(activeVersion.license ||
+                                                activeVersion.type) && (
+                                                <div className="grid grid-cols-2 gap-4">
+                                                    {activeVersion.license && (
+                                                        <div>
+                                                            <span className="text-sm font-medium text-muted-foreground">
+                                                                License
+                                                            </span>
+                                                            <p className="mt-0.5 font-medium">
+                                                                {
+                                                                    activeVersion.license
+                                                                }
+                                                            </p>
+                                                        </div>
+                                                    )}
+                                                    {activeVersion.type && (
+                                                        <div>
+                                                            <span className="text-sm font-medium text-muted-foreground">
+                                                                Type
+                                                            </span>
+                                                            <p className="mt-0.5 font-medium">
+                                                                {
+                                                                    activeVersion.type
+                                                                }
+                                                            </p>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
+
+                                            {activeVersion.authors &&
+                                                activeVersion.authors.length >
+                                                    0 && (
+                                                    <div>
+                                                        <div className="mb-2 flex items-center gap-1.5 text-sm font-medium text-muted-foreground">
+                                                            <Users className="h-4 w-4" />
+                                                            Authors
+                                                        </div>
+                                                        <div className="flex flex-wrap gap-1.5">
+                                                            {activeVersion.authors.map(
+                                                                (author, i) => (
+                                                                    <Badge
+                                                                        key={i}
+                                                                        variant="secondary"
+                                                                    >
+                                                                        {author.name ||
+                                                                            author.email}
+                                                                    </Badge>
+                                                                ),
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                            {activeVersion.keywords &&
+                                                activeVersion.keywords.length >
+                                                    0 && (
+                                                    <div>
+                                                        <span className="mb-2 block text-sm font-medium text-muted-foreground">
+                                                            Keywords
+                                                        </span>
+                                                        <div className="flex flex-wrap gap-1.5">
+                                                            {activeVersion.keywords.map(
+                                                                (keyword) => (
+                                                                    <Badge
+                                                                        key={
+                                                                            keyword
+                                                                        }
+                                                                        variant="outline"
+                                                                    >
+                                                                        {
+                                                                            keyword
+                                                                        }
+                                                                    </Badge>
+                                                                ),
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                )}
+                                        </div>
+                                    </>
+                                )}
+                            </div>
+
+                            {canManageVersions && (
+                                <SheetFooter className="border-t p-6">
+                                    <Dialog>
+                                        <DialogTrigger asChild>
+                                            <Button
+                                                variant="destructive"
+                                                className="w-full"
+                                            >
+                                                <Trash2 className="mr-2 h-4 w-4" />
+                                                Delete version
+                                            </Button>
+                                        </DialogTrigger>
+                                        <DialogContent>
+                                            <DialogTitle>
+                                                Delete version{' '}
+                                                {activeVersion.version}?
+                                            </DialogTitle>
+                                            <DialogDescription>
+                                                This will permanently remove
+                                                version{' '}
+                                                <strong>
+                                                    {activeVersion.version}
+                                                </strong>{' '}
+                                                from {pkg.name}. This action
+                                                cannot be undone.
+                                            </DialogDescription>
+                                            <DialogFooter className="gap-2">
+                                                <DialogClose asChild>
+                                                    <Button variant="secondary">
+                                                        Cancel
+                                                    </Button>
+                                                </DialogClose>
+                                                <Button
+                                                    variant="destructive"
+                                                    onClick={() =>
+                                                        router.delete(
+                                                            `/organizations/${organization.slug}/packages/${pkg.uuid}/versions/${activeVersion.uuid}`,
+                                                            {
+                                                                preserveScroll: true,
+                                                            },
+                                                        )
+                                                    }
+                                                >
+                                                    Delete version
+                                                </Button>
+                                            </DialogFooter>
+                                        </DialogContent>
+                                    </Dialog>
+                                </SheetFooter>
+                            )}
+                        </>
+                    )}
+                </SheetContent>
+            </Sheet>
         </AppLayout>
     );
 }
