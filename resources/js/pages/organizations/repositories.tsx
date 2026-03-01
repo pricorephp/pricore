@@ -7,6 +7,7 @@ import ImportRepositoriesDialog from '@/components/import-repositories-dialog';
 import InfoBox from '@/components/info-box';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { CardList } from '@/components/ui/card';
 import AppLayout from '@/layouts/app-layout';
 import { createOrganizationBreadcrumb } from '@/lib/breadcrumbs';
 import { Head, Link, usePage } from '@inertiajs/react';
@@ -104,7 +105,7 @@ export default function Repositories({
                         }}
                     />
                 ) : (
-                    <div className="divide-y divide-border rounded-lg border bg-card">
+                    <CardList>
                         {repositories.map((repo) => (
                             <Link
                                 key={repo.uuid}
@@ -142,7 +143,7 @@ export default function Repositories({
                                 <ArrowUpRight className="h-4 w-4 shrink-0 text-muted-foreground/50 transition-all group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-muted-foreground" />
                             </Link>
                         ))}
-                    </div>
+                    </CardList>
                 )}
 
                 <InfoBox

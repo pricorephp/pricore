@@ -71,6 +71,9 @@
     --color-button-destructive-to: var(--button-destructive-to);
     --color-button-destructive-border: var(--button-destructive-border);
 
+    /* Surface hierarchy */
+    --color-surface-inset: var(--surface-inset);
+
     /* Elegant shadow system */
     --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.03);
     --shadow-sm:
@@ -90,14 +93,15 @@
     --popover-foreground: oklch(0.18 0.01 260);
     --primary: oklch(0.63 0.22 35);
     --primary-foreground: oklch(0.99 0 0);
-    --secondary: oklch(0.97 0.003 90);
+    --secondary: oklch(0.97 0.008 90);
     --secondary-foreground: oklch(0.25 0.01 260);
-    --muted: oklch(0.965 0.003 90);
+    --muted: oklch(0.965 0.008 90);
     --muted-foreground: oklch(0.5 0.01 260);
-    --accent: oklch(0.96 0.005 90);
+    --accent: oklch(0.96 0.008 90);
     --accent-foreground: oklch(0.25 0.01 260);
     --destructive: oklch(0.55 0.22 25);
     --destructive-foreground: oklch(0.55 0.22 25);
+    --surface-inset: oklch(0.975 0.008 90);
 
     /* Button depth styling */
     --button-primary-from: oklch(0.68 0.2 35);
@@ -145,6 +149,7 @@
     --accent-foreground: oklch(0.95 0 0);
     --destructive: oklch(0.45 0.18 25);
     --destructive-foreground: oklch(0.68 0.2 25);
+    --surface-inset: oklch(0.12 0.008 260);
 
     /* Button depth styling - dark mode */
     --button-primary-from: oklch(0.68 0.2 35);

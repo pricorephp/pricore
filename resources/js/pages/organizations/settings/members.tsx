@@ -207,183 +207,174 @@ export default function Members({ members, invitations, roleOptions }: Props) {
                 </Dialog>
             </div>
 
-            <div className="rounded-lg border bg-card">
-                <Table>
-                    <TableHeader>
-                        <TableRow className="hover:bg-transparent">
-                            <TableHead>Member</TableHead>
-                            <TableHead>Role</TableHead>
-                            <TableHead>Joined</TableHead>
-                            <TableHead className="text-right">
-                                Actions
-                            </TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {members.map((member) => (
-                            <TableRow key={member.uuid}>
-                                <TableCell>
-                                    <div className="flex items-center gap-3">
-                                        <Avatar className="h-8 w-8">
-                                            <AvatarImage
-                                                src={member.avatar ?? undefined}
-                                                alt={member.name}
-                                            />
-                                            <AvatarFallback className="bg-gradient-to-br from-neutral-200 to-neutral-300 text-xs text-neutral-600 dark:from-neutral-600 dark:to-neutral-700 dark:text-neutral-300">
-                                                {getInitials(member.name)}
-                                            </AvatarFallback>
-                                        </Avatar>
-                                        <div className="flex flex-col">
-                                            <span className="font-medium">
-                                                {member.name}
-                                            </span>
-                                            <span className="text-muted-foreground">
-                                                {member.email}
-                                            </span>
-                                        </div>
+            <Table>
+                <TableHeader>
+                    <TableRow>
+                        <TableHead>Member</TableHead>
+                        <TableHead>Role</TableHead>
+                        <TableHead>Joined</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                </TableHeader>
+                <TableBody>
+                    {members.map((member) => (
+                        <TableRow key={member.uuid}>
+                            <TableCell>
+                                <div className="flex items-center gap-3">
+                                    <Avatar className="h-8 w-8">
+                                        <AvatarImage
+                                            src={member.avatar ?? undefined}
+                                            alt={member.name}
+                                        />
+                                        <AvatarFallback className="bg-gradient-to-br from-neutral-200 to-neutral-300 text-xs text-neutral-600 dark:from-neutral-600 dark:to-neutral-700 dark:text-neutral-300">
+                                            {getInitials(member.name)}
+                                        </AvatarFallback>
+                                    </Avatar>
+                                    <div className="flex flex-col">
+                                        <span className="font-medium">
+                                            {member.name}
+                                        </span>
+                                        <span className="text-muted-foreground">
+                                            {member.email}
+                                        </span>
                                     </div>
-                                </TableCell>
-                                <TableCell>
-                                    {member.role === 'owner' ? (
-                                        <Badge
-                                            variant={getRoleBadgeVariant(
-                                                member.role,
-                                            )}
-                                        >
-                                            {roleOptions[member.role]}
-                                        </Badge>
-                                    ) : (
-                                        <Select
-                                            value={member.role}
-                                            onValueChange={(role) =>
-                                                handleRoleChange(
-                                                    member.uuid,
-                                                    role,
+                                </div>
+                            </TableCell>
+                            <TableCell>
+                                {member.role === 'owner' ? (
+                                    <Badge
+                                        variant={getRoleBadgeVariant(
+                                            member.role,
+                                        )}
+                                    >
+                                        {roleOptions[member.role]}
+                                    </Badge>
+                                ) : (
+                                    <Select
+                                        value={member.role}
+                                        onValueChange={(role) =>
+                                            handleRoleChange(member.uuid, role)
+                                        }
+                                    >
+                                        <SelectTrigger className="w-32">
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {Object.entries(roleOptions)
+                                                .filter(
+                                                    ([value]) =>
+                                                        value !== 'owner',
                                                 )
-                                            }
-                                        >
-                                            <SelectTrigger className="w-32">
-                                                <SelectValue />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                {Object.entries(roleOptions)
-                                                    .filter(
-                                                        ([value]) =>
-                                                            value !== 'owner',
-                                                    )
-                                                    .map(([value, label]) => (
-                                                        <SelectItem
-                                                            key={value}
-                                                            value={value}
-                                                        >
-                                                            {label}
-                                                        </SelectItem>
-                                                    ))}
-                                            </SelectContent>
-                                        </Select>
-                                    )}
-                                </TableCell>
-                                <TableCell>
-                                    {member.joinedAt
-                                        ? new Date(
-                                              member.joinedAt,
-                                          ).toLocaleDateString()
-                                        : '-'}
-                                </TableCell>
-                                <TableCell className="text-right">
-                                    {member.role !== 'owner' && (
-                                        <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            onClick={() =>
-                                                handleRemoveMember(member.uuid)
-                                            }
-                                        >
-                                            <Trash2 className="h-4 w-4 text-red-600 dark:text-red-400" />
-                                        </Button>
-                                    )}
-                                </TableCell>
-                            </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
-            </div>
+                                                .map(([value, label]) => (
+                                                    <SelectItem
+                                                        key={value}
+                                                        value={value}
+                                                    >
+                                                        {label}
+                                                    </SelectItem>
+                                                ))}
+                                        </SelectContent>
+                                    </Select>
+                                )}
+                            </TableCell>
+                            <TableCell>
+                                {member.joinedAt
+                                    ? new Date(
+                                          member.joinedAt,
+                                      ).toLocaleDateString()
+                                    : '-'}
+                            </TableCell>
+                            <TableCell className="text-right">
+                                {member.role !== 'owner' && (
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() =>
+                                            handleRemoveMember(member.uuid)
+                                        }
+                                    >
+                                        <Trash2 className="h-4 w-4 text-red-600 dark:text-red-400" />
+                                    </Button>
+                                )}
+                            </TableCell>
+                        </TableRow>
+                    ))}
+                </TableBody>
+            </Table>
 
             {invitations.length > 0 && (
                 <div className="space-y-3">
                     <h4 className="text-sm font-medium text-muted-foreground">
                         Pending Invitations
                     </h4>
-                    <div className="rounded-lg border bg-card">
-                        <Table>
-                            <TableHeader>
-                                <TableRow className="hover:bg-transparent">
-                                    <TableHead>Email</TableHead>
-                                    <TableHead>Role</TableHead>
-                                    <TableHead>Sent</TableHead>
-                                    <TableHead className="text-right">
-                                        Actions
-                                    </TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {invitations.map((invitation) => (
-                                    <TableRow key={invitation.uuid}>
-                                        <TableCell>
-                                            <div className="flex items-center gap-2 text-muted-foreground">
-                                                <Mail className="h-4 w-4 shrink-0" />
-                                                <span>{invitation.email}</span>
-                                            </div>
-                                        </TableCell>
-                                        <TableCell>
-                                            <Badge
-                                                variant={getRoleBadgeVariant(
-                                                    invitation.role,
-                                                )}
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Email</TableHead>
+                                <TableHead>Role</TableHead>
+                                <TableHead>Sent</TableHead>
+                                <TableHead className="text-right">
+                                    Actions
+                                </TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {invitations.map((invitation) => (
+                                <TableRow key={invitation.uuid}>
+                                    <TableCell>
+                                        <div className="flex items-center gap-2 text-muted-foreground">
+                                            <Mail className="h-4 w-4 shrink-0" />
+                                            <span>{invitation.email}</span>
+                                        </div>
+                                    </TableCell>
+                                    <TableCell>
+                                        <Badge
+                                            variant={getRoleBadgeVariant(
+                                                invitation.role,
+                                            )}
+                                        >
+                                            {roleOptions[invitation.role]}
+                                        </Badge>
+                                    </TableCell>
+                                    <TableCell>
+                                        {invitation.createdAt
+                                            ? new Date(
+                                                  invitation.createdAt,
+                                              ).toLocaleDateString()
+                                            : '-'}
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                        <div className="flex items-center justify-end gap-1">
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={() =>
+                                                    handleResendInvitation(
+                                                        invitation.uuid,
+                                                    )
+                                                }
+                                                title="Resend invitation"
                                             >
-                                                {roleOptions[invitation.role]}
-                                            </Badge>
-                                        </TableCell>
-                                        <TableCell>
-                                            {invitation.createdAt
-                                                ? new Date(
-                                                      invitation.createdAt,
-                                                  ).toLocaleDateString()
-                                                : '-'}
-                                        </TableCell>
-                                        <TableCell className="text-right">
-                                            <div className="flex items-center justify-end gap-1">
-                                                <Button
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    onClick={() =>
-                                                        handleResendInvitation(
-                                                            invitation.uuid,
-                                                        )
-                                                    }
-                                                    title="Resend invitation"
-                                                >
-                                                    <RefreshCw className="h-4 w-4" />
-                                                </Button>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    onClick={() =>
-                                                        handleCancelInvitation(
-                                                            invitation.uuid,
-                                                        )
-                                                    }
-                                                    title="Cancel invitation"
-                                                >
-                                                    <Trash2 className="h-4 w-4 text-red-600 dark:text-red-400" />
-                                                </Button>
-                                            </div>
-                                        </TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    </div>
+                                                <RefreshCw className="h-4 w-4" />
+                                            </Button>
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={() =>
+                                                    handleCancelInvitation(
+                                                        invitation.uuid,
+                                                    )
+                                                }
+                                                title="Cancel invitation"
+                                            >
+                                                <Trash2 className="h-4 w-4 text-red-600 dark:text-red-400" />
+                                            </Button>
+                                        </div>
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
                 </div>
             )}
         </div>

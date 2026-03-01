@@ -4,7 +4,13 @@ import { DownloadChart } from '@/components/stats/download-chart';
 import { VersionDownloads } from '@/components/stats/version-downloads';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+    Card,
+    CardContent,
+    CardHeader,
+    CardList,
+    CardTitle,
+} from '@/components/ui/card';
 import {
     Dialog,
     DialogClose,
@@ -277,11 +283,9 @@ export default function PackageShow({
             <div className="mx-auto w-7xl space-y-6 p-6">
                 <div className="space-y-4">
                     <div className="flex items-start justify-between">
-                        <div className="grid space-y-2">
+                        <div className="space-y-1">
                             <div className="flex items-center gap-3">
-                                <h1 className="font-mono text-2xl font-semibold">
-                                    {pkg.name}
-                                </h1>
+                                <HeadingSmall title={pkg.name} />
                                 <Badge
                                     variant={
                                         pkg.visibility === 'private'
@@ -427,7 +431,7 @@ export default function PackageShow({
                         </Card>
                     ) : (
                         <>
-                            <div className="rounded-lg border bg-card">
+                            <CardList>
                                 {versions.data.map((version, index) => (
                                     <button
                                         key={version.uuid}
@@ -486,7 +490,7 @@ export default function PackageShow({
                                         <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
                                     </button>
                                 ))}
-                            </div>
+                            </CardList>
 
                             {versions.last_page > 1 && (
                                 <div className="flex items-center justify-between">
@@ -594,9 +598,7 @@ export default function PackageShow({
                                             )}
                                             {activeVersion.description && (
                                                 <DialogDescription className="truncate">
-                                                    {
-                                                        activeVersion.description
-                                                    }
+                                                    {activeVersion.description}
                                                 </DialogDescription>
                                             )}
                                         </div>
@@ -791,9 +793,7 @@ export default function PackageShow({
                                                     This will permanently remove
                                                     version{' '}
                                                     <strong>
-                                                        {
-                                                            activeVersion.version
-                                                        }
+                                                        {activeVersion.version}
                                                     </strong>{' '}
                                                     from {pkg.name}. This action
                                                     cannot be undone.
@@ -810,8 +810,7 @@ export default function PackageShow({
                                                             router.delete(
                                                                 `/organizations/${organization.slug}/packages/${pkg.uuid}/versions/${activeVersion.uuid}`,
                                                                 {
-                                                                    preserveScroll:
-                                                                        true,
+                                                                    preserveScroll: true,
                                                                 },
                                                             )
                                                         }

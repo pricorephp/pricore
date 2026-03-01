@@ -65,11 +65,25 @@ function CardFooter({ className, ...props }: React.ComponentProps<'div'>) {
     );
 }
 
+function CardList({ className, ...props }: React.ComponentProps<'div'>) {
+    return (
+        <div
+            data-slot="card-list"
+            className={cn(
+                'divide-y divide-border rounded-lg border bg-card',
+                className,
+            )}
+            {...props}
+        />
+    );
+}
+
 export {
     Card,
     CardContent,
     CardDescription,
     CardFooter,
     CardHeader,
+    CardList,
     CardTitle,
 };
