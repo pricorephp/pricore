@@ -21,4 +21,11 @@ interface GitProviderInterface
     public function getRepositoryIdentifier(): string;
 
     public function getRepositoryUrl(): string;
+
+    /**
+     * @return array{id: int|string}
+     */
+    public function createWebhook(string $url, string $secret): array;
+
+    public function deleteWebhook(int $hookId): void;
 }

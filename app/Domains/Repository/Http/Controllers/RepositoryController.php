@@ -19,6 +19,7 @@ use App\Domains\Repository\Jobs\SyncRepositoryJob;
 use App\Http\Controllers\Controller;
 use App\Models\Organization;
 use App\Models\Repository;
+use App\Models\UserGitCredential;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -63,12 +64,20 @@ class RepositoryController extends Controller
             GitProvider::from($request->provider)
         );
 
+        $provider = GitProvider::from($request->provider);
+
+        /** @var \App\Models\User $user */
+        $user = auth()->user();
+
+        $baseUrl = $this->resolveBaseUrl($provider, $user->uuid);
+
         $repository = Repository::create([
             'organization_uuid' => $organization->uuid,
-            'credential_user_uuid' => auth()->id(),
+            'credential_user_uuid' => $user->uuid,
             'name' => $name,
-            'provider' => GitProvider::from($request->provider),
+            'provider' => $provider,
             'repo_identifier' => $request->repo_identifier,
+            'custom_base_url' => $baseUrl,
             'default_branch' => $request->default_branch,
         ]);
 
@@ -85,7 +94,7 @@ class RepositoryController extends Controller
         $webhookRegistered = $this->registerWebhookAction->handle($repository);
 
         $message = 'Repository added successfully.';
-        if (! $webhookRegistered && $repository->provider === GitProvider::GitHub) {
+        if (! $webhookRegistered && $repository->provider->supportsWebhooks()) {
             $message .= ' Webhook registration failed — you can retry from the repository page.';
         }
 
@@ -189,5 +198,19 @@ class RepositoryController extends Controller
         return redirect()
             ->route('organizations.repositories.index', $organization)
             ->with('status', 'Repository deleted successfully.');
+    }
+
+    private function resolveBaseUrl(GitProvider $provider, string $userUuid): ?string
+    {
+        if (! $provider->supportsSelfHosted()) {
+            return null;
+        }
+
+        $credential = UserGitCredential::query()
+            ->where('user_uuid', $userUuid)
+            ->where('provider', $provider)
+            ->first();
+
+        return $credential?->credentials['url'] ?? null;
     }
 }

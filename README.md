@@ -20,8 +20,6 @@ Manage your packages with a registry that just works.
 <img src="./docs/public/pricore-landing.png?v=20260228" alt="Pricore Dashboard">
 </p>
 
----
-
 ## About Pricore
 
 Managing private PHP packages should be simple. Pricore makes it that way. It provides a centralized, reliable way to store package metadata, control access with tokens, and integrate seamlessly with Git-based workflows.
@@ -43,7 +41,7 @@ Don't want to self-host? Try [Hosted Pricore](https://app.pricore.dev) — a ful
 - **Built on Laravel** - Familiar stack, easy to extend. If you know Laravel, you know Pricore.
 - **Blazing Fast** - Packages resolve in milliseconds. No waiting on external APIs.
 - **Web Dashboard** - Browse packages, manage tokens, and view download stats from a clean UI.
-- **Webhook Support** - Auto-update packages when you push. Works with GitHub, GitLab, and Bitbucket.
+- **Webhook Support** - Auto-update packages when you push. Works with GitHub and GitLab.
 - **Composer v2 Native** - Full Composer v2 API support including metadata-url for lightning-fast resolves.
 - **Open Source** - Apache 2.0 licensed. Run it, fork it, contribute to it. No vendor lock-in, ever.
 

@@ -148,11 +148,7 @@ export default function Repositories({
 
                 <InfoBox
                     title="About Repositories"
-                    description="Connect your Git repositories from GitHub, GitLab,
- Bitbucket, or any Git server to automatically discover
- and sync Composer packages. Repositories are monitored
- for new versions and can be synced manually or via
- webhooks."
+                    description="Connect your Git repositories from GitHub, GitLab, or any Git server to automatically discover and sync Composer packages. Repositories are monitored for new versions and can be synced manually or via webhooks."
                 />
 
                 <AddRepositoryDialog

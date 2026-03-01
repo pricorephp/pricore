@@ -14,7 +14,6 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { Textarea } from '@/components/ui/textarea';
 import { Form } from '@inertiajs/react';
 
 type GitCredentialData =
@@ -25,6 +24,7 @@ interface GitCredentialDialogProps {
     provider: string;
     providers: Record<string, string>;
     githubConnectUrl?: string;
+    gitlabConnectUrl?: string;
     isOpen: boolean;
     onClose: () => void;
 }
@@ -34,13 +34,16 @@ export default function GitCredentialDialog({
     provider,
     providers,
     githubConnectUrl,
+    gitlabConnectUrl,
     isOpen,
     onClose,
 }: GitCredentialDialogProps) {
     const isEditing = !!credential;
     const providerLabel = providers[provider] || provider;
-    const showOAuthOption =
+    const showGitHubOAuth =
         provider === 'github' && !!githubConnectUrl && !isEditing;
+    const showGitLabOAuth =
+        provider === 'gitlab' && !!gitlabConnectUrl && !isEditing;
 
     const getGitHubTokenUrl = (): string => {
         const description = 'Pricore';
@@ -54,7 +57,7 @@ export default function GitCredentialDialog({
             case 'github':
                 return (
                     <>
-                        {showOAuthOption && (
+                        {showGitHubOAuth && (
                             <>
                                 <div className="grid space-y-2">
                                     <Button asChild className="w-full">
@@ -124,6 +127,42 @@ export default function GitCredentialDialog({
             case 'gitlab':
                 return (
                     <>
+                        {showGitLabOAuth && (
+                            <>
+                                <div className="grid space-y-2">
+                                    <Button asChild className="w-full">
+                                        <a href={gitlabConnectUrl}>
+                                            <svg
+                                                className="h-4 w-4"
+                                                viewBox="0 0 24 24"
+                                                fill="currentColor"
+                                            >
+                                                <path d="M23.955 13.587l-1.342-4.135-2.664-8.189a.455.455 0 00-.867 0L16.418 9.45H7.582L4.918 1.263a.455.455 0 00-.867 0L1.386 9.45.044 13.587a.924.924 0 00.331 1.023L12 23.054l11.625-8.443a.92.92 0 00.33-1.024" />
+                                            </svg>
+                                            Use my GitLab account
+                                        </a>
+                                    </Button>
+                                    <p className="text-sm text-muted-foreground">
+                                        Authorizes Pricore to access your GitLab
+                                        repositories. The token will be
+                                        automatically refreshed when you sign in
+                                        via GitLab.
+                                    </p>
+                                </div>
+
+                                <div className="relative">
+                                    <div className="absolute inset-0 flex items-center">
+                                        <Separator />
+                                    </div>
+                                    <div className="relative flex justify-center text-xs uppercase">
+                                        <span className="bg-background px-2 text-muted-foreground">
+                                            or enter a token manually
+                                        </span>
+                                    </div>
+                                </div>
+                            </>
+                        )}
+
                         <div className="grid space-y-2">
                             <Label htmlFor="token">
                                 Personal Access Token{' '}
@@ -147,6 +186,8 @@ export default function GitCredentialDialog({
                                 >
                                     GitLab Settings → Access Tokens
                                 </a>
+                                . Make sure to select the <strong>api</strong>{' '}
+                                scope for full repository and webhook access.
                             </p>
                         </div>
                         <div className="grid space-y-2">
@@ -160,81 +201,6 @@ export default function GitCredentialDialog({
                             <p className="text-sm text-muted-foreground">
                                 Leave empty for GitLab.com, or enter your
                                 self-hosted GitLab instance URL
-                            </p>
-                        </div>
-                    </>
-                );
-            case 'bitbucket':
-                return (
-                    <>
-                        <div className="grid space-y-2">
-                            <Label htmlFor="username">
-                                Username <span className="text-red-500">*</span>
-                            </Label>
-                            <Input
-                                id="username"
-                                name="credentials[username]"
-                                required
-                                placeholder="your-username"
-                                autoFocus
-                            />
-                        </div>
-                        <div className="grid space-y-2">
-                            <Label htmlFor="app_password">
-                                App Password{' '}
-                                <span className="text-red-500">*</span>
-                            </Label>
-                            <Input
-                                id="app_password"
-                                name="credentials[app_password]"
-                                type="password"
-                                required
-                                placeholder="xxxxxxxxxxxx"
-                            />
-                            <p className="text-sm text-muted-foreground">
-                                Create an app password in{' '}
-                                <a
-                                    href="https://bitbucket.org/account/settings/app-passwords/"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="text-primary hover:underline"
-                                >
-                                    Bitbucket Settings → Personal settings → App
-                                    passwords
-                                </a>
-                            </p>
-                        </div>
-                    </>
-                );
-            case 'git':
-                return (
-                    <>
-                        <div className="grid space-y-2">
-                            <Label htmlFor="ssh_key">
-                                SSH Private Key{' '}
-                                <span className="text-red-500">*</span>
-                            </Label>
-                            <Textarea
-                                id="ssh_key"
-                                name="credentials[ssh_key]"
-                                required
-                                rows={8}
-                                placeholder="-----BEGIN OPENSSH PRIVATE KEY-----&#10;...&#10;-----END OPENSSH PRIVATE KEY-----"
-                                autoFocus
-                            />
-                            <p className="text-sm text-muted-foreground">
-                                Paste your SSH private key. Make sure the
-                                corresponding public key is added to your Git
-                                server. Learn how to{' '}
-                                <a
-                                    href="https://docs.github.com/en/authentication/connecting-to-github-with-ssh/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="text-primary hover:underline"
-                                >
-                                    generate an SSH key
-                                </a>
-                                .
                             </p>
                         </div>
                     </>
@@ -284,7 +250,6 @@ export default function GitCredentialDialog({
                                 errors['credentials.token'] ||
                                 errors['credentials.username'] ||
                                 errors['credentials.app_password'] ||
-                                errors['credentials.ssh_key'] ||
                                 errors['credentials.url']) && (
                                 <div className="rounded-md border border-destructive bg-destructive/10 p-3">
                                     <p className="font-medium text-destructive">
@@ -314,12 +279,6 @@ export default function GitCredentialDialog({
                                                         'credentials.app_password'
                                                     ]
                                                 }
-                                            </li>
-                                        )}
-                                        {errors['credentials.ssh_key'] && (
-                                            <li>
-                                                SSH Key:{' '}
-                                                {errors['credentials.ssh_key']}
                                             </li>
                                         )}
                                         {errors['credentials.url'] && (

@@ -62,6 +62,7 @@ class FortifyServiceProvider extends ServiceProvider
             'canRegister' => Features::enabled(Features::registration())
                 && (config('fortify.sign_up_enabled') || session('invitation_token')),
             'githubEnabled' => ! empty(config('services.github.client_id')),
+            'gitlabEnabled' => ! empty(config('services.gitlab.client_id')),
             'status' => $request->session()->get('status'),
         ]));
 
@@ -85,6 +86,7 @@ class FortifyServiceProvider extends ServiceProvider
 
             return Inertia::render('auth/register', [
                 'githubEnabled' => ! empty(config('services.github.client_id')),
+                'gitlabEnabled' => ! empty(config('services.gitlab.client_id')),
             ]);
         });
 

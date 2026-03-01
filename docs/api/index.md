@@ -143,6 +143,23 @@ Requires webhook signature verification via the `X-Hub-Signature-256` header.
 | `push` | Triggers repository sync |
 | `release` | Triggers repository sync |
 
+### GitLab Webhook
+
+```
+POST /webhooks/gitlab/{repository-uuid}
+```
+
+Receives push and tag push events from GitLab. Triggers an automatic repository sync when new commits or tags are pushed.
+
+Requires webhook token verification via the `X-Gitlab-Token` header (plain text comparison).
+
+**Supported events:**
+
+| Event | Action |
+|-------|--------|
+| `Push Hook` | Triggers repository sync |
+| `Tag Push Hook` | Triggers repository sync |
+
 ## Configuring Composer
 
 Add Pricore as a repository in your project's `composer.json`:

@@ -26,6 +26,9 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @property string|null $github_id
  * @property string|null $github_token
  * @property string|null $github_nickname
+ * @property string|null $gitlab_id
+ * @property string|null $gitlab_token
+ * @property string|null $gitlab_nickname
  * @property string|null $avatar_url
  * @property array<string, mixed>|null $preferences
  * @property Carbon|null $email_verified_at
@@ -88,6 +91,7 @@ class User extends Authenticatable implements MustVerifyEmail
     protected $hidden = [
         'password',
         'github_token',
+        'gitlab_token',
         'two_factor_secret',
         'two_factor_recovery_codes',
         'remember_token',
@@ -153,6 +157,11 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->github_id !== null && $this->github_token !== null;
     }
 
+    public function hasGitLabConnected(): bool
+    {
+        return $this->gitlab_id !== null && $this->gitlab_token !== null;
+    }
+
     public function hasOnboardingDismissed(string $organizationUuid): bool
     {
         $dismissed = $this->preferences['dismissed_onboarding'] ?? [];
@@ -198,6 +207,17 @@ class User extends Authenticatable implements MustVerifyEmail
      * @return Attribute<string|null, string|null>
      */
     protected function githubToken(): Attribute
+    {
+        return Attribute::make(
+            get: fn (?string $value) => $value ? decrypt($value) : null,
+            set: fn (?string $value) => $value ? encrypt($value) : null,
+        );
+    }
+
+    /**
+     * @return Attribute<string|null, string|null>
+     */
+    protected function gitlabToken(): Attribute
     {
         return Attribute::make(
             get: fn (?string $value) => $value ? decrypt($value) : null,

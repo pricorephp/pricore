@@ -17,7 +17,8 @@ class GitProviderFactory
         return match ($repository->provider) {
             GitProvider::GitHub => new GitHubProvider($repository->repo_identifier, $credentials),
             GitProvider::Git => new GenericGitProvider($repository->repo_identifier, $credentials),
-            GitProvider::GitLab, GitProvider::Bitbucket => throw new GitProviderException(
+            GitProvider::GitLab => new GitLabProvider($repository->repo_identifier, $credentials),
+            GitProvider::Bitbucket => throw new GitProviderException(
                 "Provider '{$repository->provider->label()}' is not yet implemented"
             ),
         };

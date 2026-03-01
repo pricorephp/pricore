@@ -22,6 +22,7 @@ use Illuminate\Support\Carbon;
  * @property string $name
  * @property GitProvider $provider
  * @property string $repo_identifier
+ * @property string|null $custom_base_url
  * @property string|null $default_branch
  * @property string|null $webhook_id
  * @property string|null $webhook_secret

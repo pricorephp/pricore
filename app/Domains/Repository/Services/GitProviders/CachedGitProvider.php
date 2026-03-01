@@ -50,4 +50,14 @@ class CachedGitProvider implements GitProviderInterface
     {
         return $this->repositoryIdentifier;
     }
+
+    public function createWebhook(string $url, string $secret): array
+    {
+        throw new GitProviderException('CachedGitProvider does not support webhooks.');
+    }
+
+    public function deleteWebhook(int $hookId): void
+    {
+        throw new GitProviderException('CachedGitProvider does not support webhooks.');
+    }
 }

@@ -1,4 +1,5 @@
 import { store } from '@/actions/App/Domains/Repository/Http/Controllers/RepositoryController';
+import GitProviderIcon from '@/components/git-provider-icon';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -31,7 +32,6 @@ interface AddRepositoryDialogProps {
 const gitProviders = {
     github: 'GitHub',
     gitlab: 'GitLab',
-    bitbucket: 'Bitbucket',
     git: 'Generic Git',
 };
 
@@ -87,6 +87,8 @@ export default function AddRepositoryDialog({
             return;
         }
 
+        const controller = new AbortController();
+
         const fetchRepositories = async (): Promise<void> => {
             setLoadingRepos(true);
             try {
@@ -96,6 +98,7 @@ export default function AddRepositoryDialog({
                         Accept: 'application/json',
                     },
                     credentials: 'same-origin',
+                    signal: controller.signal,
                 });
 
                 if (response.ok) {
@@ -104,14 +107,21 @@ export default function AddRepositoryDialog({
                 } else {
                     setRepositories([]);
                 }
-            } catch {
+            } catch (e) {
+                if (e instanceof DOMException && e.name === 'AbortError') {
+                    return;
+                }
                 setRepositories([]);
             } finally {
-                setLoadingRepos(false);
+                if (!controller.signal.aborted) {
+                    setLoadingRepos(false);
+                }
             }
         };
 
         fetchRepositories();
+
+        return () => controller.abort();
     }, [provider, organizationSlug, isOpen]);
 
     const handleRepoSelect = (
@@ -144,8 +154,6 @@ export default function AddRepositoryDialog({
                 return 'owner/repo';
             case 'gitlab':
                 return 'owner/repo';
-            case 'bitbucket':
-                return 'owner/repo';
             case 'git':
                 return 'https://example.com/repo.git';
             default:
@@ -159,8 +167,6 @@ export default function AddRepositoryDialog({
                 return 'Enter the repository identifier in the format "owner/repo" (e.g., "laravel/laravel")';
             case 'gitlab':
                 return 'Enter the repository identifier in the format "owner/repo" (e.g., "gitlab-org/gitlab")';
-            case 'bitbucket':
-                return 'Enter the repository identifier in the format "owner/repo" (e.g., "atlassian/bitbucket")';
             case 'git':
                 return 'Enter the full Git repository URL (e.g., "https://example.com/repo.git")';
             default:
@@ -210,6 +216,10 @@ export default function AddRepositoryDialog({
                                                     key={value}
                                                     value={value}
                                                 >
+                                                    <GitProviderIcon
+                                                        provider={value}
+                                                        className="size-4"
+                                                    />
                                                     {label}
                                                 </SelectItem>
                                             ),
@@ -241,14 +251,14 @@ export default function AddRepositoryDialog({
                                     Repository{' '}
                                     <span className="text-red-500">*</span>
                                 </Label>
-                                {loadingRepos && provider === 'github' ? (
+                                {loadingRepos && provider !== 'git' ? (
                                     <div className="flex items-center gap-2 rounded-md border border-input bg-transparent px-3 py-2">
                                         <Spinner className="size-4" />
                                         <span className="text-muted-foreground">
                                             Loading repositories...
                                         </span>
                                     </div>
-                                ) : provider === 'github' &&
+                                ) : provider !== 'git' &&
                                   repositories.length > 0 ? (
                                     <>
                                         <div className="space-y-3">
@@ -386,12 +396,12 @@ export default function AddRepositoryDialog({
                                             required
                                         />
                                     </>
-                                ) : provider === 'github' &&
+                                ) : provider !== 'git' &&
                                   repositories.length === 0 ? (
                                     <>
                                         <div className="rounded-md border border-destructive bg-destructive/10 p-3 text-destructive">
                                             No repositories found. Please
-                                            configure GitHub credentials in
+                                            configure your credentials in
                                             settings.
                                         </div>
                                         <input
@@ -415,24 +425,9 @@ export default function AddRepositoryDialog({
                                                 )
                                             }
                                         />
-                                        {loadingRepos && provider !== 'git' && (
-                                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                                <Spinner className="size-3" />
-                                                Loading repositories...
-                                            </div>
-                                        )}
-                                        {!loadingRepos &&
-                                            repositories.length === 0 &&
-                                            provider !== 'git' && (
-                                                <p className="text-xs text-muted-foreground">
-                                                    {getRepoIdentifierHelp()}
-                                                </p>
-                                            )}
-                                        {provider === 'git' && (
-                                            <p className="text-xs text-muted-foreground">
-                                                {getRepoIdentifierHelp()}
-                                            </p>
-                                        )}
+                                        <p className="text-xs text-muted-foreground">
+                                            {getRepoIdentifierHelp()}
+                                        </p>
                                     </>
                                 )}
                                 {errors.repo_identifier &&
@@ -479,7 +474,7 @@ export default function AddRepositoryDialog({
                                     type="submit"
                                     disabled={
                                         processing ||
-                                        (provider === 'github' &&
+                                        (provider !== 'git' &&
                                             (!selectedRepo ||
                                                 repositories.length === 0))
                                     }

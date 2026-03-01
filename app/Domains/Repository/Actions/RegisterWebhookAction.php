@@ -2,8 +2,6 @@
 
 namespace App\Domains\Repository\Actions;
 
-use App\Domains\Repository\Contracts\Enums\GitProvider;
-use App\Domains\Repository\Services\GitProviders\GitHubProvider;
 use App\Domains\Repository\Services\GitProviders\GitProviderFactory;
 use App\Models\Repository;
 use Illuminate\Support\Facades\Log;
@@ -12,23 +10,19 @@ use Illuminate\Support\Str;
 class RegisterWebhookAction
 {
     /**
-     * Register a GitHub webhook for the given repository.
+     * Register a webhook for the given repository.
      *
      * Returns true if the webhook was registered successfully, false otherwise.
-     * Silently returns false for non-GitHub repositories.
+     * Silently returns false for providers that don't support webhooks.
      */
     public function handle(Repository $repository): bool
     {
-        if ($repository->provider !== GitProvider::GitHub) {
+        if (! $repository->provider->supportsWebhooks()) {
             return false;
         }
 
         try {
             $provider = GitProviderFactory::make($repository);
-
-            if (! $provider instanceof GitHubProvider) {
-                return false;
-            }
 
             // Delete existing webhook if present
             if ($repository->webhook_id) {
@@ -44,7 +38,7 @@ class RegisterWebhookAction
             }
 
             $secret = Str::random(40);
-            $callbackUrl = route('webhooks.github', $repository->uuid);
+            $callbackUrl = route($repository->provider->webhookRouteName(), $repository->uuid);
 
             $result = $provider->createWebhook($callbackUrl, $secret);
 

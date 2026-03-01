@@ -105,15 +105,32 @@ Create a GitHub OAuth App:
 ```bash
 GITLAB_CLIENT_ID=your-gitlab-client-id
 GITLAB_CLIENT_SECRET=your-gitlab-client-secret
-GITLAB_URL=https://gitlab.com  # or your self-hosted GitLab URL
+GITLAB_REDIRECT_URI=${APP_URL}/auth/gitlab/callback
+GITLAB_INSTANCE_URI=https://gitlab.com  # or your self-hosted GitLab URL
 ```
 
-### Bitbucket
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `GITLAB_CLIENT_ID` | GitLab OAuth Application ID | - |
+| `GITLAB_CLIENT_SECRET` | GitLab OAuth Application secret | - |
+| `GITLAB_REDIRECT_URI` | OAuth callback URL | `{APP_URL}/auth/gitlab/callback` |
+| `GITLAB_INSTANCE_URI` | GitLab instance URL (for self-hosted) | `https://gitlab.com` |
 
-```bash
-BITBUCKET_CLIENT_ID=your-bitbucket-client-id
-BITBUCKET_CLIENT_SECRET=your-bitbucket-client-secret
-```
+Create a GitLab OAuth Application:
+
+**GitLab.com:**
+1. Go to [GitLab User Settings > Applications](https://gitlab.com/-/user_settings/applications)
+2. Click "Add new application"
+3. Set the **Redirect URI** to `{APP_URL}/auth/gitlab/callback`
+4. Select scopes: `read_user` and `api`
+   - `read_user` — used for login/sign-up (reading user profile and email)
+   - `api` — used when connecting GitLab as a git credential (reading repositories, file content, and managing webhooks). GitLab does not offer a narrower scope for webhook management.
+5. Click "Save application" and copy the Application ID and Secret
+
+**Self-hosted GitLab:**
+1. Go to your GitLab instance > User Settings > Applications
+2. Follow the same steps as above
+3. Set `GITLAB_INSTANCE_URI` to your instance URL (e.g., `https://gitlab.example.com/`)
 
 ## Mail Configuration
 
@@ -267,6 +284,10 @@ MAIL_FROM_NAME="${APP_NAME}"
 
 GITHUB_CLIENT_ID=your-github-client-id
 GITHUB_CLIENT_SECRET=your-github-client-secret
+
+GITLAB_CLIENT_ID=your-gitlab-client-id
+GITLAB_CLIENT_SECRET=your-gitlab-client-secret
+# GITLAB_INSTANCE_URI=https://gitlab.example.com  # uncomment for self-hosted
 
 HORIZON_ALLOWED_EMAILS=admin@yourcompany.com
 
