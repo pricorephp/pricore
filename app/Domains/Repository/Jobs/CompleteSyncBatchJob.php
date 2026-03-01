@@ -26,7 +26,7 @@ class CompleteSyncBatchJob implements ShouldQueue
         public string $batchId,
     ) {}
 
-    public function handle(CleanupGitCloneAction $cleanupGitCloneAction, RecordActivityTask $recordActivity): void
+    public function handle(CleanupGitCloneAction $cleanupGitCloneAction, RecordActivityTask $recordActivityTask): void
     {
         $syncLog = RepositorySyncLog::findOrFail($this->syncLogUuid);
         $repository = Repository::findOrFail($this->repositoryUuid);
@@ -35,7 +35,7 @@ class CompleteSyncBatchJob implements ShouldQueue
         $this->completeSyncLog($syncLog, $batch);
         $cleanupGitCloneAction->handle($this->clonePath);
         $this->updateRepositoryStatus($repository, $batch);
-        $this->recordActivity($repository, $syncLog, $recordActivity);
+        $this->recordActivity($repository, $syncLog, $recordActivityTask);
     }
 
     protected function getBatch(): ?Batch
@@ -100,29 +100,42 @@ class CompleteSyncBatchJob implements ShouldQueue
         ]);
     }
 
-    protected function recordActivity(Repository $repository, RepositorySyncLog $syncLog, RecordActivityTask $recordActivity): void
+    protected function recordActivity(Repository $repository, RepositorySyncLog $syncLog, RecordActivityTask $recordActivityTask): void
     {
-        $type = $syncLog->status->isFailed()
-            ? ActivityType::RepositorySyncFailed
-            : ActivityType::RepositorySynced;
-
-        $properties = [
-            'name' => $repository->name,
-            'versions_added' => $syncLog->versions_added,
-            'versions_updated' => $syncLog->versions_updated,
-            'versions_removed' => $syncLog->versions_removed,
-            'sync_log_uuid' => $syncLog->uuid,
-        ];
+        $hasChanges = $syncLog->versions_added > 0
+            || $syncLog->versions_updated > 0
+            || $syncLog->versions_removed > 0;
 
         if ($syncLog->status->isFailed()) {
-            $properties['error_message'] = $syncLog->error_message;
+            $recordActivityTask->handle(
+                organization: $repository->organization,
+                type: ActivityType::RepositorySyncFailed,
+                subject: $repository,
+                properties: [
+                    'name' => $repository->name,
+                    'error_message' => $syncLog->error_message,
+                    'sync_log_uuid' => $syncLog->uuid,
+                ],
+            );
+
+            return;
         }
 
-        $recordActivity->handle(
+        if (! $hasChanges) {
+            return;
+        }
+
+        $recordActivityTask->handle(
             organization: $repository->organization,
-            type: $type,
+            type: ActivityType::RepositorySynced,
             subject: $repository,
-            properties: $properties,
+            properties: [
+                'name' => $repository->name,
+                'versions_added' => $syncLog->versions_added,
+                'versions_updated' => $syncLog->versions_updated,
+                'versions_removed' => $syncLog->versions_removed,
+                'sync_log_uuid' => $syncLog->uuid,
+            ],
         );
     }
 }
