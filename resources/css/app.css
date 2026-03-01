@@ -91,7 +91,7 @@
     --card-foreground: oklch(0.18 0.01 260);
     --popover: oklch(1 0 0);
     --popover-foreground: oklch(0.18 0.01 260);
-    --primary: oklch(0.63 0.22 35);
+    --primary: oklch(0.69 0.20 37);
     --primary-foreground: oklch(0.99 0 0);
     --secondary: oklch(0.97 0.008 90);
     --secondary-foreground: oklch(0.25 0.01 260);
@@ -104,9 +104,9 @@
     --surface-inset: oklch(0.975 0.008 90);
 
     /* Button depth styling */
-    --button-primary-from: oklch(0.68 0.2 35);
-    --button-primary-to: oklch(0.58 0.22 35);
-    --button-primary-border: oklch(0.52 0.2 35);
+    --button-primary-from: oklch(0.74 0.18 37);
+    --button-primary-to: oklch(0.64 0.20 37);
+    --button-primary-border: oklch(0.58 0.18 37);
     --button-secondary-from: oklch(0.995 0.001 90);
     --button-secondary-to: oklch(0.97 0.002 90);
     --button-secondary-border: oklch(0.87 0.004 90);
@@ -139,7 +139,7 @@
     --card-foreground: oklch(0.95 0 0);
     --popover: oklch(0.16 0.01 260);
     --popover-foreground: oklch(0.95 0 0);
-    --primary: oklch(0.63 0.22 35);
+    --primary: oklch(0.69 0.20 37);
     --primary-foreground: oklch(0.99 0 0);
     --secondary: oklch(0.24 0.01 260);
     --secondary-foreground: oklch(0.95 0 0);
@@ -152,9 +152,9 @@
     --surface-inset: oklch(0.12 0.008 260);
 
     /* Button depth styling - dark mode */
-    --button-primary-from: oklch(0.68 0.2 35);
-    --button-primary-to: oklch(0.58 0.22 35);
-    --button-primary-border: oklch(0.394 0.147 32.608);
+    --button-primary-from: oklch(0.74 0.18 37);
+    --button-primary-to: oklch(0.64 0.20 37);
+    --button-primary-border: oklch(0.42 0.15 37);
     --button-secondary-from: oklch(0.3 0.01 260);
     --button-secondary-to: oklch(0.25 0.01 260);
     --button-secondary-border: oklch(0.38 0.01 260);
