@@ -90,6 +90,16 @@ class GenericGitProvider extends AbstractGitProvider
         return $this->repositoryIdentifier;
     }
 
+    public function createWebhook(string $url, string $secret): array
+    {
+        throw new GitProviderException('Generic Git provider does not support webhooks.');
+    }
+
+    public function deleteWebhook(int $hookId): void
+    {
+        throw new GitProviderException('Generic Git provider does not support webhooks.');
+    }
+
     protected function getAuthenticatedUrl(): string
     {
         $url = $this->repositoryIdentifier;

@@ -78,4 +78,17 @@ class UserFactory extends Factory
             'avatar_url' => fake()->imageUrl(200, 200),
         ]);
     }
+
+    /**
+     * Indicate that the user has a connected GitLab account.
+     */
+    public function withGitLab(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'gitlab_id' => (string) fake()->unique()->randomNumber(8),
+            'gitlab_token' => 'glpat-'.Str::random(20),
+            'gitlab_nickname' => fake()->userName(),
+            'avatar_url' => fake()->imageUrl(200, 200),
+        ]);
+    }
 }

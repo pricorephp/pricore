@@ -60,6 +60,7 @@ Events: Push, Create (tags)
 **GitLab:**
 ```
 URL: https://pricore.yourcompany.com/webhooks/gitlab/{repository-id}
+Secret token: (auto-generated when registering via Pricore)
 Trigger: Push events, Tag push events
 ```
 

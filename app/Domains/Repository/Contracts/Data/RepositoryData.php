@@ -22,6 +22,7 @@ class RepositoryData extends Data
         public ?string $syncStatusLabel,
         public ?CarbonInterface $lastSyncedAt,
         public int $packagesCount,
+        public bool $supportsWebhooks,
         public bool $webhookActive,
     ) {}
 
@@ -33,11 +34,12 @@ class RepositoryData extends Data
             provider: $repository->provider->value,
             providerLabel: $repository->provider->label(),
             repoIdentifier: $repository->repo_identifier,
-            url: $repository->provider->repositoryUrl($repository->repo_identifier),
+            url: $repository->provider->repositoryUrl($repository->repo_identifier, $repository->custom_base_url),
             syncStatus: $repository->sync_status,
             syncStatusLabel: $repository->sync_status?->label(),
             lastSyncedAt: $repository->last_synced_at,
             packagesCount: $repository->packages_count ?? 0,
+            supportsWebhooks: $repository->provider->supportsWebhooks(),
             webhookActive: $repository->webhook_id !== null,
         );
     }

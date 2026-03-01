@@ -27,6 +27,7 @@ class UserGitCredentialController extends Controller
             'credentials' => $credentials,
             'providers' => GitProvider::options(),
             'githubConnectUrl' => route('settings.github.connect'),
+            'gitlabConnectUrl' => route('settings.gitlab.connect'),
         ]);
     }
 

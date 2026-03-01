@@ -183,7 +183,7 @@ export default function RepositoryShow({
                                     {repository.syncStatusLabel ?? 'Pending'}
                                 </Badge>
                             )}
-                            {repository.provider === 'github' && (
+                            {repository.supportsWebhooks && (
                                 <Badge
                                     variant={
                                         repository.webhookActive
@@ -228,7 +228,7 @@ export default function RepositoryShow({
                                 <RefreshCw />
                                 Sync Now
                             </DropdownMenuItem>
-                            {repository.provider === 'github' && (
+                            {repository.supportsWebhooks && (
                                 <DropdownMenuItem
                                     onSelect={() =>
                                         router.post(

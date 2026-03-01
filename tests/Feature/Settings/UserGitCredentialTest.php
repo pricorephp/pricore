@@ -23,6 +23,7 @@ test('index page shows user git credentials', function () {
         ->has('credentials', 1)
         ->has('providers')
         ->has('githubConnectUrl')
+        ->has('gitlabConnectUrl')
     );
 });
 

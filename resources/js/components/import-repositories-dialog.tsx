@@ -1,4 +1,5 @@
 import { bulkStore } from '@/actions/App/Domains/Repository/Http/Controllers/RepositoryController';
+import GitProviderIcon from '@/components/git-provider-icon';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -27,6 +28,7 @@ type RepositorySuggestion =
 
 const gitProviders: Record<string, string> = {
     github: 'GitHub',
+    gitlab: 'GitLab',
 };
 
 interface ImportRepositoriesDialogProps {
@@ -76,6 +78,8 @@ export default function ImportRepositoriesDialog({
             return;
         }
 
+        const controller = new AbortController();
+
         const fetchRepositories = async () => {
             setLoadingRepos(true);
             try {
@@ -83,6 +87,7 @@ export default function ImportRepositoriesDialog({
                 const response = await fetch(url, {
                     headers: { Accept: 'application/json' },
                     credentials: 'same-origin',
+                    signal: controller.signal,
                 });
 
                 if (response.ok) {
@@ -91,14 +96,21 @@ export default function ImportRepositoriesDialog({
                 } else {
                     setRepositories([]);
                 }
-            } catch {
+            } catch (e) {
+                if (e instanceof DOMException && e.name === 'AbortError') {
+                    return;
+                }
                 setRepositories([]);
             } finally {
-                setLoadingRepos(false);
+                if (!controller.signal.aborted) {
+                    setLoadingRepos(false);
+                }
             }
         };
 
         fetchRepositories();
+
+        return () => controller.abort();
     }, [provider, organizationSlug, isOpen]);
 
     const filteredRepositories = repositories.filter((repo) => {
@@ -182,20 +194,22 @@ export default function ImportRepositoriesDialog({
                 </DialogHeader>
 
                 <div className="space-y-4">
-                    {supportedProviders.length > 1 && (
-                        <Select value={provider} onValueChange={setProvider}>
-                            <SelectTrigger>
-                                <SelectValue placeholder="Select a provider" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {supportedProviders.map((p) => (
-                                    <SelectItem key={p} value={p}>
-                                        {gitProviders[p]}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    )}
+                    <Select value={provider} onValueChange={setProvider}>
+                        <SelectTrigger>
+                            <SelectValue placeholder="Select a provider" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {supportedProviders.map((p) => (
+                                <SelectItem key={p} value={p}>
+                                    <GitProviderIcon
+                                        provider={p}
+                                        className="size-4"
+                                    />
+                                    {gitProviders[p]}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
 
                     {loadingRepos ? (
                         <div className="flex items-center gap-2 rounded-md border px-3 py-8">

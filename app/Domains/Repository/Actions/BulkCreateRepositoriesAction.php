@@ -7,6 +7,7 @@ use App\Domains\Repository\Contracts\Enums\GitProvider;
 use App\Domains\Repository\Jobs\SyncRepositoryJob;
 use App\Models\Organization;
 use App\Models\Repository;
+use App\Models\UserGitCredential;
 
 class BulkCreateRepositoriesAction
 {
@@ -32,6 +33,8 @@ class BulkCreateRepositoriesAction
             ->pluck('repo_identifier')
             ->toArray();
 
+        $baseUrl = $this->resolveBaseUrl($provider, $userUuid);
+
         $created = 0;
         $skipped = 0;
         $webhooksFailed = 0;
@@ -53,6 +56,7 @@ class BulkCreateRepositoriesAction
                 'name' => $name,
                 'provider' => $provider,
                 'repo_identifier' => $identifier,
+                'custom_base_url' => $baseUrl,
             ]);
 
             SyncRepositoryJob::dispatch($repository);
@@ -69,5 +73,19 @@ class BulkCreateRepositoriesAction
             skipped: $skipped,
             webhooksFailed: $webhooksFailed,
         );
+    }
+
+    private function resolveBaseUrl(GitProvider $provider, string $userUuid): ?string
+    {
+        if (! $provider->supportsSelfHosted()) {
+            return null;
+        }
+
+        $credential = UserGitCredential::query()
+            ->where('user_uuid', $userUuid)
+            ->where('provider', $provider)
+            ->first();
+
+        return $credential?->credentials['url'] ?? null;
     }
 }

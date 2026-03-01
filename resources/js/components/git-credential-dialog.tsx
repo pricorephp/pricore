@@ -25,6 +25,7 @@ interface GitCredentialDialogProps {
     provider: string;
     providers: Record<string, string>;
     githubConnectUrl?: string;
+    gitlabConnectUrl?: string;
     isOpen: boolean;
     onClose: () => void;
 }
@@ -34,13 +35,16 @@ export default function GitCredentialDialog({
     provider,
     providers,
     githubConnectUrl,
+    gitlabConnectUrl,
     isOpen,
     onClose,
 }: GitCredentialDialogProps) {
     const isEditing = !!credential;
     const providerLabel = providers[provider] || provider;
-    const showOAuthOption =
+    const showGitHubOAuth =
         provider === 'github' && !!githubConnectUrl && !isEditing;
+    const showGitLabOAuth =
+        provider === 'gitlab' && !!gitlabConnectUrl && !isEditing;
 
     const getGitHubTokenUrl = (): string => {
         const description = 'Pricore';
@@ -54,7 +58,7 @@ export default function GitCredentialDialog({
             case 'github':
                 return (
                     <>
-                        {showOAuthOption && (
+                        {showGitHubOAuth && (
                             <>
                                 <div className="grid space-y-2">
                                     <Button asChild className="w-full">
@@ -124,6 +128,42 @@ export default function GitCredentialDialog({
             case 'gitlab':
                 return (
                     <>
+                        {showGitLabOAuth && (
+                            <>
+                                <div className="grid space-y-2">
+                                    <Button asChild className="w-full">
+                                        <a href={gitlabConnectUrl}>
+                                            <svg
+                                                className="h-4 w-4"
+                                                viewBox="0 0 24 24"
+                                                fill="currentColor"
+                                            >
+                                                <path d="M23.955 13.587l-1.342-4.135-2.664-8.189a.455.455 0 00-.867 0L16.418 9.45H7.582L4.918 1.263a.455.455 0 00-.867 0L1.386 9.45.044 13.587a.924.924 0 00.331 1.023L12 23.054l11.625-8.443a.92.92 0 00.33-1.024" />
+                                            </svg>
+                                            Use my GitLab account
+                                        </a>
+                                    </Button>
+                                    <p className="text-sm text-muted-foreground">
+                                        Authorizes Pricore to access your GitLab
+                                        repositories. The token will be
+                                        automatically refreshed when you sign in
+                                        via GitLab.
+                                    </p>
+                                </div>
+
+                                <div className="relative">
+                                    <div className="absolute inset-0 flex items-center">
+                                        <Separator />
+                                    </div>
+                                    <div className="relative flex justify-center text-xs uppercase">
+                                        <span className="bg-background px-2 text-muted-foreground">
+                                            or enter a token manually
+                                        </span>
+                                    </div>
+                                </div>
+                            </>
+                        )}
+
                         <div className="grid space-y-2">
                             <Label htmlFor="token">
                                 Personal Access Token{' '}
@@ -147,6 +187,8 @@ export default function GitCredentialDialog({
                                 >
                                     GitLab Settings → Access Tokens
                                 </a>
+                                . Make sure to select the <strong>api</strong>{' '}
+                                scope for full repository and webhook access.
                             </p>
                         </div>
                         <div className="grid space-y-2">

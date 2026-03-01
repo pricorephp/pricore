@@ -5,6 +5,7 @@ namespace App\Domains\Repository\Http\Controllers\Api;
 use App\Domains\Repository\Contracts\Data\RepositorySuggestionData;
 use App\Domains\Repository\Contracts\Enums\GitProvider;
 use App\Domains\Repository\Services\GitProviders\GitHubProvider;
+use App\Domains\Repository\Services\GitProviders\GitLabProvider;
 use App\Http\Controllers\Controller;
 use App\Models\Organization;
 use App\Models\Repository;
@@ -37,7 +38,8 @@ class RepositorySuggestionController extends Controller
         try {
             $repositories = match ($provider) {
                 GitProvider::GitHub => $this->getGitHubRepositories($credential->credentials),
-                GitProvider::GitLab, GitProvider::Bitbucket, GitProvider::Git => throw new \RuntimeException(
+                GitProvider::GitLab => $this->getGitLabRepositories($credential->credentials),
+                GitProvider::Bitbucket, GitProvider::Git => throw new \RuntimeException(
                     "Provider '{$provider->label()}' repository suggestions are not yet implemented"
                 ),
             };
@@ -72,6 +74,17 @@ class RepositorySuggestionController extends Controller
     protected function getGitHubRepositories(array $credentials): array
     {
         $provider = new GitHubProvider('', $credentials);
+
+        return $provider->getRepositories();
+    }
+
+    /**
+     * @param  array<string, mixed>  $credentials
+     * @return array<int, RepositorySuggestionData>
+     */
+    protected function getGitLabRepositories(array $credentials): array
+    {
+        $provider = new GitLabProvider('', $credentials);
 
         return $provider->getRepositories();
     }

@@ -18,6 +18,7 @@ export type ActivityType = 'repository.added' | 'repository.removed' | 'reposito
 }
 declare namespace App.Domains.Auth.Contracts.Enums {
 export type GitHubOAuthIntent = 'login' | 'connect';
+export type GitLabOAuthIntent = 'login' | 'connect';
 }
 declare namespace App.Domains.Organization.Contracts.Data {
 export type DailyDownloadData = {
@@ -156,6 +157,7 @@ syncStatus: App.Domains.Repository.Contracts.Enums.RepositorySyncStatus | null;
 syncStatusLabel: string | null;
 lastSyncedAt: string | null;
 packagesCount: number;
+supportsWebhooks: boolean;
 webhookActive: boolean;
 };
 export type RepositorySuggestionData = {

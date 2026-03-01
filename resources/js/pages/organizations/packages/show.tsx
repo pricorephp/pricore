@@ -574,7 +574,7 @@ export default function PackageShow({
                     }
                 }}
             >
-                <DialogContent className="max-h-[85vh] overflow-y-auto overflow-x-hidden sm:max-w-xl [&>button.absolute]:hidden">
+                <DialogContent className="max-h-[85vh] overflow-x-hidden overflow-y-auto sm:max-w-xl [&>button.absolute]:hidden">
                     {activeVersion && (
                         <>
                             <div className="flex items-start justify-between gap-4">

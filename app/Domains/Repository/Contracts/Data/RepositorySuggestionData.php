@@ -30,4 +30,19 @@ class RepositorySuggestionData extends Data
             description: $githubRepo['description'] ?? null,
         );
     }
+
+    /**
+     * Create instance from GitLab API response array.
+     *
+     * @param  array<string, mixed>  $gitlabProject
+     */
+    public static function fromGitLabArray(array $gitlabProject): self
+    {
+        return new self(
+            name: $gitlabProject['name'],
+            fullName: $gitlabProject['path_with_namespace'],
+            isPrivate: ($gitlabProject['visibility'] ?? 'private') !== 'public',
+            description: $gitlabProject['description'] ?? null,
+        );
+    }
 }

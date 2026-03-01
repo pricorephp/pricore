@@ -26,6 +26,7 @@ interface GitCredentialsPageProps {
     credentials: GitCredentialData[];
     providers: Record<string, string>;
     githubConnectUrl: string;
+    gitlabConnectUrl: string;
 }
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -43,6 +44,7 @@ export default function GitCredentials({
     credentials,
     providers,
     githubConnectUrl,
+    gitlabConnectUrl,
 }: GitCredentialsPageProps) {
     const [dialogOpen, setDialogOpen] = useState(false);
     const [editingCredential, setEditingCredential] =
@@ -142,15 +144,17 @@ export default function GitCredentials({
                                                                 credential.providerLabel
                                                             }
                                                             {credential.provider !==
-                                                                'github' && (
-                                                                <Badge
-                                                                    variant="outline"
-                                                                    className="text-xs"
-                                                                >
-                                                                    <FlaskConical className="size-3" />
-                                                                    Experimental
-                                                                </Badge>
-                                                            )}
+                                                                'github' &&
+                                                                credential.provider !==
+                                                                    'gitlab' && (
+                                                                    <Badge
+                                                                        variant="outline"
+                                                                        className="text-xs"
+                                                                    >
+                                                                        <FlaskConical className="size-3" />
+                                                                        Experimental
+                                                                    </Badge>
+                                                                )}
                                                         </CardTitle>
                                                         <CardDescription>
                                                             {credential.isConfigured
@@ -217,15 +221,17 @@ export default function GitCredentials({
                                                             <CardTitle className="flex items-center gap-2 text-base">
                                                                 {label}
                                                                 {provider !==
-                                                                    'github' && (
-                                                                    <Badge
-                                                                        variant="outline"
-                                                                        className="text-xs"
-                                                                    >
-                                                                        <FlaskConical className="size-3" />
-                                                                        Experimental
-                                                                    </Badge>
-                                                                )}
+                                                                    'github' &&
+                                                                    provider !==
+                                                                        'gitlab' && (
+                                                                        <Badge
+                                                                            variant="outline"
+                                                                            className="text-xs"
+                                                                        >
+                                                                            <FlaskConical className="size-3" />
+                                                                            Experimental
+                                                                        </Badge>
+                                                                    )}
                                                             </CardTitle>
                                                         </div>
                                                     </div>
@@ -273,6 +279,7 @@ export default function GitCredentials({
                             }
                             providers={providers}
                             githubConnectUrl={githubConnectUrl}
+                            gitlabConnectUrl={gitlabConnectUrl}
                             isOpen={dialogOpen}
                             onClose={() => {
                                 setDialogOpen(false);

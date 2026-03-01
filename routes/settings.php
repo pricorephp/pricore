@@ -2,6 +2,7 @@
 
 use App\Domains\Token\Http\Controllers\UserTokenController;
 use App\Http\Controllers\Settings\ConnectGitHubController;
+use App\Http\Controllers\Settings\ConnectGitLabController;
 use App\Http\Controllers\Settings\LeaveOrganizationController;
 use App\Http\Controllers\Settings\OrganizationsController;
 use App\Http\Controllers\Settings\PasswordController;
@@ -40,6 +41,7 @@ Route::middleware('auth')->group(function () {
     Route::delete('settings/git-credentials/{credential}', [UserGitCredentialController::class, 'destroy'])->name('settings.git-credentials.destroy');
 
     Route::get('settings/git-credentials/github/connect', [ConnectGitHubController::class, 'redirect'])->name('settings.github.connect');
+    Route::get('settings/git-credentials/gitlab/connect', [ConnectGitLabController::class, 'redirect'])->name('settings.gitlab.connect');
 
     Route::get('settings/tokens', [UserTokenController::class, 'index'])->name('settings.tokens.index');
     Route::post('settings/tokens', [UserTokenController::class, 'store'])->name('settings.tokens.store');

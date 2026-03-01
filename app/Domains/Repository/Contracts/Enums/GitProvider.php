@@ -19,13 +19,38 @@ enum GitProvider: string
         };
     }
 
-    public function repositoryUrl(string $repoIdentifier): ?string
+    public function repositoryUrl(string $repoIdentifier, ?string $baseUrl = null): ?string
     {
         return match ($this) {
             self::GitHub => "https://github.com/{$repoIdentifier}",
-            self::GitLab => "https://gitlab.com/{$repoIdentifier}",
+            self::GitLab => rtrim($baseUrl ?? 'https://gitlab.com', '/')."/{$repoIdentifier}",
             self::Bitbucket => "https://bitbucket.org/{$repoIdentifier}",
             self::Git => filter_var($repoIdentifier, FILTER_VALIDATE_URL) ? $repoIdentifier : null,
+        };
+    }
+
+    public function supportsSelfHosted(): bool
+    {
+        return match ($this) {
+            self::GitLab => true,
+            self::GitHub, self::Bitbucket, self::Git => false,
+        };
+    }
+
+    public function supportsWebhooks(): bool
+    {
+        return match ($this) {
+            self::GitHub, self::GitLab => true,
+            self::Bitbucket, self::Git => false,
+        };
+    }
+
+    public function webhookRouteName(): string
+    {
+        return match ($this) {
+            self::GitHub => 'webhooks.github',
+            self::GitLab => 'webhooks.gitlab',
+            self::Bitbucket, self::Git => throw new \LogicException("Provider {$this->value} does not support webhooks."),
         };
     }
 
