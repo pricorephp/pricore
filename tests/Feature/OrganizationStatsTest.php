@@ -5,9 +5,7 @@ use App\Domains\Repository\Contracts\Enums\RepositorySyncStatus;
 use App\Models\AccessToken;
 use App\Models\Organization;
 use App\Models\Package;
-use App\Models\PackageVersion;
 use App\Models\Repository;
-use App\Models\RepositorySyncLog;
 use App\Models\User;
 use Illuminate\Support\Str;
 
@@ -34,7 +32,6 @@ describe('organization stats', function () {
             ->has('stats.repositoriesCount')
             ->has('stats.tokensCount')
             ->has('stats.membersCount')
-            ->has('stats.activityFeed')
         );
     });
 
@@ -89,37 +86,6 @@ describe('organization stats', function () {
         );
     });
 
-    it('returns recent releases in activity feed', function () {
-        $package = Package::factory()->create([
-            'organization_uuid' => $this->organization->uuid,
-        ]);
-        PackageVersion::factory()->count(10)->create([
-            'package_uuid' => $package->uuid,
-            'released_at' => fn () => fake()->dateTimeBetween('-30 days', 'now'),
-        ]);
-
-        $response = $this->actingAs($this->user)->get("/organizations/{$this->organization->slug}");
-
-        $response->assertInertia(fn ($page) => $page
-            ->has('stats.activityFeed.recentReleases', 10)
-        );
-    });
-
-    it('returns recent syncs in activity feed', function () {
-        $repository = Repository::factory()->create([
-            'organization_uuid' => $this->organization->uuid,
-        ]);
-        RepositorySyncLog::factory()->count(5)->successful()->create([
-            'repository_uuid' => $repository->uuid,
-        ]);
-
-        $response = $this->actingAs($this->user)->get("/organizations/{$this->organization->slug}");
-
-        $response->assertInertia(fn ($page) => $page
-            ->has('stats.activityFeed.recentSyncs', 5)
-        );
-    });
-
     it('handles empty organization gracefully', function () {
         $response = $this->actingAs($this->user)->get("/organizations/{$this->organization->slug}");
 
@@ -128,8 +94,6 @@ describe('organization stats', function () {
             ->where('stats.repositoriesCount', 0)
             ->where('stats.tokensCount', 0)
             ->where('stats.membersCount', 1) // The owner
-            ->has('stats.activityFeed.recentReleases', 0)
-            ->has('stats.activityFeed.recentSyncs', 0)
         );
     });
 });

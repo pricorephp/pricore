@@ -4,6 +4,7 @@ namespace App\Domains\Package\Http\Controllers;
 
 use App\Domains\Organization\Contracts\Data\OrganizationData;
 use App\Domains\Package\Actions\BuildPackageDownloadStatsAction;
+use App\Domains\Package\Actions\RecordPackageViewTask;
 use App\Domains\Package\Contracts\Data\PackageData;
 use App\Domains\Package\Contracts\Data\PackageVersionData;
 use App\Domains\Package\Contracts\Data\PackageVersionDetailData;
@@ -18,6 +19,7 @@ class PackageController extends Controller
 {
     public function __construct(
         protected BuildPackageDownloadStatsAction $downloadStats,
+        protected RecordPackageViewTask $recordPackageView,
     ) {}
 
     public function index(Organization $organization): Response
@@ -37,6 +39,10 @@ class PackageController extends Controller
 
     public function show(Request $request, Organization $organization, Package $package): Response
     {
+        if ($request->user() && ! $request->hasAny(['query', 'type', 'page', 'version'])) {
+            $this->recordPackageView->handle($request->user(), $package);
+        }
+
         $package->load('organization', 'repository');
 
         $query = $request->query('query', '');

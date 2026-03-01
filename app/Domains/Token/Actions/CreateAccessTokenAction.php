@@ -2,6 +2,8 @@
 
 namespace App\Domains\Token\Actions;
 
+use App\Domains\Activity\Actions\RecordActivityTask;
+use App\Domains\Activity\Contracts\Enums\ActivityType;
 use App\Domains\Token\Contracts\Data\TokenCreatedData;
 use App\Models\AccessToken;
 use App\Models\Organization;
@@ -11,6 +13,10 @@ use Illuminate\Support\Str;
 
 class CreateAccessTokenAction
 {
+    public function __construct(
+        protected RecordActivityTask $recordActivity,
+    ) {}
+
     public function handle(
         ?Organization $organization,
         ?User $user,
@@ -27,6 +33,16 @@ class CreateAccessTokenAction
             'token_hash' => $tokenHash,
             'expires_at' => $expiresAt,
         ]);
+
+        if ($organization) {
+            $this->recordActivity->handle(
+                organization: $organization,
+                type: ActivityType::TokenCreated,
+                subject: $accessToken,
+                actor: $user ?? auth()->user(),
+                properties: ['name' => $name],
+            );
+        }
 
         return new TokenCreatedData(
             plainToken: $plainToken,

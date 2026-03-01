@@ -2,6 +2,8 @@
 
 namespace App\Domains\Token\Http\Controllers;
 
+use App\Domains\Activity\Actions\RecordActivityTask;
+use App\Domains\Activity\Contracts\Enums\ActivityType;
 use App\Domains\Organization\Contracts\Data\OrganizationData;
 use App\Domains\Token\Actions\CreateAccessTokenAction;
 use App\Domains\Token\Contracts\Data\AccessTokenData;
@@ -16,7 +18,8 @@ use Inertia\Response;
 class TokenController extends Controller
 {
     public function __construct(
-        protected CreateAccessTokenAction $createAccessToken
+        protected CreateAccessTokenAction $createAccessToken,
+        protected RecordActivityTask $recordActivity,
     ) {}
 
     public function index(Organization $organization): Response
@@ -60,6 +63,14 @@ class TokenController extends Controller
         if ($token->organization_uuid !== $organization->uuid) {
             abort(403);
         }
+
+        $this->recordActivity->handle(
+            organization: $organization,
+            type: ActivityType::TokenRevoked,
+            subject: $token,
+            actor: auth()->user(),
+            properties: ['name' => $token->name],
+        );
 
         $token->delete();
 

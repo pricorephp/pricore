@@ -80,8 +80,7 @@ export function CommandPalette({
                                 <GitBranch className="size-4 opacity-60" />
                                 <span>{repo.name}</span>
                                 <span className="ml-auto text-xs text-muted-foreground">
-                                    {repo.providerLabel} &middot;{' '}
-                                    {repo.organizationName}
+                                    {repo.providerLabel}
                                 </span>
                             </CommandItem>
                         ))}
@@ -101,9 +100,6 @@ export function CommandPalette({
                             >
                                 <Package className="size-4 opacity-60" />
                                 <span>{pkg.name}</span>
-                                <span className="ml-auto text-xs text-muted-foreground">
-                                    {pkg.organizationName}
-                                </span>
                             </CommandItem>
                         ))}
                     </CommandGroup>

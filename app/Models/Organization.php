@@ -37,6 +37,8 @@ use Illuminate\Support\Carbon;
  * @property-read int|null $invitations_count
  * @property-read Collection<int, PackageDownload> $downloads
  * @property-read int|null $downloads_count
+ * @property-read Collection<int, ActivityLog> $activityLogs
+ * @property-read int|null $activity_logs_count
  *
  * @method static OrganizationFactory factory($count = null, $state = [])
  * @method static Builder<static>|Organization newModelQuery()
@@ -126,5 +128,13 @@ class Organization extends Model
     public function downloads(): HasMany
     {
         return $this->hasMany(PackageDownload::class, 'organization_uuid', 'uuid');
+    }
+
+    /**
+     * @return HasMany<ActivityLog, $this>
+     */
+    public function activityLogs(): HasMany
+    {
+        return $this->hasMany(ActivityLog::class, 'organization_uuid', 'uuid');
     }
 }

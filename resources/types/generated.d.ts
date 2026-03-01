@@ -1,11 +1,25 @@
+declare namespace App.Domains.Activity.Contracts.Data {
+export type ActivityLogData = {
+uuid: string;
+type: App.Domains.Activity.Contracts.Enums.ActivityType;
+typeLabel: string;
+icon: string;
+category: string;
+actorName: string | null;
+actorAvatar: string | null;
+subjectType: string | null;
+subjectUuid: string | null;
+properties: Array<any> | null;
+createdAt: string | null;
+};
+}
+declare namespace App.Domains.Activity.Contracts.Enums {
+export type ActivityType = 'repository.added' | 'repository.removed' | 'repository.synced' | 'repository.sync_failed' | 'package.created' | 'package.removed' | 'member.added' | 'member.removed' | 'member.role_changed' | 'invitation.sent' | 'token.created' | 'token.revoked';
+}
 declare namespace App.Domains.Auth.Contracts.Enums {
 export type GitHubOAuthIntent = 'login' | 'connect';
 }
 declare namespace App.Domains.Organization.Contracts.Data {
-export type ActivityFeedData = {
-recentReleases: Array<any>;
-recentSyncs: Array<any>;
-};
 export type DailyDownloadData = {
 date: string;
 downloads: number;
@@ -61,7 +75,6 @@ tokensCount: number;
 membersCount: number;
 totalDownloads: number;
 dailyDownloads: Array<any>;
-activityFeed: App.Domains.Organization.Contracts.Data.ActivityFeedData;
 };
 export type OrganizationWithRoleData = {
 organization: App.Domains.Organization.Contracts.Data.OrganizationData;
@@ -69,30 +82,16 @@ role: App.Domains.Organization.Contracts.Enums.OrganizationRole;
 isOwner: boolean;
 pivotUuid: string;
 };
-export type RecentReleaseData = {
-packageName: string;
-packageUuid: string;
-version: string;
-isStable: boolean;
-releasedAt: string | null;
-};
-export type RecentSyncData = {
-repositoryName: string;
-repositoryUuid: string;
-status: App.Domains.Repository.Contracts.Enums.SyncStatus;
-statusLabel: string;
-startedAt: string;
-completedAt: string | null;
-versionsAdded: number;
-versionsUpdated: number;
-versionsRemoved: number;
-errorMessage: string | null;
-};
 }
 declare namespace App.Domains.Organization.Contracts.Enums {
 export type OrganizationRole = 'owner' | 'admin' | 'member';
 }
 declare namespace App.Domains.Package.Contracts.Data {
+export type FrequentPackageData = {
+uuid: string;
+name: string;
+latestVersion: string | null;
+};
 export type PackageData = {
 uuid: string;
 name: string;

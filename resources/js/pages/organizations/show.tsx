@@ -1,12 +1,16 @@
 import OnboardingChecklist from '@/components/onboarding-checklist';
-import { ActivityFeed } from '@/components/stats/activity-feed';
+import { ActivityTimeline } from '@/components/stats/activity-timeline';
 import { DownloadChart } from '@/components/stats/download-chart';
+import { FrequentPackages } from '@/components/stats/frequent-packages';
 import { StatCard } from '@/components/stats/stat-card';
 import AppLayout from '@/layouts/app-layout';
 import { createOrganizationBreadcrumb } from '@/lib/breadcrumbs';
-import { Head, Link, usePage } from '@inertiajs/react';
+import { Deferred, Head, Link, usePage } from '@inertiajs/react';
 import { Box, Download, GitBranch, Users } from 'lucide-react';
 
+type ActivityLogData = App.Domains.Activity.Contracts.Data.ActivityLogData;
+type FrequentPackageData =
+    App.Domains.Package.Contracts.Data.FrequentPackageData;
 type OnboardingChecklistData =
     App.Domains.Organization.Contracts.Data.OnboardingChecklistData;
 
@@ -20,6 +24,8 @@ interface OrganizationShowProps {
     stats: OrganizationStatsData;
     onboarding: OnboardingChecklistData;
     configuredProviders?: string[];
+    activityLogs?: ActivityLogData[];
+    frequentPackages?: FrequentPackageData[];
 }
 
 export default function OrganizationShow({
@@ -27,6 +33,8 @@ export default function OrganizationShow({
     stats,
     onboarding,
     configuredProviders = [],
+    activityLogs,
+    frequentPackages,
 }: OrganizationShowProps) {
     const { auth } = usePage<{
         auth: { organizations: OrganizationData[] };
@@ -98,12 +106,43 @@ export default function OrganizationShow({
                     configuredProviders={configuredProviders}
                 />
 
-                {/* Activity Feed */}
-                <ActivityFeed
-                    organizationSlug={organization.slug}
-                    recentReleases={stats.activityFeed.recentReleases}
-                    recentSyncs={stats.activityFeed.recentSyncs}
-                />
+                <div className="grid gap-6 lg:grid-cols-3">
+                    <div className="lg:col-span-2">
+                        {/* Activity Timeline */}
+                        <Deferred
+                            data="activityLogs"
+                            fallback={
+                                <ActivityTimeline
+                                    organizationSlug={organization.slug}
+                                    activities={undefined}
+                                />
+                            }
+                        >
+                            <ActivityTimeline
+                                organizationSlug={organization.slug}
+                                activities={activityLogs}
+                            />
+                        </Deferred>
+                    </div>
+
+                    <div>
+                        {/* Frequently Viewed Packages */}
+                        <Deferred
+                            data="frequentPackages"
+                            fallback={
+                                <FrequentPackages
+                                    organizationSlug={organization.slug}
+                                    packages={undefined}
+                                />
+                            }
+                        >
+                            <FrequentPackages
+                                organizationSlug={organization.slug}
+                                packages={frequentPackages}
+                            />
+                        </Deferred>
+                    </div>
+                </div>
             </div>
         </AppLayout>
     );
