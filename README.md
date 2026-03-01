@@ -81,7 +81,7 @@ We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for development
 
 ## Security
 
-If you discover a security vulnerability, please send an email to pricore@maartenbode.com instead of using the issue tracker. All security vulnerabilities will be promptly addressed.
+If you discover a security vulnerability, please send an email to info@pricore.dev instead of using the issue tracker. All security vulnerabilities will be promptly addressed.
 
 ## License
 
