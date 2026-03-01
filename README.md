@@ -20,8 +20,6 @@ Manage your packages with a registry that just works.
 <img src="./docs/public/pricore-landing.png?v=20260228" alt="Pricore Dashboard">
 </p>
 
----
-
 ## About Pricore
 
 Managing private PHP packages should be simple. Pricore makes it that way. It provides a centralized, reliable way to store package metadata, control access with tokens, and integrate seamlessly with Git-based workflows.
