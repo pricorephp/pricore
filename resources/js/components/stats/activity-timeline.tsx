@@ -321,7 +321,12 @@ function ActivityTimelineItem({
                     )}
                     {action}
                 </p>
-                <p className="mt-1 text-sm text-muted-foreground/70">
+                <p
+                    className="mt-1 text-sm text-muted-foreground/70"
+                    title={DateTime.fromISO(
+                        activity.createdAt as unknown as string,
+                    ).toLocaleString(DateTime.DATETIME_FULL)}
+                >
                     {DateTime.fromISO(
                         activity.createdAt as unknown as string,
                     ).toRelative()}
