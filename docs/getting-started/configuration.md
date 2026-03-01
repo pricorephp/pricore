@@ -132,13 +132,6 @@ Create a GitLab OAuth Application:
 2. Follow the same steps as above
 3. Set `GITLAB_INSTANCE_URI` to your instance URL (e.g., `https://gitlab.example.com/`)
 
-### Bitbucket
-
-```bash
-BITBUCKET_CLIENT_ID=your-bitbucket-client-id
-BITBUCKET_CLIENT_SECRET=your-bitbucket-client-secret
-```
-
 ## Mail Configuration
 
 Configure mail for password resets and notifications:

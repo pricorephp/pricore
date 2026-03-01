@@ -14,7 +14,6 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { Textarea } from '@/components/ui/textarea';
 import { Form } from '@inertiajs/react';
 
 type GitCredentialData =
@@ -206,81 +205,6 @@ export default function GitCredentialDialog({
                         </div>
                     </>
                 );
-            case 'bitbucket':
-                return (
-                    <>
-                        <div className="grid space-y-2">
-                            <Label htmlFor="username">
-                                Username <span className="text-red-500">*</span>
-                            </Label>
-                            <Input
-                                id="username"
-                                name="credentials[username]"
-                                required
-                                placeholder="your-username"
-                                autoFocus
-                            />
-                        </div>
-                        <div className="grid space-y-2">
-                            <Label htmlFor="app_password">
-                                App Password{' '}
-                                <span className="text-red-500">*</span>
-                            </Label>
-                            <Input
-                                id="app_password"
-                                name="credentials[app_password]"
-                                type="password"
-                                required
-                                placeholder="xxxxxxxxxxxx"
-                            />
-                            <p className="text-sm text-muted-foreground">
-                                Create an app password in{' '}
-                                <a
-                                    href="https://bitbucket.org/account/settings/app-passwords/"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="text-primary hover:underline"
-                                >
-                                    Bitbucket Settings → Personal settings → App
-                                    passwords
-                                </a>
-                            </p>
-                        </div>
-                    </>
-                );
-            case 'git':
-                return (
-                    <>
-                        <div className="grid space-y-2">
-                            <Label htmlFor="ssh_key">
-                                SSH Private Key{' '}
-                                <span className="text-red-500">*</span>
-                            </Label>
-                            <Textarea
-                                id="ssh_key"
-                                name="credentials[ssh_key]"
-                                required
-                                rows={8}
-                                placeholder="-----BEGIN OPENSSH PRIVATE KEY-----&#10;...&#10;-----END OPENSSH PRIVATE KEY-----"
-                                autoFocus
-                            />
-                            <p className="text-sm text-muted-foreground">
-                                Paste your SSH private key. Make sure the
-                                corresponding public key is added to your Git
-                                server. Learn how to{' '}
-                                <a
-                                    href="https://docs.github.com/en/authentication/connecting-to-github-with-ssh/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="text-primary hover:underline"
-                                >
-                                    generate an SSH key
-                                </a>
-                                .
-                            </p>
-                        </div>
-                    </>
-                );
             default:
                 return null;
         }
@@ -326,7 +250,6 @@ export default function GitCredentialDialog({
                                 errors['credentials.token'] ||
                                 errors['credentials.username'] ||
                                 errors['credentials.app_password'] ||
-                                errors['credentials.ssh_key'] ||
                                 errors['credentials.url']) && (
                                 <div className="rounded-md border border-destructive bg-destructive/10 p-3">
                                     <p className="font-medium text-destructive">
@@ -356,12 +279,6 @@ export default function GitCredentialDialog({
                                                         'credentials.app_password'
                                                     ]
                                                 }
-                                            </li>
-                                        )}
-                                        {errors['credentials.ssh_key'] && (
-                                            <li>
-                                                SSH Key:{' '}
-                                                {errors['credentials.ssh_key']}
                                             </li>
                                         )}
                                         {errors['credentials.url'] && (

@@ -107,7 +107,7 @@ export default function OnboardingChecklist({
 
                 <Step
                     title="Register a Git provider"
-                    description="Add credentials for GitHub, GitLab, or Bitbucket to sync repositories."
+                    description="Add credentials for GitHub, GitLab, or a generic Git server to sync repositories."
                     completed={onboarding.hasGitProvider}
                 >
                     <Button size="sm" variant="secondary" asChild>

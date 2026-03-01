@@ -62,8 +62,6 @@ enum GitProvider: string
         return [
             self::GitHub->value => self::GitHub->label(),
             self::GitLab->value => self::GitLab->label(),
-            self::Bitbucket->value => self::Bitbucket->label(),
-            self::Git->value => self::Git->label(),
         ];
     }
 }

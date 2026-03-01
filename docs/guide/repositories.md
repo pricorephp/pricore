@@ -10,31 +10,19 @@ Pricore supports multiple Git providers:
 |----------|----------|
 | **GitHub** | OAuth integration, webhooks, automatic sync |
 | **GitLab** | OAuth integration, webhooks, self-hosted support |
-| **Bitbucket** | OAuth integration, webhooks |
-| **Generic Git** | Manual URL entry, SSH/HTTPS clone |
 
 ## Connecting a Repository
 
 ### Via OAuth (Recommended)
 
 1. Navigate to **Repositories** > **Connect Repository**
-2. Select your Git provider (GitHub, GitLab, or Bitbucket)
+2. Select your Git provider (GitHub or GitLab)
 3. Authorize Pricore to access your repositories
 4. Select the repository to connect
 5. Pricore automatically:
    - Fetches `composer.json` from the default branch
    - Creates a package with the discovered metadata
    - Sets up webhooks for automatic syncing
-
-### Via URL (Generic Git)
-
-For repositories not on supported OAuth providers:
-
-1. Navigate to **Repositories** > **Add Repository**
-2. Select "Generic Git"
-3. Enter the repository URL (HTTPS or SSH)
-4. Configure authentication if needed (deploy key or credentials)
-5. Manually trigger the initial sync
 
 ## Repository Configuration
 
@@ -62,12 +50,6 @@ Events: Push, Create (tags)
 URL: https://pricore.yourcompany.com/webhooks/gitlab/{repository-id}
 Secret token: (auto-generated when registering via Pricore)
 Trigger: Push events, Tag push events
-```
-
-**Bitbucket:**
-```
-URL: https://pricore.yourcompany.com/webhooks/bitbucket/{repository-id}
-Events: Repository push
 ```
 
 ## Sync Status
