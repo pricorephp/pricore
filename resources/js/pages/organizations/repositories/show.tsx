@@ -7,7 +7,7 @@ import HeadingSmall from '@/components/heading-small';
 import PackageCard from '@/components/package-card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardList } from '@/components/ui/card';
 import {
     Dialog,
     DialogContent,
@@ -275,7 +275,7 @@ export default function RepositoryShow({
                         }
                     />
                     {packages.length > 0 ? (
-                        <div className="divide-y divide-border rounded-lg border bg-card">
+                        <CardList>
                             {packages.map((pkg) => (
                                 <Link
                                     key={pkg.uuid}
@@ -288,7 +288,7 @@ export default function RepositoryShow({
                                     <PackageCard package={pkg} hideRepository />
                                 </Link>
                             ))}
-                        </div>
+                        </CardList>
                     ) : (
                         <Card>
                             <CardContent className="py-8 text-center">
@@ -317,7 +317,7 @@ export default function RepositoryShow({
                             </CardContent>
                         </Card>
                     ) : (
-                        <div className="divide-y divide-border rounded-lg border bg-card">
+                        <CardList>
                             {syncLogs.map((log) => (
                                 <div
                                     key={log.uuid}
@@ -448,7 +448,7 @@ export default function RepositoryShow({
                                     </div>
                                 </div>
                             ))}
-                        </div>
+                        </CardList>
                     )}
                 </div>
                 <Dialog

@@ -49,7 +49,10 @@ export function NavMain({ items = [] }: { items?: NavItem[] }) {
                     >
                         {item.icon && (
                             <item.icon
-                                className="size-5"
+                                className={cn(
+                                    'size-5',
+                                    active && 'text-primary',
+                                )}
                                 strokeWidth={active ? 2.25 : 1.75}
                             />
                         )}

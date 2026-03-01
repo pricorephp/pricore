@@ -3,6 +3,7 @@ import { EmptyState } from '@/components/empty-state';
 import HeadingSmall from '@/components/heading-small';
 import PackageCard from '@/components/package-card';
 import { Button } from '@/components/ui/button';
+import { CardList } from '@/components/ui/card';
 import AppLayout from '@/layouts/app-layout';
 import { createOrganizationBreadcrumb } from '@/lib/breadcrumbs';
 import { Head, Link, usePage } from '@inertiajs/react';
@@ -64,7 +65,7 @@ export default function Packages({
                         }}
                     />
                 ) : (
-                    <div className="divide-y divide-border rounded-lg border bg-card">
+                    <CardList>
                         {packages.map((pkg) => (
                             <Link
                                 key={pkg.uuid}
@@ -74,7 +75,7 @@ export default function Packages({
                                 <PackageCard package={pkg} />
                             </Link>
                         ))}
-                    </div>
+                    </CardList>
                 )}
             </div>
         </AppLayout>
