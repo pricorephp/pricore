@@ -574,7 +574,7 @@ export default function PackageShow({
                     }
                 }}
             >
-                <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-xl [&>button.absolute]:hidden">
+                <DialogContent className="max-h-[85vh] overflow-y-auto overflow-x-hidden sm:max-w-xl [&>button.absolute]:hidden">
                     {activeVersion && (
                         <>
                             <div className="flex items-start justify-between gap-4">
@@ -586,7 +586,7 @@ export default function PackageShow({
                                         <DialogTitle className="truncate font-mono text-lg">
                                             {activeVersion.version}
                                         </DialogTitle>
-                                        <div className="flex items-center gap-2">
+                                        <div className="flex min-w-0 items-center gap-2">
                                             {activeVersion.isDev ? (
                                                 <Badge variant="secondary">
                                                     dev
@@ -597,7 +597,7 @@ export default function PackageShow({
                                                 </Badge>
                                             )}
                                             {activeVersion.description && (
-                                                <DialogDescription className="truncate">
+                                                <DialogDescription className="line-clamp-1">
                                                     {activeVersion.description}
                                                 </DialogDescription>
                                             )}
