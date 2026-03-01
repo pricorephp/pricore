@@ -24,15 +24,6 @@ import {
 } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import {
-    Sheet,
-    SheetClose,
-    SheetContent,
-    SheetDescription,
-    SheetFooter,
-    SheetHeader,
-    SheetTitle,
-} from '@/components/ui/sheet';
-import {
     Tooltip,
     TooltipContent,
     TooltipTrigger,
@@ -571,7 +562,7 @@ export default function PackageShow({
                 </div>
             </div>
 
-            <Sheet
+            <Dialog
                 open={activeVersion !== null}
                 onOpenChange={(open) => {
                     if (!open) {
@@ -579,63 +570,47 @@ export default function PackageShow({
                     }
                 }}
             >
-                <SheetContent className="overflow-y-auto sm:max-w-xl [&>button.absolute]:hidden">
+                <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-xl [&>button.absolute]:hidden">
                     {activeVersion && (
                         <>
-                            <SheetHeader className="p-6">
-                                <div className="flex items-start justify-between gap-4">
-                                    <div className="flex min-w-0 items-start gap-3">
-                                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                                            <PackageIcon className="h-5 w-5" />
-                                        </div>
-                                        <div className="min-w-0 space-y-1">
-                                            <SheetTitle className="truncate font-mono text-lg">
-                                                {activeVersion.version}
-                                            </SheetTitle>
-                                            <div className="flex items-center gap-2">
-                                                {activeVersion.isDev ? (
-                                                    <Badge variant="secondary">
-                                                        dev
-                                                    </Badge>
-                                                ) : (
-                                                    <Badge variant="success">
-                                                        stable
-                                                    </Badge>
-                                                )}
-                                                {activeVersion.description && (
-                                                    <SheetDescription className="truncate">
-                                                        {
-                                                            activeVersion.description
-                                                        }
-                                                    </SheetDescription>
-                                                )}
-                                            </div>
-                                        </div>
+                            <div className="flex items-start justify-between gap-4">
+                                <div className="flex min-w-0 items-start gap-3">
+                                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                                        <PackageIcon className="h-5 w-5" />
                                     </div>
-                                    <div className="flex shrink-0 items-center gap-2">
-                                        <CopyButton
-                                            text={`${window.location.origin}/organizations/${organization.slug}/packages/${pkg.uuid}?version=${activeVersion.uuid}`}
-                                            icon={Link2}
-                                            tooltip="Link copied!"
-                                            variant="outline"
-                                        />
-                                        <SheetClose asChild>
-                                            <Button
-                                                variant="outline"
-                                                size="icon"
-                                                className="h-8 w-8"
-                                            >
-                                                <X className="h-4 w-4" />
-                                                <span className="sr-only">
-                                                    Close
-                                                </span>
-                                            </Button>
-                                        </SheetClose>
+                                    <div className="min-w-0 space-y-1">
+                                        <DialogTitle className="truncate font-mono text-lg">
+                                            {activeVersion.version}
+                                        </DialogTitle>
+                                        <div className="flex items-center gap-2">
+                                            {activeVersion.isDev ? (
+                                                <Badge variant="secondary">
+                                                    dev
+                                                </Badge>
+                                            ) : (
+                                                <Badge variant="success">
+                                                    stable
+                                                </Badge>
+                                            )}
+                                            {activeVersion.description && (
+                                                <DialogDescription className="truncate">
+                                                    {
+                                                        activeVersion.description
+                                                    }
+                                                </DialogDescription>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
-                            </SheetHeader>
+                                <CopyButton
+                                    text={`${window.location.origin}/organizations/${organization.slug}/packages/${pkg.uuid}?version=${activeVersion.uuid}`}
+                                    icon={Link2}
+                                    tooltip="Link copied!"
+                                    variant="outline"
+                                />
+                            </div>
 
-                            <div className="space-y-6 p-6 pt-0">
+                            <div className="space-y-6">
                                 {/* Quick info row */}
                                 <div className="grid grid-cols-2 gap-4">
                                     {activeVersion.releasedAt && (
@@ -793,62 +768,66 @@ export default function PackageShow({
                                         </div>
                                     </>
                                 )}
-                            </div>
 
-                            {canManageVersions && (
-                                <SheetFooter className="border-t p-6">
-                                    <Dialog>
-                                        <DialogTrigger asChild>
-                                            <Button
-                                                variant="destructive"
-                                                className="w-full"
-                                            >
-                                                <Trash2 className="mr-2 h-4 w-4" />
-                                                Delete version
-                                            </Button>
-                                        </DialogTrigger>
-                                        <DialogContent>
-                                            <DialogTitle>
-                                                Delete version{' '}
-                                                {activeVersion.version}?
-                                            </DialogTitle>
-                                            <DialogDescription>
-                                                This will permanently remove
-                                                version{' '}
-                                                <strong>
-                                                    {activeVersion.version}
-                                                </strong>{' '}
-                                                from {pkg.name}. This action
-                                                cannot be undone.
-                                            </DialogDescription>
-                                            <DialogFooter className="gap-2">
-                                                <DialogClose asChild>
-                                                    <Button variant="secondary">
-                                                        Cancel
-                                                    </Button>
-                                                </DialogClose>
+                                {canManageVersions && (
+                                    <>
+                                        <Separator />
+                                        <Dialog>
+                                            <DialogTrigger asChild>
                                                 <Button
                                                     variant="destructive"
-                                                    onClick={() =>
-                                                        router.delete(
-                                                            `/organizations/${organization.slug}/packages/${pkg.uuid}/versions/${activeVersion.uuid}`,
-                                                            {
-                                                                preserveScroll: true,
-                                                            },
-                                                        )
-                                                    }
+                                                    size="sm"
                                                 >
+                                                    <Trash2 className="mr-1.5 h-3.5 w-3.5" />
                                                     Delete version
                                                 </Button>
-                                            </DialogFooter>
-                                        </DialogContent>
-                                    </Dialog>
-                                </SheetFooter>
-                            )}
+                                            </DialogTrigger>
+                                            <DialogContent>
+                                                <DialogTitle>
+                                                    Delete version{' '}
+                                                    {activeVersion.version}?
+                                                </DialogTitle>
+                                                <DialogDescription>
+                                                    This will permanently remove
+                                                    version{' '}
+                                                    <strong>
+                                                        {
+                                                            activeVersion.version
+                                                        }
+                                                    </strong>{' '}
+                                                    from {pkg.name}. This action
+                                                    cannot be undone.
+                                                </DialogDescription>
+                                                <DialogFooter className="gap-2">
+                                                    <DialogClose asChild>
+                                                        <Button variant="secondary">
+                                                            Cancel
+                                                        </Button>
+                                                    </DialogClose>
+                                                    <Button
+                                                        variant="destructive"
+                                                        onClick={() =>
+                                                            router.delete(
+                                                                `/organizations/${organization.slug}/packages/${pkg.uuid}/versions/${activeVersion.uuid}`,
+                                                                {
+                                                                    preserveScroll:
+                                                                        true,
+                                                                },
+                                                            )
+                                                        }
+                                                    >
+                                                        Delete version
+                                                    </Button>
+                                                </DialogFooter>
+                                            </DialogContent>
+                                        </Dialog>
+                                    </>
+                                )}
+                            </div>
                         </>
                     )}
-                </SheetContent>
-            </Sheet>
+                </DialogContent>
+            </Dialog>
         </AppLayout>
     );
 }
