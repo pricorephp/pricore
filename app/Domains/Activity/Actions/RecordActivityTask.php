@@ -3,6 +3,7 @@
 namespace App\Domains\Activity\Actions;
 
 use App\Domains\Activity\Contracts\Enums\ActivityType;
+use App\Domains\Activity\Events\ActivityRecorded;
 use App\Models\ActivityLog;
 use App\Models\Organization;
 use App\Models\User;
@@ -20,7 +21,7 @@ class RecordActivityTask
         ?User $actor = null,
         array $properties = [],
     ): ActivityLog {
-        return ActivityLog::create([
+        $activityLog = ActivityLog::create([
             'organization_uuid' => $organization->uuid,
             'actor_uuid' => $actor?->uuid,
             'type' => $type,
@@ -28,5 +29,12 @@ class RecordActivityTask
             'subject_uuid' => $subject?->getKey(),
             'properties' => $properties ?: null,
         ]);
+
+        ActivityRecorded::dispatch(
+            $organization->uuid,
+            $type->value,
+        );
+
+        return $activityLog;
     }
 }

@@ -14,6 +14,7 @@ import { Head, Link, usePage } from '@inertiajs/react';
 import { ArrowUpRight, GitBranch, Import, Plus } from 'lucide-react';
 import { DateTime } from 'luxon';
 import { useState } from 'react';
+import { useOrganizationChannel } from '@/hooks/use-organization-channel';
 
 type OrganizationData =
     App.Domains.Organization.Contracts.Data.OrganizationData;
@@ -56,6 +57,9 @@ export default function Repositories({
     const { auth } = usePage<{
         auth: { organizations: OrganizationData[] };
     }>().props;
+
+    useOrganizationChannel(organization.uuid);
+
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [isImportOpen, setIsImportOpen] = useState(false);
 

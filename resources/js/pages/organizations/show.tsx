@@ -5,6 +5,7 @@ import { FrequentPackages } from '@/components/stats/frequent-packages';
 import { StatCard } from '@/components/stats/stat-card';
 import AppLayout from '@/layouts/app-layout';
 import { createOrganizationBreadcrumb } from '@/lib/breadcrumbs';
+import { useOrganizationChannel } from '@/hooks/use-organization-channel';
 import { Deferred, Head, Link, usePage } from '@inertiajs/react';
 import { Box, Download, GitBranch, Users } from 'lucide-react';
 
@@ -39,6 +40,8 @@ export default function OrganizationShow({
     const { auth } = usePage<{
         auth: { organizations: OrganizationData[] };
     }>().props;
+
+    useOrganizationChannel(organization.uuid);
 
     const breadcrumbs = [
         createOrganizationBreadcrumb(organization, auth.organizations),

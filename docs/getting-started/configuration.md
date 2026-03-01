@@ -77,6 +77,38 @@ CACHE_STORE=redis
 SESSION_DRIVER=redis
 ```
 
+### Realtime Updates (Reverb)
+
+Pricore uses [Laravel Reverb](https://laravel.com/docs/reverb) as a WebSocket server to push realtime sync status updates to the browser. When a repository sync starts, completes, or fails, all connected users see the status change immediately.
+
+```bash
+BROADCAST_CONNECTION=reverb
+
+REVERB_APP_ID=your-app-id
+REVERB_APP_KEY=your-app-key
+REVERB_APP_SECRET=your-app-secret
+REVERB_HOST=localhost
+REVERB_PORT=8080
+REVERB_SCHEME=http
+
+VITE_REVERB_APP_KEY="${REVERB_APP_KEY}"
+VITE_REVERB_HOST="${REVERB_HOST}"
+VITE_REVERB_PORT="${REVERB_PORT}"
+VITE_REVERB_SCHEME="${REVERB_SCHEME}"
+```
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `BROADCAST_CONNECTION` | Broadcasting driver (`reverb`, `log`, `null`) | `null` |
+| `REVERB_APP_ID` | Reverb application ID | - |
+| `REVERB_APP_KEY` | Reverb application key | - |
+| `REVERB_APP_SECRET` | Reverb application secret | - |
+| `REVERB_HOST` | Reverb server hostname | `localhost` |
+| `REVERB_PORT` | Reverb server port | `8080` |
+| `REVERB_SCHEME` | Reverb connection scheme (`http` or `https`) | `http` |
+
+> **Note:** Realtime updates are optional. Without Reverb configured, the application works normally — pages update on navigation or manual refresh.
+
 ## Git Provider Configuration
 
 To sync packages from Git repositories, configure your provider credentials.
@@ -272,6 +304,19 @@ REDIS_PORT=6379
 CACHE_STORE=redis
 SESSION_DRIVER=redis
 QUEUE_CONNECTION=redis
+BROADCAST_CONNECTION=reverb
+
+REVERB_APP_ID=your-app-id
+REVERB_APP_KEY=your-app-key
+REVERB_APP_SECRET=your-app-secret
+REVERB_HOST=pricore.yourcompany.com
+REVERB_PORT=8080
+REVERB_SCHEME=https
+
+VITE_REVERB_APP_KEY="${REVERB_APP_KEY}"
+VITE_REVERB_HOST="${REVERB_HOST}"
+VITE_REVERB_PORT="${REVERB_PORT}"
+VITE_REVERB_SCHEME="${REVERB_SCHEME}"
 
 MAIL_MAILER=smtp
 MAIL_HOST=smtp.mailgun.org

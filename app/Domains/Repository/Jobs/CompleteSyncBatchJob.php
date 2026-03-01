@@ -7,6 +7,7 @@ use App\Domains\Activity\Contracts\Enums\ActivityType;
 use App\Domains\Repository\Actions\CleanupGitCloneAction;
 use App\Domains\Repository\Contracts\Enums\RepositorySyncStatus;
 use App\Domains\Repository\Contracts\Enums\SyncStatus;
+use App\Domains\Repository\Events\RepositorySyncStatusUpdated;
 use App\Models\Repository;
 use App\Models\RepositorySyncLog;
 use Illuminate\Bus\Batch;
@@ -88,7 +89,7 @@ class CompleteSyncBatchJob implements ShouldQueue
 
     protected function updateRepositoryStatus(Repository $repository, ?Batch $batch): void
     {
-        $failedJobs = $batch ? $batch->failedJobs : 0;
+        $failedJobs = $batch->failedJobs ?? 0;
 
         $status = $failedJobs > 0
             ? RepositorySyncStatus::Failed
@@ -98,6 +99,15 @@ class CompleteSyncBatchJob implements ShouldQueue
             'sync_status' => $status,
             'last_synced_at' => now(),
         ]);
+
+        $repository->refresh();
+
+        RepositorySyncStatusUpdated::dispatch(
+            $repository->organization_uuid,
+            $repository->uuid,
+            $status,
+            $repository->last_synced_at?->toISOString(),
+        );
     }
 
     protected function recordActivity(Repository $repository, RepositorySyncLog $syncLog, RecordActivityTask $recordActivityTask): void

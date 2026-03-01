@@ -46,6 +46,7 @@ import {
 } from 'lucide-react';
 import { DateTime } from 'luxon';
 import { useState } from 'react';
+import { useOrganizationChannel } from '@/hooks/use-organization-channel';
 
 type OrganizationData =
     App.Domains.Organization.Contracts.Data.OrganizationData;
@@ -109,6 +110,8 @@ export default function RepositoryShow({
     const { auth } = usePage<{
         auth: { organizations: OrganizationData[] };
     }>().props;
+
+    useOrganizationChannel(organization.uuid);
 
     const [selectedLog, setSelectedLog] = useState<SyncLogData | null>(null);
 
