@@ -73,19 +73,19 @@ class HandleInertiaRequests extends Middleware
 
     private function searchData(Request $request): SearchData
     {
-        /** @var \App\Models\User $user */
-        $user = $request->user();
-        $organizationUuids = $user->organizations()->pluck('organizations.uuid');
+        $organization = $request->route('organization');
 
-        $packages = Package::query()
-            ->whereIn('organization_uuid', $organizationUuids)
+        if (! $organization instanceof \App\Models\Organization) {
+            return new SearchData(packages: [], repositories: []);
+        }
+
+        $packages = $organization->packages()
             ->with('organization:uuid,name,slug')
             ->get()
             ->map(fn (Package $package) => SearchPackageData::fromModel($package))
             ->all();
 
-        $repositories = Repository::query()
-            ->whereIn('organization_uuid', $organizationUuids)
+        $repositories = $organization->repositories()
             ->with('organization:uuid,name,slug')
             ->get()
             ->map(fn (Repository $repository) => SearchRepositoryData::fromModel($repository))
