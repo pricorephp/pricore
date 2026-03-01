@@ -38,24 +38,24 @@ const iconMap: Record<string, LucideIcon> = {
 
 const categoryStyles: Record<string, { badge: string; standalone: string }> = {
     repository: {
-        badge: 'bg-blue-500 text-white dark:bg-blue-500',
+        badge: 'bg-gradient-to-b from-blue-400 to-blue-600 text-white shadow-sm shadow-blue-500/30 [text-shadow:0_1px_0_rgba(0,0,0,0.2)]',
         standalone:
-            'bg-blue-100 text-blue-600 dark:bg-blue-900/40 dark:text-blue-400',
+            'bg-gradient-to-b from-blue-400 to-blue-600 text-white shadow-sm shadow-blue-500/30 [text-shadow:0_1px_0_rgba(0,0,0,0.2)]',
     },
     package: {
-        badge: 'bg-purple-500 text-white dark:bg-purple-500',
+        badge: 'bg-gradient-to-b from-purple-400 to-purple-600 text-white shadow-sm shadow-purple-500/30 [text-shadow:0_1px_0_rgba(0,0,0,0.2)]',
         standalone:
-            'bg-purple-100 text-purple-600 dark:bg-purple-900/40 dark:text-purple-400',
+            'bg-gradient-to-b from-purple-400 to-purple-600 text-white shadow-sm shadow-purple-500/30 [text-shadow:0_1px_0_rgba(0,0,0,0.2)]',
     },
     member: {
-        badge: 'bg-emerald-500 text-white dark:bg-emerald-500',
+        badge: 'bg-gradient-to-b from-emerald-400 to-emerald-600 text-white shadow-sm shadow-emerald-500/30 [text-shadow:0_1px_0_rgba(0,0,0,0.2)]',
         standalone:
-            'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/40 dark:text-emerald-400',
+            'bg-gradient-to-b from-emerald-400 to-emerald-600 text-white shadow-sm shadow-emerald-500/30 [text-shadow:0_1px_0_rgba(0,0,0,0.2)]',
     },
     token: {
-        badge: 'bg-amber-500 text-white dark:bg-amber-500',
+        badge: 'bg-gradient-to-b from-amber-400 to-amber-600 text-white shadow-sm shadow-amber-500/30 [text-shadow:0_1px_0_rgba(0,0,0,0.2)]',
         standalone:
-            'bg-amber-100 text-amber-600 dark:bg-amber-900/40 dark:text-amber-400',
+            'bg-gradient-to-b from-amber-400 to-amber-600 text-white shadow-sm shadow-amber-500/30 [text-shadow:0_1px_0_rgba(0,0,0,0.2)]',
     },
 };
 
