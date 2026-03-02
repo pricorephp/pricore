@@ -8,7 +8,7 @@ import AppLayout from '@/layouts/app-layout';
 import { createOrganizationBreadcrumb } from '@/lib/breadcrumbs';
 import { Deferred, Head, Link, usePage } from '@inertiajs/react';
 import { Box, Download, GitBranch, Users } from 'lucide-react';
-import { useRef } from 'react';
+import { useState } from 'react';
 
 type ActivityLogData = App.Domains.Activity.Contracts.Data.ActivityLogData;
 type FrequentPackageData =
@@ -44,9 +44,10 @@ export default function OrganizationShow({
 
     useOrganizationChannel(organization.uuid);
 
-    const cachedActivityLogs = useRef<ActivityLogData[]>();
-    if (activityLogs !== undefined) {
-        cachedActivityLogs.current = activityLogs;
+    const [cachedActivityLogs, setCachedActivityLogs] =
+        useState(activityLogs);
+    if (activityLogs !== undefined && activityLogs !== cachedActivityLogs) {
+        setCachedActivityLogs(activityLogs);
     }
 
     const breadcrumbs = [
@@ -123,7 +124,7 @@ export default function OrganizationShow({
                             fallback={
                                 <ActivityTimeline
                                     organizationSlug={organization.slug}
-                                    activities={cachedActivityLogs.current}
+                                    activities={cachedActivityLogs}
                                 />
                             }
                         >
