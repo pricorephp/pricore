@@ -60,7 +60,7 @@ class OrganizationController extends Controller
                     $join->on('packages.uuid', '=', 'package_views.package_uuid')
                         ->where('package_views.user_uuid', $user->uuid);
                 })
-                ->orderByDesc('package_views.view_count')
+                ->orderByDesc(DB::raw('COALESCE(package_views.view_count, 0)'))
                 ->orderBy('packages.name')
                 ->select('packages.*', DB::raw('COALESCE(package_views.view_count, 0) as user_view_count'))
                 ->get()

@@ -278,7 +278,7 @@ function ActivityAvatar({ activity }: { activity: ActivityLogData }) {
                 </Avatar>
                 <div
                     className={cn(
-                        'absolute -right-0.5 -bottom-0.5 flex size-4.5 items-center justify-center rounded-full ring-2 ring-background',
+                        'absolute -right-0.5 bottom-1.5 flex size-4.5 items-center justify-center rounded-full ring-2 ring-background',
                         styles.badge,
                     )}
                 >
@@ -313,7 +313,7 @@ function ActivityTimelineItem({
         <div className="flex gap-3.5 py-3">
             <ActivityAvatar activity={activity} />
             <div className="min-w-0 flex-1 pt-0.5">
-                <p className="text-[0.9375rem] leading-snug text-muted-foreground">
+                <p className="leading-snug text-muted-foreground">
                     {actor && (
                         <span className="font-medium text-foreground">
                             {actor}{' '}
@@ -364,7 +364,7 @@ export function ActivityTimeline({
             {activities === undefined ? (
                 <ActivityTimelineSkeleton />
             ) : activities.length === 0 ? (
-                <p className="px-2 text-sm text-muted-foreground">
+                <p className="px-2 text-muted-foreground">
                     No activity yet. Activity will appear here as you add
                     repositories, invite members, and manage tokens.
                 </p>
