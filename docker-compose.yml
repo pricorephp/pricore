@@ -20,6 +20,13 @@ services:
       - CACHE_STORE=redis
       - SESSION_DRIVER=redis
       - QUEUE_CONNECTION=redis
+      - BROADCAST_CONNECTION=${BROADCAST_CONNECTION:-reverb}
+      - REVERB_APP_ID=${REVERB_APP_ID:-pricore-local}
+      - REVERB_APP_KEY=${REVERB_APP_KEY:-pricore-key}
+      - REVERB_APP_SECRET=${REVERB_APP_SECRET:-pricore-secret}
+      - REVERB_HOST=reverb
+      - REVERB_PORT=8080
+      - REVERB_SCHEME=http
     networks:
       - pricore-network
     depends_on:
@@ -52,6 +59,13 @@ services:
       - REDIS_PORT=6379
       - CACHE_STORE=redis
       - QUEUE_CONNECTION=redis
+      - BROADCAST_CONNECTION=${BROADCAST_CONNECTION:-reverb}
+      - REVERB_APP_ID=${REVERB_APP_ID:-pricore-local}
+      - REVERB_APP_KEY=${REVERB_APP_KEY:-pricore-key}
+      - REVERB_APP_SECRET=${REVERB_APP_SECRET:-pricore-secret}
+      - REVERB_HOST=reverb
+      - REVERB_PORT=8080
+      - REVERB_SCHEME=http
     networks:
       - pricore-network
     depends_on:
@@ -82,6 +96,37 @@ services:
       - REDIS_PORT=6379
       - CACHE_STORE=redis
       - QUEUE_CONNECTION=redis
+    networks:
+      - pricore-network
+    depends_on:
+      app:
+        condition: service_healthy
+
+  reverb:
+    image: ghcr.io/pricorephp/pricore:latest
+    container_name: pricore-reverb
+    restart: unless-stopped
+    command: php artisan reverb:start --host=0.0.0.0 --port=8080
+    ports:
+      - "${REVERB_PORT:-8080}:8080"
+    volumes:
+      - pricore-storage:/app/storage
+      - pricore-database:/app/database
+    environment:
+      - APP_ENV=${APP_ENV:-production}
+      - APP_DEBUG=${APP_DEBUG:-false}
+      - APP_KEY=${APP_KEY:-}
+      - DB_CONNECTION=${DB_CONNECTION:-sqlite}
+      - DB_DATABASE=${DB_DATABASE:-/app/database/database.sqlite}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - CACHE_STORE=redis
+      - REVERB_APP_ID=${REVERB_APP_ID:-pricore-local}
+      - REVERB_APP_KEY=${REVERB_APP_KEY:-pricore-key}
+      - REVERB_APP_SECRET=${REVERB_APP_SECRET:-pricore-secret}
+      - REVERB_HOST=0.0.0.0
+      - REVERB_PORT=8080
+      - REVERB_SCHEME=http
     networks:
       - pricore-network
     depends_on:

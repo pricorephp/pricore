@@ -231,12 +231,31 @@ RestartSec=3
 WantedBy=multi-user.target
 ```
 
+**Reverb service** (`/etc/systemd/system/pricore-reverb.service`):
+
+```ini
+[Unit]
+Description=Pricore Reverb
+After=network.target
+
+[Service]
+Type=simple
+User=www-data
+WorkingDirectory=/var/www/pricore
+ExecStart=/usr/bin/php artisan reverb:start
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
+```
+
 Enable and start:
 
 ```bash
 sudo systemctl daemon-reload
-sudo systemctl enable pricore-horizon pricore-scheduler
-sudo systemctl start pricore-horizon pricore-scheduler
+sudo systemctl enable pricore-horizon pricore-scheduler pricore-reverb
+sudo systemctl start pricore-horizon pricore-scheduler pricore-reverb
 ```
 
 ### Supervisor
@@ -266,6 +285,19 @@ autorestart=true
 user=www-data
 redirect_stderr=true
 stdout_logfile=/var/www/pricore/storage/logs/scheduler.log
+```
+
+**Reverb** (`/etc/supervisor/conf.d/pricore-reverb.conf`):
+
+```ini
+[program:pricore-reverb]
+process_name=%(program_name)s
+command=php /var/www/pricore/artisan reverb:start
+autostart=true
+autorestart=true
+user=www-data
+redirect_stderr=true
+stdout_logfile=/var/www/pricore/storage/logs/reverb.log
 ```
 
 ## File Permissions

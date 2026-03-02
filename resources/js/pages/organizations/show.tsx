@@ -3,10 +3,12 @@ import { ActivityTimeline } from '@/components/stats/activity-timeline';
 import { DownloadChart } from '@/components/stats/download-chart';
 import { FrequentPackages } from '@/components/stats/frequent-packages';
 import { StatCard } from '@/components/stats/stat-card';
+import { useOrganizationChannel } from '@/hooks/use-organization-channel';
 import AppLayout from '@/layouts/app-layout';
 import { createOrganizationBreadcrumb } from '@/lib/breadcrumbs';
 import { Deferred, Head, Link, usePage } from '@inertiajs/react';
 import { Box, Download, GitBranch, Users } from 'lucide-react';
+import { useState } from 'react';
 
 type ActivityLogData = App.Domains.Activity.Contracts.Data.ActivityLogData;
 type FrequentPackageData =
@@ -39,6 +41,14 @@ export default function OrganizationShow({
     const { auth } = usePage<{
         auth: { organizations: OrganizationData[] };
     }>().props;
+
+    useOrganizationChannel(organization.uuid);
+
+    const [cachedActivityLogs, setCachedActivityLogs] =
+        useState(activityLogs);
+    if (activityLogs !== undefined && activityLogs !== cachedActivityLogs) {
+        setCachedActivityLogs(activityLogs);
+    }
 
     const breadcrumbs = [
         createOrganizationBreadcrumb(organization, auth.organizations),
@@ -114,7 +124,7 @@ export default function OrganizationShow({
                             fallback={
                                 <ActivityTimeline
                                     organizationSlug={organization.slug}
-                                    activities={undefined}
+                                    activities={cachedActivityLogs}
                                 />
                             }
                         >

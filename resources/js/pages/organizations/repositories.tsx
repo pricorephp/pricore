@@ -8,6 +8,7 @@ import InfoBox from '@/components/info-box';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { CardList } from '@/components/ui/card';
+import { useOrganizationChannel } from '@/hooks/use-organization-channel';
 import AppLayout from '@/layouts/app-layout';
 import { createOrganizationBreadcrumb } from '@/lib/breadcrumbs';
 import { Head, Link, usePage } from '@inertiajs/react';
@@ -56,6 +57,9 @@ export default function Repositories({
     const { auth } = usePage<{
         auth: { organizations: OrganizationData[] };
     }>().props;
+
+    useOrganizationChannel(organization.uuid);
+
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [isImportOpen, setIsImportOpen] = useState(false);
 

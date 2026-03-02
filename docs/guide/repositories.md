@@ -68,6 +68,10 @@ Each repository shows its sync status:
 2. Click **Sync History**
 3. View logs for each sync attempt
 
+### Realtime Status Updates
+
+When [Laravel Reverb](/getting-started/configuration#realtime-updates-reverb) is configured, sync status updates are pushed to the browser in realtime via WebSockets. All connected users see status changes immediately — no manual refresh needed. This works for both manual syncs and webhook-triggered syncs.
+
 ### Manual Sync
 
 To manually trigger a sync:

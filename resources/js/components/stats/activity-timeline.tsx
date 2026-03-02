@@ -1,3 +1,4 @@
+import { RelativeTime } from '@/components/relative-time';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
@@ -17,7 +18,6 @@ import {
     UserMinus,
     UserPlus,
 } from 'lucide-react';
-import { DateTime } from 'luxon';
 import type { ReactNode } from 'react';
 
 type ActivityLogData = App.Domains.Activity.Contracts.Data.ActivityLogData;
@@ -321,16 +321,10 @@ function ActivityTimelineItem({
                     )}
                     {action}
                 </p>
-                <p
-                    className="mt-1 text-sm text-muted-foreground/70"
-                    title={DateTime.fromISO(
-                        activity.createdAt as unknown as string,
-                    ).toLocaleString(DateTime.DATETIME_FULL)}
-                >
-                    {DateTime.fromISO(
-                        activity.createdAt as unknown as string,
-                    ).toRelative()}
-                </p>
+                <RelativeTime
+                    datetime={activity.createdAt as unknown as string}
+                    className="mt-1 block text-sm text-muted-foreground/70"
+                />
             </div>
         </div>
     );
