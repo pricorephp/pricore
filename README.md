@@ -41,6 +41,7 @@ Don't want to self-host? Try [Hosted Pricore](https://app.pricore.dev) — a ful
 - **Built on Laravel** - Familiar stack, easy to extend. If you know Laravel, you know Pricore.
 - **Blazing Fast** - Packages resolve in milliseconds. No waiting on external APIs.
 - **Web Dashboard** - Browse packages, manage tokens, and view download stats from a clean UI.
+- **Realtime Updates** - Sync status and activity feed update live via WebSockets. No refresh needed.
 - **Webhook Support** - Auto-update packages when you push. Works with GitHub and GitLab.
 - **Composer v2 Native** - Full Composer v2 API support including metadata-url for lightning-fast resolves.
 - **Open Source** - Apache 2.0 licensed. Run it, fork it, contribute to it. No vendor lock-in, ever.
