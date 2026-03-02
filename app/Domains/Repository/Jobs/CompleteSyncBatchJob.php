@@ -102,12 +102,12 @@ class CompleteSyncBatchJob implements ShouldQueue
 
         $repository->refresh();
 
-        RepositorySyncStatusUpdated::dispatch(
-            $repository->organization_uuid,
-            $repository->uuid,
-            $status,
-            $repository->last_synced_at?->toISOString(),
-        );
+        event(new RepositorySyncStatusUpdated(
+            organizationUuid: $repository->organization_uuid,
+            repositoryUuid: $repository->uuid,
+            syncStatus: $status,
+            lastSyncedAt: $repository->last_synced_at?->toISOString(),
+        ));
     }
 
     protected function recordActivity(Repository $repository, RepositorySyncLog $syncLog, RecordActivityTask $recordActivityTask): void

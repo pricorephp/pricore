@@ -30,10 +30,10 @@ class RecordActivityTask
             'properties' => $properties ?: null,
         ]);
 
-        ActivityRecorded::dispatch(
-            $organization->uuid,
-            $type->value,
-        );
+        event(new ActivityRecorded(
+            organizationUuid: $organization->uuid,
+            activityType: $type->value,
+        ));
 
         return $activityLog;
     }

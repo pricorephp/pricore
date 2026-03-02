@@ -52,12 +52,12 @@ class SyncRepositoryJob implements ShouldBeUnique, ShouldQueue
     ): void {
         $syncLog = $createSyncLogAction->handle($this->repository);
 
-        RepositorySyncStatusUpdated::dispatch(
-            $this->repository->organization_uuid,
-            $this->repository->uuid,
-            RepositorySyncStatus::Pending,
-            $this->repository->last_synced_at?->toISOString(),
-        );
+        event(new RepositorySyncStatusUpdated(
+            organizationUuid: $this->repository->organization_uuid,
+            repositoryUuid: $this->repository->uuid,
+            syncStatus: RepositorySyncStatus::Pending,
+            lastSyncedAt: $this->repository->last_synced_at?->toISOString(),
+        ));
 
         try {
             $provider = GitProviderFactory::make($this->repository);
@@ -167,12 +167,12 @@ class SyncRepositoryJob implements ShouldBeUnique, ShouldQueue
 
         $this->repository->refresh();
 
-        RepositorySyncStatusUpdated::dispatch(
-            $this->repository->organization_uuid,
-            $this->repository->uuid,
-            RepositorySyncStatus::Ok,
-            $this->repository->last_synced_at?->toISOString(),
-        );
+        event(new RepositorySyncStatusUpdated(
+            organizationUuid: $this->repository->organization_uuid,
+            repositoryUuid: $this->repository->uuid,
+            syncStatus: RepositorySyncStatus::Ok,
+            lastSyncedAt: $this->repository->last_synced_at?->toISOString(),
+        ));
 
         Log::info('Repository sync completed (no refs)', [
             'repository' => $this->repository->name,
@@ -191,12 +191,12 @@ class SyncRepositoryJob implements ShouldBeUnique, ShouldQueue
             'sync_status' => RepositorySyncStatus::Failed,
         ]);
 
-        RepositorySyncStatusUpdated::dispatch(
-            $this->repository->organization_uuid,
-            $this->repository->uuid,
-            RepositorySyncStatus::Failed,
-            $this->repository->last_synced_at?->toISOString(),
-        );
+        event(new RepositorySyncStatusUpdated(
+            organizationUuid: $this->repository->organization_uuid,
+            repositoryUuid: $this->repository->uuid,
+            syncStatus: RepositorySyncStatus::Failed,
+            lastSyncedAt: $this->repository->last_synced_at?->toISOString(),
+        ));
 
         Log::error('Repository sync failed', [
             'repository' => $this->repository->name,
