@@ -38,10 +38,7 @@ export function FrequentPackages({
             {packages === undefined ? (
                 <FrequentPackagesSkeleton />
             ) : packages.length === 0 ? (
-                <p className="px-2 text-sm text-muted-foreground">
-                    No packages yet. Packages will appear here once you add
-                    repositories and sync them.
-                </p>
+                <p className="px-2 text-muted-foreground">No packages yet.</p>
             ) : (
                 <div className="space-y-0.5">
                     {packages.map((pkg) => (
