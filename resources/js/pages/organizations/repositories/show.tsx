@@ -5,6 +5,7 @@ import SyncWebhook from '@/actions/App/Domains/Repository/Http/Controllers/SyncW
 import GitProviderIcon from '@/components/git-provider-icon';
 import HeadingSmall from '@/components/heading-small';
 import PackageCard from '@/components/package-card';
+import { RelativeTime } from '@/components/relative-time';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardList } from '@/components/ui/card';
@@ -27,6 +28,7 @@ import {
     TooltipContent,
     TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { useOrganizationChannel } from '@/hooks/use-organization-channel';
 import AppLayout from '@/layouts/app-layout';
 import { createOrganizationBreadcrumb } from '@/lib/breadcrumbs';
 import { cn } from '@/lib/utils';
@@ -46,7 +48,6 @@ import {
 } from 'lucide-react';
 import { DateTime } from 'luxon';
 import { useState } from 'react';
-import { useOrganizationChannel } from '@/hooks/use-organization-channel';
 
 type OrganizationData =
     App.Domains.Organization.Contracts.Data.OrganizationData;
@@ -204,9 +205,9 @@ export default function RepositoryShow({
                         {repository.lastSyncedAt && (
                             <p className="text-muted-foreground">
                                 Last synced{' '}
-                                {DateTime.fromISO(
-                                    repository.lastSyncedAt,
-                                ).toRelative()}
+                                <RelativeTime
+                                    datetime={repository.lastSyncedAt}
+                                />
                             </p>
                         )}
                     </div>
@@ -342,11 +343,9 @@ export default function RepositoryShow({
                                             {log.statusLabel}
                                         </span>
                                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                            <span>
-                                                {DateTime.fromISO(
-                                                    log.startedAt,
-                                                ).toRelative()}
-                                            </span>
+                                            <RelativeTime
+                                                datetime={log.startedAt}
+                                            />
                                             <span>&middot;</span>
                                             <span>
                                                 {formatDuration(

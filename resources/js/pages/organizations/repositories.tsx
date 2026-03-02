@@ -8,13 +8,13 @@ import InfoBox from '@/components/info-box';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { CardList } from '@/components/ui/card';
+import { useOrganizationChannel } from '@/hooks/use-organization-channel';
 import AppLayout from '@/layouts/app-layout';
 import { createOrganizationBreadcrumb } from '@/lib/breadcrumbs';
 import { Head, Link, usePage } from '@inertiajs/react';
 import { ArrowUpRight, GitBranch, Import, Plus } from 'lucide-react';
 import { DateTime } from 'luxon';
 import { useState } from 'react';
-import { useOrganizationChannel } from '@/hooks/use-organization-channel';
 
 type OrganizationData =
     App.Domains.Organization.Contracts.Data.OrganizationData;

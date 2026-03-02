@@ -7,13 +7,16 @@ export function useOrganizationChannel(organizationUuid: string) {
             return;
         }
 
-        const channel = window.Echo.private(
-            `organization.${organizationUuid}`,
-        );
+        const channel = window.Echo.private(`organization.${organizationUuid}`);
 
         const reload = () => {
             router.reload({
-                only: ['repository', 'repositories', 'syncLogs', 'activityLogs'],
+                only: [
+                    'repository',
+                    'repositories',
+                    'syncLogs',
+                    'activityLogs',
+                ],
             });
         };
 
