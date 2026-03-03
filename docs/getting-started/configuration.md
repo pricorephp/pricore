@@ -90,12 +90,9 @@ REVERB_APP_SECRET=your-app-secret
 REVERB_HOST=localhost
 REVERB_PORT=8080
 REVERB_SCHEME=http
-
-VITE_REVERB_APP_KEY="${REVERB_APP_KEY}"
-VITE_REVERB_HOST="${REVERB_HOST}"
-VITE_REVERB_PORT="${REVERB_PORT}"
-VITE_REVERB_SCHEME="${REVERB_SCHEME}"
 ```
+
+The Reverb app key is automatically injected into the frontend at runtime via a meta tag — no `VITE_REVERB_*` variables are needed. The WebSocket client connects to the current hostname on port 443 with TLS.
 
 | Variable | Description | Default |
 |----------|-------------|---------|
@@ -312,11 +309,6 @@ REVERB_APP_SECRET=your-app-secret
 REVERB_HOST=pricore.yourcompany.com
 REVERB_PORT=8080
 REVERB_SCHEME=https
-
-VITE_REVERB_APP_KEY="${REVERB_APP_KEY}"
-VITE_REVERB_HOST="${REVERB_HOST}"
-VITE_REVERB_PORT="${REVERB_PORT}"
-VITE_REVERB_SCHEME="${REVERB_SCHEME}"
 
 MAIL_MAILER=smtp
 MAIL_HOST=smtp.mailgun.org
