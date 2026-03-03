@@ -35,7 +35,7 @@ class ProfileController extends Controller
 
         $user?->save();
 
-        if ($emailChanged && $user instanceof MustVerifyEmail) {
+        if ($emailChanged) {
             $user->sendEmailVerificationNotification();
         }
 
