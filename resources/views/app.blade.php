@@ -31,10 +31,13 @@
         }
     </style>
 
-    @if(config('broadcasting.default') === 'reverb' && config('broadcasting.connections.reverb.key'))
+    @if (config('broadcasting.default') === 'reverb' && config('broadcasting.connections.reverb.key'))
         <meta name="reverb-key" content="{{ config('broadcasting.connections.reverb.key') }}">
-        <meta name="reverb-port" content="{{ config('broadcasting.connections.reverb.options.port', 443) }}">
-        <meta name="reverb-scheme" content="{{ config('broadcasting.connections.reverb.options.scheme', 'https') }}">
+        @if (env('REVERB_ECHO_HOST'))
+            <meta name="reverb-host" content="{{ env('REVERB_ECHO_HOST') }}">
+        @endif
+        <meta name="reverb-port" content="{{ env('REVERB_ECHO_PORT', 443) }}">
+        <meta name="reverb-scheme" content="{{ env('REVERB_ECHO_SCHEME', 'https') }}">
     @endif
 
     <title inertia>{{ config('app.name') }}</title>
