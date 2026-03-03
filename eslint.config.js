@@ -37,6 +37,7 @@ export default [
             'bootstrap/ssr',
             'docs',
             'tailwind.config.js',
+            'resources/js/actions',
             'resources/types/generated.d.ts',
         ],
     },

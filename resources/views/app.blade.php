@@ -31,6 +31,12 @@
         }
     </style>
 
+    @if(config('broadcasting.default') === 'reverb' && config('broadcasting.connections.reverb.key'))
+        <meta name="reverb-key" content="{{ config('broadcasting.connections.reverb.key') }}">
+        <meta name="reverb-port" content="{{ config('broadcasting.connections.reverb.options.port', 443) }}">
+        <meta name="reverb-scheme" content="{{ config('broadcasting.connections.reverb.options.scheme', 'https') }}">
+    @endif
+
     <title inertia>{{ config('app.name') }}</title>
 
     <link rel="icon" href="/favicon.svg" type="image/svg+xml">
