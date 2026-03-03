@@ -92,7 +92,9 @@ REVERB_PORT=8080
 REVERB_SCHEME=http
 ```
 
-The Reverb app key is automatically injected into the frontend at runtime via a meta tag — no `VITE_REVERB_*` variables are needed. The WebSocket client connects to the current hostname on port 443 with TLS.
+The Reverb config is automatically injected into the frontend at runtime via meta tags — no Vite build-time variables are needed.
+
+The `REVERB_*` variables configure the **server-side** Reverb process (what it binds to). The `REVERB_ECHO_*` variables configure the **client-side** WebSocket connection (what the browser connects to). When deployed behind a reverse proxy or gateway that terminates TLS, these will differ — Reverb binds to an internal port (e.g., 8080 over HTTP), while the browser connects to the external port (e.g., 443 over HTTPS).
 
 | Variable | Description | Default |
 |----------|-------------|---------|
@@ -101,8 +103,11 @@ The Reverb app key is automatically injected into the frontend at runtime via a 
 | `REVERB_APP_KEY` | Reverb application key | - |
 | `REVERB_APP_SECRET` | Reverb application secret | - |
 | `REVERB_HOST` | Reverb server hostname | `localhost` |
-| `REVERB_PORT` | Reverb server port | `8080` |
-| `REVERB_SCHEME` | Reverb connection scheme (`http` or `https`) | `http` |
+| `REVERB_PORT` | Reverb server port (internal) | `8080` |
+| `REVERB_SCHEME` | Reverb connection scheme (internal) | `http` |
+| `REVERB_ECHO_HOST` | Client-facing WebSocket hostname | `window.location.hostname` |
+| `REVERB_ECHO_PORT` | Client-facing WebSocket port | `443` |
+| `REVERB_ECHO_SCHEME` | Client-facing WebSocket scheme | `https` |
 
 > **Note:** Realtime updates are optional. Without Reverb configured, the application works normally — pages update on navigation or manual refresh.
 

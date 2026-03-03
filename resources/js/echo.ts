@@ -22,7 +22,7 @@ if (typeof window !== 'undefined') {
         window.Echo = new Echo({
             broadcaster: 'reverb',
             key: reverbKey,
-            wsHost: window.location.hostname,
+            wsHost: meta('reverb-host') ?? window.location.hostname,
             wsPort: port,
             wssPort: port,
             forceTLS,
