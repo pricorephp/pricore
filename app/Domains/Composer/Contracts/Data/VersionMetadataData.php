@@ -36,6 +36,7 @@ class VersionMetadataData extends Data
                 type: 'zip',
                 url: $version->dist_url,
                 reference: $version->source_reference,
+                shasum: $version->dist_shasum,
             ) : null,
             time: $version->released_at?->toIso8601String(),
         );

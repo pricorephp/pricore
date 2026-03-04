@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Storage;
 
 /**
  * @property string $uuid
@@ -20,6 +21,8 @@ use Illuminate\Support\Carbon;
  * @property string|null $source_url
  * @property string|null $source_reference
  * @property string|null $dist_url
+ * @property string|null $dist_shasum
+ * @property string|null $dist_path
  * @property Carbon|null $released_at
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
@@ -59,6 +62,15 @@ class PackageVersion extends Model
         'composer_json' => 'array',
         'released_at' => 'datetime',
     ];
+
+    protected static function booted(): void
+    {
+        static::deleting(function (PackageVersion $version) {
+            if ($version->dist_path) {
+                Storage::disk(config('pricore.dist.disk'))->delete($version->dist_path);
+            }
+        });
+    }
 
     /**
      * @return BelongsTo<Package, $this>

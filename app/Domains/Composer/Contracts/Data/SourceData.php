@@ -10,5 +10,6 @@ class SourceData extends Data
         public string $type,
         public string $url,
         public ?string $reference = null,
+        public ?string $shasum = null,
     ) {}
 }

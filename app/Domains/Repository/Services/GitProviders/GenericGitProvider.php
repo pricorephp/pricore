@@ -100,6 +100,11 @@ class GenericGitProvider extends AbstractGitProvider
         throw new GitProviderException('Generic Git provider does not support webhooks.');
     }
 
+    public function downloadArchive(string $ref, string $outputPath): bool
+    {
+        return false;
+    }
+
     protected function getAuthenticatedUrl(): string
     {
         $url = $this->repositoryIdentifier;

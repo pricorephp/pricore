@@ -9,11 +9,13 @@ use App\Models\Package;
 use App\Models\PackageVersion;
 use App\Models\Repository;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class SyncRefAction
 {
     public function __construct(
-        protected FindOrCreatePackageAction $findOrCreatePackage
+        protected FindOrCreatePackageAction $findOrCreatePackage,
+        protected CreateDistArchiveAction $createDistArchive,
     ) {}
 
     /**
@@ -55,7 +57,7 @@ class SyncRefAction
             }
         }
 
-        return DB::transaction(function () use ($metadata, $ref, $package, $repository, $provider): string {
+        $result = DB::transaction(function () use ($metadata, $ref, $package, $repository, $provider): array {
             if (! $package) {
                 $package = $this->findOrCreatePackage->handle($repository, $metadata->name);
             }
@@ -76,10 +78,10 @@ class SyncRefAction
                     'source_reference' => $ref->commit,
                 ]);
 
-                return 'updated';
+                return ['status' => 'updated', 'version' => $version, 'package' => $package];
             }
 
-            PackageVersion::create([
+            $version = PackageVersion::create([
                 'package_uuid' => $package->uuid,
                 'version' => $metadata->version,
                 'normalized_version' => $metadata->normalizedVersion,
@@ -89,7 +91,44 @@ class SyncRefAction
                 'released_at' => now(),
             ]);
 
-            return 'added';
+            return ['status' => 'added', 'version' => $version, 'package' => $package];
         });
+
+        if (config('pricore.dist.enabled')) {
+            $this->createDistForVersion($provider, $result['version'], $result['package'], $repository);
+        }
+
+        return $result['status'];
+    }
+
+    protected function createDistForVersion(
+        GitProviderInterface $provider,
+        PackageVersion $version,
+        Package $package,
+        Repository $repository,
+    ): void {
+        try {
+            $organizationSlug = $repository->organization->slug;
+
+            $dist = $this->createDistArchive->handle($provider, $version, $organizationSlug);
+
+            if (! $dist) {
+                return;
+            }
+
+            $distUrl = url("/{$organizationSlug}/dists/{$package->name}/{$version->version}/{$version->source_reference}.zip");
+
+            $version->update([
+                'dist_url' => $distUrl,
+                'dist_path' => $dist['path'],
+                'dist_shasum' => $dist['shasum'],
+            ]);
+        } catch (\Throwable $e) {
+            Log::warning('Failed to create dist archive', [
+                'package' => $package->name,
+                'version' => $version->version,
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 }

@@ -28,4 +28,6 @@ interface GitProviderInterface
     public function createWebhook(string $url, string $secret): array;
 
     public function deleteWebhook(int $hookId): void;
+
+    public function downloadArchive(string $ref, string $outputPath): bool;
 }
