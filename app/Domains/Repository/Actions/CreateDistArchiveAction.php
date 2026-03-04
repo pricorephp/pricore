@@ -40,13 +40,17 @@ class CreateDistArchiveAction
             $storagePath = "{$organizationSlug}/{$version->package->name}/{$version->version}_{$refShort}.zip";
 
             $disk = Storage::disk(config('pricore.dist.disk'));
-            $contents = file_get_contents($tempPath);
+            $stream = fopen($tempPath, 'r');
 
-            if ($contents === false) {
+            if ($stream === false) {
                 return null;
             }
 
-            $disk->put($storagePath, $contents);
+            try {
+                $disk->put($storagePath, $stream);
+            } finally {
+                fclose($stream);
+            }
 
             return [
                 'path' => $storagePath,
