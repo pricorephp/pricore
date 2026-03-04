@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Console\Commands;
+namespace App\Domains\Repository\Commands;
 
 use App\Domains\Repository\Actions\CleanupDistArchivesAction;
 use Illuminate\Console\Command;
