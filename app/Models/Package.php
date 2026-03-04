@@ -21,6 +21,7 @@ use Illuminate\Support\Carbon;
  * @property string|null $type
  * @property string $visibility
  * @property bool $is_proxy
+ * @property int $dist_keep_last_releases
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property-read Organization $organization

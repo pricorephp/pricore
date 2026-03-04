@@ -60,4 +60,13 @@ class CachedGitProvider implements GitProviderInterface
     {
         throw new GitProviderException('CachedGitProvider does not support webhooks.');
     }
+
+    public function downloadArchive(string $ref, string $outputPath): bool
+    {
+        $result = Process::path($this->clonePath)
+            ->env(['GIT_TERMINAL_PROMPT' => '0'])
+            ->run(['git', 'archive', '--format=zip', "--output={$outputPath}", $ref]);
+
+        return $result->successful() && file_exists($outputPath);
+    }
 }

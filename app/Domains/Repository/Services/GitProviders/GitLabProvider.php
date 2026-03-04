@@ -8,6 +8,7 @@ use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Http\Client\Response;
 
 class GitLabProvider extends AbstractGitProvider
 {
@@ -226,6 +227,30 @@ class GitLabProvider extends AbstractGitProvider
         $baseUrl = $this->getBaseUrl();
 
         return "{$baseUrl}/{$this->repositoryIdentifier}.git";
+    }
+
+    public function downloadArchive(string $ref, string $outputPath): bool
+    {
+        try {
+            $projectPath = $this->getEncodedProjectPath();
+
+            /** @var Response $response */
+            $response = $this->http
+                ->withOptions(['sink' => $outputPath])
+                ->get("/projects/{$projectPath}/repository/archive.zip", [
+                    'sha' => $ref,
+                ]);
+
+            return $response->successful() && file_exists($outputPath);
+        } catch (\Exception $e) {
+            Log::warning('GitLab API error downloading archive', [
+                'repository' => $this->repositoryIdentifier,
+                'ref' => $ref,
+                'error' => $e->getMessage(),
+            ]);
+
+            return false;
+        }
     }
 
     /**

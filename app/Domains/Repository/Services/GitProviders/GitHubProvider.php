@@ -312,6 +312,26 @@ class GitHubProvider extends AbstractGitProvider
         }
     }
 
+    public function downloadArchive(string $ref, string $outputPath): bool
+    {
+        try {
+            /** @var Response $response */
+            $response = $this->http
+                ->withOptions(['sink' => $outputPath])
+                ->get("/repos/{$this->repositoryIdentifier}/zipball/{$ref}");
+
+            return $response->successful() && file_exists($outputPath);
+        } catch (\Exception $e) {
+            Log::warning('GitHub API error downloading archive', [
+                'repository' => $this->repositoryIdentifier,
+                'ref' => $ref,
+                'error' => $e->getMessage(),
+            ]);
+
+            return false;
+        }
+    }
+
     public function pingWebhook(int $hookId): void
     {
         try {

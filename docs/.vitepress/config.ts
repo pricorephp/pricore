@@ -35,6 +35,7 @@ export default defineConfig({
             { text: 'Packages', link: '/guide/packages' },
             { text: 'Repositories', link: '/guide/repositories' },
             { text: 'Access Tokens', link: '/guide/tokens' },
+            { text: 'Distribution Mirroring', link: '/guide/dist-mirroring' },
           ],
         },
         {

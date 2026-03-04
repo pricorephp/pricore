@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Composer\DistController;
 use App\Http\Controllers\Composer\MetadataController;
 use App\Http\Controllers\Composer\NotifyBatchController;
 use App\Http\Controllers\Composer\PackageController;
@@ -20,6 +21,11 @@ Route::prefix('{organization:slug}')
         // Dev versions metadata
         Route::get('p2/{vendor}/{package}~dev.json', [MetadataController::class, 'showDev'])
             ->name('composer.metadata.showDev')
+            ->where(['vendor' => '[a-z0-9_.-]+', 'package' => '[a-z0-9_.-]+']);
+
+        // Dist archive download
+        Route::get('dists/{vendor}/{package}/{version}/{reference}.zip', [DistController::class, 'download'])
+            ->name('composer.dist.download')
             ->where(['vendor' => '[a-z0-9_.-]+', 'package' => '[a-z0-9_.-]+']);
 
         // Download notification endpoint
