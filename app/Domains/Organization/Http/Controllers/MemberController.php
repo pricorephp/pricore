@@ -51,7 +51,7 @@ class MemberController
             'organization' => OrganizationData::from($organization),
             'members' => $members,
             'invitations' => $invitations,
-            'roleOptions' => OrganizationRole::options(),
+            'roleOptions' => OrganizationRole::assignableOptions(),
         ]);
     }
 

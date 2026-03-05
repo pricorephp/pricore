@@ -241,41 +241,31 @@ export default function Members({ members, invitations, roleOptions }: Props) {
                                 </div>
                             </TableCell>
                             <TableCell>
-                                {member.role === 'owner' ? (
-                                    <Badge
-                                        variant={getRoleBadgeVariant(
-                                            member.role,
-                                        )}
-                                    >
-                                        {roleOptions[member.role]}
-                                    </Badge>
-                                ) : (
-                                    <Select
-                                        value={member.role}
-                                        onValueChange={(role) =>
-                                            handleRoleChange(member.uuid, role)
-                                        }
-                                    >
-                                        <SelectTrigger className="w-32">
-                                            <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {Object.entries(roleOptions)
-                                                .filter(
-                                                    ([value]) =>
-                                                        value !== 'owner',
-                                                )
-                                                .map(([value, label]) => (
-                                                    <SelectItem
-                                                        key={value}
-                                                        value={value}
-                                                    >
-                                                        {label}
-                                                    </SelectItem>
-                                                ))}
-                                        </SelectContent>
-                                    </Select>
-                                )}
+                                <Select
+                                    value={member.role}
+                                    onValueChange={(role) =>
+                                        handleRoleChange(member.uuid, role)
+                                    }
+                                    disabled={member.role === 'owner'}
+                                >
+                                    <SelectTrigger className="w-32">
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {Object.entries(
+                                            member.role === 'owner'
+                                                ? { owner: 'Owner' }
+                                                : roleOptions,
+                                        ).map(([value, label]) => (
+                                            <SelectItem
+                                                key={value}
+                                                value={value}
+                                            >
+                                                {label}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
                             </TableCell>
                             <TableCell>
                                 {member.joinedAt

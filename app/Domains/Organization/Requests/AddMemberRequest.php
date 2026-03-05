@@ -26,7 +26,7 @@ class AddMemberRequest extends FormRequest
     {
         return [
             'email' => ['required', 'email'],
-            'role' => ['required', Rule::enum(OrganizationRole::class)],
+            'role' => ['required', Rule::in(array_map(fn ($role) => $role->value, OrganizationRole::assignableRoles()))],
         ];
     }
 }

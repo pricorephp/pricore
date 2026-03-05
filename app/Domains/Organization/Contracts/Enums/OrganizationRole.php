@@ -29,6 +29,27 @@ enum OrganizationRole: string
         ];
     }
 
+    /**
+     * Roles that can be assigned to members (excludes Owner).
+     *
+     * @return array<string, string>
+     */
+    public static function assignableOptions(): array
+    {
+        return [
+            self::Admin->value => self::Admin->label(),
+            self::Member->value => self::Member->label(),
+        ];
+    }
+
+    /**
+     * @return array<int, self>
+     */
+    public static function assignableRoles(): array
+    {
+        return [self::Admin, self::Member];
+    }
+
     public function isOwner(): bool
     {
         return $this === self::Owner;
