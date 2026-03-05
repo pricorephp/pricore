@@ -201,6 +201,41 @@ it('cannot remove organization owner', function () {
     expect($this->organization->members()->where('user_uuid', $owner->uuid)->exists())->toBeTrue();
 });
 
+it('admin cannot invite user with owner role', function () {
+    Notification::fake();
+
+    $response = $this->actingAs($this->admin)->post("/organizations/{$this->organization->slug}/settings/members", [
+        'email' => 'newuser@example.com',
+        'role' => OrganizationRole::Owner->value,
+    ]);
+
+    $response->assertInvalid(['role']);
+
+    expect(OrganizationInvitation::where('email', 'newuser@example.com')
+        ->where('organization_uuid', $this->organization->uuid)
+        ->exists()
+    )->toBeFalse();
+});
+
+it('admin cannot update member role to owner', function () {
+    $member = User::factory()->create();
+    $this->organization->members()->attach($member->uuid, [
+        'uuid' => \Illuminate\Support\Str::uuid()->toString(),
+        'role' => OrganizationRole::Member->value,
+    ]);
+
+    $organizationUser = OrganizationUser::where('user_uuid', $member->uuid)
+        ->where('organization_uuid', $this->organization->uuid)
+        ->first();
+
+    $response = $this->actingAs($this->admin)->patch("/organizations/{$this->organization->slug}/settings/members/{$organizationUser->uuid}", [
+        'role' => OrganizationRole::Owner->value,
+    ]);
+
+    $response->assertInvalid(['role']);
+    expect($organizationUser->fresh()->role)->toBe(OrganizationRole::Member);
+});
+
 it('member cannot add other members', function () {
     $member = User::factory()->create();
     $this->organization->members()->attach($member->uuid, [

@@ -5,6 +5,7 @@ namespace App\Domains\Organization\Requests;
 use App\Domains\Organization\Contracts\Enums\OrganizationRole;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules\Enum;
 
 class UpdateMemberRoleRequest extends FormRequest
 {
@@ -20,12 +21,12 @@ class UpdateMemberRoleRequest extends FormRequest
     }
 
     /**
-     * @return array<string, array<int, string|\Illuminate\Validation\Rules\Enum>>
+     * @return array<string, array<int, string|Enum>>
      */
     public function rules(): array
     {
         return [
-            'role' => ['required', Rule::enum(OrganizationRole::class)],
+            'role' => ['required', Rule::in(array_map(fn ($role) => $role->value, OrganizationRole::assignableRoles()))],
         ];
     }
 }
