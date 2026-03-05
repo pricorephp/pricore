@@ -54,9 +54,15 @@ class DistController extends Controller
 
             $url = $disk->temporaryUrl($distPath, now()->addMinutes($expiry));
 
-            return redirect($url);
+            return redirect($url)->header('Cache-Control', 'private, no-store');
         }
 
-        return $disk->download($distPath);
+        /** @var \Symfony\Component\HttpFoundation\StreamedResponse $response */
+        $response = $disk->download($distPath);
+
+        $response->headers->set('Cache-Control', 'private, max-age=31536000, immutable');
+        $response->headers->set('ETag', '"'.$reference.'"');
+
+        return $response;
     }
 }

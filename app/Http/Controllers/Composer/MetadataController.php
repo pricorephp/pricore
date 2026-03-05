@@ -6,6 +6,7 @@ use App\Domains\Composer\Contracts\Data\VersionMetadataData;
 use App\Http\Controllers\Controller;
 use App\Models\Organization;
 use Composer\MetadataMinifier\MetadataMinifier;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -16,49 +17,13 @@ class MetadataController extends Controller
      */
     public function show(Request $request, Organization $organization, string $vendor, string $packageName): JsonResponse
     {
-        $packageName = "{$vendor}/{$packageName}";
-
-        $package = $organization->packages()
-            ->where('name', $packageName)
-            ->first();
-
-        if (! $package) {
-            return response()->json([
-                'packages' => [],
-                'minified' => 'composer/2.0',
-            ], 404);
-        }
-
-        $versions = $package->versions()
-            ->stable()
-            ->orderBy('released_at', 'desc')
-            ->get();
-
-        $versionsMetadata = $versions
-            ->map(fn ($version) => VersionMetadataData::fromPackageVersion($version)->toArray())
-            ->values()
-            ->all();
-
-        $minified = MetadataMinifier::minify($versionsMetadata);
-
-        $response = response()
-            ->json([
-                'packages' => [
-                    $package->name => $minified,
-                ],
-                'minified' => 'composer/2.0',
-            ])
-            ->setLastModified($package->updated_at)
-            ->setPrivate()
-            ->setMaxAge(3600);
-
-        $response->setEtag(md5((string) $response->getContent()));
-
-        if ($response->isNotModified($request)) {
-            return $response;
-        }
-
-        return $response;
+        return $this->metadataResponse(
+            request: $request,
+            organization: $organization,
+            packageName: "{$vendor}/{$packageName}",
+            scopeFilter: fn (HasMany $query) => $query->stable(),
+            maxAge: 3600,
+        );
     }
 
     /**
@@ -66,8 +31,25 @@ class MetadataController extends Controller
      */
     public function showDev(Request $request, Organization $organization, string $vendor, string $packageName): JsonResponse
     {
-        $packageName = "{$vendor}/{$packageName}";
+        return $this->metadataResponse(
+            request: $request,
+            organization: $organization,
+            packageName: "{$vendor}/{$packageName}",
+            scopeFilter: fn (HasMany $query) => $query->dev(),
+            maxAge: 300,
+        );
+    }
 
+    /**
+     * @param  \Closure(HasMany<\App\Models\PackageVersion, \App\Models\Package>): HasMany<\App\Models\PackageVersion, \App\Models\Package>  $scopeFilter
+     */
+    private function metadataResponse(
+        Request $request,
+        Organization $organization,
+        string $packageName,
+        \Closure $scopeFilter,
+        int $maxAge,
+    ): JsonResponse {
         $package = $organization->packages()
             ->where('name', $packageName)
             ->first();
@@ -76,11 +58,12 @@ class MetadataController extends Controller
             return response()->json([
                 'packages' => [],
                 'minified' => 'composer/2.0',
-            ], 404);
+            ], 404)
+                ->setPrivate()
+                ->setMaxAge(300);
         }
 
-        $versions = $package->versions()
-            ->dev()
+        $versions = $scopeFilter($package->versions())
             ->orderBy('released_at', 'desc')
             ->get();
 
@@ -91,16 +74,18 @@ class MetadataController extends Controller
 
         $minified = MetadataMinifier::minify($versionsMetadata);
 
+        $lastModified = $versions->max('updated_at') ?? $package->updated_at;
+
         $response = response()
             ->json([
                 'packages' => [
-                    $package->name => $minified,
+                    $packageName => $minified,
                 ],
                 'minified' => 'composer/2.0',
             ])
-            ->setLastModified($package->updated_at)
+            ->setLastModified($lastModified)
             ->setPrivate()
-            ->setMaxAge(3600);
+            ->setMaxAge($maxAge);
 
         $response->setEtag(md5((string) $response->getContent()));
 
