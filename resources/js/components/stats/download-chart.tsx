@@ -33,6 +33,8 @@ export function DownloadChart({
     className,
 }: DownloadChartProps) {
     const hasDownloads = data.some((d) => d.downloads > 0);
+    const maxDownloads = Math.max(...data.map((d) => d.downloads));
+    const yAxisWidth = maxDownloads >= 10000 ? 55 : maxDownloads >= 1000 ? 48 : 40;
 
     return (
         <Card className={cn('flex flex-col', className)}>
@@ -94,7 +96,7 @@ export function DownloadChart({
                                 axisLine={false}
                                 tickMargin={8}
                                 allowDecimals={false}
-                                width={40}
+                                width={yAxisWidth}
                                 className="text-xs"
                             />
                             <ChartTooltip
