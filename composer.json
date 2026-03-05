@@ -21,6 +21,7 @@
         "laravel/socialite": "^5.24",
         "laravel/tinker": "^2.10.1",
         "laravel/wayfinder": "^0.1.9",
+        "league/flysystem-aws-s3-v3": "^3.0",
         "sentry/sentry-laravel": "^4.20",
         "socialiteproviders/gitlab": "^4.1",
         "spatie/laravel-data": "^4.18",
