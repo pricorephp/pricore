@@ -80,6 +80,32 @@ it('downloads a dist archive successfully', function () {
     $response->assertOk();
 });
 
+it('includes immutable caching headers on local dist downloads', function () {
+    $package = Package::factory()
+        ->for($this->organization, 'organization')
+        ->create(['name' => 'acme/test-package']);
+
+    $distPath = 'acme/acme/test-package/1.0.0_abc123def456.zip';
+    Storage::disk('local')->put($distPath, 'fake-zip-content');
+
+    PackageVersion::factory()
+        ->for($package)
+        ->create([
+            'version' => '1.0.0',
+            'source_reference' => 'abc123def456',
+            'dist_url' => url('/acme/dists/acme/test-package/1.0.0/abc123def456.zip'),
+            'dist_path' => $distPath,
+            'dist_shasum' => sha1('fake-zip-content'),
+        ]);
+
+    $response = distGet('/acme/dists/acme/test-package/1.0.0/abc123def456.zip', $this->plainToken);
+
+    $response->assertOk();
+
+    expect($response->headers->get('Cache-Control'))->toContain('max-age=31536000', 'immutable', 'private');
+    expect($response->headers->get('ETag'))->toBe('"abc123def456"');
+});
+
 it('requires authentication for dist download', function () {
     $response = test()->getJson('/acme/dists/acme/test-package/1.0.0/abc123.zip');
 

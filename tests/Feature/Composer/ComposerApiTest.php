@@ -195,7 +195,7 @@ it('returns 404 for non-existent organization', function () {
     $response->assertNotFound();
 });
 
-it('includes caching headers', function () {
+it('includes caching headers with max-age=3600 for stable endpoint', function () {
     $package = Package::factory()
         ->for($this->organization, 'organization')
         ->create(['name' => 'acme/package']);
@@ -211,6 +211,60 @@ it('includes caching headers', function () {
         ->assertHeader('Last-Modified');
 
     expect($response->headers->get('Cache-Control'))->toContain('max-age=3600', 'private');
+});
+
+it('uses max-age=300 for dev metadata endpoint', function () {
+    $package = Package::factory()
+        ->for($this->organization, 'organization')
+        ->create(['name' => 'acme/package']);
+
+    PackageVersion::factory()
+        ->for($package)
+        ->create(['version' => 'dev-main']);
+
+    $response = authenticatedGet("/{$this->organization->slug}/p2/acme/package~dev.json", $this->plainToken);
+
+    $response->assertOk()
+        ->assertHeader('Cache-Control')
+        ->assertHeader('Last-Modified');
+
+    expect($response->headers->get('Cache-Control'))->toContain('max-age=300', 'private');
+});
+
+it('sets Last-Modified from version timestamps, not package creation', function () {
+    $package = Package::factory()
+        ->for($this->organization, 'organization')
+        ->create([
+            'name' => 'acme/package',
+            'updated_at' => now()->subDays(30),
+        ]);
+
+    $versionUpdatedAt = now()->subHour();
+
+    PackageVersion::factory()
+        ->for($package)
+        ->create([
+            'version' => '1.0.0',
+            'updated_at' => $versionUpdatedAt,
+        ]);
+
+    $response = authenticatedGet("/{$this->organization->slug}/p2/acme/package.json", $this->plainToken);
+
+    $response->assertOk()
+        ->assertHeader('Last-Modified');
+
+    $lastModified = new \DateTime($response->headers->get('Last-Modified'));
+
+    // Last-Modified should be close to the version's updated_at, not the package's
+    expect($lastModified->getTimestamp())->toBe($versionUpdatedAt->timestamp);
+});
+
+it('includes caching headers on 404 metadata responses', function () {
+    $response = authenticatedGet("/{$this->organization->slug}/p2/acme/non-existent.json", $this->plainToken);
+
+    $response->assertNotFound();
+
+    expect($response->headers->get('Cache-Control'))->toContain('max-age=300', 'private');
 });
 
 it('includes dist information when available', function () {
