@@ -27,7 +27,7 @@ export function AppSidebarHeader({
                 <button
                     type="button"
                     onClick={() => setOpen(true)}
-                    className="flex h-8 cursor-pointer items-center gap-2 rounded-lg border border-input bg-background px-3 text-sm text-muted-foreground transition-all duration-150 hover:bg-accent hover:text-accent-foreground active:scale-[0.98]"
+                    className="flex h-9.5 cursor-pointer items-center gap-2 rounded-lg border border-input bg-background pr-2 pl-3 text-muted-foreground transition-all duration-150 hover:bg-accent hover:text-accent-foreground active:scale-[0.98]"
                 >
                     <SearchIcon className="size-4" />
                     <span className="mr-1 hidden lg:inline">Search...</span>

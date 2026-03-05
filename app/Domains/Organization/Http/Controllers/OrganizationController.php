@@ -63,6 +63,7 @@ class OrganizationController extends Controller
                 ->orderByDesc(DB::raw('COALESCE(package_views.view_count, 0)'))
                 ->orderBy('packages.name')
                 ->select('packages.*', DB::raw('COALESCE(package_views.view_count, 0) as user_view_count'))
+                ->limit(10)
                 ->get()
                 ->map(fn ($p) => FrequentPackageData::fromModel($p))
             ),

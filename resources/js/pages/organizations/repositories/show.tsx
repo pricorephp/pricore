@@ -339,7 +339,7 @@ export default function RepositoryShow({
                                         )}
                                     </div>
                                     <div className="min-w-0 flex-1">
-                                        <span className="text-sm font-medium">
+                                        <span className="font-medium">
                                             {log.statusLabel}
                                         </span>
                                         <div className="flex items-center gap-2 text-sm text-muted-foreground">

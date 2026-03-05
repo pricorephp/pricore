@@ -51,11 +51,11 @@ export function FrequentPackages({
                                 <p className="truncate font-medium">
                                     {pkg.name}
                                 </p>
-                                {pkg.latestVersion && (
-                                    <p className="text-sm text-muted-foreground">
-                                        v{pkg.latestVersion}
-                                    </p>
-                                )}
+                                <p className="text-sm text-muted-foreground">
+                                    {pkg.latestVersion
+                                        ? `v${pkg.latestVersion}`
+                                        : '—'}
+                                </p>
                             </div>
                         </Link>
                     ))}
