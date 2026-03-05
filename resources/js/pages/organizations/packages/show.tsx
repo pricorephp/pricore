@@ -161,6 +161,55 @@ function CopyButton({
     );
 }
 
+function CopyInstallButton({ text }: { text: string }) {
+    const [copied, setCopied] = useState(false);
+    const [tooltipOpen, setTooltipOpen] = useState(false);
+
+    const copyToClipboard = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (navigator?.clipboard) {
+            navigator.clipboard.writeText(text);
+        } else {
+            const textArea = document.createElement('textarea');
+            textArea.value = text;
+            textArea.style.position = 'fixed';
+            textArea.style.opacity = '0';
+            document.body.appendChild(textArea);
+            textArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textArea);
+        }
+        setCopied(true);
+        setTooltipOpen(false);
+        setTimeout(() => setCopied(false), 2000);
+    };
+
+    return (
+        <Tooltip
+            open={tooltipOpen}
+            onOpenChange={(open) => setTooltipOpen(copied ? false : open)}
+        >
+            <TooltipTrigger asChild>
+                <button
+                    type="button"
+                    onClick={copyToClipboard}
+                    className="inline-flex shrink-0 items-center gap-1.5 rounded-md border px-2 py-1 text-xs text-muted-foreground opacity-0 transition-opacity group-hover/version:opacity-100 hover:bg-muted hover:text-foreground"
+                >
+                    {copied ? (
+                        <Check className="h-3 w-3 text-green-600 dark:text-green-400" />
+                    ) : (
+                        <Terminal className="h-3 w-3" />
+                    )}
+                    <span className="font-mono">
+                        {copied ? 'Copied!' : 'composer require'}
+                    </span>
+                </button>
+            </TooltipTrigger>
+            <TooltipContent>Copy install command</TooltipContent>
+        </Tooltip>
+    );
+}
+
 export default function PackageShow({
     organization,
     package: pkg,
@@ -359,7 +408,7 @@ export default function PackageShow({
                             to install packages from this organization:
                         </p>
                         <div className="relative">
-                            <pre className="overflow-x-auto rounded bg-muted p-4 text-sm">
+                            <pre className="overflow-x-auto rounded bg-muted/60 p-4 text-sm">
                                 <code>{composerConfig}</code>
                             </pre>
                             <div className="absolute top-2 right-2">
@@ -433,33 +482,20 @@ export default function PackageShow({
                         <>
                             <CardList>
                                 {versions.data.map((version, index) => (
-                                    <button
+                                    <div
                                         key={version.uuid}
-                                        type="button"
+                                        role="button"
+                                        tabIndex={0}
                                         onClick={() =>
                                             openVersion(version.uuid)
                                         }
-                                        className={`flex w-full items-center gap-4 px-5 py-4 text-left transition-colors hover:bg-muted/50 ${index < versions.data.length - 1 ? 'border-b' : ''}`}
+                                        className={`group/version flex w-full cursor-pointer items-center gap-4 px-5 py-4 text-left transition-colors hover:bg-muted/50 ${index < versions.data.length - 1 ? 'border-b' : ''}`}
                                     >
                                         <div className="min-w-0 flex-1">
                                             <div className="flex items-center gap-2">
-                                                <code className="truncate font-mono text-sm font-medium">
+                                                <span className="truncate font-medium tabular-nums">
                                                     {version.version}
-                                                </code>
-                                                {version.version.includes(
-                                                    'dev',
-                                                ) ||
-                                                version.normalizedVersion.startsWith(
-                                                    'dev-',
-                                                ) ? (
-                                                    <Badge variant="secondary">
-                                                        dev
-                                                    </Badge>
-                                                ) : (
-                                                    <Badge variant="success">
-                                                        stable
-                                                    </Badge>
-                                                )}
+                                                </span>
                                             </div>
                                             <div className="mt-1 flex items-center gap-3 text-sm text-muted-foreground">
                                                 {version.releasedAt && (
@@ -487,8 +523,11 @@ export default function PackageShow({
                                                 )}
                                             </div>
                                         </div>
+                                        <CopyInstallButton
+                                            text={`composer require ${pkg.name}:${version.version}`}
+                                        />
                                         <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
-                                    </button>
+                                    </div>
                                 ))}
                             </CardList>
 
@@ -578,26 +617,17 @@ export default function PackageShow({
                     {activeVersion && (
                         <>
                             <div className="flex items-start justify-between gap-4">
-                                <div className="flex min-w-0 items-start gap-3">
+                                <div className="flex min-w-0 items-center gap-3">
                                     <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
                                         <PackageIcon className="h-5 w-5" />
                                     </div>
-                                    <div className="min-w-0 space-y-1">
-                                        <DialogTitle className="truncate font-mono text-lg">
+                                    <div className="min-w-0 space-y-0.5">
+                                        <DialogTitle className="truncate text-lg">
                                             {activeVersion.version}
                                         </DialogTitle>
-                                        <div className="flex min-w-0 items-center gap-2">
-                                            {activeVersion.isDev ? (
-                                                <Badge variant="secondary">
-                                                    dev
-                                                </Badge>
-                                            ) : (
-                                                <Badge variant="success">
-                                                    stable
-                                                </Badge>
-                                            )}
+                                        <div className="flex min-w-0 items-center gap-1">
                                             {activeVersion.description && (
-                                                <DialogDescription className="line-clamp-1">
+                                                <DialogDescription>
                                                     {activeVersion.description}
                                                 </DialogDescription>
                                             )}
@@ -612,11 +642,11 @@ export default function PackageShow({
                                 />
                             </div>
 
-                            <div className="space-y-6">
+                            <div className="mt-3 space-y-6">
                                 {/* Quick info row */}
                                 <div className="grid grid-cols-2 gap-4">
                                     {activeVersion.releasedAt && (
-                                        <div className="rounded-lg border p-4">
+                                        <div>
                                             <div className="mb-1.5 flex items-center gap-1.5 text-sm font-medium text-muted-foreground">
                                                 <Calendar className="h-4 w-4" />
                                                 Released
@@ -631,7 +661,7 @@ export default function PackageShow({
                                         </div>
                                     )}
                                     {activeVersion.sourceReference && (
-                                        <div className="rounded-lg border p-4">
+                                        <div>
                                             <div className="mb-1.5 flex items-center gap-1.5 text-sm font-medium text-muted-foreground">
                                                 <GitCommit className="h-4 w-4" />
                                                 Commit
