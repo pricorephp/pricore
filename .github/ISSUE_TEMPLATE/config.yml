@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Documentation
+    url: https://docs.pricore.dev
+    about: Check the documentation before opening an issue — your answer might already be there.
+  - name: Hosted Pricore
+    url: https://app.pricore.dev
+    about: Not self-hosting? Try the fully managed version with zero setup.
