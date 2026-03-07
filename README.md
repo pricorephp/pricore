@@ -46,9 +46,9 @@ Don't want to self-host? Try [Hosted Pricore](https://app.pricore.dev) — a ful
 - **Composer v2 Native** - Full Composer v2 API support including metadata-url for lightning-fast resolves.
 - **Open Source** - Apache 2.0 licensed. Run it, fork it, contribute to it. No vendor lock-in, ever.
 
-## Star History
-
-[![Star History Chart](https://api.star-history.com/image?repos=pricorephp/pricore&type=date&legend=top-left)](https://www.star-history.com/?repos=pricorephp%2Fpricore&type=date&legend=top-left)
+<p align="center">
+  <a href="https://www.star-history.com/?repos=pricorephp%2Fpricore&type=date&legend=top-left"><img src="https://api.star-history.com/image?repos=pricorephp/pricore&type=date&legend=top-left" alt="Star History Chart" width="500" /></a>
+</p>
 
 ## Quick Start with Docker
 
@@ -86,7 +86,7 @@ We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for development
 
 ## Security
 
-If you discover a security vulnerability, please send an email to info@pricore.dev instead of using the issue tracker. All security vulnerabilities will be promptly addressed.
+If you discover a security vulnerability, please send an email to security@pricore.dev instead of using the issue tracker. All security vulnerabilities will be promptly addressed.
 
 ## License
 
