@@ -46,6 +46,10 @@ Don't want to self-host? Try [Hosted Pricore](https://app.pricore.dev) — a ful
 - **Composer v2 Native** - Full Composer v2 API support including metadata-url for lightning-fast resolves.
 - **Open Source** - Apache 2.0 licensed. Run it, fork it, contribute to it. No vendor lock-in, ever.
 
+## Star History
+
+[![Star History Chart](https://api.star-history.com/image?repos=pricorephp/pricore&type=date&legend=top-left)](https://www.star-history.com/?repos=pricorephp%2Fpricore&type=date&legend=top-left)
+
 ## Quick Start with Docker
 
 60 seconds to a working registry. Three commands. That's all it takes.
