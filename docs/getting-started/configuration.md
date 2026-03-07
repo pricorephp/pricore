@@ -166,6 +166,57 @@ Create a GitLab OAuth Application:
 2. Follow the same steps as above
 3. Set `GITLAB_INSTANCE_URI` to your instance URL (e.g., `https://gitlab.example.com/`)
 
+## Storage Configuration
+
+By default, Pricore stores package distribution files on the local filesystem. To use S3 or an S3-compatible storage provider (like MinIO, DigitalOcean Spaces, or Cloudflare R2), set the filesystem disk to `s3`:
+
+```bash
+FILESYSTEM_DISK=s3
+```
+
+### AWS S3
+
+If you only use AWS, configure the standard `AWS_*` variables:
+
+```bash
+AWS_ACCESS_KEY_ID=your-access-key
+AWS_SECRET_ACCESS_KEY=your-secret-key
+AWS_DEFAULT_REGION=us-east-1
+AWS_BUCKET=your-bucket
+```
+
+### S3-Compatible Storage
+
+If you want to use an S3-compatible provider for storage while keeping the `AWS_*` variables for other AWS services, you can set `S3_*` variables that take precedence over their `AWS_*` counterparts:
+
+```bash
+# S3-compatible provider for filesystem storage
+S3_ACCESS_KEY_ID=your-s3-compatible-key
+S3_SECRET_ACCESS_KEY=your-s3-compatible-secret
+S3_DEFAULT_REGION=us-east-1
+S3_BUCKET=your-bucket
+S3_ENDPOINT=https://s3.example.com
+S3_URL=https://your-bucket.s3.example.com
+S3_USE_PATH_STYLE_ENDPOINT=true
+
+# AWS credentials (used by other AWS services, and as fallback for S3)
+AWS_ACCESS_KEY_ID=your-aws-key
+AWS_SECRET_ACCESS_KEY=your-aws-secret
+AWS_DEFAULT_REGION=us-east-1
+```
+
+| Variable | Description | Fallback |
+|----------|-------------|----------|
+| `S3_ACCESS_KEY_ID` | Access key for S3-compatible storage | `AWS_ACCESS_KEY_ID` |
+| `S3_SECRET_ACCESS_KEY` | Secret key for S3-compatible storage | `AWS_SECRET_ACCESS_KEY` |
+| `S3_DEFAULT_REGION` | Storage region | `AWS_DEFAULT_REGION` |
+| `S3_BUCKET` | Bucket name | `AWS_BUCKET` |
+| `S3_URL` | Custom URL for the storage service | `AWS_URL` |
+| `S3_ENDPOINT` | Custom endpoint URL | `AWS_ENDPOINT` |
+| `S3_USE_PATH_STYLE_ENDPOINT` | Use path-style endpoints (required by most S3-compatible providers) | `AWS_USE_PATH_STYLE_ENDPOINT` |
+
+If no `S3_*` variables are set, the configuration falls back to the `AWS_*` variables — so existing setups continue to work without changes.
+
 ## Mail Configuration
 
 Configure mail for password resets and notifications:
