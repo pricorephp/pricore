@@ -44,8 +44,7 @@ export default function OrganizationShow({
 
     useOrganizationChannel(organization.uuid);
 
-    const [cachedActivityLogs, setCachedActivityLogs] =
-        useState(activityLogs);
+    const [cachedActivityLogs, setCachedActivityLogs] = useState(activityLogs);
     if (activityLogs !== undefined && activityLogs !== cachedActivityLogs) {
         setCachedActivityLogs(activityLogs);
     }
