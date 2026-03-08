@@ -11,6 +11,10 @@ use Laravel\Paddle\Subscription;
 uses()->group('billing');
 
 beforeEach(function () {
+    if (! class_exists(\PricoreCloud\PricoreCloudServiceProvider::class)) {
+        $this->markTestSkipped('pricore-cloud is not installed.');
+    }
+
     $this->user = User::factory()->create();
     $this->organization = Organization::factory()->create(['owner_uuid' => $this->user->uuid]);
     $this->organization->members()->attach($this->user->uuid, [
