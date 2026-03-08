@@ -34,7 +34,8 @@ export function DownloadChart({
 }: DownloadChartProps) {
     const hasDownloads = data.some((d) => d.downloads > 0);
     const maxDownloads = Math.max(...data.map((d) => d.downloads));
-    const yAxisWidth = maxDownloads >= 10000 ? 55 : maxDownloads >= 1000 ? 48 : 40;
+    const yAxisWidth =
+        maxDownloads >= 10000 ? 55 : maxDownloads >= 1000 ? 48 : 40;
 
     return (
         <Card className={cn('flex flex-col', className)}>

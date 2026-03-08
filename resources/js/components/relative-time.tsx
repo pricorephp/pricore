@@ -7,8 +7,8 @@ interface RelativeTimeProps {
 }
 
 export function RelativeTime({ datetime, className }: RelativeTimeProps) {
-    const [relative, setRelative] = useState(() =>
-        DateTime.fromISO(datetime).toRelative() ?? '',
+    const [relative, setRelative] = useState(
+        () => DateTime.fromISO(datetime).toRelative() ?? '',
     );
 
     useEffect(() => {

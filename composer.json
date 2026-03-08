@@ -100,6 +100,14 @@
         ],
         "ts": [
             "@php artisan typescript:transform"
+        ],
+        "cloud:link": [
+            "composer config repositories.pricore-cloud path ../pricore-cloud",
+            "composer require pricorephp/pricore-cloud:@dev --no-interaction"
+        ],
+        "cloud:unlink": [
+            "composer remove pricorephp/pricore-cloud --no-interaction",
+            "composer config --unset repositories.pricore-cloud"
         ]
     },
     "extra": {
