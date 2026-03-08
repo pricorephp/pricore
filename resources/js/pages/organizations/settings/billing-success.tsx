@@ -1,4 +1,3 @@
-import { show } from '@/actions/PricoreCloud/Http/Controllers/BillingController';
 import { Button } from '@/components/ui/button';
 import { withOrganizationSettingsLayout } from '@/layouts/organization-settings-layout';
 import { Link } from '@inertiajs/react';
@@ -27,7 +26,11 @@ export default function BillingSuccess({ organization }: Props) {
             </p>
 
             <Button className="mt-8" asChild>
-                <Link href={show.url(organization.slug)}>Go to billing</Link>
+                <Link
+                    href={`/organizations/${organization.slug}/settings/billing`}
+                >
+                    Go to billing
+                </Link>
             </Button>
         </div>
     );

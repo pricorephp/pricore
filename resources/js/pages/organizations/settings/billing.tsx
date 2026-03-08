@@ -1,9 +1,3 @@
-import CheckoutController from '@/actions/PricoreCloud/Http/Controllers/CheckoutController';
-import {
-    cancel,
-    paymentMethod,
-    resume,
-} from '@/actions/PricoreCloud/Http/Controllers/SubscriptionController';
 import HeadingSmall from '@/components/heading-small';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
@@ -59,6 +53,10 @@ function getCookie(name: string): string | null {
     return null;
 }
 
+function billingUrl(slug: string, path = '') {
+    return `/organizations/${slug}/settings/billing${path}`;
+}
+
 export default function Billing({
     organization,
     plan,
@@ -82,7 +80,7 @@ export default function Billing({
         setCheckoutLoading(true);
         try {
             const response = await fetch(
-                CheckoutController.url(organization.slug),
+                billingUrl(organization.slug, '/checkout'),
                 {
                     method: 'POST',
                     headers: {
@@ -137,7 +135,12 @@ export default function Billing({
                             <Button
                                 size="sm"
                                 onClick={() =>
-                                    router.post(resume.url(organization.slug))
+                                    router.post(
+                                        billingUrl(
+                                            organization.slug,
+                                            '/resume',
+                                        ),
+                                    )
                                 }
                             >
                                 Resume subscription
@@ -251,7 +254,10 @@ export default function Billing({
                         <div>
                             <Button variant="outline" asChild>
                                 <a
-                                    href={paymentMethod.url(organization.slug)}
+                                    href={billingUrl(
+                                        organization.slug,
+                                        '/payment-method',
+                                    )}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                 >
@@ -311,7 +317,12 @@ function CancelSubscription({
                             <Button
                                 variant="destructive"
                                 onClick={() =>
-                                    router.post(cancel.url(organization.slug))
+                                    router.post(
+                                        billingUrl(
+                                            organization.slug,
+                                            '/cancel',
+                                        ),
+                                    )
                                 }
                             >
                                 Cancel subscription
