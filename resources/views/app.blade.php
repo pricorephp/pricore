@@ -47,6 +47,16 @@
 
     <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
 
+    @if (config('cashier.client_side_token'))
+        <script src="https://cdn.paddle.com/paddle/v2/paddle.js"></script>
+        @if (config('cashier.sandbox'))
+            <script>Paddle.Environment.set('sandbox');</script>
+        @endif
+        <script>
+            Paddle.Initialize({ token: @json(config('cashier.client_side_token')) });
+        </script>
+    @endif
+
     @viteReactRefresh
     @vite(['resources/js/app.tsx', "resources/js/pages/{$page['component']}.tsx"])
     @inertiaHead

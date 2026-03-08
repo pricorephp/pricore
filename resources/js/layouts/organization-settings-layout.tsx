@@ -4,7 +4,7 @@ import AppLayout from '@/layouts/app-layout';
 import { createOrganizationBreadcrumb } from '@/lib/breadcrumbs';
 import { cn } from '@/lib/utils';
 import { Link, usePage } from '@inertiajs/react';
-import { ArrowRight, Key, Settings, Users } from 'lucide-react';
+import { ArrowRight, CreditCard, Key, Settings, Users } from 'lucide-react';
 import { type PropsWithChildren, useMemo } from 'react';
 
 type OrganizationData =
@@ -17,8 +17,8 @@ interface SidebarNavItem {
 }
 
 function SettingsContent({ children }: PropsWithChildren) {
-    const page = usePage<{ organization: OrganizationData }>();
-    const { organization } = page.props;
+    const page = usePage<{ organization: OrganizationData; cloud: boolean }>();
+    const { organization, cloud } = page.props;
     const currentUrl = page.url;
 
     const sidebarNavItems: SidebarNavItem[] = useMemo(() => {
@@ -40,8 +40,17 @@ function SettingsContent({ children }: PropsWithChildren) {
                 href: `/organizations/${organization.slug}/settings/tokens`,
                 icon: Key,
             },
+            ...(cloud
+                ? [
+                      {
+                          title: 'Billing',
+                          href: `/organizations/${organization.slug}/settings/billing`,
+                          icon: CreditCard,
+                      },
+                  ]
+                : []),
         ];
-    }, [organization]);
+    }, [organization, cloud]);
 
     if (!organization) {
         return null;
@@ -109,6 +118,7 @@ const settingsPageTitles: Record<string, string> = {
     general: 'General',
     members: 'Members',
     tokens: 'Composer Tokens',
+    billing: 'Billing',
 };
 
 function OrganizationSettingsLayoutWrapper({ children }: PropsWithChildren) {
