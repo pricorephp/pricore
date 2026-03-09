@@ -78,6 +78,7 @@ interface BreadcrumbDropdownProps {
 function BreadcrumbDropdown({ item, isLast }: BreadcrumbDropdownProps) {
     const [actionDialogOpen, setActionDialogOpen] = useState(false);
     const ActionDialog = item.dropdown.action?.dialog;
+    const activeBadge = item.dropdown.items.find((i) => i.active)?.badge;
 
     return (
         <>
@@ -96,6 +97,11 @@ function BreadcrumbDropdown({ item, isLast }: BreadcrumbDropdownProps) {
                         )}
                     >
                         {item.title}
+                        {activeBadge && (
+                            <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+                                {activeBadge}
+                            </span>
+                        )}
                         <ChevronDown className="size-3 opacity-60" />
                     </button>
                 </DropdownMenuTrigger>
@@ -104,9 +110,17 @@ function BreadcrumbDropdown({ item, isLast }: BreadcrumbDropdownProps) {
                         <DropdownMenuItem
                             key={dropdownItem.id}
                             onClick={() => router.visit(dropdownItem.href)}
-                            className={cn(dropdownItem.active && 'bg-accent')}
+                            className={cn(
+                                'flex items-center justify-between gap-4',
+                                dropdownItem.active && 'bg-accent',
+                            )}
                         >
                             {dropdownItem.title}
+                            {dropdownItem.badge && (
+                                <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+                                    {dropdownItem.badge}
+                                </span>
+                            )}
                         </DropdownMenuItem>
                     ))}
                     {item.dropdown.action && (

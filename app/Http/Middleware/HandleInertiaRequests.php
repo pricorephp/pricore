@@ -10,6 +10,7 @@ use App\Http\Data\AuthData;
 use App\Http\Data\FlashData;
 use App\Http\Data\SearchData;
 use App\Http\Data\UserData;
+use App\Models\Organization;
 use App\Models\Package;
 use App\Models\Repository;
 use Illuminate\Http\Request;
@@ -57,6 +58,8 @@ class HandleInertiaRequests extends Middleware
                     ? $user->organizations()->get()->map(function ($org) use ($user) {
                         $data = OrganizationData::fromModel($org);
                         $data->permissions = OrganizationPermissionsData::fromUserAndOrganization($user, $org);
+                        $data->onTrial = $this->isOrganizationOnTrial($org);
+                        $data->trialExpired = $this->isOrganizationTrialExpired($org);
 
                         return $data;
                     })->all()
@@ -72,11 +75,29 @@ class HandleInertiaRequests extends Middleware
         ];
     }
 
+    private function isOrganizationOnTrial(Organization $organization): ?bool
+    {
+        if (! class_exists(\PricoreCloud\PricoreCloudServiceProvider::class)) {
+            return null;
+        }
+
+        return $organization->isTrialing();
+    }
+
+    private function isOrganizationTrialExpired(Organization $organization): ?bool
+    {
+        if (! class_exists(\PricoreCloud\PricoreCloudServiceProvider::class)) {
+            return null;
+        }
+
+        return $organization->isTrialExpired();
+    }
+
     private function searchData(Request $request): SearchData
     {
         $organization = $request->route('organization');
 
-        if (! $organization instanceof \App\Models\Organization) {
+        if (! $organization instanceof Organization) {
             return new SearchData(packages: [], repositories: []);
         }
 

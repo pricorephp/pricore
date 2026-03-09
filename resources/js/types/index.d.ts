@@ -6,6 +6,7 @@ export interface BreadcrumbDropdownItem {
     title: string;
     href: string;
     active?: boolean;
+    badge?: string;
 }
 
 export interface BreadcrumbItem {

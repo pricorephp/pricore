@@ -21,8 +21,8 @@ export default function BillingSuccess({ organization }: Props) {
                 Thanks for subscribing!
             </h2>
             <p className="mt-2 max-w-sm text-muted-foreground">
-                Your Business plan is being activated. You now have unlimited
-                packages and access to all features.
+                Your Business plan is being activated. You now have full access
+                to all features.
             </p>
 
             <Button className="mt-8" asChild>

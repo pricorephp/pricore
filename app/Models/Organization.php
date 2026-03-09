@@ -20,6 +20,7 @@ use Illuminate\Support\Carbon;
  * @property string $name
  * @property string $slug
  * @property string $owner_uuid
+ * @property Carbon|null $trial_ends_at
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property Carbon|null $deleted_at
@@ -62,6 +63,26 @@ class Organization extends Model
     use SoftDeletes;
 
     protected $guarded = ['uuid'];
+
+    /**
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'trial_ends_at' => 'datetime',
+        ];
+    }
+
+    public function isTrialing(): bool
+    {
+        return $this->trial_ends_at !== null && $this->trial_ends_at->isFuture();
+    }
+
+    public function isTrialExpired(): bool
+    {
+        return $this->trial_ends_at !== null && $this->trial_ends_at->isPast();
+    }
 
     /**
      * @return BelongsTo<User, $this>

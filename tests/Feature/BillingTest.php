@@ -32,6 +32,7 @@ it('owner can access billing page', function () {
         ->has('organization')
         ->has('plan')
         ->has('plans')
+        ->has('prices')
     );
 });
 
@@ -47,15 +48,33 @@ it('member cannot access billing page', function () {
     $response->assertForbidden();
 });
 
-it('shows free plan for unsubscribed organization', function () {
+it('shows trial plan for organization on trial', function () {
     $response = $this->actingAs($this->user)->get("/organizations/{$this->organization->slug}/settings/billing");
 
     $response->assertSuccessful();
     $response->assertInertia(fn ($page) => $page
         ->where('subscribed', false)
         ->where('onGracePeriod', false)
+        ->where('onTrial', true)
+        ->where('trialExpired', false)
         ->where('endsAt', null)
-        ->where('plan.plan', 'free')
+        ->where('plan.plan', 'trial')
+        ->where('plan.trialExpired', false)
+    );
+});
+
+it('shows expired trial state for organization with expired trial', function () {
+    $this->organization->update(['trial_ends_at' => now()->subDay()]);
+
+    $response = $this->actingAs($this->user)->get("/organizations/{$this->organization->slug}/settings/billing");
+
+    $response->assertSuccessful();
+    $response->assertInertia(fn ($page) => $page
+        ->where('subscribed', false)
+        ->where('onTrial', false)
+        ->where('trialExpired', true)
+        ->where('plan.plan', 'trial')
+        ->where('plan.trialExpired', true)
     );
 });
 
@@ -191,4 +210,36 @@ it('resume endpoint stops cancellation', function () {
     $response = $this->actingAs($this->user)->post("/organizations/{$this->organization->slug}/settings/billing/resume");
 
     $response->assertRedirect();
+});
+
+it('sets trial_ends_at when organization is created', function () {
+    $newOrganization = Organization::factory()->create(['owner_uuid' => $this->user->uuid]);
+
+    expect($newOrganization->fresh()->trial_ends_at)->not->toBeNull();
+    expect($newOrganization->fresh()->trial_ends_at->isFuture())->toBeTrue();
+});
+
+it('redirects expired trial to billing page', function () {
+    $this->organization->update(['trial_ends_at' => now()->subDay()]);
+
+    $response = $this->actingAs($this->user)->get("/organizations/{$this->organization->slug}");
+
+    $response->assertRedirect(route('organizations.settings.billing', $this->organization));
+});
+
+it('returns 403 json for expired trial on json requests', function () {
+    $this->organization->update(['trial_ends_at' => now()->subDay()]);
+
+    $response = $this->actingAs($this->user)->getJson("/organizations/{$this->organization->slug}");
+
+    $response->assertForbidden();
+    $response->assertJson(['message' => 'Your trial has expired. Subscribe to continue using Pricore.']);
+});
+
+it('allows settings pages for expired trial', function () {
+    $this->organization->update(['trial_ends_at' => now()->subDay()]);
+
+    $response = $this->actingAs($this->user)->get("/organizations/{$this->organization->slug}/settings/general");
+
+    $response->assertSuccessful();
 });

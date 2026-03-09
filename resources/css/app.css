@@ -70,6 +70,9 @@
     --color-button-destructive-from: var(--button-destructive-from);
     --color-button-destructive-to: var(--button-destructive-to);
     --color-button-destructive-border: var(--button-destructive-border);
+    --color-button-success-from: var(--button-success-from);
+    --color-button-success-to: var(--button-success-to);
+    --color-button-success-border: var(--button-success-border);
 
     /* Surface hierarchy */
     --color-surface-inset: var(--surface-inset);
@@ -113,6 +116,9 @@
     --button-destructive-from: oklch(0.6 0.2 25);
     --button-destructive-to: oklch(0.5 0.22 25);
     --button-destructive-border: oklch(0.45 0.2 25);
+    --button-success-from: oklch(0.7 0.2 150);
+    --button-success-to: oklch(0.6 0.2 150);
+    --button-success-border: oklch(0.55 0.18 150);
     --border: oklch(0.93 0.003 90);
     --input: oklch(0.93 0.003 90);
     --ring: oklch(0.88 0.005 90);
@@ -161,6 +167,9 @@
     --button-destructive-from: oklch(0.52 0.18 25);
     --button-destructive-to: oklch(0.42 0.18 25);
     --button-destructive-border: oklch(0.55 0.16 25);
+    --button-success-from: oklch(0.65 0.2 150);
+    --button-success-to: oklch(0.55 0.2 150);
+    --button-success-border: oklch(0.68 0.18 150);
     --border: oklch(0.26 0.01 260);
     --input: oklch(0.26 0.01 260);
     --ring: oklch(0.42 0.01 260);
