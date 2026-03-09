@@ -84,7 +84,6 @@ export default function AcceptInvitation({
             <Head title={`Join ${invitation.organizationName}`} />
             <Card>
                 <CardHeader className="items-center text-center">
-                    <span className="text-3xl">🎉</span>
                     <CardTitle className="text-lg">
                         You've been invited!
                     </CardTitle>
@@ -125,14 +124,14 @@ export default function AcceptInvitation({
                     ) : (
                         <div className="w-full space-y-3 text-center">
                             <p className="text-sm text-muted-foreground">
-                                You need to sign in to accept this invitation.
+                                You need an account to accept this invitation.
                             </p>
                             <Button asChild className="w-full">
-                                <a href={login.url()}>Log in to accept</a>
+                                <a href="/register">Sign up to accept</a>
                             </Button>
                             <p className="text-sm text-muted-foreground">
-                                Don't have an account?{' '}
-                                <TextLink href="/register">Sign up</TextLink>
+                                Already have an account?{' '}
+                                <TextLink href={login.url()}>Log in</TextLink>
                             </p>
                         </div>
                     )}

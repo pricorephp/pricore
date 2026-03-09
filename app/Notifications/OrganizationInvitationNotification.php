@@ -29,7 +29,7 @@ class OrganizationInvitationNotification extends Notification implements ShouldQ
         $organization = $this->invitation->organization;
         $invitedBy = $this->invitation->invitedBy;
 
-        $message = (new MailMessage)
+        return (new MailMessage)
             ->subject("You've been invited to join {$organization->name} on Pricore")
             ->greeting("You've been invited!")
             ->line($invitedBy
@@ -38,9 +38,9 @@ class OrganizationInvitationNotification extends Notification implements ShouldQ
             )
             ->action('Accept Invitation', url("/invitations/{$this->invitation->token}/accept"))
             ->line("This invitation will expire on {$this->invitation->expires_at->format('F j, Y')}.")
-            ->line('---')
-            ->line('**What is Pricore?** Pricore is a private Composer registry that helps teams securely host, manage, and distribute their PHP packages — like a private Packagist for your organization.');
-
-        return $message;
+            ->line('')
+            ->line('**What is Pricore?**')
+            ->line('')
+            ->line('Pricore is a private Composer registry that helps teams securely host, manage, and distribute their PHP packages — like a private Packagist for your organization.');
     }
 }
