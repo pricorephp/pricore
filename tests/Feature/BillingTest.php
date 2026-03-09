@@ -140,6 +140,49 @@ it('checkout endpoint validates price_id is required', function () {
     $response->assertJsonValidationErrors(['price_id']);
 });
 
+it('creates customer for second organization when first already has same paddle customer', function () {
+    config(['cashier.api_key' => 'test_api_key', 'cashier.sandbox' => true]);
+
+    $paddleId = 'ctm_test_shared_'.Str::random(10);
+
+    // First org already has the customer record
+    Customer::create([
+        'billable_id' => $this->organization->uuid,
+        'billable_type' => 'organization',
+        'paddle_id' => $paddleId,
+        'name' => $this->organization->name,
+        'email' => $this->user->email,
+    ]);
+
+    // Create second org owned by the same user
+    $secondOrganization = Organization::factory()->create(['owner_uuid' => $this->user->uuid]);
+    $secondOrganization->members()->attach($this->user->uuid, [
+        'uuid' => Str::uuid()->toString(),
+        'role' => OrganizationRole::Owner->value,
+    ]);
+
+    // Fake Paddle API: createAsCustomer looks up by email and finds existing customer
+    Http::fake([
+        'https://sandbox-api.paddle.com/customers*' => Http::response(['data' => [[
+            'id' => $paddleId,
+            'name' => $this->user->name,
+            'email' => $this->user->email,
+        ]]]),
+    ]);
+
+    $response = $this->actingAs($this->user)->postJson(
+        "/organizations/{$secondOrganization->slug}/settings/billing/checkout",
+        ['price_id' => 'pri_test_123']
+    );
+
+    $response->assertSuccessful();
+
+    // Both orgs should have customer records with the same paddle_id
+    expect(Customer::where('billable_id', $this->organization->uuid)->first()->paddle_id)->toBe($paddleId);
+    expect(Customer::where('billable_id', $secondOrganization->uuid)->first()->paddle_id)->toBe($paddleId);
+    expect(Customer::where('paddle_id', $paddleId)->count())->toBe(2);
+});
+
 it('cancel endpoint cancels subscription', function () {
     config(['cashier.api_key' => 'test_api_key', 'cashier.sandbox' => true]);
 
