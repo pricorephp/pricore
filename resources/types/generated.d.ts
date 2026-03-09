@@ -44,6 +44,8 @@ name: string;
 slug: string;
 ownerUuid: string;
 permissions: App.Domains.Organization.Contracts.Data.OrganizationPermissionsData | null;
+onTrial: boolean | null;
+trialExpired: boolean | null;
 };
 export type OrganizationInvitationData = {
 uuid: string;

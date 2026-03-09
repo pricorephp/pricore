@@ -30,9 +30,10 @@ type OrganizationData =
     App.Domains.Organization.Contracts.Data.OrganizationData;
 
 interface PlanData {
-    plan: 'free' | 'business';
-    maxPackages: number | null;
-    currentPackages: number;
+    plan: 'trial' | 'business';
+    trialEndsAt: string | null;
+    trialDaysRemaining: number | null;
+    trialExpired: boolean;
 }
 
 interface Props {
@@ -40,8 +41,11 @@ interface Props {
     plan: PlanData;
     subscribed: boolean;
     onGracePeriod: boolean;
+    onTrial: boolean;
+    trialExpired: boolean;
     endsAt: string | null;
     plans: { business: { monthly: string; yearly: string } };
+    prices: { business: { monthly: number; yearly: number } };
 }
 
 function getCookie(name: string): string | null {
@@ -62,15 +66,12 @@ export default function Billing({
     plan,
     subscribed,
     onGracePeriod,
+    onTrial,
+    trialExpired,
     endsAt,
     plans,
+    prices,
 }: Props) {
-    const isFree = plan.plan === 'free';
-    const isUnlimited = plan.maxPackages === null;
-    const usagePercentage = isUnlimited
-        ? 0
-        : Math.round((plan.currentPackages / (plan.maxPackages ?? 1)) * 100);
-
     const [billingInterval, setBillingInterval] = useState<
         'monthly' | 'yearly'
     >('monthly');
@@ -116,6 +117,17 @@ export default function Billing({
                 description="Manage your organization's subscription and usage"
             />
 
+            {trialExpired && (
+                <Alert variant="destructive">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertTitle>Trial expired</AlertTitle>
+                    <AlertDescription>
+                        Your trial has expired. Subscribe to continue using
+                        Pricore.
+                    </AlertDescription>
+                </Alert>
+            )}
+
             {onGracePeriod && endsAt && (
                 <Alert>
                     <AlertCircle className="h-4 w-4" />
@@ -153,35 +165,29 @@ export default function Billing({
             <div className="rounded-lg border bg-card p-6">
                 <div className="flex items-center gap-3">
                     <h3 className="text-lg font-medium">Current Plan</h3>
-                    <Badge variant={isFree ? 'secondary' : 'default'}>
-                        {isFree ? 'Free' : 'Business'}
+                    <Badge
+                        variant={
+                            plan.plan === 'trial' ? 'secondary' : 'default'
+                        }
+                    >
+                        {plan.plan === 'trial' ? 'Trial' : 'Business'}
                     </Badge>
                 </div>
 
-                <div className="mt-4 space-y-3">
-                    <div className="flex items-center justify-between text-sm">
-                        <span className="text-muted-foreground">Packages</span>
-                        <span>
-                            {plan.currentPackages}
-                            {isUnlimited ? '' : ` / ${plan.maxPackages}`}
-                        </span>
-                    </div>
-                    {!isUnlimited && (
-                        <div className="h-2 w-full overflow-hidden rounded-full bg-secondary">
-                            <div
-                                className="h-full rounded-full bg-primary transition-all"
-                                style={{ width: `${usagePercentage}%` }}
-                            />
-                        </div>
-                    )}
-                </div>
+                {onTrial && plan.trialDaysRemaining !== null && (
+                    <p className="mt-2 text-sm text-muted-foreground">
+                        {plan.trialDaysRemaining} day
+                        {plan.trialDaysRemaining !== 1 ? 's' : ''} remaining in
+                        your trial
+                    </p>
+                )}
             </div>
 
             {!subscribed && (
                 <div className="space-y-4">
                     <HeadingSmall
                         title="Upgrade to Business"
-                        description="Remove package limits and unlock all features"
+                        description="Subscribe to continue using Pricore after your trial"
                     />
 
                     <div className="flex items-center gap-2">
@@ -190,7 +196,7 @@ export default function Billing({
                             onClick={() => setBillingInterval('monthly')}
                             className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
                                 billingInterval === 'monthly'
-                                    ? 'bg-primary text-primary-foreground'
+                                    ? 'bg-secondary text-secondary-foreground'
                                     : 'text-muted-foreground hover:text-foreground'
                             }`}
                         >
@@ -201,11 +207,21 @@ export default function Billing({
                             onClick={() => setBillingInterval('yearly')}
                             className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
                                 billingInterval === 'yearly'
-                                    ? 'bg-primary text-primary-foreground'
+                                    ? 'bg-secondary text-secondary-foreground'
                                     : 'text-muted-foreground hover:text-foreground'
                             }`}
                         >
-                            Yearly
+                            Yearly{' '}
+                            <span className="text-xs opacity-75">
+                                (save{' '}
+                                {Math.round(
+                                    (1 -
+                                        prices.business.yearly /
+                                            (prices.business.monthly * 12)) *
+                                        100,
+                                )}
+                                %)
+                            </span>
                         </button>
                     </div>
 
@@ -213,16 +229,44 @@ export default function Billing({
                         <div className="flex items-start justify-between">
                             <div>
                                 <h4 className="font-medium">Business</h4>
-                                <p className="mt-1 text-sm text-muted-foreground">
-                                    Everything in Free, plus:
-                                </p>
+                                <div className="mt-2">
+                                    <span className="text-3xl font-bold">
+                                        ${prices.business[billingInterval]}
+                                    </span>
+                                    <span className="text-muted-foreground">
+                                        /
+                                        {billingInterval === 'monthly'
+                                            ? 'mo'
+                                            : 'yr'}
+                                    </span>
+                                </div>
+                                {billingInterval === 'yearly' && (
+                                    <p className="mt-1 text-sm text-muted-foreground">
+                                        Save $
+                                        {prices.business.monthly * 12 -
+                                            prices.business.yearly}
+                                        /yr compared to monthly
+                                    </p>
+                                )}
                                 <ul className="mt-3 space-y-2 text-sm">
                                     <li className="flex items-center gap-2">
-                                        <Check className="h-4 w-4 text-primary" />
-                                        Unlimited packages
+                                        <Check className="h-4 w-4 text-green-500" />
+                                        Unlimited private packages
                                     </li>
                                     <li className="flex items-center gap-2">
-                                        <Check className="h-4 w-4 text-primary" />
+                                        <Check className="h-4 w-4 text-green-500" />
+                                        Managed hosting
+                                    </li>
+                                    <li className="flex items-center gap-2">
+                                        <Check className="h-4 w-4 text-green-500" />
+                                        Automatic updates
+                                    </li>
+                                    <li className="flex items-center gap-2">
+                                        <Check className="h-4 w-4 text-green-500" />
+                                        Daily backups
+                                    </li>
+                                    <li className="flex items-center gap-2">
+                                        <Check className="h-4 w-4 text-green-500" />
                                         Priority support
                                     </li>
                                 </ul>
@@ -230,6 +274,7 @@ export default function Billing({
                         </div>
                         <div className="mt-6">
                             <Button
+                                variant="success"
                                 onClick={() =>
                                     handleCheckout(
                                         plans.business[billingInterval],
@@ -291,7 +336,8 @@ function CancelSubscription({
                     <p>
                         If you cancel, your subscription will remain active
                         until the end of the current billing period. After that,
-                        your organization will be downgraded to the Free plan.
+                        your organization will lose access until you
+                        resubscribe.
                     </p>
                 </div>
 

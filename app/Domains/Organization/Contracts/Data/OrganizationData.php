@@ -15,6 +15,8 @@ class OrganizationData extends Data
         public string $slug,
         public string $ownerUuid,
         public ?OrganizationPermissionsData $permissions = null,
+        public ?bool $onTrial = null,
+        public ?bool $trialExpired = null,
     ) {}
 
     public static function fromModel(Organization $organization): self

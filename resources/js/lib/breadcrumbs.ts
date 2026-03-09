@@ -17,6 +17,7 @@ export function createOrganizationBreadcrumb(
                 title: org.name,
                 href: `/organizations/${org.slug}`,
                 active: org.uuid === currentOrg.uuid,
+                badge: org.onTrial ? 'Trial' : undefined,
             })),
             action: {
                 label: 'Add Organization',
