@@ -62,15 +62,8 @@ Versions are synced automatically when:
 
 Add your Pricore organization as a Composer repository:
 
-```json
-{
-    "repositories": [
-        {
-            "type": "composer",
-            "url": "https://pricore.yourcompany.com/org/your-organization"
-        }
-    ]
-}
+```bash
+composer config repositories.your-organization composer https://pricore.yourcompany.com/your-organization
 ```
 
 ### 2. Authenticate
