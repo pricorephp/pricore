@@ -162,17 +162,10 @@ Requires webhook token verification via the `X-Gitlab-Token` header (plain text 
 
 ## Configuring Composer
 
-Add Pricore as a repository in your project's `composer.json`:
+Add Pricore as a Composer repository:
 
-```json
-{
-    "repositories": [
-        {
-            "type": "composer",
-            "url": "https://pricore.yourcompany.com/your-org"
-        }
-    ]
-}
+```bash
+composer config repositories.your-org composer https://pricore.yourcompany.com/your-org
 ```
 
 Then authenticate:

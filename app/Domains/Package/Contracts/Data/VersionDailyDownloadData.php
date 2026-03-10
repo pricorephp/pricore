@@ -8,17 +8,14 @@ use Spatie\TypeScriptTransformer\Attributes\TypeScript;
 use Spatie\TypeScriptTransformer\Attributes\TypeScriptType;
 
 #[TypeScript]
-class PackageDownloadStatsData extends Data
+class VersionDailyDownloadData extends Data
 {
     /**
      * @param  array<int, DailyDownloadData>  $dailyDownloads
-     * @param  array<int, VersionDailyDownloadData>  $versionDailyDownloads
      */
     public function __construct(
-        public int $totalDownloads,
+        public string $version,
         #[TypeScriptType('array<'.DailyDownloadData::class.'>')]
         public array $dailyDownloads,
-        #[TypeScriptType('array<'.VersionDailyDownloadData::class.'>')]
-        public array $versionDailyDownloads,
     ) {}
 }

@@ -66,7 +66,7 @@ class PackageController extends Controller
                 $package->repository?->repo_identifier
             ));
 
-        $composerRepositoryUrl = url("/{$organization->slug}/packages.json");
+        $composerRepositoryUrl = url("/{$organization->slug}");
 
         $versionUuid = $request->query('version');
         $activeVersion = null;

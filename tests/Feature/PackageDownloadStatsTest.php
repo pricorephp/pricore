@@ -32,7 +32,7 @@ describe('package download stats', function () {
             ->has('downloadStats')
             ->has('downloadStats.totalDownloads')
             ->has('downloadStats.dailyDownloads')
-            ->has('downloadStats.versionBreakdown')
+            ->has('downloadStats.versionDailyDownloads')
         );
     });
 
@@ -51,7 +51,7 @@ describe('package download stats', function () {
         );
     });
 
-    it('groups downloads by version', function () {
+    it('groups downloads by version in daily data', function () {
         PackageDownload::factory()
             ->count(5)
             ->forOrganization($this->organization)
@@ -68,11 +68,9 @@ describe('package download stats', function () {
             ->get("/organizations/{$this->organization->slug}/packages/{$this->package->uuid}");
 
         $response->assertInertia(fn ($page) => $page
-            ->has('downloadStats.versionBreakdown', 2)
-            ->where('downloadStats.versionBreakdown.0.version', '1.0.0')
-            ->where('downloadStats.versionBreakdown.0.downloads', 5)
-            ->where('downloadStats.versionBreakdown.1.version', '2.0.0')
-            ->where('downloadStats.versionBreakdown.1.downloads', 3)
+            ->has('downloadStats.versionDailyDownloads', 2)
+            ->where('downloadStats.versionDailyDownloads.0.version', '1.0.0')
+            ->where('downloadStats.versionDailyDownloads.1.version', '2.0.0')
         );
     });
 
@@ -92,7 +90,7 @@ describe('package download stats', function () {
         $response->assertInertia(fn ($page) => $page
             ->where('downloadStats.totalDownloads', 0)
             ->has('downloadStats.dailyDownloads', 30)
-            ->has('downloadStats.versionBreakdown', 0)
+            ->has('downloadStats.versionDailyDownloads', 0)
         );
     });
 
