@@ -153,11 +153,6 @@ export function VersionDownloadChart({
                                             index % CHART_COLORS.length
                                         ]
                                     }
-                                    radius={
-                                        index === versions.length - 1
-                                            ? [3, 3, 0, 0]
-                                            : [0, 0, 0, 0]
-                                    }
                                 />
                             ))}
                         </BarChart>
