@@ -5,7 +5,6 @@ namespace App\Domains\Package\Actions;
 use App\Domains\Organization\Contracts\Data\DailyDownloadData;
 use App\Domains\Package\Contracts\Data\PackageDownloadStatsData;
 use App\Domains\Package\Contracts\Data\VersionDailyDownloadData;
-use App\Domains\Package\Contracts\Data\VersionDownloadData;
 use App\Models\Package;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -32,24 +31,11 @@ class BuildPackageDownloadStatsAction
             );
         }
 
-        $versionBreakdown = $package->downloads()
-            ->select('version', DB::raw('COUNT(*) as downloads'))
-            ->groupBy('version')
-            ->orderByDesc('downloads')
-            ->limit(10)
-            ->get()
-            ->map(fn ($row) => new VersionDownloadData(
-                version: $row->version,
-                downloads: (int) $row->getAttribute('downloads'),
-            ))
-            ->all();
-
         $versionDailyDownloads = $this->buildVersionDailyDownloads($package, $startDate);
 
         return new PackageDownloadStatsData(
             totalDownloads: $package->downloads()->count(),
             dailyDownloads: $dailyDownloads,
-            versionBreakdown: $versionBreakdown,
             versionDailyDownloads: $versionDailyDownloads,
         );
     }

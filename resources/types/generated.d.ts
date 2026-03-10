@@ -111,9 +111,8 @@ repositoryUuid: string | null;
 };
 export type PackageDownloadStatsData = {
 totalDownloads: number;
-dailyDownloads: Array<any>;
-versionBreakdown: Array<any>;
-versionDailyDownloads: Array<any>;
+dailyDownloads: Array<App.Domains.Organization.Contracts.Data.DailyDownloadData>;
+versionDailyDownloads: Array<App.Domains.Package.Contracts.Data.VersionDailyDownloadData>;
 };
 export type PackageVersionData = {
 uuid: string;
@@ -145,11 +144,7 @@ isDev: boolean;
 };
 export type VersionDailyDownloadData = {
 version: string;
-dailyDownloads: Array<any>;
-};
-export type VersionDownloadData = {
-version: string;
-downloads: number;
+dailyDownloads: Array<App.Domains.Organization.Contracts.Data.DailyDownloadData>;
 };
 }
 declare namespace App.Domains.Repository.Contracts.Data {
