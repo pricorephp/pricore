@@ -113,6 +113,7 @@ export type PackageDownloadStatsData = {
 totalDownloads: number;
 dailyDownloads: Array<any>;
 versionBreakdown: Array<any>;
+versionDailyDownloads: Array<any>;
 };
 export type PackageVersionData = {
 uuid: string;
@@ -141,6 +142,10 @@ authors: Array<any> | null;
 keywords: Array<any> | null;
 isStable: boolean;
 isDev: boolean;
+};
+export type VersionDailyDownloadData = {
+version: string;
+dailyDownloads: Array<any>;
 };
 export type VersionDownloadData = {
 version: string;

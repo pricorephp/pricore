@@ -1,7 +1,6 @@
 import { show } from '@/actions/App/Domains/Repository/Http/Controllers/RepositoryController';
 import HeadingSmall from '@/components/heading-small';
-import { DownloadChart } from '@/components/stats/download-chart';
-import { VersionDownloads } from '@/components/stats/version-downloads';
+import { VersionDownloadChart } from '@/components/stats/version-download-chart';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -316,14 +315,7 @@ export default function PackageShow({
         },
     ];
 
-    const composerConfig = `{
-    "repositories": [
-        {
-            "type": "composer",
-            "url": "${composerRepositoryUrl}"
-        }
-    ]
-}`;
+    const composerRepoCommand = `composer config repositories.${organization.slug} composer ${composerRepositoryUrl}`;
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -401,31 +393,23 @@ export default function PackageShow({
                     </CardHeader>
                     <CardContent className="space-y-4">
                         <p className="text-muted-foreground">
-                            Add this repository to your{' '}
-                            <code className="rounded bg-muted px-1 py-0.5 text-xs">
-                                composer.json
-                            </code>{' '}
-                            to install packages from this organization:
+                            Add this repository to your project to install
+                            packages from this organization:
                         </p>
-                        <div className="relative">
-                            <pre className="overflow-x-auto rounded bg-muted/60 p-4 text-sm">
-                                <code>{composerConfig}</code>
-                            </pre>
-                            <div className="absolute top-2 right-2">
-                                <CopyButton text={composerConfig} />
-                            </div>
+                        <div className="flex items-center gap-2 rounded-lg border bg-muted/50 px-4 py-3">
+                            <code className="flex-1 truncate font-mono text-sm">
+                                {composerRepoCommand}
+                            </code>
+                            <CopyButton text={composerRepoCommand} />
                         </div>
                     </CardContent>
                 </Card>
 
-                <div className="grid gap-6 lg:grid-cols-2">
-                    <DownloadChart
-                        title="Downloads (Last 30 Days)"
-                        data={downloadStats.dailyDownloads}
-                        compact
-                    />
-                    <VersionDownloads data={downloadStats.versionBreakdown} />
-                </div>
+                <VersionDownloadChart
+                    title="Downloads (Last 30 Days)"
+                    versionData={downloadStats.versionDailyDownloads}
+                    fallbackData={downloadStats.dailyDownloads}
+                />
 
                 <div className="space-y-4">
                     <HeadingSmall

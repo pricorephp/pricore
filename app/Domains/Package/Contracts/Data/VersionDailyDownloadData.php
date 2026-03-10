@@ -7,17 +7,13 @@ use Spatie\LaravelData\Data;
 use Spatie\TypeScriptTransformer\Attributes\TypeScript;
 
 #[TypeScript]
-class PackageDownloadStatsData extends Data
+class VersionDailyDownloadData extends Data
 {
     /**
      * @param  array<int, DailyDownloadData>  $dailyDownloads
-     * @param  array<int, VersionDownloadData>  $versionBreakdown
-     * @param  array<int, VersionDailyDownloadData>  $versionDailyDownloads
      */
     public function __construct(
-        public int $totalDownloads,
+        public string $version,
         public array $dailyDownloads,
-        public array $versionBreakdown,
-        public array $versionDailyDownloads,
     ) {}
 }
