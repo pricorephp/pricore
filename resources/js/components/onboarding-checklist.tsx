@@ -68,11 +68,12 @@ export default function OnboardingChecklist({
     configuredProviders = [],
 }: OnboardingChecklistProps) {
     const [isImportOpen, setIsImportOpen] = useState(false);
+
     if (onboarding.isDismissed) {
         return null;
     }
 
-    const hasToken = onboarding.hasPersonalToken || onboarding.hasOrgToken;
+    const hasToken = onboarding.hasPersonalToken;
 
     function handleDismiss() {
         router.post(
