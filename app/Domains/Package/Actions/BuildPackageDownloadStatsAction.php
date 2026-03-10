@@ -68,7 +68,8 @@ class BuildPackageDownloadStatsAction
         $versionDailyMap = [];
         foreach ($rows as $row) {
             $version = in_array($row->version, $topVersions) ? $row->version : 'Other';
-            $versionDailyMap[$version][$row->date] = ($versionDailyMap[$version][$row->date] ?? 0) + (int) $row->downloads;
+            $date = (string) $row->getAttribute('date');
+            $versionDailyMap[$version][$date] = ($versionDailyMap[$version][$date] ?? 0) + (int) $row->getAttribute('downloads');
         }
 
         $orderedVersions = array_values(array_filter($topVersions, fn ($v) => isset($versionDailyMap[$v])));
