@@ -23,14 +23,24 @@ interface VersionDownloadChartProps {
     className?: string;
 }
 
-const CHART_COLORS = [
-    'var(--chart-1)',
-    'var(--chart-2)',
-    'var(--chart-3)',
-    'var(--chart-4)',
-    'var(--chart-5)',
-    'var(--muted-foreground)',
+const OTHER_VERSION = 'Other';
+
+const BLUE_PALETTE = [
+    'var(--chart-blue-1)',
+    'var(--chart-blue-2)',
+    'var(--chart-blue-3)',
+    'var(--chart-blue-4)',
+    'var(--chart-blue-5)',
 ] as const;
+
+const OTHER_COLOR = 'var(--chart-other)';
+
+function getVersionColor(index: number, count: number): string {
+    const paletteIndex = Math.round(
+        (index / Math.max(count - 1, 1)) * (BLUE_PALETTE.length - 1),
+    );
+    return BLUE_PALETTE[paletteIndex];
+}
 
 export function VersionDownloadChart({
     title,
@@ -39,11 +49,12 @@ export function VersionDownloadChart({
     compact = false,
     className,
 }: VersionDownloadChartProps) {
-    const versions = versionData.map((v) => v.version);
+    const { versions, chartData, chartConfig, maxDownloads } = useMemo(() => {
+        const versionNames = versionData.map((v) => v.version);
 
-    const { chartData, chartConfig, maxDownloads } = useMemo(() => {
-        if (versions.length === 0) {
+        if (versionNames.length === 0) {
             return {
+                versions: versionNames,
                 chartData: [],
                 chartConfig: {} as ChartConfig,
                 maxDownloads: 0,
@@ -51,10 +62,17 @@ export function VersionDownloadChart({
         }
 
         const config: ChartConfig = {};
-        versions.forEach((version, index) => {
+        const versionCount = versionNames.filter(
+            (v) => v !== OTHER_VERSION,
+        ).length;
+
+        versionNames.forEach((version, index) => {
             config[version] = {
                 label: version,
-                color: CHART_COLORS[index % CHART_COLORS.length],
+                color:
+                    version === OTHER_VERSION
+                        ? OTHER_COLOR
+                        : getVersionColor(index, versionCount),
             };
         });
 
@@ -76,8 +94,13 @@ export function VersionDownloadChart({
 
         const max = Math.max(...data.map((d) => d._total as number));
 
-        return { chartData: data, chartConfig: config, maxDownloads: max };
-    }, [versionData, versions]);
+        return {
+            versions: versionNames,
+            chartData: data,
+            chartConfig: config,
+            maxDownloads: max,
+        };
+    }, [versionData]);
 
     const hasDownloads =
         versions.length > 0
@@ -143,16 +166,12 @@ export function VersionDownloadChart({
                                     />
                                 }
                             />
-                            {versions.map((version, index) => (
+                            {versions.map((version) => (
                                 <Bar
                                     key={version}
                                     dataKey={version}
                                     stackId="1"
-                                    fill={
-                                        CHART_COLORS[
-                                            index % CHART_COLORS.length
-                                        ]
-                                    }
+                                    fill={chartConfig[version].color}
                                 />
                             ))}
                         </BarChart>
