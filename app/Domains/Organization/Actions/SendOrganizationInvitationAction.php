@@ -20,14 +20,18 @@ class SendOrganizationInvitationAction
 
     public function handle(Organization $organization, string $email, OrganizationRole $role, User $invitedBy): OrganizationInvitation
     {
-        $invitation = OrganizationInvitation::create([
-            'organization_uuid' => $organization->uuid,
-            'email' => $email,
-            'role' => $role->value,
-            'token' => Str::random(64),
-            'invited_by' => $invitedBy->uuid,
-            'expires_at' => now()->addDays(7),
-        ]);
+        $invitation = OrganizationInvitation::updateOrCreate(
+            [
+                'organization_uuid' => $organization->uuid,
+                'email' => $email,
+            ],
+            [
+                'role' => $role->value,
+                'token' => Str::random(64),
+                'invited_by' => $invitedBy->uuid,
+                'expires_at' => now()->addDays(7),
+            ],
+        );
 
         $invitation->load('organization', 'invitedBy');
 
