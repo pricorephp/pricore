@@ -87,7 +87,9 @@ export default function AddRepositoryDialog({
         setProvider(defaultProvider);
         setOwners([]);
         setSelectedOwner('');
+        setLoadingOwners(false);
         setRepositories([]);
+        setLoadingRepos(false);
         setSelectedRepo('');
         setRepoIdentifier('');
         setSearchQuery('');
