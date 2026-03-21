@@ -22,7 +22,7 @@ interface DownloadChartProps {
 const chartConfig: ChartConfig = {
     downloads: {
         label: 'Downloads',
-        color: 'var(--chart-1)',
+        color: 'var(--chart-primary)',
     },
 };
 
