@@ -58,6 +58,9 @@ export default function AddRepositoryDialog({
         configuredProviders.length > 0 ? configuredProviders[0] : 'git';
 
     const [provider, setProvider] = useState<string>(defaultProvider);
+    const [owners, setOwners] = useState<string[]>([]);
+    const [selectedOwner, setSelectedOwner] = useState<string>('');
+    const [loadingOwners, setLoadingOwners] = useState(false);
     const [repositories, setRepositories] = useState<RepositorySuggestion[]>(
         [],
     );
@@ -77,11 +80,15 @@ export default function AddRepositoryDialog({
         }
 
         setProvider(defaultProvider);
+        setOwners([]);
+        setSelectedOwner('');
+        setRepositories([]);
         setSelectedRepo('');
         setRepoIdentifier('');
         setSearchQuery('');
     }, [isOpen, defaultProvider]);
 
+    // Fetch owners when provider changes
     useEffect(() => {
         if (!isOpen || provider === 'git') {
             return;
@@ -89,14 +96,60 @@ export default function AddRepositoryDialog({
 
         const controller = new AbortController();
 
+        const fetchOwners = async (): Promise<void> => {
+            setLoadingOwners(true);
+            setOwners([]);
+            setSelectedOwner('');
+            setRepositories([]);
+            try {
+                const url = `/organizations/${organizationSlug}/repositories/owners?provider=${encodeURIComponent(provider)}`;
+                const response = await fetch(url, {
+                    headers: { Accept: 'application/json' },
+                    credentials: 'same-origin',
+                    signal: controller.signal,
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    const fetchedOwners = data.owners || [];
+                    setOwners(fetchedOwners);
+                    if (fetchedOwners.length === 1) {
+                        setSelectedOwner(fetchedOwners[0]);
+                    }
+                }
+            } catch (e) {
+                if (e instanceof DOMException && e.name === 'AbortError') {
+                    return;
+                }
+            } finally {
+                if (!controller.signal.aborted) {
+                    setLoadingOwners(false);
+                }
+            }
+        };
+
+        fetchOwners();
+
+        return () => controller.abort();
+    }, [provider, organizationSlug, isOpen]);
+
+    // Fetch repositories when owner is selected
+    useEffect(() => {
+        if (!isOpen || provider === 'git' || !selectedOwner) {
+            return;
+        }
+
+        const controller = new AbortController();
+
         const fetchRepositories = async (): Promise<void> => {
             setLoadingRepos(true);
+            setRepositories([]);
+            setSelectedRepo('');
+            setRepoIdentifier('');
             try {
-                const url = `/organizations/${organizationSlug}/repositories/suggest?provider=${encodeURIComponent(provider)}`;
+                const url = `/organizations/${organizationSlug}/repositories/suggest?provider=${encodeURIComponent(provider)}&owner=${encodeURIComponent(selectedOwner)}`;
                 const response = await fetch(url, {
-                    headers: {
-                        Accept: 'application/json',
-                    },
+                    headers: { Accept: 'application/json' },
                     credentials: 'same-origin',
                     signal: controller.signal,
                 });
@@ -122,7 +175,7 @@ export default function AddRepositoryDialog({
         fetchRepositories();
 
         return () => controller.abort();
-    }, [provider, organizationSlug, isOpen]);
+    }, [selectedOwner, provider, organizationSlug, isOpen]);
 
     const handleRepoSelect = (
         fullName: string,
@@ -251,166 +304,205 @@ export default function AddRepositoryDialog({
                                     Repository{' '}
                                     <span className="text-red-500">*</span>
                                 </Label>
-                                {loadingRepos && provider !== 'git' ? (
-                                    <div className="flex items-center gap-2 rounded-md border border-input bg-transparent px-3 py-2">
-                                        <Spinner className="size-4" />
-                                        <span className="text-muted-foreground">
-                                            Loading repositories...
-                                        </span>
-                                    </div>
-                                ) : provider !== 'git' &&
-                                  repositories.length > 0 ? (
-                                    <>
+                                {provider !== 'git' ? (
+                                    loadingOwners ? (
+                                        <div className="flex items-center gap-2 rounded-md border border-input bg-transparent px-3 py-2">
+                                            <Spinner className="size-4" />
+                                            <span className="text-muted-foreground">
+                                                Loading...
+                                            </span>
+                                        </div>
+                                    ) : owners.length > 0 ? (
                                         <div className="space-y-3">
-                                            <Input
-                                                placeholder="Search repositories..."
-                                                value={searchQuery}
-                                                onChange={(e) =>
-                                                    setSearchQuery(
-                                                        e.target.value,
-                                                    )
-                                                }
-                                            />
-                                            <div
-                                                ref={repoListContainerRef}
-                                                className="max-h-64 space-y-2 overflow-y-auto rounded-md border p-2"
-                                            >
-                                                {filteredRepositories.length >
-                                                0 ? (
-                                                    filteredRepositories.map(
-                                                        (repo) => {
-                                                            const handleLabelClick =
-                                                                (
-                                                                    e: React.MouseEvent<HTMLLabelElement>,
-                                                                ): void => {
-                                                                    // If clicking directly on the radio button, let it handle it
-                                                                    if (
-                                                                        e.target instanceof
-                                                                        HTMLInputElement
-                                                                    ) {
-                                                                        return;
-                                                                    }
-                                                                    // Otherwise, programmatically trigger the radio button
-                                                                    e.preventDefault();
-                                                                    const scrollTop =
-                                                                        repoListContainerRef
-                                                                            .current
-                                                                            ?.scrollTop ??
-                                                                        0;
-                                                                    handleRepoSelect(
-                                                                        repo.fullName,
-                                                                    );
-                                                                    // Restore scroll position after state update
-                                                                    setTimeout(
-                                                                        () => {
-                                                                            repoListContainerRef.current?.scrollTo(
-                                                                                {
-                                                                                    top: scrollTop,
-                                                                                    behavior:
-                                                                                        'instant',
-                                                                                },
-                                                                            );
-                                                                        },
-                                                                        0,
-                                                                    );
-                                                                };
+                                            <div className="flex gap-2">
+                                                <Select
+                                                    value={selectedOwner}
+                                                    onValueChange={(value) => {
+                                                        setSelectedOwner(value);
+                                                        setSearchQuery('');
+                                                    }}
+                                                >
+                                                    <SelectTrigger className="w-[180px] shrink-0">
+                                                        <SelectValue placeholder="Select owner" />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        {owners.map((owner) => (
+                                                            <SelectItem
+                                                                key={owner}
+                                                                value={owner}
+                                                            >
+                                                                {owner}
+                                                            </SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
+                                                <Input
+                                                    placeholder="Search repositories..."
+                                                    value={searchQuery}
+                                                    onChange={(e) =>
+                                                        setSearchQuery(
+                                                            e.target.value,
+                                                        )
+                                                    }
+                                                    disabled={!selectedOwner}
+                                                />
+                                            </div>
+                                            {loadingRepos ? (
+                                                <div className="flex items-center gap-2 rounded-md border border-input bg-transparent px-3 py-2">
+                                                    <Spinner className="size-4" />
+                                                    <span className="text-muted-foreground">
+                                                        Loading repositories...
+                                                    </span>
+                                                </div>
+                                            ) : selectedOwner &&
+                                              repositories.length > 0 ? (
+                                                <div
+                                                    ref={repoListContainerRef}
+                                                    className="max-h-64 space-y-2 overflow-y-auto rounded-md border p-2"
+                                                >
+                                                    {filteredRepositories.length >
+                                                    0 ? (
+                                                        filteredRepositories.map(
+                                                            (repo) => {
+                                                                const handleLabelClick =
+                                                                    (
+                                                                        e: React.MouseEvent<HTMLLabelElement>,
+                                                                    ): void => {
+                                                                        // If clicking directly on the radio button, let it handle it
+                                                                        if (
+                                                                            e.target instanceof
+                                                                            HTMLInputElement
+                                                                        ) {
+                                                                            return;
+                                                                        }
+                                                                        // Otherwise, programmatically trigger the radio button
+                                                                        e.preventDefault();
+                                                                        const scrollTop =
+                                                                            repoListContainerRef
+                                                                                .current
+                                                                                ?.scrollTop ??
+                                                                            0;
+                                                                        handleRepoSelect(
+                                                                            repo.fullName,
+                                                                        );
+                                                                        // Restore scroll position after state update
+                                                                        setTimeout(
+                                                                            () => {
+                                                                                repoListContainerRef.current?.scrollTo(
+                                                                                    {
+                                                                                        top: scrollTop,
+                                                                                        behavior:
+                                                                                            'instant',
+                                                                                    },
+                                                                                );
+                                                                            },
+                                                                            0,
+                                                                        );
+                                                                    };
 
-                                                            return (
-                                                                <label
-                                                                    key={
-                                                                        repo.fullName
-                                                                    }
-                                                                    onClick={
-                                                                        handleLabelClick
-                                                                    }
-                                                                    className="flex cursor-pointer items-start gap-3 rounded-md p-2 hover:bg-accent"
-                                                                >
-                                                                    <input
-                                                                        type="radio"
-                                                                        name="selected_repo"
-                                                                        value={
+                                                                return (
+                                                                    <label
+                                                                        key={
                                                                             repo.fullName
                                                                         }
-                                                                        checked={
-                                                                            selectedRepo ===
-                                                                            repo.fullName
+                                                                        onClick={
+                                                                            handleLabelClick
                                                                         }
-                                                                        onChange={(
-                                                                            e,
-                                                                        ) => {
-                                                                            const scrollTop =
-                                                                                repoListContainerRef
-                                                                                    .current
-                                                                                    ?.scrollTop ??
-                                                                                0;
-                                                                            handleRepoSelect(
-                                                                                repo.fullName,
-                                                                                e,
-                                                                            );
-                                                                            // Restore scroll position after state update
-                                                                            setTimeout(
-                                                                                () => {
-                                                                                    repoListContainerRef.current?.scrollTo(
-                                                                                        {
-                                                                                            top: scrollTop,
-                                                                                            behavior:
-                                                                                                'instant',
-                                                                                        },
-                                                                                    );
-                                                                                },
-                                                                                0,
-                                                                            );
-                                                                        }}
-                                                                        className="mt-1 size-4"
-                                                                        required
-                                                                    />
-                                                                    <div className="flex flex-1 flex-col">
-                                                                        <span className="font-medium">
-                                                                            {
+                                                                        className="flex cursor-pointer items-start gap-3 rounded-md p-2 hover:bg-accent"
+                                                                    >
+                                                                        <input
+                                                                            type="radio"
+                                                                            name="selected_repo"
+                                                                            value={
                                                                                 repo.fullName
                                                                             }
-                                                                        </span>
-                                                                        {repo.description && (
-                                                                            <span className="text-xs text-muted-foreground">
+                                                                            checked={
+                                                                                selectedRepo ===
+                                                                                repo.fullName
+                                                                            }
+                                                                            onChange={(
+                                                                                e,
+                                                                            ) => {
+                                                                                const scrollTop =
+                                                                                    repoListContainerRef
+                                                                                        .current
+                                                                                        ?.scrollTop ??
+                                                                                    0;
+                                                                                handleRepoSelect(
+                                                                                    repo.fullName,
+                                                                                    e,
+                                                                                );
+                                                                                // Restore scroll position after state update
+                                                                                setTimeout(
+                                                                                    () => {
+                                                                                        repoListContainerRef.current?.scrollTo(
+                                                                                            {
+                                                                                                top: scrollTop,
+                                                                                                behavior:
+                                                                                                    'instant',
+                                                                                            },
+                                                                                        );
+                                                                                    },
+                                                                                    0,
+                                                                                );
+                                                                            }}
+                                                                            className="mt-1 size-4"
+                                                                            required
+                                                                        />
+                                                                        <div className="flex flex-1 flex-col">
+                                                                            <span className="font-medium">
                                                                                 {
-                                                                                    repo.description
+                                                                                    repo.fullName
                                                                                 }
                                                                             </span>
-                                                                        )}
-                                                                    </div>
-                                                                </label>
-                                                            );
-                                                        },
-                                                    )
-                                                ) : (
-                                                    <div className="px-2 py-4 text-center text-muted-foreground">
-                                                        No repositories found
-                                                    </div>
-                                                )}
+                                                                            {repo.description && (
+                                                                                <span className="text-xs text-muted-foreground">
+                                                                                    {
+                                                                                        repo.description
+                                                                                    }
+                                                                                </span>
+                                                                            )}
+                                                                        </div>
+                                                                    </label>
+                                                                );
+                                                            },
+                                                        )
+                                                    ) : (
+                                                        <div className="px-2 py-4 text-center text-muted-foreground">
+                                                            No repositories
+                                                            found
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            ) : selectedOwner &&
+                                              repositories.length === 0 ? (
+                                                <div className="px-2 py-4 text-center text-muted-foreground">
+                                                    No repositories found for
+                                                    this owner.
+                                                </div>
+                                            ) : null}
+                                            <input
+                                                type="hidden"
+                                                name="repo_identifier"
+                                                value={repoIdentifier}
+                                                required
+                                            />
+                                        </div>
+                                    ) : (
+                                        <>
+                                            <div className="rounded-md border border-destructive bg-destructive/10 p-3 text-destructive">
+                                                No repositories found. Please
+                                                configure your credentials in
+                                                settings.
                                             </div>
-                                        </div>
-                                        <input
-                                            type="hidden"
-                                            name="repo_identifier"
-                                            value={repoIdentifier}
-                                            required
-                                        />
-                                    </>
-                                ) : provider !== 'git' &&
-                                  repositories.length === 0 ? (
-                                    <>
-                                        <div className="rounded-md border border-destructive bg-destructive/10 p-3 text-destructive">
-                                            No repositories found. Please
-                                            configure your credentials in
-                                            settings.
-                                        </div>
-                                        <input
-                                            type="hidden"
-                                            name="repo_identifier"
-                                            value=""
-                                            required
-                                        />
-                                    </>
+                                            <input
+                                                type="hidden"
+                                                name="repo_identifier"
+                                                value=""
+                                                required
+                                            />
+                                        </>
+                                    )
                                 ) : (
                                     <>
                                         <Input
