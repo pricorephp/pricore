@@ -115,10 +115,10 @@ function SshKeyCard({
                         <KeyRound className="h-4 w-4 text-muted-foreground" />
                         <h4 className="font-medium">{sshKey.name}</h4>
                     </div>
-                    <p className="font-mono text-xs text-muted-foreground">
+                    <p className="font-mono text-sm text-muted-foreground">
                         {sshKey.fingerprint}
                     </p>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-sm text-muted-foreground">
                         Created {createdAt}
                     </p>
                 </div>
@@ -173,14 +173,14 @@ function SshKeyCard({
             {showPublicKey && (
                 <div className="mt-3">
                     <div className="relative">
-                        <pre className="overflow-x-auto rounded-md bg-muted p-3 font-mono text-xs break-all whitespace-pre-wrap">
+                        <pre className="overflow-x-auto rounded-md bg-muted p-3 font-mono text-sm break-all whitespace-pre-wrap">
                             {sshKey.publicKey}
                         </pre>
                         <div className="absolute top-1.5 right-1.5">
                             <CopyButton text={sshKey.publicKey} />
                         </div>
                     </div>
-                    <p className="mt-1.5 text-xs text-muted-foreground">
+                    <p className="mt-1.5 text-sm text-muted-foreground">
                         Add this public key as a deploy key on your Git server.
                     </p>
                 </div>
