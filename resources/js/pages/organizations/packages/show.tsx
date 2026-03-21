@@ -88,7 +88,6 @@ interface PackageShowProps {
         query: string;
         type: string;
     };
-    composerRepositoryUrl: string;
     canManageVersions: boolean;
     activeVersion: PackageVersionDetailData | null;
 }
@@ -148,7 +147,6 @@ export default function PackageShow({
     downloadStats,
     versions,
     filters,
-    composerRepositoryUrl,
     canManageVersions,
     activeVersion,
 }: PackageShowProps) {
@@ -248,7 +246,7 @@ export default function PackageShow({
         },
     ];
 
-    const composerRepoCommand = `composer config repositories.${organization.slug} composer ${composerRepositoryUrl}`;
+    const composerRepoCommand = `composer config repositories.${organization.slug} composer ${organization.composerRepositoryUrl}`;
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>

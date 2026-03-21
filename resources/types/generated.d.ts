@@ -43,6 +43,7 @@ uuid: string;
 name: string;
 slug: string;
 ownerUuid: string;
+composerRepositoryUrl: string;
 permissions: App.Domains.Organization.Contracts.Data.OrganizationPermissionsData | null;
 onTrial: boolean | null;
 trialExpired: boolean | null;
