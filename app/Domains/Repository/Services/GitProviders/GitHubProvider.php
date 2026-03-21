@@ -360,22 +360,67 @@ class GitHubProvider extends AbstractGitProvider
     }
 
     /**
+     * @return array<int, string>
+     */
+    public function getOwners(): array
+    {
+        try {
+            $owners = [];
+
+            $userResponse = $this->http->get('/user');
+            if ($userResponse->successful()) {
+                $owners[] = $userResponse->json('login');
+            }
+
+            $page = 1;
+            do {
+                $response = $this->http->get('/user/orgs', [
+                    'per_page' => 100,
+                    'page' => $page,
+                ]);
+
+                if ($response->failed()) {
+                    break;
+                }
+
+                $orgs = $response->json();
+                foreach ($orgs as $org) {
+                    $owners[] = $org['login'];
+                }
+
+                $page++;
+            } while (count($orgs) === 100);
+
+            return $owners;
+        } catch (\Exception $e) {
+            Log::error('GitHub API error fetching owners', [
+                'error' => $e->getMessage(),
+            ]);
+
+            throw new GitProviderException(
+                "Failed to fetch owners: {$e->getMessage()}",
+                previous: $e
+            );
+        }
+    }
+
+    /**
      * @return array<int, RepositorySuggestionData>
      */
-    public function getRepositories(): array
+    public function getRepositories(?string $owner = null): array
     {
         try {
             $repositories = [];
             $page = 1;
             $perPage = 100;
 
+            $endpoint = $owner ? "/users/{$owner}/repos" : '/user/repos';
+            $params = $owner
+                ? ['per_page' => $perPage, 'sort' => 'updated']
+                : ['per_page' => $perPage, 'sort' => 'updated', 'affiliation' => 'owner,collaborator,organization_member'];
+
             do {
-                $response = $this->http->get('/user/repos', [
-                    'per_page' => $perPage,
-                    'page' => $page,
-                    'sort' => 'updated',
-                    'affiliation' => 'owner,collaborator,organization_member',
-                ]);
+                $response = $this->http->get($endpoint, array_merge($params, ['page' => $page]));
 
                 if ($response->failed()) {
                     throw new GitProviderException(
