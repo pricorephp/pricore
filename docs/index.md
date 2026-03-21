@@ -34,5 +34,5 @@ Pricore is an open-source private Composer registry designed to help teams secur
 
 - **Self-hosted** - Keep your packages on your own infrastructure
 - **Open Source** - Apache 2.0 licensed, fully transparent, no vendor lock-in
-- **Modern Stack** - Built with Laravel 12, React 19, and Inertia.js
+- **Modern Stack** - Built with Laravel 13, React 19, and Inertia.js
 - **Production Ready** - Docker support with FrankenPHP for high performance
