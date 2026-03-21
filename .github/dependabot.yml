@@ -8,6 +8,10 @@ updates:
     labels:
       - dependencies
       - php
+    ignore:
+      - dependency-name: spatie/laravel-typescript-transformer
+        # Dependabot's PHP 8.4 platform lacks a patch version, causing
+        # roave/better-reflection (~8.4.1) resolution failures
 
   - package-ecosystem: npm
     directory: /
