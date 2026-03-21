@@ -81,7 +81,7 @@ img {
     -premailer-cellpadding: 0;
     -premailer-cellspacing: 0;
     -premailer-width: 100%;
-    background-color: #FAFAF8;
+    background-color: #fafaf8;
     margin: 0;
     padding: 0;
     width: 100%;
@@ -126,9 +126,9 @@ img {
     -premailer-cellpadding: 0;
     -premailer-cellspacing: 0;
     -premailer-width: 100%;
-    background-color: #FAFAF8;
-    border-bottom: 1px solid #FAFAF8;
-    border-top: 1px solid #FAFAF8;
+    background-color: #fafaf8;
+    border-bottom: 1px solid #fafaf8;
+    border-top: 1px solid #fafaf8;
     margin: 0;
     padding: 0;
     width: 100%;
@@ -272,7 +272,7 @@ img {
 }
 
 .panel-content {
-    background-color: #FAFAF8;
+    background-color: #fafaf8;
     color: #52525b;
     padding: 16px;
 }
