@@ -4,10 +4,11 @@ namespace Database\Factories;
 
 use App\Domains\Repository\Contracts\Enums\SyncStatus;
 use App\Models\Repository;
+use App\Models\RepositorySyncLog;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\RepositorySyncLog>
+ * @extends Factory<RepositorySyncLog>
  */
 class RepositorySyncLogFactory extends Factory
 {

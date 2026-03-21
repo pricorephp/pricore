@@ -3,12 +3,13 @@
 namespace Database\Factories;
 
 use App\Domains\Activity\Contracts\Enums\ActivityType;
+use App\Models\ActivityLog;
 use App\Models\Organization;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\ActivityLog>
+ * @extends Factory<ActivityLog>
  */
 class ActivityLogFactory extends Factory
 {

@@ -5,13 +5,14 @@ use App\Models\Package;
 use App\Models\PackageVersion;
 use App\Models\Repository;
 use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
 
 use function Pest\Laravel\actingAs;
 use function Pest\Laravel\assertDatabaseHas;
 use function Pest\Laravel\assertDatabaseMissing;
 
-uses(Illuminate\Foundation\Testing\RefreshDatabase::class);
+uses(RefreshDatabase::class);
 
 it('can delete a version as an owner', function () {
     $user = User::factory()->create();

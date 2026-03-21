@@ -6,6 +6,7 @@ use App\Models\Package;
 use App\Models\PackageVersion;
 use App\Models\User;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Testing\TestResponse;
 
 beforeEach(function () {
     $this->user = User::factory()->create();
@@ -24,7 +25,7 @@ beforeEach(function () {
     Storage::fake('local');
 });
 
-function distGet(string $uri, string $token): \Illuminate\Testing\TestResponse
+function distGet(string $uri, string $token): TestResponse
 {
     return test()->withHeaders([
         'Authorization' => "Bearer {$token}",

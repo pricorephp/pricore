@@ -15,6 +15,7 @@ use App\Models\Package;
 use App\Models\Repository;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
+use PricoreCloud\PricoreCloudServiceProvider;
 
 class HandleInertiaRequests extends Middleware
 {
@@ -67,7 +68,7 @@ class HandleInertiaRequests extends Middleware
             ),
             'search' => $user ? fn () => $this->searchData($request) : new SearchData(packages: [], repositories: []),
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
-            'cloud' => class_exists(\PricoreCloud\PricoreCloudServiceProvider::class),
+            'cloud' => class_exists(PricoreCloudServiceProvider::class),
             'flash' => new FlashData(
                 status: $request->session()->get('status') ?? $request->session()->get('success'),
                 error: $request->session()->get('error'),
@@ -77,7 +78,7 @@ class HandleInertiaRequests extends Middleware
 
     private function isOrganizationOnTrial(Organization $organization): ?bool
     {
-        if (! class_exists(\PricoreCloud\PricoreCloudServiceProvider::class)) {
+        if (! class_exists(PricoreCloudServiceProvider::class)) {
             return null;
         }
 
@@ -86,7 +87,7 @@ class HandleInertiaRequests extends Middleware
 
     private function isOrganizationTrialExpired(Organization $organization): ?bool
     {
-        if (! class_exists(\PricoreCloud\PricoreCloudServiceProvider::class)) {
+        if (! class_exists(PricoreCloudServiceProvider::class)) {
             return null;
         }
 

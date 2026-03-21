@@ -9,6 +9,7 @@ use Illuminate\Http\Client\RequestException;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Psr\Http\Message\ResponseInterface;
 
 class GitHubProvider extends AbstractGitProvider
 {
@@ -57,7 +58,7 @@ class GitHubProvider extends AbstractGitProvider
                 },
                 throw: true,
             )
-            ->withResponseMiddleware(function (\Psr\Http\Message\ResponseInterface $response) {
+            ->withResponseMiddleware(function (ResponseInterface $response) {
                 $remaining = $response->getHeaderLine('X-RateLimit-Remaining');
 
                 if ($remaining !== '' && (int) $remaining < 100) {

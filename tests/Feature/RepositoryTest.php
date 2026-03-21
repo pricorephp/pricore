@@ -3,14 +3,16 @@
 use App\Models\Organization;
 use App\Models\Package;
 use App\Models\Repository;
+use App\Models\RepositorySyncLog;
 use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
 
 use function Pest\Laravel\actingAs;
 use function Pest\Laravel\assertDatabaseHas;
 use function Pest\Laravel\assertDatabaseMissing;
 
-uses(Illuminate\Foundation\Testing\RefreshDatabase::class);
+uses(RefreshDatabase::class);
 
 it('can delete a repository as an owner', function () {
     $user = User::factory()->create();
@@ -117,7 +119,7 @@ it('deletes sync logs when repository is deleted', function () {
 
     $repository = Repository::factory()->create(['organization_uuid' => $organization->uuid]);
 
-    $syncLog = \App\Models\RepositorySyncLog::factory()->create(['repository_uuid' => $repository->uuid]);
+    $syncLog = RepositorySyncLog::factory()->create(['repository_uuid' => $repository->uuid]);
 
     actingAs($user)
         ->delete(route('organizations.repositories.destroy', [$organization->slug, $repository->uuid]));

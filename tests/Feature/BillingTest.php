@@ -7,11 +7,12 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 use Laravel\Paddle\Customer;
 use Laravel\Paddle\Subscription;
+use PricoreCloud\PricoreCloudServiceProvider;
 
 uses()->group('billing');
 
 beforeEach(function () {
-    if (! class_exists(\PricoreCloud\PricoreCloudServiceProvider::class)) {
+    if (! class_exists(PricoreCloudServiceProvider::class)) {
         $this->markTestSkipped('pricore-cloud is not installed.');
     }
 

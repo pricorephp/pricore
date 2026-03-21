@@ -5,6 +5,7 @@ use App\Models\Organization;
 use App\Models\Package;
 use App\Models\PackageVersion;
 use App\Models\User;
+use Illuminate\Support\Str;
 
 use function Pest\Laravel\getJson;
 
@@ -132,7 +133,7 @@ it('allows user-scoped token to access user organizations', function () {
 
     // Add user as member of the organization
     $this->organization->members()->attach($this->user->uuid, [
-        'uuid' => \Illuminate\Support\Str::uuid()->toString(),
+        'uuid' => Str::uuid()->toString(),
         'role' => 'member',
     ]);
 

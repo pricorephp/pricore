@@ -5,7 +5,9 @@ use App\Models\Organization;
 use App\Models\OrganizationInvitation;
 use App\Models\OrganizationUser;
 use App\Models\User;
+use App\Notifications\OrganizationInvitationNotification;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Str;
 
 uses()->group('organizations', 'members');
 
@@ -13,7 +15,7 @@ beforeEach(function () {
     $this->admin = User::factory()->create();
     $this->organization = Organization::factory()->create();
     $this->organization->members()->attach($this->admin->uuid, [
-        'uuid' => \Illuminate\Support\Str::uuid()->toString(),
+        'uuid' => Str::uuid()->toString(),
         'role' => OrganizationRole::Admin->value,
     ]);
 });
@@ -33,7 +35,7 @@ it('admin can view members page', function () {
 it('member cannot view members page', function () {
     $member = User::factory()->create();
     $this->organization->members()->attach($member->uuid, [
-        'uuid' => \Illuminate\Support\Str::uuid()->toString(),
+        'uuid' => Str::uuid()->toString(),
         'role' => OrganizationRole::Member->value,
     ]);
 
@@ -59,7 +61,7 @@ it('admin can invite user by email', function () {
     )->toBeTrue();
 
     Notification::assertSentOnDemand(
-        \App\Notifications\OrganizationInvitationNotification::class,
+        OrganizationInvitationNotification::class,
     );
 });
 
@@ -87,7 +89,7 @@ it('admin can invite existing user by email', function () {
 it('cannot invite user that is already a member', function () {
     $existingMember = User::factory()->create();
     $this->organization->members()->attach($existingMember->uuid, [
-        'uuid' => \Illuminate\Support\Str::uuid()->toString(),
+        'uuid' => Str::uuid()->toString(),
         'role' => OrganizationRole::Member->value,
     ]);
 
@@ -128,7 +130,7 @@ it('validates role is required when adding member', function () {
 it('admin can update member role', function () {
     $member = User::factory()->create();
     $this->organization->members()->attach($member->uuid, [
-        'uuid' => \Illuminate\Support\Str::uuid()->toString(),
+        'uuid' => Str::uuid()->toString(),
         'role' => OrganizationRole::Member->value,
     ]);
 
@@ -148,7 +150,7 @@ it('cannot change owner role', function () {
     $owner = User::factory()->create();
     $this->organization->update(['owner_uuid' => $owner->uuid]);
     $this->organization->members()->attach($owner->uuid, [
-        'uuid' => \Illuminate\Support\Str::uuid()->toString(),
+        'uuid' => Str::uuid()->toString(),
         'role' => OrganizationRole::Owner->value,
     ]);
 
@@ -168,7 +170,7 @@ it('cannot change owner role', function () {
 it('admin can remove member', function () {
     $member = User::factory()->create();
     $this->organization->members()->attach($member->uuid, [
-        'uuid' => \Illuminate\Support\Str::uuid()->toString(),
+        'uuid' => Str::uuid()->toString(),
         'role' => OrganizationRole::Member->value,
     ]);
 
@@ -186,7 +188,7 @@ it('cannot remove organization owner', function () {
     $owner = User::factory()->create();
     $this->organization->update(['owner_uuid' => $owner->uuid]);
     $this->organization->members()->attach($owner->uuid, [
-        'uuid' => \Illuminate\Support\Str::uuid()->toString(),
+        'uuid' => Str::uuid()->toString(),
         'role' => OrganizationRole::Owner->value,
     ]);
 
@@ -220,7 +222,7 @@ it('admin cannot invite user with owner role', function () {
 it('admin cannot update member role to owner', function () {
     $member = User::factory()->create();
     $this->organization->members()->attach($member->uuid, [
-        'uuid' => \Illuminate\Support\Str::uuid()->toString(),
+        'uuid' => Str::uuid()->toString(),
         'role' => OrganizationRole::Member->value,
     ]);
 
@@ -239,7 +241,7 @@ it('admin cannot update member role to owner', function () {
 it('member cannot add other members', function () {
     $member = User::factory()->create();
     $this->organization->members()->attach($member->uuid, [
-        'uuid' => \Illuminate\Support\Str::uuid()->toString(),
+        'uuid' => Str::uuid()->toString(),
         'role' => OrganizationRole::Member->value,
     ]);
 

@@ -54,7 +54,7 @@ class SyncRefJob implements ShouldQueue
             ]);
 
             $this->incrementCounter('skipped');
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             Log::error('Failed to sync ref', [
                 'repository' => $this->repository->name,
                 'ref' => $this->ref->name,

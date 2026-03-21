@@ -1,6 +1,8 @@
 <?php
 
+use App\Domains\Repository\Actions\SyncRefAction;
 use App\Domains\Repository\Contracts\Data\RefData;
+use App\Domains\Repository\Contracts\Interfaces\GitProviderInterface;
 use App\Domains\Repository\Jobs\SyncRefJob;
 use App\Models\Organization;
 use App\Models\Package;
@@ -48,7 +50,7 @@ it('syncs a single ref and creates a package version', function () {
     $ref = new RefData(name: 'v1.0.0', commit: 'abc123');
 
     $job = new SyncRefJob($repository, $ref);
-    $job->handle(app(\App\Domains\Repository\Actions\SyncRefAction::class));
+    $job->handle(app(SyncRefAction::class));
 
     expect(Package::count())->toBe(1);
     expect(PackageVersion::count())->toBe(1);
@@ -83,7 +85,7 @@ it('skips if batch is cancelled', function () {
     $reflection = new ReflectionProperty($job, 'batchId');
     $reflection->setValue($job, $batch->id);
 
-    $job->handle(app(\App\Domains\Repository\Actions\SyncRefAction::class));
+    $job->handle(app(SyncRefAction::class));
 
     expect(Package::count())->toBe(0);
     expect(PackageVersion::count())->toBe(0);
@@ -128,13 +130,13 @@ it('skips refs when composer.json is missing', function () {
         ->create();
 
     // Use a mock provider that returns null for file content
-    $mockProvider = Mockery::mock(\App\Domains\Repository\Contracts\Interfaces\GitProviderInterface::class);
+    $mockProvider = Mockery::mock(GitProviderInterface::class);
     $mockProvider->shouldReceive('getFileContent')->andReturn(null);
     $mockProvider->shouldReceive('getRepositoryUrl')->andReturn('https://github.com/test/repo');
 
     $ref = new RefData(name: 'v1.0.0', commit: 'abc123');
 
-    $syncRefAction = app(\App\Domains\Repository\Actions\SyncRefAction::class);
+    $syncRefAction = app(SyncRefAction::class);
     $result = $syncRefAction->handle($mockProvider, $repository, $ref);
 
     expect($result)->toBe('skipped');

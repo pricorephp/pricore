@@ -3,9 +3,10 @@
 use App\Domains\Repository\Jobs\SyncRepositoryJob;
 use App\Models\Organization;
 use App\Models\Repository;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
 
-uses(Illuminate\Foundation\Testing\RefreshDatabase::class);
+uses(RefreshDatabase::class);
 
 function createGitLabRepositoryWithWebhook(): Repository
 {

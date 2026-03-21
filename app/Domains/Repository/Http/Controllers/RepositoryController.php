@@ -19,6 +19,7 @@ use App\Domains\Repository\Jobs\SyncRepositoryJob;
 use App\Http\Controllers\Controller;
 use App\Models\Organization;
 use App\Models\Repository;
+use App\Models\User;
 use App\Models\UserGitCredential;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -42,7 +43,7 @@ class RepositoryController extends Controller
             ->get()
             ->map(fn ($repository) => RepositoryData::fromModel($repository));
 
-        /** @var \App\Models\User $user */
+        /** @var User $user */
         $user = auth()->user();
 
         $configuredProviders = $user->gitCredentials()
@@ -66,7 +67,7 @@ class RepositoryController extends Controller
 
         $provider = GitProvider::from($request->provider);
 
-        /** @var \App\Models\User $user */
+        /** @var User $user */
         $user = auth()->user();
 
         $baseUrl = $this->resolveBaseUrl($provider, $user->uuid);
@@ -108,7 +109,7 @@ class RepositoryController extends Controller
         Organization $organization,
         BulkCreateRepositoriesAction $bulkCreateAction,
     ): RedirectResponse {
-        /** @var \App\Models\User $user */
+        /** @var User $user */
         $user = $request->user();
 
         $result = $bulkCreateAction->handle(
@@ -152,7 +153,7 @@ class RepositoryController extends Controller
 
     public function edit(Organization $organization, Repository $repository): Response
     {
-        /** @var \App\Models\User|null $user */
+        /** @var User|null $user */
         $user = auth()->user();
 
         if (! $user || ! $user->can('deleteRepository', $organization)) {

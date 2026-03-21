@@ -2,6 +2,7 @@
 
 namespace App\Domains\Organization\Requests;
 
+use App\Models\Organization;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -23,7 +24,7 @@ class UpdateOrganizationRequest extends FormRequest
      */
     public function rules(): array
     {
-        /** @var \App\Models\Organization|null $organization */
+        /** @var Organization|null $organization */
         $organization = $this->route('organization');
         $user = $this->user();
         $isOwner = $organization !== null && $user !== null && $organization->owner_uuid === $user->uuid;

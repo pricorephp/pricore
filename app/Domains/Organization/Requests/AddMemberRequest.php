@@ -5,6 +5,7 @@ namespace App\Domains\Organization\Requests;
 use App\Domains\Organization\Contracts\Enums\OrganizationRole;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules\Enum;
 
 class AddMemberRequest extends FormRequest
 {
@@ -20,7 +21,7 @@ class AddMemberRequest extends FormRequest
     }
 
     /**
-     * @return array<string, array<int, string|\Illuminate\Validation\Rules\Enum>>
+     * @return array<string, array<int, string|Enum>>
      */
     public function rules(): array
     {

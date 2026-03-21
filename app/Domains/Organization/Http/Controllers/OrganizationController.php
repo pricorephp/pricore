@@ -12,6 +12,7 @@ use App\Domains\Package\Contracts\Data\FrequentPackageData;
 use App\Domains\Repository\Contracts\Enums\GitProvider;
 use App\Http\Controllers\Controller;
 use App\Models\Organization;
+use App\Models\User;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\DB;
@@ -35,7 +36,7 @@ class OrganizationController extends Controller
 
     public function show(Organization $organization): Response
     {
-        /** @var \App\Models\User $user */
+        /** @var User $user */
         $user = auth()->user();
 
         $configuredProviders = $user->gitCredentials()

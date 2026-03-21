@@ -4,7 +4,9 @@ use App\Domains\Organization\Contracts\Enums\OrganizationRole;
 use App\Models\Organization;
 use App\Models\OrganizationInvitation;
 use App\Models\User;
+use App\Notifications\OrganizationInvitationNotification;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Str;
 
 uses()->group('organizations', 'invitations');
 
@@ -12,7 +14,7 @@ beforeEach(function () {
     $this->admin = User::factory()->create();
     $this->organization = Organization::factory()->create();
     $this->organization->members()->attach($this->admin->uuid, [
-        'uuid' => \Illuminate\Support\Str::uuid()->toString(),
+        'uuid' => Str::uuid()->toString(),
         'role' => OrganizationRole::Admin->value,
     ]);
 });
@@ -35,7 +37,7 @@ it('admin can cancel a pending invitation', function () {
 it('member cannot cancel invitation', function () {
     $member = User::factory()->create();
     $this->organization->members()->attach($member->uuid, [
-        'uuid' => \Illuminate\Support\Str::uuid()->toString(),
+        'uuid' => Str::uuid()->toString(),
         'role' => OrganizationRole::Member->value,
     ]);
 
@@ -81,7 +83,7 @@ it('admin can resend invitation', function () {
     expect($invitation->expires_at->greaterThan(now()->addDays(6)))->toBeTrue();
 
     Notification::assertSentOnDemand(
-        \App\Notifications\OrganizationInvitationNotification::class,
+        OrganizationInvitationNotification::class,
     );
 });
 
@@ -231,7 +233,7 @@ it('shows error for invalid token on show page', function () {
 it('handles already-member accepting invitation gracefully', function () {
     $user = User::factory()->create();
     $this->organization->members()->attach($user->uuid, [
-        'uuid' => \Illuminate\Support\Str::uuid()->toString(),
+        'uuid' => Str::uuid()->toString(),
         'role' => OrganizationRole::Member->value,
     ]);
 

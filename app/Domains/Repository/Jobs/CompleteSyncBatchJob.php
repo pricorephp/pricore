@@ -11,6 +11,7 @@ use App\Domains\Repository\Events\RepositorySyncStatusUpdated;
 use App\Models\Repository;
 use App\Models\RepositorySyncLog;
 use Illuminate\Bus\Batch;
+use Illuminate\Bus\BatchRepository;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\Cache;
@@ -41,7 +42,7 @@ class CompleteSyncBatchJob implements ShouldQueue
 
     protected function getBatch(): ?Batch
     {
-        return app(\Illuminate\Bus\BatchRepository::class)->find($this->batchId);
+        return app(BatchRepository::class)->find($this->batchId);
     }
 
     protected function completeSyncLog(RepositorySyncLog $syncLog, ?Batch $batch): void
