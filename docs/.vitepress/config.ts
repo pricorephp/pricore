@@ -34,6 +34,7 @@ export default defineConfig({
             { text: 'Organizations', link: '/guide/organizations' },
             { text: 'Packages', link: '/guide/packages' },
             { text: 'Repositories', link: '/guide/repositories' },
+            { text: 'SSH Keys', link: '/guide/ssh-keys' },
             { text: 'Access Tokens', link: '/guide/tokens' },
             { text: 'Distribution Mirroring', link: '/guide/dist-mirroring' },
           ],
