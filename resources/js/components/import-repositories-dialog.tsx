@@ -50,6 +50,9 @@ export default function ImportRepositoriesDialog({
     const defaultProvider = supportedProviders[0] ?? '';
 
     const [provider, setProvider] = useState(defaultProvider);
+    const [owners, setOwners] = useState<string[]>([]);
+    const [selectedOwner, setSelectedOwner] = useState('');
+    const [loadingOwners, setLoadingOwners] = useState(false);
     const [repositories, setRepositories] = useState<RepositorySuggestion[]>(
         [],
     );
@@ -68,6 +71,9 @@ export default function ImportRepositoriesDialog({
         }
 
         setProvider(defaultProvider);
+        setOwners([]);
+        setSelectedOwner('');
+        setRepositories([]);
         setSelectedRepos(new Set());
         setSearchQuery('');
         setProcessing(false);
@@ -80,10 +86,56 @@ export default function ImportRepositoriesDialog({
 
         const controller = new AbortController();
 
+        const fetchOwners = async () => {
+            setLoadingOwners(true);
+            setOwners([]);
+            setSelectedOwner('');
+            setRepositories([]);
+            try {
+                const url = `/organizations/${organizationSlug}/repositories/owners?provider=${encodeURIComponent(provider)}`;
+                const response = await fetch(url, {
+                    headers: { Accept: 'application/json' },
+                    credentials: 'same-origin',
+                    signal: controller.signal,
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    const fetchedOwners = data.owners || [];
+                    setOwners(fetchedOwners);
+                    if (fetchedOwners.length === 1) {
+                        setSelectedOwner(fetchedOwners[0]);
+                    }
+                }
+            } catch (e) {
+                if (e instanceof DOMException && e.name === 'AbortError') {
+                    return;
+                }
+            } finally {
+                if (!controller.signal.aborted) {
+                    setLoadingOwners(false);
+                }
+            }
+        };
+
+        fetchOwners();
+
+        return () => controller.abort();
+    }, [provider, organizationSlug, isOpen]);
+
+    useEffect(() => {
+        if (!isOpen || !provider || !selectedOwner) {
+            return;
+        }
+
+        const controller = new AbortController();
+
         const fetchRepositories = async () => {
             setLoadingRepos(true);
+            setRepositories([]);
+            setSelectedRepos(new Set());
             try {
-                const url = `/organizations/${organizationSlug}/repositories/suggest?provider=${encodeURIComponent(provider)}`;
+                const url = `/organizations/${organizationSlug}/repositories/suggest?provider=${encodeURIComponent(provider)}&owner=${encodeURIComponent(selectedOwner)}`;
                 const response = await fetch(url, {
                     headers: { Accept: 'application/json' },
                     credentials: 'same-origin',
@@ -111,7 +163,7 @@ export default function ImportRepositoriesDialog({
         fetchRepositories();
 
         return () => controller.abort();
-    }, [provider, organizationSlug, isOpen]);
+    }, [selectedOwner, provider, organizationSlug, isOpen]);
 
     const filteredRepositories = repositories.filter((repo) => {
         if (!searchQuery) return true;
@@ -211,91 +263,138 @@ export default function ImportRepositoriesDialog({
                         </SelectContent>
                     </Select>
 
-                    {loadingRepos ? (
+                    {loadingOwners ? (
                         <div className="flex items-center gap-2 rounded-md border px-3 py-8">
                             <Spinner className="size-4" />
                             <span className="text-muted-foreground">
-                                Loading repositories...
+                                Loading...
                             </span>
                         </div>
-                    ) : repositories.length > 0 ? (
+                    ) : owners.length > 0 ? (
                         <>
-                            <Input
-                                placeholder="Search repositories..."
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                            />
-
-                            <div className="flex items-center justify-between text-sm">
-                                <button
-                                    type="button"
-                                    className="text-primary hover:underline"
-                                    onClick={toggleAll}
+                            <div className="flex gap-2">
+                                <Select
+                                    value={selectedOwner}
+                                    onValueChange={(value) => {
+                                        setSelectedOwner(value);
+                                        setSearchQuery('');
+                                    }}
                                 >
-                                    {allSelectableSelected
-                                        ? 'Deselect all'
-                                        : 'Select all'}
-                                </button>
-                                <span className="text-muted-foreground">
-                                    {selectedRepos.size} selected
-                                </span>
+                                    <SelectTrigger className="w-[180px] shrink-0">
+                                        <SelectValue placeholder="Select owner" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {owners.map((owner) => (
+                                            <SelectItem
+                                                key={owner}
+                                                value={owner}
+                                            >
+                                                {owner}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                                <Input
+                                    placeholder="Search repositories..."
+                                    value={searchQuery}
+                                    onChange={(e) =>
+                                        setSearchQuery(e.target.value)
+                                    }
+                                    disabled={!selectedOwner}
+                                />
                             </div>
 
-                            <div className="max-h-72 space-y-1 overflow-y-auto rounded-md border p-2">
-                                {filteredRepositories.length > 0 ? (
-                                    filteredRepositories.map((repo) => (
-                                        <label
-                                            key={repo.fullName}
-                                            className={`flex items-start gap-3 rounded-md p-2 ${
-                                                repo.isConnected
-                                                    ? 'cursor-default opacity-60'
-                                                    : 'cursor-pointer hover:bg-accent'
-                                            }`}
+                            {loadingRepos ? (
+                                <div className="flex items-center gap-2 rounded-md border px-3 py-8">
+                                    <Spinner className="size-4" />
+                                    <span className="text-muted-foreground">
+                                        Loading repositories...
+                                    </span>
+                                </div>
+                            ) : selectedOwner && repositories.length > 0 ? (
+                                <>
+                                    <div className="flex items-center justify-between text-sm">
+                                        <button
+                                            type="button"
+                                            className="text-primary hover:underline"
+                                            onClick={toggleAll}
                                         >
-                                            <Checkbox
-                                                checked={
-                                                    repo.isConnected ||
-                                                    selectedRepos.has(
-                                                        repo.fullName,
-                                                    )
-                                                }
-                                                disabled={repo.isConnected}
-                                                onCheckedChange={() =>
-                                                    toggleRepo(repo.fullName)
-                                                }
-                                                className="mt-0.5"
-                                            />
-                                            <div className="flex flex-1 flex-col">
-                                                <div className="flex items-center gap-2">
-                                                    <span className="font-medium">
-                                                        {repo.fullName}
-                                                    </span>
-                                                    {repo.isConnected && (
-                                                        <Badge variant="secondary">
-                                                            Connected
-                                                        </Badge>
-                                                    )}
-                                                    {repo.isPrivate &&
-                                                        !repo.isConnected && (
-                                                            <Badge variant="outline">
-                                                                Private
-                                                            </Badge>
-                                                        )}
-                                                </div>
-                                                {repo.description && (
-                                                    <span className="text-xs text-muted-foreground">
-                                                        {repo.description}
-                                                    </span>
-                                                )}
-                                            </div>
-                                        </label>
-                                    ))
-                                ) : (
-                                    <div className="px-2 py-4 text-center text-muted-foreground">
-                                        No repositories found
+                                            {allSelectableSelected
+                                                ? 'Deselect all'
+                                                : 'Select all'}
+                                        </button>
+                                        <span className="text-muted-foreground">
+                                            {selectedRepos.size} selected
+                                        </span>
                                     </div>
-                                )}
-                            </div>
+
+                                    <div className="max-h-72 space-y-1 overflow-y-auto rounded-md border p-2">
+                                        {filteredRepositories.length > 0 ? (
+                                            filteredRepositories.map((repo) => (
+                                                <label
+                                                    key={repo.fullName}
+                                                    className={`flex items-start gap-3 rounded-md p-2 ${
+                                                        repo.isConnected
+                                                            ? 'cursor-default opacity-60'
+                                                            : 'cursor-pointer hover:bg-accent'
+                                                    }`}
+                                                >
+                                                    <Checkbox
+                                                        checked={
+                                                            repo.isConnected ||
+                                                            selectedRepos.has(
+                                                                repo.fullName,
+                                                            )
+                                                        }
+                                                        disabled={
+                                                            repo.isConnected
+                                                        }
+                                                        onCheckedChange={() =>
+                                                            toggleRepo(
+                                                                repo.fullName,
+                                                            )
+                                                        }
+                                                        className="mt-0.5"
+                                                    />
+                                                    <div className="flex flex-1 flex-col">
+                                                        <div className="flex items-center gap-2">
+                                                            <span className="font-medium">
+                                                                {repo.fullName}
+                                                            </span>
+                                                            {repo.isConnected && (
+                                                                <Badge variant="secondary">
+                                                                    Connected
+                                                                </Badge>
+                                                            )}
+                                                            {repo.isPrivate &&
+                                                                !repo.isConnected && (
+                                                                    <Badge variant="outline">
+                                                                        Private
+                                                                    </Badge>
+                                                                )}
+                                                        </div>
+                                                        {repo.description && (
+                                                            <span className="text-xs text-muted-foreground">
+                                                                {
+                                                                    repo.description
+                                                                }
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                </label>
+                                            ))
+                                        ) : (
+                                            <div className="px-2 py-4 text-center text-muted-foreground">
+                                                No repositories found
+                                            </div>
+                                        )}
+                                    </div>
+                                </>
+                            ) : selectedOwner && repositories.length === 0 ? (
+                                <div className="px-2 py-4 text-center text-muted-foreground">
+                                    No repositories found for this owner.
+                                </div>
+                            ) : null}
                         </>
                     ) : (
                         <div className="rounded-md border border-destructive bg-destructive/10 p-3 text-destructive">

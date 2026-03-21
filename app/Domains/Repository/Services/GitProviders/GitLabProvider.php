@@ -325,9 +325,55 @@ class GitLabProvider extends AbstractGitProvider
     }
 
     /**
+     * @return array<int, string>
+     */
+    public function getOwners(): array
+    {
+        try {
+            $owners = [];
+
+            $userResponse = $this->http->get('/user');
+            if ($userResponse->successful()) {
+                $owners[] = $userResponse->json('username');
+            }
+
+            $page = 1;
+            do {
+                $response = $this->http->get('/groups', [
+                    'min_access_level' => 20,
+                    'per_page' => 100,
+                    'page' => $page,
+                ]);
+
+                if ($response->failed()) {
+                    break;
+                }
+
+                $groups = $response->json();
+                foreach ($groups as $group) {
+                    $owners[] = $group['full_path'];
+                }
+
+                $page++;
+            } while (count($groups) === 100);
+
+            return $owners;
+        } catch (\Exception $e) {
+            Log::error('GitLab API error fetching owners', [
+                'error' => $e->getMessage(),
+            ]);
+
+            throw new GitProviderException(
+                "Failed to fetch owners: {$e->getMessage()}",
+                previous: $e
+            );
+        }
+    }
+
+    /**
      * @return array<int, RepositorySuggestionData>
      */
-    public function getRepositories(): array
+    public function getRepositories(?string $owner = null): array
     {
         try {
             $repositories = [];
@@ -335,14 +381,21 @@ class GitLabProvider extends AbstractGitProvider
             $perPage = 100;
 
             do {
-                $response = $this->http->get('/projects', [
+                $params = [
                     'membership' => true,
                     'min_access_level' => 20,
                     'per_page' => $perPage,
                     'page' => $page,
                     'order_by' => 'updated_at',
                     'sort' => 'desc',
-                ]);
+                ];
+
+                if ($owner) {
+                    $params['search_namespaces'] = true;
+                    $params['search'] = $owner.'/';
+                }
+
+                $response = $this->http->get('/projects', $params);
 
                 if ($response->failed()) {
                     throw new GitProviderException(
@@ -353,7 +406,11 @@ class GitLabProvider extends AbstractGitProvider
                 $pageRepos = $response->json();
 
                 foreach ($pageRepos as $repo) {
-                    $repositories[] = RepositorySuggestionData::fromGitLabArray($repo);
+                    $suggestion = RepositorySuggestionData::fromGitLabArray($repo);
+                    if ($owner && ! str_starts_with($suggestion->fullName, $owner.'/')) {
+                        continue;
+                    }
+                    $repositories[] = $suggestion;
                 }
 
                 $page++;
