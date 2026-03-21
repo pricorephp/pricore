@@ -6,19 +6,21 @@ use App\Domains\Repository\Contracts\Data\RepositorySuggestionData;
 use App\Domains\Repository\Exceptions\GitProviderException;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\RequestException;
-use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
-class GitLabProvider extends AbstractGitProvider
+class BitbucketProvider extends AbstractGitProvider
 {
     protected function configureHttpClient(): PendingRequest
     {
-        $token = $this->getCredential('token');
-        $baseUrl = rtrim($this->getBaseUrl(), '/').'/api/v4';
+        $username = $this->getCredential('username', '');
+        $appPassword = $this->getCredential('app_password', '');
 
-        return Http::baseUrl($baseUrl)
-            ->withToken($token ?? '')
+        return Http::baseUrl('https://api.bitbucket.org/2.0')
+            ->withBasicAuth($username, $appPassword)
+            ->withHeaders([
+                'Accept' => 'application/json',
+            ])
             ->timeout(30)
             ->retry(
                 times: 3,
@@ -28,7 +30,7 @@ class GitLabProvider extends AbstractGitProvider
                     if ($response && $response->status() === 429) {
                         $retryAfter = (int) ($response->header('Retry-After') ?: '60');
 
-                        Log::warning('GitLab API rate limit hit, retrying after delay', [
+                        Log::warning('Bitbucket API rate limit hit, retrying after delay', [
                             'repository' => $this->repositoryIdentifier,
                             'retry_after' => $retryAfter,
                         ]);
@@ -51,18 +53,8 @@ class GitLabProvider extends AbstractGitProvider
 
                     return false;
                 },
-                throw: true,
+                throw: false,
             );
-    }
-
-    public function getBaseUrl(): string
-    {
-        return rtrim($this->getCredential('url', 'https://gitlab.com'), '/');
-    }
-
-    protected function getEncodedProjectPath(): string
-    {
-        return urlencode($this->repositoryIdentifier);
     }
 
     /**
@@ -72,37 +64,34 @@ class GitLabProvider extends AbstractGitProvider
     {
         try {
             $tags = [];
-            $page = 1;
-            $perPage = 100;
-            $projectPath = $this->getEncodedProjectPath();
+            $url = "/repositories/{$this->repositoryIdentifier}/refs/tags";
+            $params = ['pagelen' => 100];
 
             do {
-                $response = $this->http->get("/projects/{$projectPath}/repository/tags", [
-                    'per_page' => $perPage,
-                    'page' => $page,
-                ]);
+                $response = $this->http->get($url, $params);
 
                 if ($response->failed()) {
                     throw new GitProviderException(
-                        "Failed to fetch tags from GitLab: {$response->body()}"
+                        "Failed to fetch tags from Bitbucket: {$response->body()}"
                     );
                 }
 
-                $pageTags = $response->json();
+                $data = $response->json();
 
-                foreach ($pageTags as $tag) {
+                foreach ($data['values'] ?? [] as $tag) {
                     $tags[] = [
                         'name' => $tag['name'],
-                        'commit' => $tag['commit']['id'],
+                        'commit' => $tag['target']['hash'],
                     ];
                 }
 
-                $page++;
-            } while (count($pageTags) === $perPage);
+                $url = $this->extractNextPath($data['next'] ?? null);
+                $params = [];
+            } while ($url !== null);
 
             return $tags;
         } catch (\Exception $e) {
-            Log::error('GitLab API error fetching tags', [
+            Log::error('Bitbucket API error fetching tags', [
                 'repository' => $this->repositoryIdentifier,
                 'error' => $e->getMessage(),
             ]);
@@ -121,37 +110,34 @@ class GitLabProvider extends AbstractGitProvider
     {
         try {
             $branches = [];
-            $page = 1;
-            $perPage = 100;
-            $projectPath = $this->getEncodedProjectPath();
+            $url = "/repositories/{$this->repositoryIdentifier}/refs/branches";
+            $params = ['pagelen' => 100];
 
             do {
-                $response = $this->http->get("/projects/{$projectPath}/repository/branches", [
-                    'per_page' => $perPage,
-                    'page' => $page,
-                ]);
+                $response = $this->http->get($url, $params);
 
                 if ($response->failed()) {
                     throw new GitProviderException(
-                        "Failed to fetch branches from GitLab: {$response->body()}"
+                        "Failed to fetch branches from Bitbucket: {$response->body()}"
                     );
                 }
 
-                $pageBranches = $response->json();
+                $data = $response->json();
 
-                foreach ($pageBranches as $branch) {
+                foreach ($data['values'] ?? [] as $branch) {
                     $branches[] = [
                         'name' => $branch['name'],
-                        'commit' => $branch['commit']['id'],
+                        'commit' => $branch['target']['hash'],
                     ];
                 }
 
-                $page++;
-            } while (count($pageBranches) === $perPage);
+                $url = $this->extractNextPath($data['next'] ?? null);
+                $params = [];
+            } while ($url !== null);
 
             return $branches;
         } catch (\Exception $e) {
-            Log::error('GitLab API error fetching branches', [
+            Log::error('Bitbucket API error fetching branches', [
                 'repository' => $this->repositoryIdentifier,
                 'error' => $e->getMessage(),
             ]);
@@ -166,12 +152,9 @@ class GitLabProvider extends AbstractGitProvider
     public function getFileContent(string $ref, string $path): ?string
     {
         try {
-            $projectPath = $this->getEncodedProjectPath();
-            $encodedPath = urlencode($path);
-
-            $response = $this->http->get("/projects/{$projectPath}/repository/files/{$encodedPath}", [
-                'ref' => $ref,
-            ]);
+            $response = $this->http
+                ->accept('application/octet-stream')
+                ->get("/repositories/{$this->repositoryIdentifier}/src/{$ref}/{$path}");
 
             if ($response->status() === 404) {
                 return null;
@@ -179,19 +162,13 @@ class GitLabProvider extends AbstractGitProvider
 
             if ($response->failed()) {
                 throw new GitProviderException(
-                    "Failed to fetch file from GitLab: {$response->body()}"
+                    "Failed to fetch file from Bitbucket: {$response->body()}"
                 );
             }
 
-            $data = $response->json();
-
-            if (isset($data['content']) && ($data['encoding'] ?? '') === 'base64') {
-                return base64_decode($data['content']);
-            }
-
-            return $data['content'] ?? null;
+            return $response->body();
         } catch (\Exception $e) {
-            Log::error('GitLab API error fetching file content', [
+            Log::error('Bitbucket API error fetching file content', [
                 'repository' => $this->repositoryIdentifier,
                 'ref' => $ref,
                 'path' => $path,
@@ -208,12 +185,11 @@ class GitLabProvider extends AbstractGitProvider
     public function validateCredentials(): bool
     {
         try {
-            $projectPath = $this->getEncodedProjectPath();
-            $response = $this->http->get("/projects/{$projectPath}");
+            $response = $this->http->get("/repositories/{$this->repositoryIdentifier}");
 
             return $response->successful();
         } catch (\Exception $e) {
-            Log::error('GitLab API error validating credentials', [
+            Log::error('Bitbucket API error validating credentials', [
                 'repository' => $this->repositoryIdentifier,
                 'error' => $e->getMessage(),
             ]);
@@ -224,67 +200,39 @@ class GitLabProvider extends AbstractGitProvider
 
     public function getRepositoryUrl(): string
     {
-        $baseUrl = $this->getBaseUrl();
-
-        return "{$baseUrl}/{$this->repositoryIdentifier}.git";
-    }
-
-    public function downloadArchive(string $ref, string $outputPath): bool
-    {
-        try {
-            $projectPath = $this->getEncodedProjectPath();
-
-            /** @var Response $response */
-            $response = $this->http
-                ->withOptions(['sink' => $outputPath])
-                ->get("/projects/{$projectPath}/repository/archive.zip", [
-                    'sha' => $ref,
-                ]);
-
-            return $response->successful() && file_exists($outputPath);
-        } catch (\Exception $e) {
-            Log::warning('GitLab API error downloading archive', [
-                'repository' => $this->repositoryIdentifier,
-                'ref' => $ref,
-                'error' => $e->getMessage(),
-            ]);
-
-            return false;
-        }
+        return "git@bitbucket.org:{$this->repositoryIdentifier}.git";
     }
 
     /**
-     * @return array{id: int, active: bool}
+     * @return array{id: string, active: bool}
      */
     public function createWebhook(string $url, string $secret): array
     {
         try {
-            $projectPath = $this->getEncodedProjectPath();
-
-            $response = $this->http->post("/projects/{$projectPath}/hooks", [
+            $response = $this->http->post("/repositories/{$this->repositoryIdentifier}/hooks", [
+                'description' => 'Pricore',
                 'url' => $url,
-                'push_events' => true,
-                'tag_push_events' => true,
-                'token' => $secret,
-                'enable_ssl_verification' => true,
+                'active' => true,
+                'events' => ['repo:push'],
+                'secret' => $secret,
             ]);
 
             if ($response->failed()) {
                 throw new GitProviderException(
-                    "Failed to create webhook at GitLab: {$response->body()}"
+                    "Failed to create webhook at Bitbucket: {$response->body()}"
                 );
             }
 
             $data = $response->json();
 
             return [
-                'id' => $data['id'],
-                'active' => true,
+                'id' => $data['uuid'],
+                'active' => $data['active'] ?? true,
             ];
         } catch (GitProviderException $e) {
             throw $e;
         } catch (\Exception $e) {
-            Log::error('GitLab API error creating webhook', [
+            Log::error('Bitbucket API error creating webhook', [
                 'repository' => $this->repositoryIdentifier,
                 'error' => $e->getMessage(),
             ]);
@@ -299,19 +247,17 @@ class GitLabProvider extends AbstractGitProvider
     public function deleteWebhook(int|string $hookId): void
     {
         try {
-            $projectPath = $this->getEncodedProjectPath();
-
-            $response = $this->http->delete("/projects/{$projectPath}/hooks/{$hookId}");
+            $response = $this->http->delete("/repositories/{$this->repositoryIdentifier}/hooks/{$hookId}");
 
             if ($response->status() !== 404 && $response->failed()) {
                 throw new GitProviderException(
-                    "Failed to delete webhook at GitLab: {$response->body()}"
+                    "Failed to delete webhook at Bitbucket: {$response->body()}"
                 );
             }
         } catch (GitProviderException $e) {
             throw $e;
         } catch (\Exception $e) {
-            Log::error('GitLab API error deleting webhook', [
+            Log::error('Bitbucket API error deleting webhook', [
                 'repository' => $this->repositoryIdentifier,
                 'hookId' => $hookId,
                 'error' => $e->getMessage(),
@@ -321,6 +267,29 @@ class GitLabProvider extends AbstractGitProvider
                 "Failed to delete webhook: {$e->getMessage()}",
                 previous: $e
             );
+        }
+    }
+
+    public function downloadArchive(string $ref, string $outputPath): bool
+    {
+        try {
+            $username = $this->getCredential('username', '');
+            $appPassword = $this->getCredential('app_password', '');
+
+            $response = Http::withBasicAuth($username, $appPassword)
+                ->timeout(60)
+                ->withOptions(['sink' => $outputPath])
+                ->get("https://bitbucket.org/{$this->repositoryIdentifier}/get/{$ref}.zip");
+
+            return $response->successful() && file_exists($outputPath);
+        } catch (\Exception $e) {
+            Log::warning('Bitbucket API error downloading archive', [
+                'repository' => $this->repositoryIdentifier,
+                'ref' => $ref,
+                'error' => $e->getMessage(),
+            ]);
+
+            return false;
         }
     }
 
@@ -337,29 +306,34 @@ class GitLabProvider extends AbstractGitProvider
                 $owners[] = $userResponse->json('username');
             }
 
-            $page = 1;
+            $url = '/workspaces';
+            $params = ['pagelen' => 100];
+
             do {
-                $response = $this->http->get('/groups', [
-                    'min_access_level' => 20,
-                    'per_page' => 100,
-                    'page' => $page,
-                ]);
+                $response = $this->http->get($url, $params);
 
                 if ($response->failed()) {
                     break;
                 }
 
-                $groups = $response->json();
-                foreach ($groups as $group) {
-                    $owners[] = $group['full_path'];
+                $data = $response->json();
+
+                foreach ($data['values'] ?? [] as $workspace) {
+                    $slug = $workspace['slug'];
+                    if (! in_array($slug, $owners)) {
+                        $owners[] = $slug;
+                    }
                 }
 
-                $page++;
-            } while (count($groups) === 100);
+                $url = $this->extractNextPath($data['next'] ?? null);
+                $params = [];
+            } while ($url !== null);
 
             return $owners;
         } catch (\Exception $e) {
-            Log::error('GitLab API error fetching owners', [
+            $this->throwIfAuthError($e);
+
+            Log::error('Bitbucket API error fetching owners', [
                 'error' => $e->getMessage(),
             ]);
 
@@ -377,48 +351,33 @@ class GitLabProvider extends AbstractGitProvider
     {
         try {
             $repositories = [];
-            $page = 1;
-            $perPage = 100;
+            $url = $owner ? "/repositories/{$owner}" : '/repositories';
+            $params = $owner ? ['pagelen' => 100] : ['pagelen' => 100, 'role' => 'member'];
 
             do {
-                $params = [
-                    'membership' => true,
-                    'min_access_level' => 20,
-                    'per_page' => $perPage,
-                    'page' => $page,
-                    'order_by' => 'updated_at',
-                    'sort' => 'desc',
-                ];
-
-                if ($owner) {
-                    $params['search_namespaces'] = true;
-                    $params['search'] = $owner.'/';
-                }
-
-                $response = $this->http->get('/projects', $params);
+                $response = $this->http->get($url, $params);
 
                 if ($response->failed()) {
                     throw new GitProviderException(
-                        "Failed to fetch repositories from GitLab: {$response->body()}"
+                        "Failed to fetch repositories from Bitbucket: {$response->body()}"
                     );
                 }
 
-                $pageRepos = $response->json();
+                $data = $response->json();
 
-                foreach ($pageRepos as $repo) {
-                    $suggestion = RepositorySuggestionData::fromGitLabArray($repo);
-                    if ($owner && ! str_starts_with($suggestion->fullName, $owner.'/')) {
-                        continue;
-                    }
-                    $repositories[] = $suggestion;
+                foreach ($data['values'] ?? [] as $repo) {
+                    $repositories[] = RepositorySuggestionData::fromBitbucketArray($repo);
                 }
 
-                $page++;
-            } while (count($pageRepos) === $perPage);
+                $url = $this->extractNextPath($data['next'] ?? null);
+                $params = [];
+            } while ($url !== null);
 
             return $repositories;
         } catch (\Exception $e) {
-            Log::error('GitLab API error fetching repositories', [
+            $this->throwIfAuthError($e);
+
+            Log::error('Bitbucket API error fetching repositories', [
                 'error' => $e->getMessage(),
             ]);
 
@@ -427,5 +386,48 @@ class GitLabProvider extends AbstractGitProvider
                 previous: $e
             );
         }
+    }
+
+    /**
+     * Throw a user-friendly error if the exception is an auth failure.
+     */
+    protected function throwIfAuthError(\Exception $exception): void
+    {
+        $response = $exception instanceof RequestException ? $exception->response : null;
+
+        if ($response && in_array($response->status(), [401, 403])) {
+            throw new GitProviderException(
+                'Invalid Bitbucket credentials. Please check your username and app password in Settings → Git Providers.',
+                previous: $exception
+            );
+        }
+    }
+
+    /**
+     * Extract the relative path from a Bitbucket absolute next URL.
+     */
+    protected function extractNextPath(?string $nextUrl): ?string
+    {
+        if ($nextUrl === null) {
+            return null;
+        }
+
+        $parsed = parse_url($nextUrl);
+        if ($parsed === false || ! isset($parsed['path'])) {
+            return null;
+        }
+
+        $path = $parsed['path'];
+
+        // Remove the /2.0 prefix since the HTTP client already has it as base URL
+        if (str_starts_with($path, '/2.0')) {
+            $path = substr($path, 4);
+        }
+
+        if (isset($parsed['query'])) {
+            $path .= '?'.$parsed['query'];
+        }
+
+        return $path;
     }
 }

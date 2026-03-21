@@ -287,7 +287,7 @@ class GitHubProvider extends AbstractGitProvider
         }
     }
 
-    public function deleteWebhook(int $hookId): void
+    public function deleteWebhook(int|string $hookId): void
     {
         try {
             $response = $this->http->delete("/repos/{$this->repositoryIdentifier}/hooks/{$hookId}");

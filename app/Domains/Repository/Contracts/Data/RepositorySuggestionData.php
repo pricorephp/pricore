@@ -45,4 +45,19 @@ class RepositorySuggestionData extends Data
             description: $gitlabProject['description'] ?? null,
         );
     }
+
+    /**
+     * Create instance from Bitbucket API response array.
+     *
+     * @param  array<string, mixed>  $bitbucketRepo
+     */
+    public static function fromBitbucketArray(array $bitbucketRepo): self
+    {
+        return new self(
+            name: $bitbucketRepo['slug'],
+            fullName: $bitbucketRepo['full_name'],
+            isPrivate: $bitbucketRepo['is_private'],
+            description: $bitbucketRepo['description'] ?? null,
+        );
+    }
 }

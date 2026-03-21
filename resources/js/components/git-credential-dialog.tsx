@@ -205,6 +205,65 @@ export default function GitCredentialDialog({
                         </div>
                     </>
                 );
+            case 'bitbucket':
+                return (
+                    <>
+                        <div className="grid space-y-2">
+                            <Label htmlFor="username">
+                                Bitbucket Username{' '}
+                                <span className="text-red-500">*</span>
+                            </Label>
+                            <Input
+                                id="username"
+                                name="credentials[username]"
+                                required
+                                placeholder="your-username"
+                                autoFocus
+                            />
+                            <p className="text-sm text-muted-foreground">
+                                Your Bitbucket username (not your email
+                                address). You can find it in{' '}
+                                <a
+                                    href="https://bitbucket.org/account/settings/"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-primary hover:underline"
+                                >
+                                    Account settings
+                                </a>
+                                .
+                            </p>
+                        </div>
+                        <div className="grid space-y-2">
+                            <Label htmlFor="app_password">
+                                App Password{' '}
+                                <span className="text-red-500">*</span>
+                            </Label>
+                            <Input
+                                id="app_password"
+                                name="credentials[app_password]"
+                                type="password"
+                                required
+                                placeholder="ATBBxxxxxxxxxxxxxxxx"
+                            />
+                            <p className="text-sm text-muted-foreground">
+                                Create an App Password in{' '}
+                                <a
+                                    href="https://bitbucket.org/account/settings/app-passwords/"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-primary hover:underline"
+                                >
+                                    Bitbucket Settings &rarr; App passwords
+                                </a>
+                                . Required permissions:{' '}
+                                <strong>Account: Read</strong>,{' '}
+                                <strong>Repositories: Read</strong>, and{' '}
+                                <strong>Webhooks: Read and Write</strong>.
+                            </p>
+                        </div>
+                    </>
+                );
             default:
                 return null;
         }

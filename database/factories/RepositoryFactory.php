@@ -98,6 +98,22 @@ class RepositoryFactory extends Factory
     }
 
     /**
+     * Indicate that the repository is a Bitbucket repository.
+     */
+    public function bitbucket(): static
+    {
+        return $this->state(function (array $attributes) {
+            $owner = fake()->userName();
+            $repoName = fake()->slug(2);
+
+            return [
+                'provider' => 'bitbucket',
+                'repo_identifier' => "{$owner}/{$repoName}",
+            ];
+        });
+    }
+
+    /**
      * Indicate that the repository sync status is OK.
      */
     public function synced(): static

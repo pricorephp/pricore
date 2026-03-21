@@ -146,7 +146,9 @@ export default function GitCredentials({
                                                             {credential.provider !==
                                                                 'github' &&
                                                                 credential.provider !==
-                                                                    'gitlab' && (
+                                                                    'gitlab' &&
+                                                                credential.provider !==
+                                                                    'bitbucket' && (
                                                                     <Badge
                                                                         variant="outline"
                                                                         className="text-xs"
@@ -223,7 +225,9 @@ export default function GitCredentials({
                                                                 {provider !==
                                                                     'github' &&
                                                                     provider !==
-                                                                        'gitlab' && (
+                                                                        'gitlab' &&
+                                                                    provider !==
+                                                                        'bitbucket' && (
                                                                         <Badge
                                                                             variant="outline"
                                                                             className="text-xs"
