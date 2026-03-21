@@ -160,6 +160,32 @@ Requires webhook token verification via the `X-Gitlab-Token` header (plain text 
 | `Push Hook` | Triggers repository sync |
 | `Tag Push Hook` | Triggers repository sync |
 
+### Generic Git Webhook
+
+```
+POST /webhooks/git/{repository-uuid}
+```
+
+Triggers a repository sync for Generic Git repositories. Unlike GitHub and GitLab webhooks, this endpoint must be configured manually on your Git server.
+
+Activate the webhook from the repository page in Pricore to get the URL and secret, then configure your Git server to POST to this URL on push events.
+
+**Authentication** — include the secret using one of these methods:
+
+| Method | Header / Parameter |
+|--------|-------------------|
+| Bearer token | `Authorization: Bearer YOUR_SECRET` |
+| Custom header | `X-Webhook-Token: YOUR_SECRET` |
+| Query parameter | `?token=YOUR_SECRET` |
+
+**Response:** `200 OK`
+
+```json
+{
+    "message": "Sync dispatched."
+}
+```
+
 ## Configuring Composer
 
 Add Pricore as a Composer repository:

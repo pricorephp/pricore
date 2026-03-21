@@ -5,6 +5,7 @@ namespace App\Domains\Repository\Http\Controllers;
 use App\Domains\Activity\Actions\RecordActivityTask;
 use App\Domains\Activity\Contracts\Enums\ActivityType;
 use App\Domains\Organization\Contracts\Data\OrganizationData;
+use App\Domains\Organization\Contracts\Data\OrganizationSshKeyData;
 use App\Domains\Package\Contracts\Data\PackageData;
 use App\Domains\Repository\Actions\BulkCreateRepositoriesAction;
 use App\Domains\Repository\Actions\DeleteWebhookAction;
@@ -51,10 +52,16 @@ class RepositoryController extends Controller
             ->map(fn (GitProvider $provider) => $provider->value)
             ->toArray();
 
+        $sshKeys = $organization->sshKeys()
+            ->orderBy('name')
+            ->get()
+            ->map(fn ($organizationSshKey) => OrganizationSshKeyData::fromModel($organizationSshKey));
+
         return Inertia::render('organizations/repositories', [
             'organization' => OrganizationData::fromModel($organization),
             'repositories' => $repositories,
             'configuredProviders' => $configuredProviders,
+            'sshKeys' => $sshKeys,
         ]);
     }
 
@@ -72,9 +79,12 @@ class RepositoryController extends Controller
 
         $baseUrl = $this->resolveBaseUrl($provider, $user->uuid);
 
+        $isGenericGit = $provider === GitProvider::Git;
+
         $repository = Repository::create([
             'organization_uuid' => $organization->uuid,
-            'credential_user_uuid' => $user->uuid,
+            'credential_user_uuid' => $isGenericGit ? null : $user->uuid,
+            'ssh_key_uuid' => $isGenericGit ? $request->ssh_key_uuid : null,
             'name' => $name,
             'provider' => $provider,
             'repo_identifier' => $request->repo_identifier,
@@ -95,7 +105,7 @@ class RepositoryController extends Controller
         $webhookRegistered = $this->registerWebhookAction->handle($repository);
 
         $message = 'Repository added successfully.';
-        if (! $webhookRegistered && $repository->provider->supportsWebhooks()) {
+        if (! $webhookRegistered && $repository->provider->supportsAutomaticWebhooks()) {
             $message .= ' Webhook registration failed — you can retry from the repository page.';
         }
 

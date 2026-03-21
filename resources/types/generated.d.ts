@@ -14,7 +14,7 @@ createdAt: string | null;
 };
 }
 declare namespace App.Domains.Activity.Contracts.Enums {
-export type ActivityType = 'repository.added' | 'repository.removed' | 'repository.synced' | 'repository.sync_failed' | 'package.created' | 'package.removed' | 'member.added' | 'member.removed' | 'member.role_changed' | 'invitation.sent' | 'token.created' | 'token.revoked';
+export type ActivityType = 'repository.added' | 'repository.removed' | 'repository.synced' | 'repository.sync_failed' | 'package.created' | 'package.removed' | 'member.added' | 'member.removed' | 'member.role_changed' | 'invitation.sent' | 'token.created' | 'token.revoked' | 'ssh_key.generated' | 'ssh_key.deleted';
 }
 declare namespace App.Domains.Auth.Contracts.Enums {
 export type GitHubOAuthIntent = 'login' | 'connect';
@@ -71,6 +71,13 @@ canManageMembers: boolean;
 canDeleteOrganization: boolean;
 canUpdateSlug: boolean;
 canManageRepository: boolean;
+};
+export type OrganizationSshKeyData = {
+uuid: string;
+name: string;
+publicKey: string;
+fingerprint: string;
+createdAt: string;
 };
 export type OrganizationStatsData = {
 packagesCount: number;
@@ -161,7 +168,10 @@ syncStatusLabel: string | null;
 lastSyncedAt: string | null;
 packagesCount: number;
 supportsWebhooks: boolean;
+supportsAutomaticWebhooks: boolean;
 webhookActive: boolean;
+webhookUrl: string | null;
+webhookSecret: string | null;
 };
 export type RepositorySuggestionData = {
 name: string;

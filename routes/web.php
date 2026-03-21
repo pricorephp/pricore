@@ -5,6 +5,7 @@ use App\Domains\Organization\Http\Controllers\InvitationController;
 use App\Domains\Organization\Http\Controllers\MemberController;
 use App\Domains\Organization\Http\Controllers\OrganizationController;
 use App\Domains\Organization\Http\Controllers\SettingsController;
+use App\Domains\Organization\Http\Controllers\SshKeyController;
 use App\Domains\Package\Http\Controllers\PackageController;
 use App\Domains\Package\Http\Controllers\PackageVersionController;
 use App\Domains\Repository\Http\Controllers\Api\RepositorySuggestionController;
@@ -76,6 +77,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::get('tokens', [TokenController::class, 'index'])->name('tokens.index');
             Route::post('tokens', [TokenController::class, 'store'])->name('tokens.store');
             Route::delete('tokens/{token}', [TokenController::class, 'destroy'])->name('tokens.destroy');
+
+            Route::get('ssh-keys', [SshKeyController::class, 'index'])->name('ssh-keys');
+            Route::post('ssh-keys', [SshKeyController::class, 'store'])->name('ssh-keys.store');
+            Route::delete('ssh-keys/{sshKey:uuid}', [SshKeyController::class, 'destroy'])->name('ssh-keys.destroy');
 
         });
     });

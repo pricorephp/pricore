@@ -19,11 +19,14 @@ import { useState } from 'react';
 type OrganizationData =
     App.Domains.Organization.Contracts.Data.OrganizationData;
 type RepositoryData = App.Domains.Repository.Contracts.Data.RepositoryData;
+type OrganizationSshKeyData =
+    App.Domains.Organization.Contracts.Data.OrganizationSshKeyData;
 
 interface RepositoriesPageProps {
     organization: OrganizationData;
     repositories: RepositoryData[];
     configuredProviders?: string[];
+    sshKeys?: OrganizationSshKeyData[];
 }
 
 function getProviderIconColor(provider: string): string {
@@ -53,6 +56,7 @@ export default function Repositories({
     organization,
     repositories,
     configuredProviders = [],
+    sshKeys = [],
 }: RepositoriesPageProps) {
     const { auth } = usePage<{
         auth: { organizations: OrganizationData[] };
@@ -160,6 +164,7 @@ export default function Repositories({
                     isOpen={isDialogOpen}
                     onClose={() => setIsDialogOpen(false)}
                     configuredProviders={configuredProviders}
+                    sshKeys={sshKeys}
                 />
 
                 {configuredProviders.length > 0 && (

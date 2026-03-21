@@ -21,6 +21,10 @@ class RegisterWebhookAction
             return false;
         }
 
+        if (! $repository->provider->supportsAutomaticWebhooks()) {
+            return $this->activateManualWebhook($repository);
+        }
+
         try {
             $provider = GitProviderFactory::make($repository);
 
@@ -56,5 +60,15 @@ class RegisterWebhookAction
 
             return false;
         }
+    }
+
+    protected function activateManualWebhook(Repository $repository): bool
+    {
+        $repository->update([
+            'webhook_id' => 'manual',
+            'webhook_secret' => Str::random(40),
+        ]);
+
+        return true;
     }
 }

@@ -5,6 +5,7 @@ namespace App\Domains\Repository\Services\GitProviders;
 use App\Domains\Repository\Contracts\Enums\GitProvider;
 use App\Domains\Repository\Contracts\Interfaces\GitProviderInterface;
 use App\Domains\Repository\Exceptions\GitProviderException;
+use App\Models\OrganizationSshKey;
 use App\Models\Repository;
 use App\Models\UserGitCredential;
 
@@ -29,6 +30,10 @@ class GitProviderFactory
      */
     protected static function getCredentials(Repository $repository): array
     {
+        if ($repository->provider === GitProvider::Git) {
+            return static::getSshCredentials($repository);
+        }
+
         $credential = UserGitCredential::query()
             ->where('user_uuid', $repository->credential_user_uuid)
             ->where('provider', $repository->provider)
@@ -39,5 +44,23 @@ class GitProviderFactory
         }
 
         return $credential->credentials ?? [];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    protected static function getSshCredentials(Repository $repository): array
+    {
+        if (! $repository->ssh_key_uuid) {
+            return [];
+        }
+
+        $organizationSshKey = OrganizationSshKey::find($repository->ssh_key_uuid);
+
+        if (! $organizationSshKey) {
+            return [];
+        }
+
+        return ['ssh_key' => $organizationSshKey->private_key];
     }
 }

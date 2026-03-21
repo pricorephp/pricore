@@ -23,11 +23,16 @@ class RepositoryData extends Data
         public ?CarbonInterface $lastSyncedAt,
         public int $packagesCount,
         public bool $supportsWebhooks,
+        public bool $supportsAutomaticWebhooks,
         public bool $webhookActive,
+        public ?string $webhookUrl,
+        public ?string $webhookSecret,
     ) {}
 
     public static function fromModel(Repository $repository): self
     {
+        $webhookActive = $repository->webhook_id !== null;
+
         return new self(
             uuid: $repository->uuid,
             name: $repository->name,
@@ -40,7 +45,14 @@ class RepositoryData extends Data
             lastSyncedAt: $repository->last_synced_at,
             packagesCount: $repository->packages_count ?? 0,
             supportsWebhooks: $repository->provider->supportsWebhooks(),
-            webhookActive: $repository->webhook_id !== null,
+            supportsAutomaticWebhooks: $repository->provider->supportsAutomaticWebhooks(),
+            webhookActive: $webhookActive,
+            webhookUrl: $webhookActive && $repository->provider->supportsWebhooks()
+                ? route($repository->provider->webhookRouteName(), $repository->uuid)
+                : null,
+            webhookSecret: $webhookActive && ! $repository->provider->supportsAutomaticWebhooks()
+                ? $repository->webhook_secret
+                : null,
         );
     }
 }
