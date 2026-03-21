@@ -4,7 +4,14 @@ import AppLayout from '@/layouts/app-layout';
 import { createOrganizationBreadcrumb } from '@/lib/breadcrumbs';
 import { cn } from '@/lib/utils';
 import { Link, usePage } from '@inertiajs/react';
-import { ArrowRight, CreditCard, Key, Settings, Users } from 'lucide-react';
+import {
+    ArrowRight,
+    CreditCard,
+    Key,
+    KeyRound,
+    Settings,
+    Users,
+} from 'lucide-react';
 import { type PropsWithChildren, useMemo } from 'react';
 
 type OrganizationData =
@@ -39,6 +46,11 @@ function SettingsContent({ children }: PropsWithChildren) {
                 title: 'Composer Tokens',
                 href: `/organizations/${organization.slug}/settings/tokens`,
                 icon: Key,
+            },
+            {
+                title: 'SSH Keys',
+                href: `/organizations/${organization.slug}/settings/ssh-keys`,
+                icon: KeyRound,
             },
             ...(cloud
                 ? [
@@ -118,6 +130,7 @@ const settingsPageTitles: Record<string, string> = {
     general: 'General',
     members: 'Members',
     tokens: 'Composer Tokens',
+    'ssh-keys': 'SSH Keys',
     billing: 'Billing',
 };
 

@@ -2,6 +2,7 @@ import { show } from '@/actions/App/Domains/Package/Http/Controllers/PackageCont
 import { edit } from '@/actions/App/Domains/Repository/Http/Controllers/RepositoryController';
 import SyncRepository from '@/actions/App/Domains/Repository/Http/Controllers/SyncRepositoryController';
 import SyncWebhook from '@/actions/App/Domains/Repository/Http/Controllers/SyncWebhookController';
+import { CopyButton } from '@/components/copy-button';
 import GitProviderIcon from '@/components/git-provider-icon';
 import HeadingSmall from '@/components/heading-small';
 import PackageCard from '@/components/package-card';
@@ -198,7 +199,9 @@ export default function RepositoryShow({
                                     <Webhook className="mr-0.5 size-3" />
                                     {repository.webhookActive
                                         ? 'Webhook Active'
-                                        : 'No Webhook'}
+                                        : repository.supportsAutomaticWebhooks
+                                          ? 'No Webhook'
+                                          : 'Webhook Available'}
                                 </Badge>
                             )}
                         </div>
@@ -244,9 +247,13 @@ export default function RepositoryShow({
                                     }
                                 >
                                     <Webhook />
-                                    {repository.webhookActive
-                                        ? 'Re-register Webhook'
-                                        : 'Register Webhook'}
+                                    {repository.supportsAutomaticWebhooks
+                                        ? repository.webhookActive
+                                            ? 'Re-register Webhook'
+                                            : 'Register Webhook'
+                                        : repository.webhookActive
+                                          ? 'Reset Webhook Secret'
+                                          : 'Activate Webhook'}
                                 </DropdownMenuItem>
                             )}
                             {canManageRepository && (
@@ -268,6 +275,11 @@ export default function RepositoryShow({
                         </DropdownMenuContent>
                     </DropdownMenu>
                 </div>
+
+                {!repository.supportsAutomaticWebhooks &&
+                    repository.supportsWebhooks && (
+                        <WebhookSetupCard repository={repository} />
+                    )}
 
                 <div className="space-y-4">
                     <HeadingSmall
@@ -474,5 +486,88 @@ export default function RepositoryShow({
                 </Dialog>
             </div>
         </AppLayout>
+    );
+}
+
+function WebhookSetupCard({ repository }: { repository: RepositoryData }) {
+    if (!repository.webhookActive) {
+        return (
+            <Card>
+                <CardContent>
+                    <div className="flex items-start gap-3">
+                        <Webhook className="mt-0.5 size-5 text-muted-foreground" />
+                        <div>
+                            <p className="font-medium">
+                                Auto-sync with webhooks
+                            </p>
+                            <p className="mt-1 text-sm text-muted-foreground">
+                                Keep packages in sync automatically. Click
+                                "Activate Webhook" in the Actions menu to get a
+                                webhook URL you can add to your Git server
+                                &mdash; Pricore will sync whenever you push.
+                            </p>
+                        </div>
+                    </div>
+                </CardContent>
+            </Card>
+        );
+    }
+
+    return (
+        <Card>
+            <CardContent className="space-y-4">
+                <div className="flex items-start gap-3">
+                    <Webhook className="mt-0.5 size-5 text-emerald-500" />
+                    <div>
+                        <p className="font-medium">Manual Webhook Setup</p>
+                        <p className="mt-1 text-sm text-muted-foreground">
+                            Configure your Git server to send a POST request to
+                            this URL on push events. Include the secret as a
+                            Bearer token, query parameter{' '}
+                            <code className="rounded bg-muted px-1 py-0.5 text-xs">
+                                ?token=...
+                            </code>
+                            , or{' '}
+                            <code className="rounded bg-muted px-1 py-0.5 text-xs">
+                                X-Webhook-Token
+                            </code>{' '}
+                            header.
+                        </p>
+                    </div>
+                </div>
+                <div className="space-y-3">
+                    <div className="space-y-1.5">
+                        <label className="text-sm font-medium">
+                            Webhook URL
+                        </label>
+                        <div className="flex items-center gap-2">
+                            <code className="flex-1 rounded-md bg-muted px-3 py-2 text-sm break-all">
+                                {repository.webhookUrl}
+                            </code>
+                            {repository.webhookUrl && (
+                                <CopyButton
+                                    text={repository.webhookUrl}
+                                    variant="outline"
+                                />
+                            )}
+                        </div>
+                    </div>
+                    <div className="space-y-1.5">
+                        <label className="text-sm font-medium">Secret</label>
+                        <div className="flex items-center gap-2">
+                            <code className="flex-1 rounded-md bg-muted px-3 py-2 text-sm break-all">
+                                {repository.webhookSecret}
+                            </code>
+                            {repository.webhookSecret && (
+                                <CopyButton
+                                    text={repository.webhookSecret}
+                                    variant="outline"
+                                />
+                            )}
+                        </div>
+                    </div>
+                </div>
+            </CardContent>
+        </Card>
     );
 }

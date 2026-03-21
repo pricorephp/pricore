@@ -19,6 +19,8 @@ enum ActivityType: string
     case InvitationSent = 'invitation.sent';
     case TokenCreated = 'token.created';
     case TokenRevoked = 'token.revoked';
+    case SshKeyGenerated = 'ssh_key.generated';
+    case SshKeyDeleted = 'ssh_key.deleted';
 
     public function label(): string
     {
@@ -35,6 +37,8 @@ enum ActivityType: string
             self::InvitationSent => 'Invitation sent',
             self::TokenCreated => 'Token created',
             self::TokenRevoked => 'Token revoked',
+            self::SshKeyGenerated => 'SSH key generated',
+            self::SshKeyDeleted => 'SSH key deleted',
         };
     }
 
@@ -53,6 +57,8 @@ enum ActivityType: string
             self::InvitationSent => 'mail',
             self::TokenCreated => 'key-round',
             self::TokenRevoked => 'key-round',
+            self::SshKeyGenerated => 'key-round',
+            self::SshKeyDeleted => 'key-round',
         };
     }
 
@@ -63,6 +69,7 @@ enum ActivityType: string
             self::PackageCreated, self::PackageRemoved => 'package',
             self::MemberAdded, self::MemberRemoved, self::MemberRoleChanged, self::InvitationSent => 'member',
             self::TokenCreated, self::TokenRevoked => 'token',
+            self::SshKeyGenerated, self::SshKeyDeleted => 'settings',
         };
     }
 }

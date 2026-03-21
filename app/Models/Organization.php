@@ -40,6 +40,8 @@ use Illuminate\Support\Carbon;
  * @property-read int|null $downloads_count
  * @property-read Collection<int, ActivityLog> $activityLogs
  * @property-read int|null $activity_logs_count
+ * @property-read Collection<int, OrganizationSshKey> $sshKeys
+ * @property-read int|null $ssh_keys_count
  *
  * @method static OrganizationFactory factory($count = null, $state = [])
  * @method static Builder<static>|Organization newModelQuery()
@@ -157,5 +159,13 @@ class Organization extends Model
     public function activityLogs(): HasMany
     {
         return $this->hasMany(ActivityLog::class, 'organization_uuid', 'uuid');
+    }
+
+    /**
+     * @return HasMany<OrganizationSshKey, $this>
+     */
+    public function sshKeys(): HasMany
+    {
+        return $this->hasMany(OrganizationSshKey::class, 'organization_uuid', 'uuid');
     }
 }

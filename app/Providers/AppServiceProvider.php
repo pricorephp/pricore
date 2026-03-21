@@ -5,6 +5,7 @@ namespace App\Providers;
 use App\Listeners\AcceptPendingInvitationListener;
 use App\Models\AccessToken;
 use App\Models\OrganizationInvitation;
+use App\Models\OrganizationSshKey;
 use App\Models\Package;
 use App\Models\Repository;
 use App\Models\User;
@@ -35,6 +36,7 @@ class AppServiceProvider extends ServiceProvider
             'access_token' => AccessToken::class,
             'user' => User::class,
             'organization_invitation' => OrganizationInvitation::class,
+            'organization_ssh_key' => OrganizationSshKey::class,
         ]);
     }
 }

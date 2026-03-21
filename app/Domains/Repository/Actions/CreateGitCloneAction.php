@@ -19,7 +19,7 @@ class CreateGitCloneAction
         $clonePath = storage_path("app/git-clones/{$repository->uuid}");
 
         if (is_dir($clonePath)) {
-            $this->updateClone($clonePath);
+            $this->updateClone($repository, $clonePath);
 
             return $clonePath;
         }
@@ -31,52 +31,64 @@ class CreateGitCloneAction
 
     protected function createClone(Repository $repository, string $clonePath): void
     {
-        $url = $this->getAuthenticatedUrl($repository);
+        $env = $this->buildGitEnvironment($repository);
+        $tempKeyFile = $env['_temp_key_file'] ?? null;
+        unset($env['_temp_key_file']);
 
-        $result = Process::env(['GIT_TERMINAL_PROMPT' => '0'])
-            ->run(['git', 'clone', '--bare', $url, $clonePath]);
+        try {
+            $result = Process::env($env)
+                ->run(['git', 'clone', '--bare', $repository->repo_identifier, $clonePath]);
 
-        if ($result->failed()) {
-            throw new GitProviderException('Failed to clone repository: '.$result->errorOutput());
-        }
-    }
-
-    protected function updateClone(string $clonePath): void
-    {
-        $result = Process::path($clonePath)
-            ->env(['GIT_TERMINAL_PROMPT' => '0'])
-            ->run(['git', 'fetch', '--all', '--prune']);
-
-        if ($result->failed()) {
-            throw new GitProviderException('Failed to update repository clone: '.$result->errorOutput());
-        }
-    }
-
-    protected function getAuthenticatedUrl(Repository $repository): string
-    {
-        $url = $repository->repo_identifier;
-        $credentials = $repository->credentials ?? [];
-
-        $username = $credentials['username'] ?? null;
-        $password = $credentials['password'] ?? null;
-
-        if (Str::startsWith($url, ['http://', 'https://']) && $username && $password) {
-            $username = urlencode($username);
-            $password = urlencode($password);
-
-            $parts = parse_url($url);
-            if (! $parts) {
-                return $url;
+            if ($result->failed()) {
+                throw new GitProviderException('Failed to clone repository: '.$result->errorOutput());
             }
+        } finally {
+            if ($tempKeyFile !== null && file_exists($tempKeyFile)) {
+                unlink($tempKeyFile);
+            }
+        }
+    }
 
-            $scheme = $parts['scheme'] ?? 'https';
-            $host = $parts['host'] ?? '';
-            $path = $parts['path'] ?? '';
-            $port = isset($parts['port']) ? ':'.$parts['port'] : '';
+    protected function updateClone(Repository $repository, string $clonePath): void
+    {
+        $env = $this->buildGitEnvironment($repository);
+        $tempKeyFile = $env['_temp_key_file'] ?? null;
+        unset($env['_temp_key_file']);
 
-            return "{$scheme}://{$username}:{$password}@{$host}{$port}{$path}";
+        try {
+            $result = Process::path($clonePath)
+                ->env($env)
+                ->run(['git', 'fetch', '--all', '--prune']);
+
+            if ($result->failed()) {
+                throw new GitProviderException('Failed to update repository clone: '.$result->errorOutput());
+            }
+        } finally {
+            if ($tempKeyFile !== null && file_exists($tempKeyFile)) {
+                unlink($tempKeyFile);
+            }
+        }
+    }
+
+    /**
+     * @return array<string, string|null>
+     */
+    protected function buildGitEnvironment(Repository $repository): array
+    {
+        $env = [
+            'GIT_TERMINAL_PROMPT' => '0',
+        ];
+
+        $sshKey = $repository->sshKey;
+
+        if ($sshKey) {
+            $tempKeyFile = sys_get_temp_dir().'/pricore-ssh-'.Str::random(16);
+            file_put_contents($tempKeyFile, $sshKey->private_key."\n");
+            chmod($tempKeyFile, 0600);
+            $env['GIT_SSH_COMMAND'] = "ssh -i {$tempKeyFile} -o StrictHostKeyChecking=accept-new -o IdentitiesOnly=yes";
+            $env['_temp_key_file'] = $tempKeyFile;
         }
 
-        return $url;
+        return $env;
     }
 }

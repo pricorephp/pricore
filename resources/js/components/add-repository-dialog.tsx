@@ -22,11 +22,15 @@ import { Spinner } from '@/components/ui/spinner';
 import { Form, Link } from '@inertiajs/react';
 import { useEffect, useRef, useState } from 'react';
 
+type OrganizationSshKeyData =
+    App.Domains.Organization.Contracts.Data.OrganizationSshKeyData;
+
 interface AddRepositoryDialogProps {
     organizationSlug: string;
     isOpen: boolean;
     onClose: () => void;
     configuredProviders?: string[];
+    sshKeys?: OrganizationSshKeyData[];
 }
 
 const gitProviders = {
@@ -43,6 +47,7 @@ export default function AddRepositoryDialog({
     isOpen,
     onClose,
     configuredProviders = [],
+    sshKeys = [],
 }: AddRepositoryDialogProps) {
     const availableProviders =
         configuredProviders.length > 0
@@ -155,7 +160,7 @@ export default function AddRepositoryDialog({
             case 'gitlab':
                 return 'owner/repo';
             case 'git':
-                return 'https://example.com/repo.git';
+                return 'git@example.com:owner/repo.git';
             default:
                 return 'owner/repo';
         }
@@ -168,7 +173,7 @@ export default function AddRepositoryDialog({
             case 'gitlab':
                 return 'Enter the repository identifier in the format "owner/repo" (e.g., "gitlab-org/gitlab")';
             case 'git':
-                return 'Enter the full Git repository URL (e.g., "https://example.com/repo.git")';
+                return 'Enter the Git repository URL (e.g., "git@github.com:owner/repo.git" or "https://example.com/repo.git")';
             default:
                 return '';
         }
@@ -438,6 +443,53 @@ export default function AddRepositoryDialog({
                                         </p>
                                     )}
                             </div>
+
+                            {provider === 'git' && (
+                                <div className="grid space-y-2">
+                                    <Label htmlFor="ssh_key_uuid">
+                                        SSH Key
+                                    </Label>
+                                    {sshKeys.length > 0 ? (
+                                        <Select name="ssh_key_uuid">
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="No SSH key (public repos only)" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {sshKeys.map((sshKey) => (
+                                                    <SelectItem
+                                                        key={sshKey.uuid}
+                                                        value={sshKey.uuid}
+                                                    >
+                                                        {sshKey.name}
+                                                        <span className="ml-2 text-xs text-muted-foreground">
+                                                            {sshKey.fingerprint}
+                                                        </span>
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    ) : (
+                                        <p className="text-sm text-muted-foreground">
+                                            No SSH keys configured.{' '}
+                                            <Link
+                                                href={`/organizations/${organizationSlug}/settings/ssh-keys`}
+                                                className="font-medium text-primary underline underline-offset-4 hover:no-underline"
+                                            >
+                                                Generate one
+                                            </Link>{' '}
+                                            to authenticate with private
+                                            repositories.
+                                        </p>
+                                    )}
+                                    {errors.ssh_key_uuid &&
+                                        !processing &&
+                                        !wasSuccessful && (
+                                            <p className="text-destructive">
+                                                {errors.ssh_key_uuid}
+                                            </p>
+                                        )}
+                                </div>
+                            )}
 
                             <div className="grid space-y-2">
                                 <Label htmlFor="default_branch">

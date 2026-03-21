@@ -19,6 +19,7 @@ use Illuminate\Support\Carbon;
  * @property string $uuid
  * @property string $organization_uuid
  * @property string|null $credential_user_uuid
+ * @property string|null $ssh_key_uuid
  * @property string $name
  * @property GitProvider $provider
  * @property string $repo_identifier
@@ -32,6 +33,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $updated_at
  * @property-read User|null $credentialUser
  * @property-read Organization $organization
+ * @property-read OrganizationSshKey|null $sshKey
  * @property-read Collection<int, Package> $packages
  * @property-read int|null $packages_count
  * @property-read Collection<int, RepositorySyncLog> $syncLogs
@@ -82,6 +84,14 @@ class Repository extends Model
     public function credentialUser(): BelongsTo
     {
         return $this->belongsTo(User::class, 'credential_user_uuid', 'uuid');
+    }
+
+    /**
+     * @return BelongsTo<OrganizationSshKey, $this>
+     */
+    public function sshKey(): BelongsTo
+    {
+        return $this->belongsTo(OrganizationSshKey::class, 'ssh_key_uuid', 'uuid');
     }
 
     /**

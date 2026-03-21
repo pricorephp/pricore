@@ -19,6 +19,7 @@ class StoreRepositoryRequest extends FormRequest
             'provider' => ['required', 'string', Rule::enum(GitProvider::class)],
             'repo_identifier' => ['required', 'string', 'max:500'],
             'default_branch' => ['nullable', 'string', 'max:255'],
+            'ssh_key_uuid' => ['nullable', 'uuid', Rule::exists('organization_ssh_keys', 'uuid')],
         ];
     }
 }

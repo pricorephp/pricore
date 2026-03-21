@@ -109,6 +109,11 @@ class GenericGitProvider extends AbstractGitProvider
     {
         $url = $this->repositoryIdentifier;
 
+        // SSH URLs are passed through unchanged — auth is handled via GIT_SSH_COMMAND
+        if ($this->hasCredential('ssh_key') || ! Str::startsWith($url, ['http://', 'https://'])) {
+            return $url;
+        }
+
         // Basic check if URL is http(s) and we have credentials
         if (Str::startsWith($url, ['http://', 'https://']) && $this->hasCredential('username') && $this->hasCredential('password')) {
             $username = urlencode($this->getCredential('username'));
@@ -144,13 +149,28 @@ class GenericGitProvider extends AbstractGitProvider
             'GIT_TERMINAL_PROMPT' => '0',
         ];
 
-        $result = Process::env($env)->run(array_merge(['git'], $command));
+        $tempKeyFile = null;
 
-        if ($result->failed()) {
-            throw new GitProviderException('Git command failed: '.$result->errorOutput());
+        if ($this->hasCredential('ssh_key')) {
+            $tempKeyFile = sys_get_temp_dir().'/pricore-ssh-'.Str::random(16);
+            file_put_contents($tempKeyFile, $this->getCredential('ssh_key')."\n");
+            chmod($tempKeyFile, 0600);
+            $env['GIT_SSH_COMMAND'] = "ssh -i {$tempKeyFile} -o StrictHostKeyChecking=accept-new -o IdentitiesOnly=yes";
         }
 
-        return trim($result->output());
+        try {
+            $result = Process::env($env)->run(array_merge(['git'], $command));
+
+            if ($result->failed()) {
+                throw new GitProviderException('Git command failed: '.$result->errorOutput());
+            }
+
+            return trim($result->output());
+        } finally {
+            if ($tempKeyFile !== null && file_exists($tempKeyFile)) {
+                unlink($tempKeyFile);
+            }
+        }
     }
 
     /**

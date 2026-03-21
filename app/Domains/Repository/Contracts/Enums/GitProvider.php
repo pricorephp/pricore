@@ -40,6 +40,14 @@ enum GitProvider: string
     public function supportsWebhooks(): bool
     {
         return match ($this) {
+            self::GitHub, self::GitLab, self::Git => true,
+            self::Bitbucket => false,
+        };
+    }
+
+    public function supportsAutomaticWebhooks(): bool
+    {
+        return match ($this) {
             self::GitHub, self::GitLab => true,
             self::Bitbucket, self::Git => false,
         };
@@ -50,7 +58,8 @@ enum GitProvider: string
         return match ($this) {
             self::GitHub => 'webhooks.github',
             self::GitLab => 'webhooks.gitlab',
-            self::Bitbucket, self::Git => throw new \LogicException("Provider {$this->value} does not support webhooks."),
+            self::Git => 'webhooks.git',
+            self::Bitbucket => throw new \LogicException("Provider {$this->value} does not support webhooks."),
         };
     }
 
