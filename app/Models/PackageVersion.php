@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Models\Concerns\HasUuids;
 use Database\Factories\PackageVersionFactory;
 use Eloquent;
+use Illuminate\Database\Connection;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -115,7 +116,7 @@ class PackageVersion extends Model
      */
     public function scopeOrderBySemanticVersion(Builder $query, string $direction = 'desc'): Builder
     {
-        /** @var \Illuminate\Database\Connection $connection */
+        /** @var Connection $connection */
         $connection = $query->getConnection();
         $driver = $connection->getDriverName();
 
@@ -131,7 +132,7 @@ class PackageVersion extends Model
             $part = fn (string $substr): string => "CASE WHEN {$isSemver} THEN CAST({$substr} AS INTEGER) ELSE NULL END";
 
             return $query->orderByRaw(
-                "({$isSemver}) DESC, ".
+                "({$isSemver}) DESC, ". // @phpstan-ignore argument.type
                 "{$part($substr1)} {$direction}, ".
                 "{$part($substr2)} {$direction}, ".
                 "{$part($substr3)} {$direction}, ".
@@ -145,7 +146,7 @@ class PackageVersion extends Model
             $part = fn (int $index): string => "CASE WHEN {$isSemver} THEN CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(normalized_version, '.', {$index}), '.', -1) AS UNSIGNED) ELSE NULL END";
 
             return $query->orderByRaw(
-                "({$isSemver}) DESC, ".
+                "({$isSemver}) DESC, ". // @phpstan-ignore argument.type
                 "{$part(1)} {$direction}, ".
                 "{$part(2)} {$direction}, ".
                 "{$part(3)} {$direction}, ".
@@ -159,7 +160,7 @@ class PackageVersion extends Model
             $part = fn (int $index): string => "CASE WHEN {$isSemver} THEN COALESCE(NULLIF(SPLIT_PART(normalized_version, '.', {$index}), ''), '0')::int ELSE NULL END";
 
             return $query->orderByRaw(
-                "({$isSemver}) DESC, ".
+                "({$isSemver}) DESC, ". // @phpstan-ignore argument.type
                 "{$part(1)} {$direction} NULLS LAST, ".
                 "{$part(2)} {$direction} NULLS LAST, ".
                 "{$part(3)} {$direction} NULLS LAST, ".
