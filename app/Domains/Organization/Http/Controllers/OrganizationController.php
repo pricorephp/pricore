@@ -49,6 +49,7 @@ class OrganizationController extends Controller
             'stats' => $this->buildStats->handle($organization),
             'onboarding' => $this->buildOnboarding->handle($organization, $user),
             'configuredProviders' => $configuredProviders,
+            'composerRepositoryUrl' => url("/{$organization->slug}"),
             'activityLogs' => Inertia::defer(fn () => $organization->activityLogs()
                 ->with('actor')
                 ->orderByDesc('created_at')

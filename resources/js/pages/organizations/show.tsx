@@ -26,6 +26,7 @@ interface OrganizationShowProps {
     stats: OrganizationStatsData;
     onboarding: OnboardingChecklistData;
     configuredProviders?: string[];
+    composerRepositoryUrl: string;
     activityLogs?: ActivityLogData[];
     frequentPackages?: FrequentPackageData[];
 }
@@ -35,6 +36,7 @@ export default function OrganizationShow({
     stats,
     onboarding,
     configuredProviders = [],
+    composerRepositoryUrl,
     activityLogs,
     frequentPackages,
 }: OrganizationShowProps) {
@@ -113,6 +115,7 @@ export default function OrganizationShow({
                     organization={organization}
                     onboarding={onboarding}
                     configuredProviders={configuredProviders}
+                    composerRepositoryUrl={composerRepositoryUrl}
                 />
 
                 <div className="grid gap-6 lg:grid-cols-3">

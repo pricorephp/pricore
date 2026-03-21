@@ -1,4 +1,5 @@
 import DismissOnboardingController from '@/actions/App/Domains/Organization/Http/Controllers/DismissOnboardingController';
+import { CopyButton } from '@/components/copy-button';
 import ImportRepositoriesDialog from '@/components/import-repositories-dialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -22,6 +23,7 @@ interface OnboardingChecklistProps {
     organization: { slug: string };
     onboarding: OnboardingChecklistData;
     configuredProviders?: string[];
+    composerRepositoryUrl: string;
 }
 
 interface StepProps {
@@ -66,6 +68,7 @@ export default function OnboardingChecklist({
     organization,
     onboarding,
     configuredProviders = [],
+    composerRepositoryUrl,
 }: OnboardingChecklistProps) {
     const [isImportOpen, setIsImportOpen] = useState(false);
 
@@ -168,6 +171,21 @@ export default function OnboardingChecklist({
                                 Create Organization Token
                             </Link>
                         </Button>
+                    </div>
+                </Step>
+
+                <Step
+                    title="Configure Composer"
+                    description="Add this registry to your project to install packages from this organization."
+                    completed={false}
+                >
+                    <div className="flex items-center gap-2 rounded-lg border bg-muted/50 px-3 py-2">
+                        <code className="flex-1 truncate font-mono text-xs">
+                            {`composer config repositories.${organization.slug} composer ${composerRepositoryUrl}`}
+                        </code>
+                        <CopyButton
+                            text={`composer config repositories.${organization.slug} composer ${composerRepositoryUrl}`}
+                        />
                     </div>
                 </Step>
             </CardContent>
