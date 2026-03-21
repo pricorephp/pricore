@@ -7,6 +7,7 @@ use App\Domains\Repository\Contracts\Enums\GitProvider;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Settings\StoreUserGitCredentialRequest;
 use App\Http\Requests\Settings\UpdateUserGitCredentialRequest;
+use App\Models\User;
 use App\Models\UserGitCredential;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
@@ -16,7 +17,7 @@ class UserGitCredentialController extends Controller
 {
     public function index(): Response
     {
-        /** @var \App\Models\User $user */
+        /** @var User $user */
         $user = auth()->user();
 
         $credentials = $user->gitCredentials()
@@ -33,7 +34,7 @@ class UserGitCredentialController extends Controller
 
     public function store(StoreUserGitCredentialRequest $request): RedirectResponse
     {
-        /** @var \App\Models\User $user */
+        /** @var User $user */
         $user = auth()->user();
 
         $provider = GitProvider::from($request->validated('provider'));
@@ -68,7 +69,7 @@ class UserGitCredentialController extends Controller
 
     public function destroy(UserGitCredential $credential): RedirectResponse
     {
-        /** @var \App\Models\User $user */
+        /** @var User $user */
         $user = auth()->user();
 
         if ($credential->user_uuid !== $user->uuid) {

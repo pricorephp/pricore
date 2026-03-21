@@ -3,6 +3,7 @@
 use App\Domains\Organization\Contracts\Enums\OrganizationRole;
 use App\Models\Organization;
 use App\Models\User;
+use Illuminate\Support\Str;
 
 uses()->group('organizations', 'settings');
 
@@ -13,7 +14,7 @@ beforeEach(function () {
 
 it('owner can access settings general page', function () {
     $this->organization->members()->attach($this->user->uuid, [
-        'uuid' => \Illuminate\Support\Str::uuid()->toString(),
+        'uuid' => Str::uuid()->toString(),
         'role' => OrganizationRole::Owner->value,
     ]);
 
@@ -28,7 +29,7 @@ it('owner can access settings general page', function () {
 
 it('admin can access settings general page', function () {
     $this->organization->members()->attach($this->user->uuid, [
-        'uuid' => \Illuminate\Support\Str::uuid()->toString(),
+        'uuid' => Str::uuid()->toString(),
         'role' => OrganizationRole::Admin->value,
     ]);
 
@@ -39,7 +40,7 @@ it('admin can access settings general page', function () {
 
 it('regular member cannot access settings', function () {
     $this->organization->members()->attach($this->user->uuid, [
-        'uuid' => \Illuminate\Support\Str::uuid()->toString(),
+        'uuid' => Str::uuid()->toString(),
         'role' => OrganizationRole::Member->value,
     ]);
 
@@ -56,7 +57,7 @@ it('non-member cannot access settings', function () {
 
 it('owner can update organization name', function () {
     $this->organization->members()->attach($this->user->uuid, [
-        'uuid' => \Illuminate\Support\Str::uuid()->toString(),
+        'uuid' => Str::uuid()->toString(),
         'role' => OrganizationRole::Owner->value,
     ]);
 
@@ -70,7 +71,7 @@ it('owner can update organization name', function () {
 
 it('admin can update organization name', function () {
     $this->organization->members()->attach($this->user->uuid, [
-        'uuid' => \Illuminate\Support\Str::uuid()->toString(),
+        'uuid' => Str::uuid()->toString(),
         'role' => OrganizationRole::Admin->value,
     ]);
 
@@ -84,7 +85,7 @@ it('admin can update organization name', function () {
 
 it('member cannot update organization name', function () {
     $this->organization->members()->attach($this->user->uuid, [
-        'uuid' => \Illuminate\Support\Str::uuid()->toString(),
+        'uuid' => Str::uuid()->toString(),
         'role' => OrganizationRole::Member->value,
     ]);
 
@@ -97,7 +98,7 @@ it('member cannot update organization name', function () {
 
 it('validates organization name is required', function () {
     $this->organization->members()->attach($this->user->uuid, [
-        'uuid' => \Illuminate\Support\Str::uuid()->toString(),
+        'uuid' => Str::uuid()->toString(),
         'role' => OrganizationRole::Owner->value,
     ]);
 
@@ -110,7 +111,7 @@ it('validates organization name is required', function () {
 
 it('redirects settings index to general page', function () {
     $this->organization->members()->attach($this->user->uuid, [
-        'uuid' => \Illuminate\Support\Str::uuid()->toString(),
+        'uuid' => Str::uuid()->toString(),
         'role' => OrganizationRole::Owner->value,
     ]);
 
@@ -122,7 +123,7 @@ it('redirects settings index to general page', function () {
 it('owner can update organization slug', function () {
     $this->organization->update(['owner_uuid' => $this->user->uuid]);
     $this->organization->members()->attach($this->user->uuid, [
-        'uuid' => \Illuminate\Support\Str::uuid()->toString(),
+        'uuid' => Str::uuid()->toString(),
         'role' => OrganizationRole::Owner->value,
     ]);
 
@@ -137,7 +138,7 @@ it('owner can update organization slug', function () {
 
 it('admin cannot update organization slug', function () {
     $this->organization->members()->attach($this->user->uuid, [
-        'uuid' => \Illuminate\Support\Str::uuid()->toString(),
+        'uuid' => Str::uuid()->toString(),
         'role' => OrganizationRole::Admin->value,
     ]);
 
@@ -155,7 +156,7 @@ it('admin cannot update organization slug', function () {
 it('validates slug format', function () {
     $this->organization->update(['owner_uuid' => $this->user->uuid]);
     $this->organization->members()->attach($this->user->uuid, [
-        'uuid' => \Illuminate\Support\Str::uuid()->toString(),
+        'uuid' => Str::uuid()->toString(),
         'role' => OrganizationRole::Owner->value,
     ]);
 
@@ -172,7 +173,7 @@ it('validates slug uniqueness', function () {
 
     $this->organization->update(['owner_uuid' => $this->user->uuid]);
     $this->organization->members()->attach($this->user->uuid, [
-        'uuid' => \Illuminate\Support\Str::uuid()->toString(),
+        'uuid' => Str::uuid()->toString(),
         'role' => OrganizationRole::Owner->value,
     ]);
 
@@ -187,7 +188,7 @@ it('validates slug uniqueness', function () {
 it('allows owner to keep same slug', function () {
     $this->organization->update(['owner_uuid' => $this->user->uuid]);
     $this->organization->members()->attach($this->user->uuid, [
-        'uuid' => \Illuminate\Support\Str::uuid()->toString(),
+        'uuid' => Str::uuid()->toString(),
         'role' => OrganizationRole::Owner->value,
     ]);
 
@@ -205,7 +206,7 @@ it('allows owner to keep same slug', function () {
 it('passes isOwner prop to frontend for owner', function () {
     $this->organization->update(['owner_uuid' => $this->user->uuid]);
     $this->organization->members()->attach($this->user->uuid, [
-        'uuid' => \Illuminate\Support\Str::uuid()->toString(),
+        'uuid' => Str::uuid()->toString(),
         'role' => OrganizationRole::Owner->value,
     ]);
 
@@ -220,7 +221,7 @@ it('passes isOwner prop to frontend for owner', function () {
 
 it('passes isOwner prop to frontend for admin', function () {
     $this->organization->members()->attach($this->user->uuid, [
-        'uuid' => \Illuminate\Support\Str::uuid()->toString(),
+        'uuid' => Str::uuid()->toString(),
         'role' => OrganizationRole::Admin->value,
     ]);
 

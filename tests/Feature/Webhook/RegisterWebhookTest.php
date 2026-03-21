@@ -4,11 +4,12 @@ use App\Domains\Repository\Actions\RegisterWebhookAction;
 use App\Models\Organization;
 use App\Models\Repository;
 use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
 
 use function Pest\Laravel\actingAs;
 
-uses(Illuminate\Foundation\Testing\RefreshDatabase::class);
+uses(RefreshDatabase::class);
 
 it('can re-register a webhook via the sync webhook endpoint', function () {
     $user = User::factory()->create();
@@ -23,7 +24,7 @@ it('can re-register a webhook via the sync webhook endpoint', function () {
     $mock = $this->mock(RegisterWebhookAction::class);
     $mock->shouldReceive('handle')
         ->once()
-        ->with(\Mockery::on(fn ($repo) => $repo->uuid === $repository->uuid))
+        ->with(Mockery::on(fn ($repo) => $repo->uuid === $repository->uuid))
         ->andReturn(true);
 
     actingAs($user)

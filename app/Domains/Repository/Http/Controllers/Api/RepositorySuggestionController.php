@@ -9,6 +9,7 @@ use App\Domains\Repository\Services\GitProviders\GitLabProvider;
 use App\Http\Controllers\Controller;
 use App\Models\Organization;
 use App\Models\Repository;
+use App\Models\User;
 use App\Models\UserGitCredential;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -23,7 +24,7 @@ class RepositorySuggestionController extends Controller
             return response()->json(['error' => 'Invalid provider'], 400);
         }
 
-        /** @var \App\Models\User $user */
+        /** @var User $user */
         $user = $request->user();
 
         $credential = UserGitCredential::query()

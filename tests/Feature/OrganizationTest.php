@@ -5,6 +5,7 @@ use App\Models\Organization;
 use App\Models\Package;
 use App\Models\Repository;
 use App\Models\User;
+use Illuminate\Support\Str;
 
 uses()->group('organizations');
 
@@ -12,7 +13,7 @@ beforeEach(function () {
     $this->user = User::factory()->create();
     $this->organization = Organization::factory()->create();
     $this->organization->members()->attach($this->user->uuid, [
-        'uuid' => \Illuminate\Support\Str::uuid()->toString(),
+        'uuid' => Str::uuid()->toString(),
         'role' => 'member',
     ]);
 });

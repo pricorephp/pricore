@@ -137,7 +137,7 @@ test('callback handles null email gracefully', function () {
 
 test('callback handles GitLab authentication failure', function () {
     $provider = Mockery::mock(GitLabSocialiteProvider::class);
-    $provider->shouldReceive('user')->andThrow(new \Exception('OAuth failed'));
+    $provider->shouldReceive('user')->andThrow(new Exception('OAuth failed'));
 
     Socialite::shouldReceive('driver')->with('gitlab')->andReturn($provider);
 
@@ -152,7 +152,7 @@ test('callback handles GitLab authentication failure during connect', function (
     $user = User::factory()->create();
 
     $provider = Mockery::mock(GitLabSocialiteProvider::class);
-    $provider->shouldReceive('user')->andThrow(new \Exception('OAuth failed'));
+    $provider->shouldReceive('user')->andThrow(new Exception('OAuth failed'));
 
     Socialite::shouldReceive('driver')->with('gitlab')->andReturn($provider);
 

@@ -6,16 +6,17 @@ use App\Domains\Repository\Contracts\Enums\RepositorySyncStatus;
 use App\Models\Organization;
 use App\Models\Repository;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Database\Eloquent\Model;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Repository>
+ * @extends Factory<Repository>
  */
 class RepositoryFactory extends Factory
 {
     /**
      * The name of the factory's corresponding model.
      *
-     * @var class-string<\Illuminate\Database\Eloquent\Model>
+     * @var class-string<Model>
      */
     protected $model = Repository::class;
 

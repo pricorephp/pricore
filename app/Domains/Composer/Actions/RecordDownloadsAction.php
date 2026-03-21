@@ -5,6 +5,7 @@ namespace App\Domains\Composer\Actions;
 use App\Domains\Composer\Contracts\Data\DownloadNotificationData;
 use App\Models\Organization;
 use App\Models\PackageDownload;
+use Illuminate\Support\Str;
 
 class RecordDownloadsAction
 {
@@ -25,7 +26,7 @@ class RecordDownloadsAction
         $now = now();
 
         $records = collect($downloads)->map(fn (DownloadNotificationData $download) => [
-            'uuid' => (string) \Illuminate\Support\Str::uuid(),
+            'uuid' => (string) Str::uuid(),
             'organization_uuid' => $organization->uuid,
             'package_uuid' => $packageUuids->get($download->name),
             'package_name' => $download->name,

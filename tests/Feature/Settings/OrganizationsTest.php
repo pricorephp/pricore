@@ -3,6 +3,7 @@
 use App\Domains\Organization\Contracts\Enums\OrganizationRole;
 use App\Models\Organization;
 use App\Models\User;
+use Illuminate\Support\Str;
 use Inertia\Testing\AssertableInertia as Assert;
 
 uses()->group('settings', 'organizations');
@@ -14,7 +15,7 @@ beforeEach(function () {
 it('can view organizations settings page', function () {
     $organization = Organization::factory()->create();
     $organization->members()->attach($this->user->uuid, [
-        'uuid' => \Illuminate\Support\Str::uuid()->toString(),
+        'uuid' => Str::uuid()->toString(),
         'role' => OrganizationRole::Member->value,
     ]);
 
@@ -36,11 +37,11 @@ it('shows all organizations user belongs to', function () {
     $org3 = Organization::factory()->create();
 
     $org1->members()->attach($this->user->uuid, [
-        'uuid' => \Illuminate\Support\Str::uuid()->toString(),
+        'uuid' => Str::uuid()->toString(),
         'role' => OrganizationRole::Member->value,
     ]);
     $org2->members()->attach($this->user->uuid, [
-        'uuid' => \Illuminate\Support\Str::uuid()->toString(),
+        'uuid' => Str::uuid()->toString(),
         'role' => OrganizationRole::Admin->value,
     ]);
     // User doesn't belong to org3
@@ -59,7 +60,7 @@ it('identifies organization owner correctly', function () {
         'owner_uuid' => $this->user->uuid,
     ]);
     $organization->members()->attach($this->user->uuid, [
-        'uuid' => \Illuminate\Support\Str::uuid()->toString(),
+        'uuid' => Str::uuid()->toString(),
         'role' => OrganizationRole::Owner->value,
     ]);
 
@@ -75,7 +76,7 @@ it('identifies organization owner correctly', function () {
 it('member can leave organization', function () {
     $organization = Organization::factory()->create();
     $organization->members()->attach($this->user->uuid, [
-        'uuid' => \Illuminate\Support\Str::uuid()->toString(),
+        'uuid' => Str::uuid()->toString(),
         'role' => OrganizationRole::Member->value,
     ]);
 
@@ -90,7 +91,7 @@ it('member can leave organization', function () {
 it('admin can leave organization', function () {
     $organization = Organization::factory()->create();
     $organization->members()->attach($this->user->uuid, [
-        'uuid' => \Illuminate\Support\Str::uuid()->toString(),
+        'uuid' => Str::uuid()->toString(),
         'role' => OrganizationRole::Admin->value,
     ]);
 
@@ -107,7 +108,7 @@ it('owner cannot leave organization', function () {
         'owner_uuid' => $this->user->uuid,
     ]);
     $organization->members()->attach($this->user->uuid, [
-        'uuid' => \Illuminate\Support\Str::uuid()->toString(),
+        'uuid' => Str::uuid()->toString(),
         'role' => OrganizationRole::Owner->value,
     ]);
 

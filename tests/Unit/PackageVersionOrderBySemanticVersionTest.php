@@ -2,11 +2,12 @@
 
 use App\Models\PackageVersion;
 use Illuminate\Database\Connection;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Query\Builder as QueryBuilder;
 
-function buildQueryForDriver(string $driver): \Illuminate\Database\Eloquent\Builder
+function buildQueryForDriver(string $driver): Builder
 {
-    $pdo = new \PDO('sqlite::memory:');
+    $pdo = new PDO('sqlite::memory:');
 
     $connection = new Connection(
         $pdo,

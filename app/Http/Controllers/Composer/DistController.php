@@ -5,8 +5,10 @@ namespace App\Http\Controllers\Composer;
 use App\Http\Controllers\Controller;
 use App\Models\Organization;
 use App\Models\PackageVersion;
+use Illuminate\Filesystem\FilesystemAdapter;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class DistController extends Controller
 {
@@ -35,7 +37,7 @@ class DistController extends Controller
 
         $distPath = $packageVersion->dist_path;
 
-        /** @var \Illuminate\Filesystem\FilesystemAdapter $disk */
+        /** @var FilesystemAdapter $disk */
         $disk = Storage::disk(config('pricore.dist.disk'));
 
         if (! $disk->exists($distPath)) {
@@ -57,7 +59,7 @@ class DistController extends Controller
             return redirect($url)->header('Cache-Control', 'private, no-store');
         }
 
-        /** @var \Symfony\Component\HttpFoundation\StreamedResponse $response */
+        /** @var StreamedResponse $response */
         $response = $disk->download($distPath);
 
         $response->headers->set('Cache-Control', 'private, max-age=31536000, immutable');

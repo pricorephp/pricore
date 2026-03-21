@@ -5,6 +5,7 @@ use App\Models\Organization;
 use App\Models\Package;
 use App\Models\PackageDownload;
 use App\Models\User;
+use Illuminate\Testing\TestResponse;
 
 beforeEach(function () {
     $this->user = User::factory()->create();
@@ -21,7 +22,7 @@ beforeEach(function () {
         ->create();
 });
 
-function authenticatedPost(string $uri, array $data, string $token): \Illuminate\Testing\TestResponse
+function authenticatedPost(string $uri, array $data, string $token): TestResponse
 {
     return test()->withHeaders([
         'Authorization' => "Bearer {$token}",

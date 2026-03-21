@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Auth;
 use Laravel\Socialite\Contracts\User as SocialiteUser;
 use Laravel\Socialite\Facades\Socialite;
 use Laravel\Socialite\Two\User as TwoUser;
+use SocialiteProviders\GitLab\Provider;
 use Symfony\Component\HttpFoundation\RedirectResponse as SymfonyRedirectResponse;
 
 class GitLabAuthController extends Controller
@@ -21,7 +22,7 @@ class GitLabAuthController extends Controller
     {
         session(['gitlab_oauth_intent' => GitLabOAuthIntent::Login]);
 
-        /** @var \SocialiteProviders\GitLab\Provider $driver */
+        /** @var Provider $driver */
         $driver = Socialite::driver('gitlab');
 
         return $driver

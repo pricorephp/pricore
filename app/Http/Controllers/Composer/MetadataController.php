@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Composer;
 use App\Domains\Composer\Contracts\Data\VersionMetadataData;
 use App\Http\Controllers\Controller;
 use App\Models\Organization;
+use App\Models\Package;
+use App\Models\PackageVersion;
 use Composer\MetadataMinifier\MetadataMinifier;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Http\JsonResponse;
@@ -41,7 +43,7 @@ class MetadataController extends Controller
     }
 
     /**
-     * @param  \Closure(HasMany<\App\Models\PackageVersion, \App\Models\Package>): HasMany<\App\Models\PackageVersion, \App\Models\Package>  $scopeFilter
+     * @param  \Closure(HasMany<PackageVersion, Package>): HasMany<PackageVersion, Package>  $scopeFilter
      */
     private function metadataResponse(
         Request $request,

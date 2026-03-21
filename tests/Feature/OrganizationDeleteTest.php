@@ -3,6 +3,7 @@
 use App\Domains\Organization\Contracts\Enums\OrganizationRole;
 use App\Models\Organization;
 use App\Models\User;
+use Illuminate\Support\Str;
 
 uses()->group('organizations');
 
@@ -10,7 +11,7 @@ beforeEach(function () {
     $this->user = User::factory()->create();
     $this->organization = Organization::factory()->ownedBy($this->user)->create();
     $this->organization->members()->attach($this->user->uuid, [
-        'uuid' => \Illuminate\Support\Str::uuid()->toString(),
+        'uuid' => Str::uuid()->toString(),
         'role' => OrganizationRole::Owner->value,
     ]);
 });
@@ -26,7 +27,7 @@ it('owner can delete organization', function () {
 it('admin cannot delete organization', function () {
     $admin = User::factory()->create();
     $this->organization->members()->attach($admin->uuid, [
-        'uuid' => \Illuminate\Support\Str::uuid()->toString(),
+        'uuid' => Str::uuid()->toString(),
         'role' => OrganizationRole::Admin->value,
     ]);
 
@@ -39,7 +40,7 @@ it('admin cannot delete organization', function () {
 it('member cannot delete organization', function () {
     $member = User::factory()->create();
     $this->organization->members()->attach($member->uuid, [
-        'uuid' => \Illuminate\Support\Str::uuid()->toString(),
+        'uuid' => Str::uuid()->toString(),
         'role' => OrganizationRole::Member->value,
     ]);
 

@@ -5,6 +5,7 @@ use App\Models\Organization;
 use App\Models\Package;
 use App\Models\PackageVersion;
 use App\Models\User;
+use Illuminate\Testing\TestResponse;
 
 beforeEach(function () {
     $this->user = User::factory()->create();
@@ -23,7 +24,7 @@ beforeEach(function () {
 });
 
 // Helper to make authenticated requests
-function authenticatedGet(string $uri, string $token): \Illuminate\Testing\TestResponse
+function authenticatedGet(string $uri, string $token): TestResponse
 {
     return test()->withHeaders([
         'Authorization' => "Bearer {$token}",
@@ -253,7 +254,7 @@ it('sets Last-Modified from version timestamps, not package creation', function 
     $response->assertOk()
         ->assertHeader('Last-Modified');
 
-    $lastModified = new \DateTime($response->headers->get('Last-Modified'));
+    $lastModified = new DateTime($response->headers->get('Last-Modified'));
 
     // Last-Modified should be close to the version's updated_at, not the package's
     expect($lastModified->getTimestamp())->toBe($versionUpdatedAt->timestamp);
