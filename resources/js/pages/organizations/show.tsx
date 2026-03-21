@@ -113,6 +113,7 @@ export default function OrganizationShow({
                     organization={organization}
                     onboarding={onboarding}
                     configuredProviders={configuredProviders}
+                    composerRepositoryUrl={organization.composerRepositoryUrl}
                 />
 
                 <div className="grid gap-6 lg:grid-cols-3">

@@ -14,6 +14,7 @@ class OrganizationData extends Data
         public string $name,
         public string $slug,
         public string $ownerUuid,
+        public string $composerRepositoryUrl,
         public ?OrganizationPermissionsData $permissions = null,
         public ?bool $onTrial = null,
         public ?bool $trialExpired = null,
@@ -26,6 +27,7 @@ class OrganizationData extends Data
             name: $organization->name,
             slug: $organization->slug,
             ownerUuid: $organization->owner_uuid,
+            composerRepositoryUrl: url("/{$organization->slug}"),
         );
     }
 }

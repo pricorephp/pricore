@@ -66,8 +66,6 @@ class PackageController extends Controller
                 $package->repository?->repo_identifier
             ));
 
-        $composerRepositoryUrl = url("/{$organization->slug}");
-
         $versionUuid = $request->query('version');
         $activeVersion = null;
 
@@ -91,7 +89,6 @@ class PackageController extends Controller
                 'query' => $query,
                 'type' => $type,
             ],
-            'composerRepositoryUrl' => $composerRepositoryUrl,
             'downloadStats' => $this->downloadStats->handle($package),
             'canManageVersions' => request()->user()?->can('deleteRepository', $organization) ?? false,
             'activeVersion' => $activeVersion,
