@@ -73,7 +73,9 @@ export default function ImportRepositoriesDialog({
         setProvider(defaultProvider);
         setOwners([]);
         setSelectedOwner('');
+        setLoadingOwners(false);
         setRepositories([]);
+        setLoadingRepos(false);
         setSelectedRepos(new Set());
         setSearchQuery('');
         setProcessing(false);
