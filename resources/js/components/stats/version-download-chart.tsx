@@ -25,21 +25,21 @@ interface VersionDownloadChartProps {
 
 const OTHER_VERSION = 'Other';
 
-const BLUE_PALETTE = [
-    'var(--chart-blue-1)',
-    'var(--chart-blue-2)',
-    'var(--chart-blue-3)',
-    'var(--chart-blue-4)',
-    'var(--chart-blue-5)',
+const CHART_COLORS = [
+    'var(--chart-1)',
+    'var(--chart-2)',
+    'var(--chart-3)',
+    'var(--chart-4)',
+    'var(--chart-5)',
 ] as const;
 
-const OTHER_COLOR = 'var(--chart-other)';
+const OTHER_COLOR = 'var(--chart-muted)';
 
 function getVersionColor(index: number, count: number): string {
     const paletteIndex = Math.round(
-        (index / Math.max(count - 1, 1)) * (BLUE_PALETTE.length - 1),
+        (index / Math.max(count - 1, 1)) * (CHART_COLORS.length - 1),
     );
-    return BLUE_PALETTE[paletteIndex];
+    return CHART_COLORS[paletteIndex];
 }
 
 export function VersionDownloadChart({
