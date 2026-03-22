@@ -13,11 +13,11 @@ class BitbucketProvider extends AbstractGitProvider
 {
     protected function configureHttpClient(): PendingRequest
     {
-        $username = $this->getCredential('username', '');
-        $appPassword = $this->getCredential('app_password', '');
+        $email = $this->getCredential('email', '');
+        $apiToken = $this->getCredential('api_token', '');
 
         return Http::baseUrl('https://api.bitbucket.org/2.0')
-            ->withBasicAuth($username, $appPassword)
+            ->withBasicAuth($email, $apiToken)
             ->withHeaders([
                 'Accept' => 'application/json',
             ])
@@ -273,10 +273,10 @@ class BitbucketProvider extends AbstractGitProvider
     public function downloadArchive(string $ref, string $outputPath): bool
     {
         try {
-            $username = $this->getCredential('username', '');
-            $appPassword = $this->getCredential('app_password', '');
+            $email = $this->getCredential('email', '');
+            $apiToken = $this->getCredential('api_token', '');
 
-            $response = Http::withBasicAuth($username, $appPassword)
+            $response = Http::withBasicAuth($email, $apiToken)
                 ->timeout(60)
                 ->withOptions(['sink' => $outputPath])
                 ->get("https://bitbucket.org/{$this->repositoryIdentifier}/get/{$ref}.zip");
@@ -397,7 +397,7 @@ class BitbucketProvider extends AbstractGitProvider
 
         if ($response && in_array($response->status(), [401, 403])) {
             throw new GitProviderException(
-                'Invalid Bitbucket credentials. Please check your username and app password in Settings → Git Providers.',
+                'Invalid Bitbucket credentials. Please check your email and API token in Settings → Git Providers.',
                 previous: $exception
             );
         }

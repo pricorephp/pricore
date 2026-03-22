@@ -209,57 +209,51 @@ export default function GitCredentialDialog({
                 return (
                     <>
                         <div className="grid space-y-2">
-                            <Label htmlFor="username">
-                                Bitbucket Username{' '}
+                            <Label htmlFor="email">
+                                Atlassian Account Email{' '}
                                 <span className="text-red-500">*</span>
                             </Label>
                             <Input
-                                id="username"
-                                name="credentials[username]"
+                                id="email"
+                                name="credentials[email]"
+                                type="email"
                                 required
-                                placeholder="your-username"
+                                placeholder="you@example.com"
                                 autoFocus
                             />
                             <p className="text-sm text-muted-foreground">
-                                Your Bitbucket username (not your email
-                                address). You can find it in{' '}
-                                <a
-                                    href="https://bitbucket.org/account/settings/"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="text-primary hover:underline"
-                                >
-                                    Account settings
-                                </a>
-                                .
+                                The email address associated with your
+                                Atlassian account.
                             </p>
                         </div>
                         <div className="grid space-y-2">
-                            <Label htmlFor="app_password">
-                                App Password{' '}
+                            <Label htmlFor="api_token">
+                                API Token{' '}
                                 <span className="text-red-500">*</span>
                             </Label>
                             <Input
-                                id="app_password"
-                                name="credentials[app_password]"
+                                id="api_token"
+                                name="credentials[api_token]"
                                 type="password"
                                 required
-                                placeholder="ATBBxxxxxxxxxxxxxxxx"
+                                placeholder="ATATxxxxxxxxxxxxxxxx"
                             />
                             <p className="text-sm text-muted-foreground">
-                                Create an App Password in{' '}
+                                Create an API token in{' '}
                                 <a
-                                    href="https://bitbucket.org/account/settings/app-passwords/"
+                                    href="https://id.atlassian.com/manage-profile/security/api-tokens"
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="text-primary hover:underline"
                                 >
-                                    Bitbucket Settings &rarr; App passwords
+                                    Atlassian Account Settings &rarr; API
+                                    tokens
                                 </a>
-                                . Required permissions:{' '}
-                                <strong>Account: Read</strong>,{' '}
-                                <strong>Repositories: Read</strong>, and{' '}
-                                <strong>Webhooks: Read and Write</strong>.
+                                . Select <strong>Bitbucket</strong> as the
+                                app and assign{' '}
+                                <strong>Repositories: Read</strong> and{' '}
+                                <strong>Webhooks: Read and Write</strong>{' '}
+                                permissions.
                             </p>
                         </div>
                     </>
@@ -307,8 +301,8 @@ export default function GitCredentialDialog({
 
                             {(errors.provider ||
                                 errors['credentials.token'] ||
-                                errors['credentials.username'] ||
-                                errors['credentials.app_password'] ||
+                                errors['credentials.email'] ||
+                                errors['credentials.api_token'] ||
                                 errors['credentials.url']) && (
                                 <div className="rounded-md border border-destructive bg-destructive/10 p-3">
                                     <p className="font-medium text-destructive">
@@ -324,18 +318,18 @@ export default function GitCredentialDialog({
                                                 {errors['credentials.token']}
                                             </li>
                                         )}
-                                        {errors['credentials.username'] && (
+                                        {errors['credentials.email'] && (
                                             <li>
-                                                Username:{' '}
-                                                {errors['credentials.username']}
+                                                Email:{' '}
+                                                {errors['credentials.email']}
                                             </li>
                                         )}
-                                        {errors['credentials.app_password'] && (
+                                        {errors['credentials.api_token'] && (
                                             <li>
-                                                App Password:{' '}
+                                                API Token:{' '}
                                                 {
                                                     errors[
-                                                        'credentials.app_password'
+                                                        'credentials.api_token'
                                                     ]
                                                 }
                                             </li>
