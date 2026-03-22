@@ -21,16 +21,10 @@ class MirrorData extends Data
         public ?string $lastSyncedAt,
         public int $packagesCount,
         public string $createdAt,
-        public ?string $lastSyncError,
     ) {}
 
     public static function fromModel(Mirror $mirror): self
     {
-        $latestSyncLog = $mirror->syncLogs()
-            ->whereNotNull('completed_at')
-            ->orderBy('completed_at', 'desc')
-            ->first();
-
         return new self(
             uuid: $mirror->uuid,
             name: $mirror->name,
@@ -41,7 +35,6 @@ class MirrorData extends Data
             lastSyncedAt: $mirror->last_synced_at?->toISOString(),
             packagesCount: $mirror->packages_count ?? $mirror->packages()->count(),
             createdAt: $mirror->created_at?->toISOString() ?? '',
-            lastSyncError: $latestSyncLog?->error_message,
         );
     }
 }

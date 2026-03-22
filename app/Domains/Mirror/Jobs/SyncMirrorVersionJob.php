@@ -5,6 +5,7 @@ namespace App\Domains\Mirror\Jobs;
 use App\Domains\Mirror\Actions\DownloadMirrorDistAction;
 use App\Domains\Mirror\Actions\FindOrCreateMirrorPackageAction;
 use App\Domains\Mirror\Actions\SyncMirrorPackageVersionAction;
+use App\Domains\Mirror\Contracts\Enums\SyncVersionResult;
 use App\Domains\Mirror\Exceptions\MirrorDistDownloadException;
 use App\Domains\Mirror\Services\RegistryClient\RegistryClientFactory;
 use App\Models\Mirror;
@@ -48,7 +49,7 @@ class SyncMirrorVersionJob implements ShouldQueue
         $composerJson = $versions[$this->version] ?? null;
 
         if (! $composerJson) {
-            $this->incrementCounter('skipped');
+            $this->incrementCounter(SyncVersionResult::Skipped);
 
             return;
         }
@@ -103,8 +104,8 @@ class SyncMirrorVersionJob implements ShouldQueue
                 'dist_shasum' => $dist['shasum'],
             ]);
         } catch (MirrorDistDownloadException $e) {
-            // Track dist download failures separately so they show in the sync log
-            $this->incrementCounter('dist_failed');
+            $this->incrementCounter(SyncVersionResult::DistFailed);
+
             Cache::put(
                 "sync-batch:{$this->batch()?->id}:dist_error",
                 $e->getMessage(),
@@ -120,7 +121,7 @@ class SyncMirrorVersionJob implements ShouldQueue
         }
     }
 
-    protected function incrementCounter(string $result): void
+    protected function incrementCounter(SyncVersionResult $result): void
     {
         $batch = $this->batch();
 
@@ -128,7 +129,7 @@ class SyncMirrorVersionJob implements ShouldQueue
             return;
         }
 
-        $key = "sync-batch:{$batch->id}:{$result}";
+        $key = "sync-batch:{$batch->id}:{$result->value}";
         $ttl = now()->addHours(2);
 
         if (Cache::has($key)) {
@@ -148,6 +149,6 @@ class SyncMirrorVersionJob implements ShouldQueue
             'error' => $exception?->getMessage() ?? 'No exception provided',
         ]);
 
-        $this->incrementCounter('failed');
+        $this->incrementCounter(SyncVersionResult::Failed);
     }
 }

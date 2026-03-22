@@ -2,6 +2,7 @@
 
 namespace App\Domains\Mirror\Actions;
 
+use App\Domains\Mirror\Contracts\Enums\SyncVersionResult;
 use App\Models\Package;
 use App\Models\PackageVersion;
 use Composer\Semver\VersionParser;
@@ -10,16 +11,13 @@ use Illuminate\Support\Facades\Log;
 class SyncMirrorPackageVersionAction
 {
     /**
-     * Sync a single version from registry metadata into a PackageVersion.
-     *
      * @param  array<string, mixed>  $composerJson
-     * @return string added|updated|skipped
      */
     public function handle(
         Package $package,
         string $version,
         array $composerJson,
-    ): string {
+    ): SyncVersionResult {
         $normalizedVersion = $this->normalizeVersion($version);
         $sourceReference = $this->extractReference($composerJson, $version);
 
@@ -30,7 +28,7 @@ class SyncMirrorPackageVersionAction
 
         if ($existingVersion) {
             if ($existingVersion->source_reference === $sourceReference) {
-                return 'skipped';
+                return SyncVersionResult::Skipped;
             }
 
             $existingVersion->update([
@@ -41,7 +39,7 @@ class SyncMirrorPackageVersionAction
                 'released_at' => isset($composerJson['time']) ? $composerJson['time'] : null,
             ]);
 
-            return 'updated';
+            return SyncVersionResult::Updated;
         }
 
         PackageVersion::create([
@@ -54,7 +52,7 @@ class SyncMirrorPackageVersionAction
             'released_at' => isset($composerJson['time']) ? $composerJson['time'] : now(),
         ]);
 
-        return 'added';
+        return SyncVersionResult::Added;
     }
 
     protected function normalizeVersion(string $version): string

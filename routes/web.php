@@ -87,6 +87,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
             Route::get('mirrors', [MirrorController::class, 'index'])->name('mirrors.index');
             Route::post('mirrors', [MirrorController::class, 'store'])->name('mirrors.store');
+            Route::get('mirrors/{mirror:uuid}', [MirrorController::class, 'show'])->name('mirrors.show');
             Route::delete('mirrors/{mirror:uuid}', [MirrorController::class, 'destroy'])->name('mirrors.destroy');
             Route::post('mirrors/{mirror:uuid}/sync', SyncMirrorController::class)->name('mirrors.sync');
 

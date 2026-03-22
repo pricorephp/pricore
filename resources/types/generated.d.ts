@@ -31,7 +31,6 @@ syncStatus: App.Domains.Repository.Contracts.Enums.RepositorySyncStatus | null;
 lastSyncedAt: string | null;
 packagesCount: number;
 createdAt: string;
-lastSyncError: string | null;
 };
 export type MirrorSyncLogData = {
 uuid: string;

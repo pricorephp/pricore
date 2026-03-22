@@ -1,20 +1,18 @@
 import {
-    destroy,
+    show,
     store,
 } from '@/actions/App/Domains/Mirror/Http/Controllers/MirrorController';
-import SyncMirrorController from '@/actions/App/Domains/Mirror/Http/Controllers/SyncMirrorController';
 import InfoBox from '@/components/info-box';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { CardList } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
     Dialog,
-    DialogClose,
     DialogContent,
     DialogDescription,
     DialogFooter,
     DialogTitle,
-    DialogTrigger,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -27,15 +25,8 @@ import {
 } from '@/components/ui/select';
 import { useOrganizationChannel } from '@/hooks/use-organization-channel';
 import { withOrganizationSettingsLayout } from '@/layouts/organization-settings-layout';
-import { Form, router } from '@inertiajs/react';
-import {
-    AlertTriangle,
-    Copy,
-    Loader2,
-    Plus,
-    RefreshCw,
-    Trash2,
-} from 'lucide-react';
+import { Form, Link } from '@inertiajs/react';
+import { ArrowUpRight, Copy, Plus } from 'lucide-react';
 import { DateTime } from 'luxon';
 import { useState } from 'react';
 
@@ -88,15 +79,50 @@ export default function Mirrors({ organization, mirrors }: MirrorsPageProps) {
             </div>
 
             {mirrors.length > 0 ? (
-                <div className="space-y-4">
+                <CardList>
                     {mirrors.map((mirror) => (
-                        <MirrorCard
+                        <Link
                             key={mirror.uuid}
-                            mirror={mirror}
-                            organizationSlug={organization.slug}
-                        />
+                            href={show.url([organization.slug, mirror.uuid])}
+                            className="group flex items-center justify-between px-4 py-3 transition-colors hover:bg-accent/50"
+                        >
+                            <div className="flex items-center gap-3">
+                                <Copy className="h-5 w-5 text-muted-foreground" />
+                                <div className="space-y-1">
+                                    <span className="font-medium transition-colors group-hover:text-primary">
+                                        {mirror.name}
+                                    </span>
+                                    <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                                        <Badge
+                                            variant={getSyncStatusVariant(
+                                                mirror.syncStatus,
+                                            )}
+                                        >
+                                            {getSyncStatusLabel(
+                                                mirror.syncStatus,
+                                            )}
+                                        </Badge>
+                                        <span>
+                                            {mirror.packagesCount}{' '}
+                                            {mirror.packagesCount === 1
+                                                ? 'package'
+                                                : 'packages'}
+                                        </span>
+                                        <span>
+                                            Last synced:{' '}
+                                            {mirror.lastSyncedAt
+                                                ? DateTime.fromISO(
+                                                      mirror.lastSyncedAt,
+                                                  ).toRelative()
+                                                : 'Never'}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                            <ArrowUpRight className="h-4 w-4 shrink-0 text-muted-foreground/50 transition-all group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-muted-foreground" />
+                        </Link>
                     ))}
-                </div>
+                </CardList>
             ) : (
                 <EmptyState />
             )}
@@ -123,133 +149,6 @@ function EmptyState() {
             <p className="mt-1 text-sm text-muted-foreground">
                 Add an external Composer registry to mirror its packages.
             </p>
-        </div>
-    );
-}
-
-function MirrorCard({
-    mirror,
-    organizationSlug,
-}: {
-    mirror: MirrorData;
-    organizationSlug: string;
-}) {
-    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-    const [syncing, setSyncing] = useState(false);
-
-    const createdAt = new Date(mirror.createdAt).toLocaleDateString(undefined, {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-    });
-
-    return (
-        <div className="rounded-lg border bg-card p-4">
-            <div className="flex items-start justify-between">
-                <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                        <Copy className="h-4 w-4 text-muted-foreground" />
-                        <h4 className="font-medium">{mirror.name}</h4>
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                        {mirror.url}
-                    </p>
-                    <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                        <Badge
-                            variant={getSyncStatusVariant(mirror.syncStatus)}
-                        >
-                            {getSyncStatusLabel(mirror.syncStatus)}
-                        </Badge>
-                        <span>
-                            {mirror.packagesCount}{' '}
-                            {mirror.packagesCount === 1
-                                ? 'package'
-                                : 'packages'}
-                        </span>
-                        <span>
-                            Last synced:{' '}
-                            {mirror.lastSyncedAt
-                                ? DateTime.fromISO(
-                                      mirror.lastSyncedAt,
-                                  ).toRelative()
-                                : 'Never'}
-                        </span>
-                        <span>Added {createdAt}</span>
-                    </div>
-                    {mirror.lastSyncError && (
-                        <div className="flex items-start gap-2 rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
-                            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-                            <span>{mirror.lastSyncError}</span>
-                        </div>
-                    )}
-                </div>
-                <div className="flex items-center gap-2">
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        disabled={syncing || mirror.syncStatus === 'pending'}
-                        onClick={() => {
-                            setSyncing(true);
-                            router.post(
-                                SyncMirrorController.url([
-                                    organizationSlug,
-                                    mirror.uuid,
-                                ]),
-                                {},
-                                {
-                                    preserveScroll: true,
-                                    onFinish: () => setSyncing(false),
-                                },
-                            );
-                        }}
-                    >
-                        {syncing || mirror.syncStatus === 'pending' ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                            <RefreshCw className="h-4 w-4" />
-                        )}
-                        Sync
-                    </Button>
-                    <Dialog
-                        open={deleteDialogOpen}
-                        onOpenChange={setDeleteDialogOpen}
-                    >
-                        <DialogTrigger asChild>
-                            <Button variant="outline" size="sm">
-                                <Trash2 className="h-4 w-4" />
-                            </Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                            <DialogTitle>Remove Mirror</DialogTitle>
-                            <DialogDescription>
-                                Are you sure you want to remove{' '}
-                                <strong>{mirror.name}</strong>? Packages that
-                                were imported from this mirror will remain but
-                                will no longer be synced.
-                            </DialogDescription>
-                            <DialogFooter>
-                                <DialogClose asChild>
-                                    <Button variant="secondary">Cancel</Button>
-                                </DialogClose>
-                                <Button
-                                    variant="destructive"
-                                    onClick={() => {
-                                        router.delete(
-                                            destroy.url([
-                                                organizationSlug,
-                                                mirror.uuid,
-                                            ]),
-                                        );
-                                        setDeleteDialogOpen(false);
-                                    }}
-                                >
-                                    Remove
-                                </Button>
-                            </DialogFooter>
-                        </DialogContent>
-                    </Dialog>
-                </div>
-            </div>
         </div>
     );
 }
@@ -320,7 +219,7 @@ function AddMirrorDialog({
                                     id="url"
                                     name="url"
                                     required
-                                    placeholder="https://nova.laravel.com"
+                                    placeholder="https://satis.example.com"
                                 />
                                 {errors.url && (
                                     <p className="text-destructive">
@@ -438,8 +337,7 @@ function AddMirrorDialog({
                                     htmlFor="mirror_dist"
                                     className="font-normal"
                                 >
-                                    Mirror dist archives (recommended for paid
-                                    packages)
+                                    Mirror dist archives
                                 </Label>
                             </div>
 
