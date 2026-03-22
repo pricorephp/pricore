@@ -86,7 +86,7 @@ test('store requires credentials for bitbucket provider', function () {
             'provider' => 'bitbucket',
         ]);
 
-    $response->assertSessionHasErrors(['credentials.username', 'credentials.app_password']);
+    $response->assertSessionHasErrors(['credentials.email', 'credentials.api_token']);
 });
 
 test('store requires ssh key for git provider', function () {
