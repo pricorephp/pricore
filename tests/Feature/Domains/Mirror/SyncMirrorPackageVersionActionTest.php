@@ -1,6 +1,7 @@
 <?php
 
 use App\Domains\Mirror\Actions\SyncMirrorPackageVersionAction;
+use App\Domains\Mirror\Contracts\Enums\SyncVersionResult;
 use App\Models\Mirror;
 use App\Models\Organization;
 use App\Models\Package;
@@ -34,7 +35,7 @@ it('creates a new package version and returns added', function () {
         $composerJson,
     );
 
-    expect($result)->toBe('added');
+    expect($result)->toBe(SyncVersionResult::Added);
 
     assertDatabaseHas('package_versions', [
         'package_uuid' => $this->package->uuid,
@@ -64,7 +65,7 @@ it('skips a version when reference has not changed', function () {
         $composerJson,
     );
 
-    expect($result)->toBe('skipped');
+    expect($result)->toBe(SyncVersionResult::Skipped);
 });
 
 it('updates a version when reference has changed', function () {
@@ -88,7 +89,7 @@ it('updates a version when reference has changed', function () {
         $composerJson,
     );
 
-    expect($result)->toBe('updated');
+    expect($result)->toBe(SyncVersionResult::Updated);
 
     assertDatabaseHas('package_versions', [
         'package_uuid' => $this->package->uuid,
@@ -113,7 +114,7 @@ it('extracts reference from source when dist reference is missing', function () 
         $composerJson,
     );
 
-    expect($result)->toBe('added');
+    expect($result)->toBe(SyncVersionResult::Added);
 
     assertDatabaseHas('package_versions', [
         'package_uuid' => $this->package->uuid,
@@ -135,7 +136,7 @@ it('generates a hash reference when no dist or source reference exists', functio
         $composerJson,
     );
 
-    expect($result)->toBe('added');
+    expect($result)->toBe(SyncVersionResult::Added);
 
     $version = PackageVersion::where('package_uuid', $this->package->uuid)
         ->where('version', '3.0.0')
