@@ -98,7 +98,7 @@ export default function AddRepositoryDialog({
 
     // Fetch owners when provider changes
     useEffect(() => {
-        if (!isOpen || provider === 'git') {
+        if (!isOpen || provider === 'git' || provider === 'bitbucket') {
             return;
         }
 
@@ -143,7 +143,7 @@ export default function AddRepositoryDialog({
 
     // Fetch repositories when owner is selected
     useEffect(() => {
-        if (!isOpen || provider === 'git' || !selectedOwner) {
+        if (!isOpen || provider === 'git' || provider === 'bitbucket' || !selectedOwner) {
             return;
         }
 
@@ -316,7 +316,7 @@ export default function AddRepositoryDialog({
                                     Repository{' '}
                                     <span className="text-red-500">*</span>
                                 </Label>
-                                {provider !== 'git' ? (
+                                {provider !== 'git' && provider !== 'bitbucket' ? (
                                     loadingOwners ? (
                                         <div className="flex items-center gap-2 rounded-md border border-input bg-transparent px-3 py-2">
                                             <Spinner className="size-4" />
@@ -625,7 +625,7 @@ export default function AddRepositoryDialog({
                                     type="submit"
                                     disabled={
                                         processing ||
-                                        (provider !== 'git' &&
+                                        (provider !== 'git' && provider !== 'bitbucket' &&
                                             (!selectedRepo ||
                                                 repositories.length === 0))
                                     }

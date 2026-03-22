@@ -29,7 +29,6 @@ type RepositorySuggestion =
 const gitProviders: Record<string, string> = {
     github: 'GitHub',
     gitlab: 'GitLab',
-    bitbucket: 'Bitbucket',
 };
 
 interface ImportRepositoriesDialogProps {
