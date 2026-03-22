@@ -28,7 +28,7 @@ class SyncMirrorJob implements ShouldBeUnique, ShouldQueue
 
     public int $tries = 1;
 
-    public int $uniqueFor = 30;
+    public int $uniqueFor = 300;
 
     public function __construct(
         public Mirror $mirror

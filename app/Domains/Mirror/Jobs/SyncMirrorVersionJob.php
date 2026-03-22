@@ -128,7 +128,14 @@ class SyncMirrorVersionJob implements ShouldQueue
             return;
         }
 
-        Cache::increment("sync-batch:{$batch->id}:{$result}");
+        $key = "sync-batch:{$batch->id}:{$result}";
+        $ttl = now()->addHours(2);
+
+        if (Cache::has($key)) {
+            Cache::increment($key);
+        } else {
+            Cache::put($key, 1, $ttl);
+        }
     }
 
     public function failed(?Throwable $exception): void

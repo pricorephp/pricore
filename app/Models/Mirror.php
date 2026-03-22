@@ -5,9 +5,11 @@ namespace App\Models;
 use App\Domains\Mirror\Contracts\Enums\MirrorAuthType;
 use App\Domains\Repository\Contracts\Enums\RepositorySyncStatus;
 use App\Models\Concerns\HasUuids;
+use Database\Factories\MirrorFactory;
 use Eloquent;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -39,7 +41,8 @@ use Illuminate\Support\Carbon;
  */
 class Mirror extends Model
 {
-    use HasUuids;
+    /** @use HasFactory<MirrorFactory> */
+    use HasFactory, HasUuids;
 
     protected $guarded = ['uuid'];
 

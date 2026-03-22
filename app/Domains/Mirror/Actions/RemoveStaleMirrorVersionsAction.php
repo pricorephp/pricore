@@ -16,15 +16,15 @@ class RemoveStaleMirrorVersionsAction
      */
     public function handle(Mirror $mirror, array $allPackageVersions): int
     {
-        $packageUuids = $mirror->packages()->pluck('uuid');
+        $packages = $mirror->packages;
 
-        if ($packageUuids->isEmpty()) {
+        if ($packages->isEmpty()) {
             return 0;
         }
 
         $totalDeleted = 0;
 
-        foreach ($mirror->packages as $package) {
+        foreach ($packages as $package) {
             $upstreamVersions = array_keys($allPackageVersions[$package->name] ?? []);
 
             if (empty($upstreamVersions)) {

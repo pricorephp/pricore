@@ -423,6 +423,11 @@ function AddMirrorDialog({
                             )}
 
                             <div className="flex items-center space-x-2">
+                                <input
+                                    type="hidden"
+                                    name="mirror_dist"
+                                    value="0"
+                                />
                                 <Checkbox
                                     id="mirror_dist"
                                     name="mirror_dist"

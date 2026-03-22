@@ -51,11 +51,11 @@ import {
     Copy,
     Download,
     EllipsisVertical,
+    HardDrive,
     ExternalLink,
     GitBranch,
     GitCommit,
     Globe,
-    HardDrive,
     Link2,
     Lock,
     Package as PackageIcon,
@@ -494,18 +494,10 @@ export default function PackageShow({
                                                     {version.version}
                                                 </span>
                                                 {version.hasDist && (
-                                                    <Tooltip>
-                                                        <TooltipTrigger asChild>
-                                                            <span className="inline-flex items-center gap-1 rounded-md border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 text-xs text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-400">
-                                                                <HardDrive className="h-3 w-3" />
-                                                                Cached
-                                                            </span>
-                                                        </TooltipTrigger>
-                                                        <TooltipContent>
-                                                            Dist archive hosted
-                                                            by Pricore
-                                                        </TooltipContent>
-                                                    </Tooltip>
+                                                    <span className="inline-flex items-center gap-1 rounded-md border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 text-xs text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-400">
+                                                        <HardDrive className="h-3 w-3" />
+                                                        Dist available
+                                                    </span>
                                                 )}
                                             </div>
                                             <div className="mt-1 flex items-center gap-3 text-sm text-muted-foreground">

@@ -47,9 +47,7 @@ class PackageController extends Controller
             abort(404);
         }
 
-        if (! $request->user()?->can('deleteRepository', $organization)) {
-            abort(403);
-        }
+        $this->authorize('deleteRepository', $organization);
 
         $this->recordActivityTask->handle(
             organization: $organization,
