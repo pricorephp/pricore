@@ -10,6 +10,7 @@ Pricore supports multiple Git providers:
 |----------|----------|
 | **GitHub** | OAuth integration, webhooks, automatic sync |
 | **GitLab** | OAuth integration, webhooks, self-hosted support |
+| **Bitbucket** | API token authentication, webhooks, automatic sync |
 | **Generic Git** | SSH key authentication, manual webhooks, works with any Git server |
 
 Generic Git support lets you connect any Git repository accessible via SSH or HTTPS — including self-hosted servers like Gitea, Gogs, Forgejo, or plain Git over SSH.
@@ -25,6 +26,18 @@ Generic Git support lets you connect any Git repository accessible via SSH or HT
    - Fetches `composer.json` from the default branch
    - Creates a package with the discovered metadata
    - Sets up webhooks for automatic syncing
+
+### Bitbucket (API Token)
+
+1. Go to **Settings** > **Git Providers** and add your Bitbucket credentials (Atlassian account email + API token)
+2. Navigate to **Repositories** > **Add Repository**
+3. Select **Bitbucket** as the provider
+4. Select the workspace and repository from the list
+5. Pricore automatically sets up webhooks and syncs the repository
+
+::: tip
+Create a scoped API token at [Atlassian Account Settings > API tokens](https://id.atlassian.com/manage-profile/security/api-tokens). Select **Bitbucket** as the app and enable: `read:user:bitbucket`, `read:repository:bitbucket`, `read:workspace:bitbucket`, `read:webhook:bitbucket`, and `write:webhook:bitbucket`.
+:::
 
 ### Generic Git
 
@@ -42,9 +55,9 @@ Public repositories accessible over HTTPS don't require an SSH key. Just enter t
 
 ## Webhook Configuration
 
-### Automatic Webhooks (GitHub & GitLab)
+### Automatic Webhooks (GitHub, GitLab & Bitbucket)
 
-For OAuth-connected repositories, webhooks are configured automatically when you connect the repository. Pricore registers a webhook with your Git provider that triggers a sync on push events.
+For OAuth-connected (GitHub/GitLab) or API token-connected (Bitbucket) repositories, webhooks are configured automatically when you connect the repository. Pricore registers a webhook with your Git provider that triggers a sync on push events.
 
 You can re-register a webhook from the repository page via **Actions** > **Re-register Webhook** if it gets out of sync.
 
@@ -77,6 +90,13 @@ Events: Push, Create (tags)
 URL: https://pricore.yourcompany.com/webhooks/gitlab/{repository-id}
 Secret token: (auto-generated when registering via Pricore)
 Trigger: Push events, Tag push events
+```
+
+**Bitbucket webhook format:**
+```
+URL: https://pricore.yourcompany.com/webhooks/bitbucket/{repository-id}
+Signature: X-Hub-Signature (HMAC-SHA256, auto-configured)
+Events: repo:push, repo:refs_changed
 ```
 
 **Generic Git webhook format:**

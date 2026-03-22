@@ -17,7 +17,7 @@ features:
   - title: Private Package Hosting
     details: Host and serve private Composer packages with fine-grained access control and organization-level isolation.
   - title: Multi-Provider Git Integration
-    details: Automatically sync packages from GitHub or GitLab repositories via webhooks.
+    details: Automatically sync packages from GitHub, GitLab, or Bitbucket repositories via webhooks.
   - title: Organization Management
     details: Multi-tenant architecture with organizations, teams, and role-based access control for your packages.
   - title: Token-Based Authentication

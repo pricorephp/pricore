@@ -53,6 +53,7 @@ Dist archive creation depends on your Git provider's capabilities:
 |----------|---------|--------|
 | **GitHub** | Supported | Downloads zipball via GitHub API |
 | **GitLab** | Supported | Downloads archive via GitLab API |
+| **Bitbucket** | Supported | Downloads zip archive via Bitbucket API |
 | **Local Git** | Supported | Uses `git archive` command |
 | **Generic Git** | Not supported | Falls back to source-only |
 

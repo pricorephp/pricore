@@ -160,6 +160,23 @@ Requires webhook token verification via the `X-Gitlab-Token` header (plain text 
 | `Push Hook` | Triggers repository sync |
 | `Tag Push Hook` | Triggers repository sync |
 
+### Bitbucket Webhook
+
+```
+POST /webhooks/bitbucket/{repository-uuid}
+```
+
+Receives push and ref change events from Bitbucket. Triggers an automatic repository sync when new commits or tags are pushed.
+
+Requires webhook signature verification via the `X-Hub-Signature` header (HMAC-SHA256).
+
+**Supported events:**
+
+| Event | Action |
+|-------|--------|
+| `repo:push` | Triggers repository sync |
+| `repo:refs_changed` | Triggers repository sync |
+
 ### Generic Git Webhook
 
 ```

@@ -166,6 +166,21 @@ Create a GitLab OAuth Application:
 2. Follow the same steps as above
 3. Set `GITLAB_INSTANCE_URI` to your instance URL (e.g., `https://gitlab.example.com/`)
 
+### Bitbucket
+
+Bitbucket uses API token authentication instead of OAuth — no environment variables are needed. Credentials are configured per user in **Settings** > **Git Providers**.
+
+1. Go to [Atlassian Account Settings > API tokens](https://id.atlassian.com/manage-profile/security/api-tokens)
+2. Click **Create API token with scopes**
+3. Select **Bitbucket** as the app and enable the following scopes:
+   - `read:user:bitbucket`
+   - `read:repository:bitbucket`
+   - `read:workspace:bitbucket`
+   - `read:webhook:bitbucket`
+   - `write:webhook:bitbucket`
+4. In Pricore, go to **Settings** > **Git Providers** > **Add Bitbucket**
+5. Enter your Atlassian account email and the API token
+
 ## Storage Configuration
 
 By default, Pricore stores package distribution files on the local filesystem. To use S3 or an S3-compatible storage provider (like MinIO, DigitalOcean Spaces, or Cloudflare R2), set the filesystem disk to `s3`:
