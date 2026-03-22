@@ -10,6 +10,8 @@ use App\Domains\Repository\Contracts\Enums\RepositorySyncStatus;
 use App\Domains\Repository\Contracts\Enums\SyncStatus;
 use App\Models\Mirror;
 use App\Models\MirrorSyncLog;
+use App\Models\Package;
+use App\Models\PackageVersion;
 use Illuminate\Bus\Batch;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -26,7 +28,7 @@ class SyncMirrorJob implements ShouldBeUnique, ShouldQueue
 
     public int $tries = 1;
 
-    public int $uniqueFor = 300;
+    public int $uniqueFor = 30;
 
     public function __construct(
         public Mirror $mirror
@@ -80,16 +82,46 @@ class SyncMirrorJob implements ShouldBeUnique, ShouldQueue
                 ],
             ]);
 
-            // Dispatch one lightweight job per version (like SyncRefJob for repos)
+            // Filter to only new/changed versions or versions missing dist archives
+            $mirrorDist = $this->mirror->mirror_dist && config('pricore.dist.enabled');
             $jobs = [];
+            $skippedCount = 0;
+
             foreach ($allPackageVersions as $packageName => $versions) {
-                foreach (array_keys($versions) as $version) {
+                $existingVersions = $this->getExistingVersions($packageName, $mirrorDist);
+
+                foreach ($versions as $version => $composerJson) {
+                    $version = (string) $version;
+                    $reference = $this->extractReference($composerJson);
+                    $existing = $existingVersions[$version] ?? null;
+
+                    if ($existing && $existing['reference'] === $reference && (! $mirrorDist || $existing['has_dist'])) {
+                        $skippedCount++;
+
+                        continue;
+                    }
+
                     $jobs[] = new SyncMirrorVersionJob(
                         $this->mirror,
                         $packageName,
-                        (string) $version,
+                        $version,
                     );
                 }
+            }
+
+            if ($skippedCount > 0) {
+                $syncLog->update([
+                    'versions_skipped' => $skippedCount,
+                    'details' => array_merge($syncLog->details ?? [], [
+                        'versions_skipped_unchanged' => $skippedCount,
+                    ]),
+                ]);
+            }
+
+            if (empty($jobs)) {
+                $this->completeSyncLogEmpty($syncLog);
+
+                return;
             }
 
             $syncLogUuid = $syncLog->uuid;
@@ -126,10 +158,6 @@ class SyncMirrorJob implements ShouldBeUnique, ShouldQueue
         $syncLog->update([
             'status' => SyncStatus::Success,
             'completed_at' => now(),
-            'versions_added' => 0,
-            'versions_updated' => 0,
-            'versions_skipped' => 0,
-            'versions_failed' => 0,
         ]);
 
         $this->mirror->update([
@@ -175,5 +203,50 @@ class SyncMirrorJob implements ShouldBeUnique, ShouldQueue
             'error' => $e->getMessage(),
             'trace' => $e->getTraceAsString(),
         ]);
+    }
+
+    /**
+     * Get existing version references for a package to filter unchanged versions.
+     *
+     * @return array<string, array{reference: string|null, has_dist: bool}>
+     */
+    protected function getExistingVersions(string $packageName, bool $checkDist): array
+    {
+        $package = Package::query()
+            ->where('organization_uuid', $this->mirror->organization_uuid)
+            ->where('name', $packageName)
+            ->first();
+
+        if (! $package) {
+            return [];
+        }
+
+        return PackageVersion::query()
+            ->where('package_uuid', $package->uuid)
+            ->get(['version', 'source_reference', 'dist_path'])
+            ->keyBy('version')
+            ->map(fn (PackageVersion $v) => [
+                'reference' => $v->source_reference,
+                'has_dist' => $v->dist_path !== null,
+            ])
+            ->all();
+    }
+
+    /**
+     * Extract a reference from upstream composer.json metadata.
+     *
+     * @param  array<string, mixed>  $composerJson
+     */
+    protected function extractReference(array $composerJson): string
+    {
+        if (isset($composerJson['dist']['reference'])) {
+            return (string) $composerJson['dist']['reference'];
+        }
+
+        if (isset($composerJson['source']['reference'])) {
+            return (string) $composerJson['source']['reference'];
+        }
+
+        return hash('sha256', (string) json_encode($composerJson));
     }
 }
