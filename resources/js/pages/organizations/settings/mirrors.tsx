@@ -103,7 +103,7 @@ export default function Mirrors({ organization, mirrors }: MirrorsPageProps) {
 
             <InfoBox
                 title="About Registry Mirrors"
-                description="Registry mirrors let you import packages from external Composer registries (like Satis, Laravel Nova, or paid Filament plugins) into your organization. Packages are synced automatically and served alongside your other packages."
+                description="Registry mirrors let you import packages from external Composer registries (e.g. Satis repositories) into your organization. Packages are synced automatically and served alongside your other packages."
             />
 
             <AddMirrorDialog
@@ -302,7 +302,7 @@ function AddMirrorDialog({
                                     id="name"
                                     name="name"
                                     required
-                                    placeholder="e.g., Laravel Nova"
+                                    placeholder="e.g., Internal Satis"
                                 />
                                 {errors.name && (
                                     <p className="text-destructive">
