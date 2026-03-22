@@ -239,7 +239,7 @@ export default function GitCredentialDialog({
                                 placeholder="ATATxxxxxxxxxxxxxxxx"
                             />
                             <p className="text-sm text-muted-foreground">
-                                Create an API token in{' '}
+                                Go to{' '}
                                 <a
                                     href="https://id.atlassian.com/manage-profile/security/api-tokens"
                                     target="_blank"
@@ -248,12 +248,25 @@ export default function GitCredentialDialog({
                                 >
                                     Atlassian Account Settings &rarr; API
                                     tokens
-                                </a>
+                                </a>{' '}
+                                and choose{' '}
+                                <strong>
+                                    Create API token with scopes
+                                </strong>
                                 . Select <strong>Bitbucket</strong> as the
-                                app and assign{' '}
-                                <strong>Repositories: Read</strong> and{' '}
-                                <strong>Webhooks: Read and Write</strong>{' '}
-                                permissions.
+                                app and enable:{' '}
+                                <strong>read:account</strong>,{' '}
+                                <strong>
+                                    read:repository:bitbucket
+                                </strong>
+                                ,{' '}
+                                <strong>
+                                    read:workspace:bitbucket
+                                </strong>
+                                ,{' '}
+                                <strong>read:webhook:bitbucket</strong>,
+                                and{' '}
+                                <strong>write:webhook:bitbucket</strong>.
                             </p>
                         </div>
                     </>

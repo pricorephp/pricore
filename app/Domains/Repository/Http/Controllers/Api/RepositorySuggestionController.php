@@ -97,7 +97,8 @@ class RepositorySuggestionController extends Controller
             $owners = match ($provider) {
                 GitProvider::GitHub => (new GitHubProvider('', $credential->credentials))->getOwners(),
                 GitProvider::GitLab => (new GitLabProvider('', $credential->credentials))->getOwners(),
-                GitProvider::Bitbucket, GitProvider::Git => [],
+                GitProvider::Bitbucket => (new BitbucketProvider('', $credential->credentials))->getOwners(),
+                GitProvider::Git => [],
             };
 
             return response()->json(['owners' => $owners]);
