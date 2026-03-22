@@ -21,6 +21,10 @@ enum ActivityType: string
     case TokenRevoked = 'token.revoked';
     case SshKeyGenerated = 'ssh_key.generated';
     case SshKeyDeleted = 'ssh_key.deleted';
+    case MirrorAdded = 'mirror.added';
+    case MirrorRemoved = 'mirror.removed';
+    case MirrorSynced = 'mirror.synced';
+    case MirrorSyncFailed = 'mirror.sync_failed';
 
     public function label(): string
     {
@@ -39,6 +43,10 @@ enum ActivityType: string
             self::TokenRevoked => 'Token revoked',
             self::SshKeyGenerated => 'SSH key generated',
             self::SshKeyDeleted => 'SSH key deleted',
+            self::MirrorAdded => 'Mirror added',
+            self::MirrorRemoved => 'Mirror removed',
+            self::MirrorSynced => 'Mirror synced',
+            self::MirrorSyncFailed => 'Mirror sync failed',
         };
     }
 
@@ -59,6 +67,10 @@ enum ActivityType: string
             self::TokenRevoked => 'key-round',
             self::SshKeyGenerated => 'key-round',
             self::SshKeyDeleted => 'key-round',
+            self::MirrorAdded => 'copy',
+            self::MirrorRemoved => 'copy',
+            self::MirrorSynced => 'refresh-cw',
+            self::MirrorSyncFailed => 'alert-circle',
         };
     }
 
@@ -70,6 +82,7 @@ enum ActivityType: string
             self::MemberAdded, self::MemberRemoved, self::MemberRoleChanged, self::InvitationSent => 'member',
             self::TokenCreated, self::TokenRevoked => 'token',
             self::SshKeyGenerated, self::SshKeyDeleted => 'settings',
+            self::MirrorAdded, self::MirrorRemoved, self::MirrorSynced, self::MirrorSyncFailed => 'mirror',
         };
     }
 }

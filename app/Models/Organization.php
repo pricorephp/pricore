@@ -42,6 +42,8 @@ use Illuminate\Support\Carbon;
  * @property-read int|null $activity_logs_count
  * @property-read Collection<int, OrganizationSshKey> $sshKeys
  * @property-read int|null $ssh_keys_count
+ * @property-read Collection<int, Mirror> $mirrors
+ * @property-read int|null $mirrors_count
  *
  * @method static OrganizationFactory factory($count = null, $state = [])
  * @method static Builder<static>|Organization newModelQuery()
@@ -167,5 +169,13 @@ class Organization extends Model
     public function sshKeys(): HasMany
     {
         return $this->hasMany(OrganizationSshKey::class, 'organization_uuid', 'uuid');
+    }
+
+    /**
+     * @return HasMany<Mirror, $this>
+     */
+    public function mirrors(): HasMany
+    {
+        return $this->hasMany(Mirror::class, 'organization_uuid', 'uuid');
     }
 }

@@ -1,5 +1,7 @@
 <?php
 
+use App\Domains\Mirror\Http\Controllers\MirrorController;
+use App\Domains\Mirror\Http\Controllers\SyncMirrorController;
 use App\Domains\Organization\Http\Controllers\DismissOnboardingController;
 use App\Domains\Organization\Http\Controllers\InvitationController;
 use App\Domains\Organization\Http\Controllers\MemberController;
@@ -47,6 +49,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('organizations/{organization:slug}/dismiss-onboarding', DismissOnboardingController::class)->name('organizations.dismiss-onboarding');
         Route::get('organizations/{organization:slug}/packages', [PackageController::class, 'index'])->name('organizations.packages.index');
         Route::get('organizations/{organization:slug}/packages/{package:uuid}', [PackageController::class, 'show'])->name('organizations.packages.show');
+        Route::delete('organizations/{organization:slug}/packages/{package:uuid}', [PackageController::class, 'destroy'])->name('organizations.packages.destroy');
         Route::delete('organizations/{organization:slug}/packages/{package:uuid}/versions/{version:uuid}', [PackageVersionController::class, 'destroy'])->name('organizations.packages.versions.destroy');
         Route::get('organizations/{organization:slug}/repositories', [RepositoryController::class, 'index'])->name('organizations.repositories.index');
         Route::post('organizations/{organization:slug}/repositories', [RepositoryController::class, 'store'])->name('organizations.repositories.store');
@@ -81,6 +84,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::get('ssh-keys', [SshKeyController::class, 'index'])->name('ssh-keys');
             Route::post('ssh-keys', [SshKeyController::class, 'store'])->name('ssh-keys.store');
             Route::delete('ssh-keys/{sshKey:uuid}', [SshKeyController::class, 'destroy'])->name('ssh-keys.destroy');
+
+            Route::get('mirrors', [MirrorController::class, 'index'])->name('mirrors.index');
+            Route::post('mirrors', [MirrorController::class, 'store'])->name('mirrors.store');
+            Route::delete('mirrors/{mirror:uuid}', [MirrorController::class, 'destroy'])->name('mirrors.destroy');
+            Route::post('mirrors/{mirror:uuid}/sync', SyncMirrorController::class)->name('mirrors.sync');
 
         });
     });

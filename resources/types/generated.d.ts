@@ -14,11 +14,40 @@ createdAt: string | null;
 };
 }
 declare namespace App.Domains.Activity.Contracts.Enums {
-export type ActivityType = 'repository.added' | 'repository.removed' | 'repository.synced' | 'repository.sync_failed' | 'package.created' | 'package.removed' | 'member.added' | 'member.removed' | 'member.role_changed' | 'invitation.sent' | 'token.created' | 'token.revoked' | 'ssh_key.generated' | 'ssh_key.deleted';
+export type ActivityType = 'repository.added' | 'repository.removed' | 'repository.synced' | 'repository.sync_failed' | 'package.created' | 'package.removed' | 'member.added' | 'member.removed' | 'member.role_changed' | 'invitation.sent' | 'token.created' | 'token.revoked' | 'ssh_key.generated' | 'ssh_key.deleted' | 'mirror.added' | 'mirror.removed' | 'mirror.synced' | 'mirror.sync_failed';
 }
 declare namespace App.Domains.Auth.Contracts.Enums {
 export type GitHubOAuthIntent = 'login' | 'connect';
 export type GitLabOAuthIntent = 'login' | 'connect';
+}
+declare namespace App.Domains.Mirror.Contracts.Data {
+export type MirrorData = {
+uuid: string;
+name: string;
+url: string;
+authType: App.Domains.Mirror.Contracts.Enums.MirrorAuthType;
+mirrorDist: boolean;
+syncStatus: App.Domains.Repository.Contracts.Enums.RepositorySyncStatus | null;
+lastSyncedAt: string | null;
+packagesCount: number;
+createdAt: string;
+lastSyncError: string | null;
+};
+export type MirrorSyncLogData = {
+uuid: string;
+status: App.Domains.Repository.Contracts.Enums.SyncStatus;
+statusLabel: string;
+startedAt: string;
+completedAt: string | null;
+errorMessage: string | null;
+versionsAdded: number;
+versionsUpdated: number;
+versionsRemoved: number;
+details: { [key: string]: any } | null;
+};
+}
+declare namespace App.Domains.Mirror.Contracts.Enums {
+export type MirrorAuthType = 'none' | 'basic' | 'bearer';
 }
 declare namespace App.Domains.Organization.Contracts.Data {
 export type DailyDownloadData = {
@@ -116,6 +145,8 @@ updatedAt: string;
 repositoryName: string | null;
 repositoryIdentifier: string | null;
 repositoryUuid: string | null;
+mirrorName: string | null;
+mirrorUuid: string | null;
 };
 export type PackageDownloadStatsData = {
 totalDownloads: number;
@@ -130,6 +161,7 @@ releasedAt: string | null;
 sourceUrl: string | null;
 sourceReference: string | null;
 commitUrl: string | null;
+hasDist: boolean;
 };
 export type PackageVersionDetailData = {
 uuid: string;
