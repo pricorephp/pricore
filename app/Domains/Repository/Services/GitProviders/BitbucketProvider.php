@@ -6,6 +6,7 @@ use App\Domains\Repository\Contracts\Data\RepositorySuggestionData;
 use App\Domains\Repository\Exceptions\GitProviderException;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\RequestException;
+use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -302,6 +303,8 @@ class BitbucketProvider extends AbstractGitProvider
             $owners = [];
 
             $userResponse = $this->http->get('/user');
+            $this->throwIfResponseUnauthorized($userResponse);
+
             if ($userResponse->successful()) {
                 $owners[] = $userResponse->json('username');
             }
@@ -311,6 +314,7 @@ class BitbucketProvider extends AbstractGitProvider
 
             do {
                 $response = $this->http->get($url, $params);
+                $this->throwIfResponseUnauthorized($response);
 
                 if ($response->failed()) {
                     break;
@@ -331,7 +335,6 @@ class BitbucketProvider extends AbstractGitProvider
 
             return $owners;
         } catch (\Exception $e) {
-            $this->throwIfAuthError($e);
 
             Log::error('Bitbucket API error fetching owners', [
                 'error' => $e->getMessage(),
@@ -356,6 +359,7 @@ class BitbucketProvider extends AbstractGitProvider
 
             do {
                 $response = $this->http->get($url, $params);
+                $this->throwIfResponseUnauthorized($response);
 
                 if ($response->failed()) {
                     throw new GitProviderException(
@@ -375,7 +379,6 @@ class BitbucketProvider extends AbstractGitProvider
 
             return $repositories;
         } catch (\Exception $e) {
-            $this->throwIfAuthError($e);
 
             Log::error('Bitbucket API error fetching repositories', [
                 'error' => $e->getMessage(),
@@ -389,16 +392,22 @@ class BitbucketProvider extends AbstractGitProvider
     }
 
     /**
-     * Throw a user-friendly error if the exception is an auth failure.
+     * Throw a user-friendly error if the response indicates auth/scope failure.
      */
-    protected function throwIfAuthError(\Exception $exception): void
+    protected function throwIfResponseUnauthorized(Response $response): void
     {
-        $response = $exception instanceof RequestException ? $exception->response : null;
-
-        if ($response && in_array($response->status(), [401, 403])) {
+        if ($response->status() === 401) {
             throw new GitProviderException(
-                'Invalid Bitbucket credentials. Please check your email and API token in Settings → Git Providers.',
-                previous: $exception
+                'Invalid Bitbucket credentials. Please check your email and API token in Settings → Git Providers.'
+            );
+        }
+
+        if ($response->status() === 403) {
+            $detail = $response->json('error.detail.required', []);
+            $scopes = $detail ? ' Required scopes: '.implode(', ', $detail).'.' : '';
+
+            throw new GitProviderException(
+                'Your Bitbucket API token is missing required scopes.'.$scopes
             );
         }
     }

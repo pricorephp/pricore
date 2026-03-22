@@ -255,7 +255,7 @@ export default function GitCredentialDialog({
                                 </strong>
                                 . Select <strong>Bitbucket</strong> as the
                                 app and enable:{' '}
-                                <strong>read:account</strong>,{' '}
+                                <strong>read:user:bitbucket</strong>,{' '}
                                 <strong>
                                     read:repository:bitbucket
                                 </strong>
