@@ -13,7 +13,9 @@ class InlineRegistryClient implements RegistryClientInterface
     public function __construct(
         protected PendingRequest $httpClient,
         protected array $packages,
-    ) {}
+    ) {
+        $this->packages = $this->normalizePackages($packages);
+    }
 
     public function getAvailablePackages(): array
     {
@@ -23,6 +25,33 @@ class InlineRegistryClient implements RegistryClientInterface
     public function getPackageVersions(string $packageName): array
     {
         return $this->packages[$packageName] ?? [];
+    }
+
+    /**
+     * Normalize packages so versions are keyed by version string.
+     *
+     * Some registries return versions as a JSON array instead of an object,
+     * resulting in numeric keys (0, 1, 2) instead of version strings.
+     *
+     * @param  array<string, array<int|string, array<string, mixed>>>  $packages
+     * @return array<string, array<string, array<string, mixed>>>
+     */
+    protected function normalizePackages(array $packages): array
+    {
+        $normalized = [];
+
+        foreach ($packages as $packageName => $versions) {
+            $normalizedVersions = [];
+
+            foreach ($versions as $key => $composerJson) {
+                $version = (string) ($composerJson['version'] ?? $key);
+                $normalizedVersions[$version] = $composerJson;
+            }
+
+            $normalized[$packageName] = $normalizedVersions;
+        }
+
+        return $normalized;
     }
 
     public function validateConnection(): bool
