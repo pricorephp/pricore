@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils';
 import { Link, usePage } from '@inertiajs/react';
 import {
     ArrowRight,
+    Copy,
     CreditCard,
     Key,
     KeyRound,
@@ -51,6 +52,11 @@ function SettingsContent({ children }: PropsWithChildren) {
                 title: 'SSH Keys',
                 href: `/organizations/${organization.slug}/settings/ssh-keys`,
                 icon: KeyRound,
+            },
+            {
+                title: 'Registry Mirrors',
+                href: `/organizations/${organization.slug}/settings/mirrors`,
+                icon: Copy,
             },
             ...(cloud
                 ? [
@@ -131,6 +137,7 @@ const settingsPageTitles: Record<string, string> = {
     members: 'Members',
     tokens: 'Composer Tokens',
     'ssh-keys': 'SSH Keys',
+    mirrors: 'Registry Mirrors',
     billing: 'Billing',
 };
 

@@ -20,6 +20,12 @@ import {
     DialogTitle,
     DialogTrigger,
 } from '@/components/ui/dialog';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import {
     Select,
@@ -42,7 +48,10 @@ import {
     Calendar,
     Check,
     ChevronRight,
+    Copy,
     Download,
+    EllipsisVertical,
+    HardDrive,
     ExternalLink,
     GitBranch,
     GitCommit,
@@ -89,6 +98,7 @@ interface PackageShowProps {
         type: string;
     };
     canManageVersions: boolean;
+    canDeletePackage: boolean;
     activeVersion: PackageVersionDetailData | null;
 }
 
@@ -148,6 +158,7 @@ export default function PackageShow({
     versions,
     filters,
     canManageVersions,
+    canDeletePackage,
     activeVersion,
 }: PackageShowProps) {
     const { auth } = usePage<{
@@ -301,6 +312,20 @@ export default function PackageShow({
                                         )}
                                     </span>
                                 )}
+                                {pkg.mirrorName && (
+                                    <Link
+                                        href={`/organizations/${organization.slug}/settings/mirrors`}
+                                        className="flex items-center gap-1.5 hover:text-foreground"
+                                    >
+                                        <Copy className="h-3.5 w-3.5" />
+                                        <span>
+                                            Mirror:{' '}
+                                            <span className="font-medium">
+                                                {pkg.mirrorName}
+                                            </span>
+                                        </span>
+                                    </Link>
+                                )}
                                 <span>
                                     {versions.total} version
                                     {versions.total === 1 ? '' : 's'}
@@ -315,6 +340,63 @@ export default function PackageShow({
                                 </span>
                             </div>
                         </div>
+                        {canDeletePackage && (
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="secondary">
+                                        Actions
+                                        <EllipsisVertical className="size-4" />
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                    <Dialog>
+                                        <DialogTrigger asChild>
+                                            <DropdownMenuItem
+                                                onSelect={(e) =>
+                                                    e.preventDefault()
+                                                }
+                                                variant="destructive"
+                                            >
+                                                <Trash2 />
+                                                Delete package
+                                            </DropdownMenuItem>
+                                        </DialogTrigger>
+                                        <DialogContent>
+                                            <DialogTitle>
+                                                Delete {pkg.name}?
+                                            </DialogTitle>
+                                            <DialogDescription>
+                                                This will permanently remove the
+                                                package{' '}
+                                                <strong>{pkg.name}</strong> and
+                                                all {versions.total} version
+                                                {versions.total === 1
+                                                    ? ''
+                                                    : 's'}
+                                                . This action cannot be undone.
+                                            </DialogDescription>
+                                            <DialogFooter className="gap-2">
+                                                <DialogClose asChild>
+                                                    <Button variant="secondary">
+                                                        Cancel
+                                                    </Button>
+                                                </DialogClose>
+                                                <Button
+                                                    variant="destructive"
+                                                    onClick={() =>
+                                                        router.delete(
+                                                            `/organizations/${organization.slug}/packages/${pkg.uuid}`,
+                                                        )
+                                                    }
+                                                >
+                                                    Delete package
+                                                </Button>
+                                            </DialogFooter>
+                                        </DialogContent>
+                                    </Dialog>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        )}
                     </div>
                 </div>
 
@@ -411,6 +493,12 @@ export default function PackageShow({
                                                 <span className="truncate font-medium tabular-nums">
                                                     {version.version}
                                                 </span>
+                                                {version.hasDist && (
+                                                    <span className="inline-flex items-center gap-1 rounded-md border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 text-xs text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-400">
+                                                        <HardDrive className="h-3 w-3" />
+                                                        Dist available
+                                                    </span>
+                                                )}
                                             </div>
                                             <div className="mt-1 flex items-center gap-3 text-sm text-muted-foreground">
                                                 {version.releasedAt && (

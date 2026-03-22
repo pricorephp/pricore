@@ -16,6 +16,7 @@ use Illuminate\Support\Carbon;
  * @property string $uuid
  * @property string $organization_uuid
  * @property string|null $repository_uuid
+ * @property string|null $mirror_uuid
  * @property string $name
  * @property string|null $description
  * @property string|null $type
@@ -26,6 +27,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $updated_at
  * @property-read Organization $organization
  * @property-read Repository|null $repository
+ * @property-read Mirror|null $mirror
  * @property-read Collection<int, PackageVersion> $versions
  * @property-read int|null $versions_count
  * @property-read Collection<int, PackageDownload> $downloads
@@ -75,6 +77,14 @@ class Package extends Model
     public function repository(): BelongsTo
     {
         return $this->belongsTo(Repository::class, 'repository_uuid', 'uuid');
+    }
+
+    /**
+     * @return BelongsTo<Mirror, $this>
+     */
+    public function mirror(): BelongsTo
+    {
+        return $this->belongsTo(Mirror::class, 'mirror_uuid', 'uuid');
     }
 
     /**

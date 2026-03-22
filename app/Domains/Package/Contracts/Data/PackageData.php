@@ -24,6 +24,8 @@ class PackageData extends Data
         public ?string $repositoryName,
         public ?string $repositoryIdentifier,
         public ?string $repositoryUuid,
+        public ?string $mirrorName,
+        public ?string $mirrorUuid,
     ) {}
 
     public static function fromModel(Package $package): self
@@ -53,6 +55,8 @@ class PackageData extends Data
             repositoryName: $package->repository?->name,
             repositoryIdentifier: $package->repository?->repo_identifier,
             repositoryUuid: $package->repository?->uuid,
+            mirrorName: $package->mirror?->name,
+            mirrorUuid: $package->mirror?->uuid,
         );
     }
 }

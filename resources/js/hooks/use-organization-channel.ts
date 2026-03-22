@@ -14,6 +14,7 @@ export function useOrganizationChannel(organizationUuid: string) {
                 only: [
                     'repository',
                     'repositories',
+                    'mirrors',
                     'syncLogs',
                     'activityLogs',
                 ],
@@ -21,6 +22,7 @@ export function useOrganizationChannel(organizationUuid: string) {
         };
 
         channel.listen('.repository.sync.status-updated', reload);
+        channel.listen('.mirror.sync.status-updated', reload);
         channel.listen('.activity.recorded', reload);
 
         return () => {

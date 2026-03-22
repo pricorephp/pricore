@@ -236,6 +236,7 @@ return [
         'local' => [
             'supervisor-1' => [
                 'maxProcesses' => 3,
+                'timeout' => 60 * 5,
             ],
         ],
     ],
