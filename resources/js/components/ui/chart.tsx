@@ -110,6 +110,7 @@ export function ChartTooltipContent({
     );
 }
 
-export function ChartTooltip(props: RechartsTooltipProps<number, string>) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function ChartTooltip(props: RechartsTooltipProps<any, any>) {
     return <RechartsTooltip {...props} />;
 }

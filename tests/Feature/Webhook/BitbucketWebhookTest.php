@@ -106,6 +106,28 @@ it('rejects request when repository has no webhook secret', function () {
     )->assertForbidden();
 });
 
+it('accepts a valid refs_changed event and dispatches sync', function () {
+    Queue::fake();
+
+    $repository = createBitbucketRepositoryWithWebhook();
+    $payload = json_encode(['changes' => []]);
+    $signature = signBitbucketPayload($payload, 'test-webhook-secret');
+
+    $this->postJson(
+        route('webhooks.bitbucket', $repository->uuid),
+        json_decode($payload, true),
+        [
+            'X-Hub-Signature' => $signature,
+            'X-Event-Key' => 'repo:refs_changed',
+        ]
+    )->assertOk()
+        ->assertJson(['message' => 'Sync dispatched.']);
+
+    Queue::assertPushed(SyncRepositoryJob::class, function ($job) use ($repository) {
+        return $job->repository->uuid === $repository->uuid;
+    });
+});
+
 it('gracefully handles unknown event types', function () {
     $repository = createBitbucketRepositoryWithWebhook();
     $payload = json_encode(['issue' => ['id' => 1]]);

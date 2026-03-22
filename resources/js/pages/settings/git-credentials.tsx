@@ -1,7 +1,6 @@
 import GitCredentialDialog from '@/components/git-credential-dialog';
 import GitProviderIcon from '@/components/git-provider-icon';
 import InfoBox from '@/components/info-box';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
     Card,
@@ -16,7 +15,7 @@ import { edit as editProfile } from '@/routes/profile';
 import { gitCredentials as gitCredentialsRoute } from '@/routes/settings';
 import { type BreadcrumbItem } from '@/types';
 import { router } from '@inertiajs/react';
-import { Edit, FlaskConical, Plus, Trash2 } from 'lucide-react';
+import { Edit, Plus, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 
 type GitCredentialData =
@@ -139,24 +138,10 @@ export default function GitCredentials({
                                                         className={`h-5 w-5 ${getProviderIconColor(credential.provider)}`}
                                                     />
                                                     <div>
-                                                        <CardTitle className="flex items-center gap-2 text-base">
+                                                        <CardTitle className="text-base">
                                                             {
                                                                 credential.providerLabel
                                                             }
-                                                            {credential.provider !==
-                                                                'github' &&
-                                                                credential.provider !==
-                                                                    'gitlab' &&
-                                                                credential.provider !==
-                                                                    'bitbucket' && (
-                                                                    <Badge
-                                                                        variant="outline"
-                                                                        className="text-xs"
-                                                                    >
-                                                                        <FlaskConical className="size-3" />
-                                                                        Experimental
-                                                                    </Badge>
-                                                                )}
                                                         </CardTitle>
                                                         <CardDescription>
                                                             {credential.isConfigured
@@ -220,22 +205,8 @@ export default function GitCredentials({
                                                                 }
                                                                 className={`h-5 w-5 ${getProviderIconColor(provider)}`}
                                                             />
-                                                            <CardTitle className="flex items-center gap-2 text-base">
+                                                            <CardTitle className="text-base">
                                                                 {label}
-                                                                {provider !==
-                                                                    'github' &&
-                                                                    provider !==
-                                                                        'gitlab' &&
-                                                                    provider !==
-                                                                        'bitbucket' && (
-                                                                        <Badge
-                                                                            variant="outline"
-                                                                            className="text-xs"
-                                                                        >
-                                                                            <FlaskConical className="size-3" />
-                                                                            Experimental
-                                                                        </Badge>
-                                                                    )}
                                                             </CardTitle>
                                                         </div>
                                                     </div>

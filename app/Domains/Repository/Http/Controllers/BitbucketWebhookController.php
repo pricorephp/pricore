@@ -15,7 +15,7 @@ class BitbucketWebhookController extends Controller
         $event = $request->header('X-Event-Key');
 
         return match ($event) {
-            'repo:push' => $this->handleSyncEvent($repository),
+            'repo:push', 'repo:refs_changed' => $this->handleSyncEvent($repository),
             default => response()->json(['message' => 'Event ignored.'], 200),
         };
     }
