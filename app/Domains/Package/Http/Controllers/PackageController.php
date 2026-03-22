@@ -13,6 +13,7 @@ use App\Domains\Package\Contracts\Data\PackageVersionDetailData;
 use App\Http\Controllers\Controller;
 use App\Models\Organization;
 use App\Models\Package;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -20,6 +21,8 @@ use Inertia\Response;
 
 class PackageController extends Controller
 {
+    use AuthorizesRequests;
+
     public function __construct(
         protected BuildPackageDownloadStatsAction $downloadStats,
         protected RecordPackageViewTask $recordPackageView,

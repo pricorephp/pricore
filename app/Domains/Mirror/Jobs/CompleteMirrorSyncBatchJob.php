@@ -98,7 +98,7 @@ class CompleteMirrorSyncBatchJob implements ShouldQueue
 
     protected function updateMirrorStatus(Mirror $mirror, ?Batch $batch): void
     {
-        $failedJobs = $batch?->failedJobs ?? 0;
+        $failedJobs = $batch->failedJobs ?? 0;
 
         $status = $failedJobs > 0
             ? RepositorySyncStatus::Failed
