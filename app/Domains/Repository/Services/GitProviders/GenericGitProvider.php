@@ -95,7 +95,7 @@ class GenericGitProvider extends AbstractGitProvider
         throw new GitProviderException('Generic Git provider does not support webhooks.');
     }
 
-    public function deleteWebhook(int $hookId): void
+    public function deleteWebhook(int|string $hookId): void
     {
         throw new GitProviderException('Generic Git provider does not support webhooks.');
     }

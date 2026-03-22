@@ -38,8 +38,8 @@ class UpdateUserGitCredentialRequest extends FormRequest
                 'credentials.url' => ['nullable', 'url'],
             ],
             GitProvider::Bitbucket => [
-                'credentials.username' => ['required', 'string'],
-                'credentials.app_password' => ['required', 'string'],
+                'credentials.email' => ['required', 'email'],
+                'credentials.api_token' => ['required', 'string'],
             ],
             default => [
                 'credentials.ssh_key' => ['required', 'string'],

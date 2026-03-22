@@ -4,7 +4,6 @@ namespace App\Domains\Repository\Services\GitProviders;
 
 use App\Domains\Repository\Contracts\Enums\GitProvider;
 use App\Domains\Repository\Contracts\Interfaces\GitProviderInterface;
-use App\Domains\Repository\Exceptions\GitProviderException;
 use App\Models\OrganizationSshKey;
 use App\Models\Repository;
 use App\Models\UserGitCredential;
@@ -19,9 +18,7 @@ class GitProviderFactory
             GitProvider::GitHub => new GitHubProvider($repository->repo_identifier, $credentials),
             GitProvider::Git => new GenericGitProvider($repository->repo_identifier, $credentials),
             GitProvider::GitLab => new GitLabProvider($repository->repo_identifier, $credentials),
-            GitProvider::Bitbucket => throw new GitProviderException(
-                "Provider '{$repository->provider->label()}' is not yet implemented"
-            ),
+            GitProvider::Bitbucket => new BitbucketProvider($repository->repo_identifier, $credentials),
         };
     }
 

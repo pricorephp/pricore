@@ -56,7 +56,7 @@ class CachedGitProvider implements GitProviderInterface
         throw new GitProviderException('CachedGitProvider does not support webhooks.');
     }
 
-    public function deleteWebhook(int $hookId): void
+    public function deleteWebhook(int|string $hookId): void
     {
         throw new GitProviderException('CachedGitProvider does not support webhooks.');
     }

@@ -31,7 +31,7 @@ class RegisterWebhookAction
             // Delete existing webhook if present
             if ($repository->webhook_id) {
                 try {
-                    $provider->deleteWebhook((int) $repository->webhook_id);
+                    $provider->deleteWebhook($repository->webhook_id);
                 } catch (\Exception $e) {
                     Log::warning('Failed to delete old webhook, continuing with registration', [
                         'repository' => $repository->uuid,

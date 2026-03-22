@@ -16,7 +16,7 @@ class DeleteWebhookAction
 
         try {
             $provider = GitProviderFactory::make($repository);
-            $provider->deleteWebhook((int) $repository->webhook_id);
+            $provider->deleteWebhook($repository->webhook_id);
         } catch (\Exception $e) {
             Log::warning('Failed to delete webhook', [
                 'repository' => $repository->uuid,

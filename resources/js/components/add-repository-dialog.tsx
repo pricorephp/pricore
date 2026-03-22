@@ -36,6 +36,7 @@ interface AddRepositoryDialogProps {
 const gitProviders = {
     github: 'GitHub',
     gitlab: 'GitLab',
+    bitbucket: 'Bitbucket',
     git: 'Generic Git',
 };
 
@@ -214,6 +215,8 @@ export default function AddRepositoryDialog({
                 return 'owner/repo';
             case 'gitlab':
                 return 'owner/repo';
+            case 'bitbucket':
+                return 'workspace/repo-slug';
             case 'git':
                 return 'git@example.com:owner/repo.git';
             default:
@@ -227,6 +230,8 @@ export default function AddRepositoryDialog({
                 return 'Enter the repository identifier in the format "owner/repo" (e.g., "laravel/laravel")';
             case 'gitlab':
                 return 'Enter the repository identifier in the format "owner/repo" (e.g., "gitlab-org/gitlab")';
+            case 'bitbucket':
+                return 'Enter the repository identifier in the format "workspace/repo-slug" (e.g., "atlassian/python-bitbucket")';
             case 'git':
                 return 'Enter the Git repository URL (e.g., "git@github.com:owner/repo.git" or "https://example.com/repo.git")';
             default:

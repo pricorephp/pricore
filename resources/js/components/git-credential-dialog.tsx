@@ -205,6 +205,72 @@ export default function GitCredentialDialog({
                         </div>
                     </>
                 );
+            case 'bitbucket':
+                return (
+                    <>
+                        <div className="grid space-y-2">
+                            <Label htmlFor="email">
+                                Atlassian Account Email{' '}
+                                <span className="text-red-500">*</span>
+                            </Label>
+                            <Input
+                                id="email"
+                                name="credentials[email]"
+                                type="email"
+                                required
+                                placeholder="you@example.com"
+                                autoFocus
+                            />
+                            <p className="text-sm text-muted-foreground">
+                                The email address associated with your
+                                Atlassian account.
+                            </p>
+                        </div>
+                        <div className="grid space-y-2">
+                            <Label htmlFor="api_token">
+                                API Token{' '}
+                                <span className="text-red-500">*</span>
+                            </Label>
+                            <Input
+                                id="api_token"
+                                name="credentials[api_token]"
+                                type="password"
+                                required
+                                placeholder="ATATxxxxxxxxxxxxxxxx"
+                            />
+                            <p className="text-sm text-muted-foreground">
+                                Go to{' '}
+                                <a
+                                    href="https://id.atlassian.com/manage-profile/security/api-tokens"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-primary hover:underline"
+                                >
+                                    Atlassian Account Settings &rarr; API
+                                    tokens
+                                </a>{' '}
+                                and choose{' '}
+                                <strong>
+                                    Create API token with scopes
+                                </strong>
+                                . Select <strong>Bitbucket</strong> as the
+                                app and enable:{' '}
+                                <strong>read:user:bitbucket</strong>,{' '}
+                                <strong>
+                                    read:repository:bitbucket
+                                </strong>
+                                ,{' '}
+                                <strong>
+                                    read:workspace:bitbucket
+                                </strong>
+                                ,{' '}
+                                <strong>read:webhook:bitbucket</strong>,
+                                and{' '}
+                                <strong>write:webhook:bitbucket</strong>.
+                            </p>
+                        </div>
+                    </>
+                );
             default:
                 return null;
         }
@@ -248,8 +314,8 @@ export default function GitCredentialDialog({
 
                             {(errors.provider ||
                                 errors['credentials.token'] ||
-                                errors['credentials.username'] ||
-                                errors['credentials.app_password'] ||
+                                errors['credentials.email'] ||
+                                errors['credentials.api_token'] ||
                                 errors['credentials.url']) && (
                                 <div className="rounded-md border border-destructive bg-destructive/10 p-3">
                                     <p className="font-medium text-destructive">
@@ -265,18 +331,18 @@ export default function GitCredentialDialog({
                                                 {errors['credentials.token']}
                                             </li>
                                         )}
-                                        {errors['credentials.username'] && (
+                                        {errors['credentials.email'] && (
                                             <li>
-                                                Username:{' '}
-                                                {errors['credentials.username']}
+                                                Email:{' '}
+                                                {errors['credentials.email']}
                                             </li>
                                         )}
-                                        {errors['credentials.app_password'] && (
+                                        {errors['credentials.api_token'] && (
                                             <li>
-                                                App Password:{' '}
+                                                API Token:{' '}
                                                 {
                                                     errors[
-                                                        'credentials.app_password'
+                                                        'credentials.api_token'
                                                     ]
                                                 }
                                             </li>
