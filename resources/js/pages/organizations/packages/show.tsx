@@ -43,6 +43,7 @@ import {
 import { useDebounce } from '@/hooks/use-debounce';
 import AppLayout from '@/layouts/app-layout';
 import { createOrganizationBreadcrumb } from '@/lib/breadcrumbs';
+import { formatBytes } from '@/lib/utils';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import {
     Calendar,
@@ -493,11 +494,25 @@ export default function PackageShow({
                                                 <span className="truncate font-medium tabular-nums">
                                                     {version.version}
                                                 </span>
-                                                {version.hasDist && (
-                                                    <span className="inline-flex items-center gap-1 rounded-md border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 text-xs text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-400">
-                                                        <HardDrive className="h-3 w-3" />
-                                                        Dist available
-                                                    </span>
+                                                {version.distSize !== null && (
+                                                    <Tooltip>
+                                                        <TooltipTrigger asChild>
+                                                            <span className="inline-flex items-center gap-1 rounded-md border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 text-xs text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-400">
+                                                                <HardDrive className="h-3 w-3" />
+                                                                {formatBytes(
+                                                                    version.distSize,
+                                                                )}
+                                                            </span>
+                                                        </TooltipTrigger>
+                                                        <TooltipContent>
+                                                            Mirror
+                                                            stored
+                                                            and
+                                                            served
+                                                            by
+                                                            Pricore
+                                                        </TooltipContent>
+                                                    </Tooltip>
                                                 )}
                                             </div>
                                             <div className="mt-1 flex items-center gap-3 text-sm text-muted-foreground">

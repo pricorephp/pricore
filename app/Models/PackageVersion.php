@@ -24,6 +24,7 @@ use Illuminate\Support\Facades\Storage;
  * @property string|null $dist_url
  * @property string|null $dist_shasum
  * @property string|null $dist_path
+ * @property int|null $dist_size
  * @property Carbon|null $released_at
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at

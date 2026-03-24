@@ -2,6 +2,7 @@
 
 namespace App\Domains\Repository\Actions;
 
+use App\Domains\Repository\Contracts\Data\DistArchiveData;
 use App\Domains\Repository\Contracts\Interfaces\GitProviderInterface;
 use App\Models\PackageVersion;
 use Illuminate\Support\Facades\Storage;
@@ -9,16 +10,11 @@ use Illuminate\Support\Str;
 
 class CreateDistArchiveAction
 {
-    /**
-     * Create a dist archive for a package version.
-     *
-     * @return array{path: string, shasum: string}|null
-     */
     public function handle(
         GitProviderInterface $provider,
         PackageVersion $version,
         string $organizationSlug,
-    ): ?array {
+    ): ?DistArchiveData {
         if (! $version->source_reference) {
             return null;
         }
@@ -31,8 +27,9 @@ class CreateDistArchiveAction
             }
 
             $shasum = hash_file('sha1', $tempPath);
+            $size = filesize($tempPath);
 
-            if ($shasum === false) {
+            if ($shasum === false || $size === false) {
                 return null;
             }
 
@@ -52,10 +49,11 @@ class CreateDistArchiveAction
                 fclose($stream);
             }
 
-            return [
-                'path' => $storagePath,
-                'shasum' => $shasum,
-            ];
+            return new DistArchiveData(
+                path: $storagePath,
+                shasum: $shasum,
+                size: $size,
+            );
         } finally {
             if (file_exists($tempPath)) {
                 unlink($tempPath);
