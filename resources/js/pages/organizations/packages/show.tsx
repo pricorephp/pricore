@@ -631,10 +631,10 @@ export default function PackageShow({
                     }
                 }}
             >
-                <DialogContent className="max-h-[85vh] overflow-x-hidden overflow-y-auto sm:max-w-xl [&>button.absolute]:hidden">
+                <DialogContent className="max-h-[85vh] overflow-x-hidden overflow-y-auto sm:max-w-xl [&>*]:min-w-0 [&>button.absolute]:hidden">
                     {activeVersion && (
                         <>
-                            <div className="flex items-start justify-between gap-4">
+                            <div className="flex min-w-0 items-start justify-between gap-4">
                                 <div className="flex min-w-0 items-center gap-3">
                                     <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
                                         <PackageIcon className="h-5 w-5" />
@@ -643,16 +643,15 @@ export default function PackageShow({
                                         <DialogTitle className="truncate text-lg">
                                             {activeVersion.version}
                                         </DialogTitle>
-                                        <div className="flex min-w-0 items-center gap-1">
-                                            {activeVersion.description && (
-                                                <DialogDescription>
-                                                    {activeVersion.description}
-                                                </DialogDescription>
-                                            )}
-                                        </div>
+                                        {activeVersion.description && (
+                                            <DialogDescription className="line-clamp-2">
+                                                {activeVersion.description}
+                                            </DialogDescription>
+                                        )}
                                     </div>
                                 </div>
                                 <CopyButton
+                                    className="shrink-0"
                                     text={`${window.location.origin}/organizations/${organization.slug}/packages/${pkg.uuid}?version=${activeVersion.uuid}`}
                                     icon={Link2}
                                     tooltip="Link copied!"
