@@ -32,10 +32,11 @@ it('creates a dist archive and returns path and shasum', function () {
     $result = $action->handle($provider, $version, 'acme');
 
     expect($result)->not->toBeNull()
-        ->and($result['shasum'])->toBe(sha1('fake-zip-content'))
-        ->and($result['path'])->toContain('acme/acme/test-package/1.0.0_abc123def456.zip');
+        ->and($result->shasum)->toBe(sha1('fake-zip-content'))
+        ->and($result->path)->toContain('acme/acme/test-package/1.0.0_abc123def456.zip')
+        ->and($result->size)->toBe(strlen('fake-zip-content'));
 
-    Storage::disk('local')->assertExists($result['path']);
+    Storage::disk('local')->assertExists($result->path);
 });
 
 it('returns null when provider fails to download archive', function () {

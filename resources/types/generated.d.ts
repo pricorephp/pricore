@@ -47,6 +47,7 @@ details: { [key: string]: any } | null;
 }
 declare namespace App.Domains.Mirror.Contracts.Enums {
 export type MirrorAuthType = 'none' | 'basic' | 'bearer';
+export type SyncVersionResult = 'added' | 'updated' | 'skipped' | 'failed' | 'dist_failed';
 }
 declare namespace App.Domains.Organization.Contracts.Data {
 export type DailyDownloadData = {
@@ -160,7 +161,7 @@ releasedAt: string | null;
 sourceUrl: string | null;
 sourceReference: string | null;
 commitUrl: string | null;
-hasDist: boolean;
+distSize: number | null;
 };
 export type PackageVersionDetailData = {
 uuid: string;
@@ -259,6 +260,19 @@ plainToken: string;
 name: string;
 expiresAt: string | null;
 organizationUuid: string | null;
+};
+}
+declare namespace App.Domains.Update.Contracts.Data {
+export type ReleaseData = {
+version: string;
+body: string;
+url: string;
+publishedAt: string;
+};
+export type UpdateCheckData = {
+updateAvailable: boolean;
+latestVersion: string | null;
+releases: Array<any>;
 };
 }
 declare namespace App.Http.Data {

@@ -120,8 +120,9 @@ class SyncRefAction
 
             $version->update([
                 'dist_url' => $distUrl,
-                'dist_path' => $dist['path'],
-                'dist_shasum' => $dist['shasum'],
+                'dist_path' => $dist->path,
+                'dist_shasum' => $dist->shasum,
+                'dist_size' => $dist->size,
             ]);
         } catch (\Throwable $e) {
             Log::warning('Failed to create dist archive', [

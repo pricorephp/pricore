@@ -100,8 +100,9 @@ class SyncMirrorVersionJob implements ShouldQueue
 
             $packageVersion->update([
                 'dist_url' => $distUrl,
-                'dist_path' => $dist['path'],
-                'dist_shasum' => $dist['shasum'],
+                'dist_path' => $dist->path,
+                'dist_shasum' => $dist->shasum,
+                'dist_size' => $dist->size,
             ]);
         } catch (MirrorDistDownloadException $e) {
             $this->incrementCounter(SyncVersionResult::DistFailed);

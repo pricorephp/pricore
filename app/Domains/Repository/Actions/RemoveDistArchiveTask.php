@@ -17,6 +17,7 @@ class RemoveDistArchiveTask
             'dist_url' => null,
             'dist_path' => null,
             'dist_shasum' => null,
+            'dist_size' => null,
         ]);
     }
 }

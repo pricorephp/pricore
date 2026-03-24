@@ -19,7 +19,7 @@ class PackageVersionData extends Data
         public ?string $sourceUrl,
         public ?string $sourceReference,
         public ?string $commitUrl,
-        public bool $hasDist,
+        public ?int $distSize,
     ) {}
 
     public static function fromModel(
@@ -50,7 +50,7 @@ class PackageVersionData extends Data
             sourceUrl: $version->source_url,
             sourceReference: $version->source_reference,
             commitUrl: $commitUrl,
-            hasDist: $version->dist_path !== null,
+            distSize: $version->dist_size,
         );
     }
 
