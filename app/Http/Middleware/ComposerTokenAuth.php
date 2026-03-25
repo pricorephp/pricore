@@ -26,6 +26,11 @@ class ComposerTokenAuth
 
         $organization = $request->route('organization');
 
+        // Resolve the organization from slug if route model binding hasn't run yet
+        if (is_string($organization)) {
+            $organization = Organization::where('slug', $organization)->first();
+        }
+
         if (! $this->canAccessOrganization($accessToken, $organization)) {
             return $this->unauthorized();
         }

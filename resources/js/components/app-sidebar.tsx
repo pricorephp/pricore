@@ -14,6 +14,7 @@ import {
     GitBranch,
     Package,
     Settings,
+    ShieldAlert,
 } from 'lucide-react';
 import { useMemo } from 'react';
 import AppLogoIcon from './app-logo-icon';
@@ -60,6 +61,11 @@ export function AppSidebar() {
                 title: 'Packages',
                 href: `/organizations/${currentOrgSlug}/packages`,
                 icon: Package,
+            },
+            {
+                title: 'Security',
+                href: `/organizations/${currentOrgSlug}/security`,
+                icon: ShieldAlert,
             },
         ];
 

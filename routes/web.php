@@ -14,6 +14,7 @@ use App\Domains\Repository\Http\Controllers\Api\RepositorySuggestionController;
 use App\Domains\Repository\Http\Controllers\RepositoryController;
 use App\Domains\Repository\Http\Controllers\SyncRepositoryController;
 use App\Domains\Repository\Http\Controllers\SyncWebhookController;
+use App\Domains\Security\Http\Controllers\SecurityOverviewController;
 use App\Domains\Token\Http\Controllers\TokenController;
 use App\Http\Controllers\AcceptInvitationController;
 use App\Http\Controllers\Auth\GitHubAuthController;
@@ -51,6 +52,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('organizations/{organization:slug}/packages/{package:uuid}', [PackageController::class, 'show'])->name('organizations.packages.show');
         Route::delete('organizations/{organization:slug}/packages/{package:uuid}', [PackageController::class, 'destroy'])->name('organizations.packages.destroy');
         Route::delete('organizations/{organization:slug}/packages/{package:uuid}/versions/{version:uuid}', [PackageVersionController::class, 'destroy'])->name('organizations.packages.versions.destroy');
+        Route::get('organizations/{organization:slug}/security', [SecurityOverviewController::class, 'index'])->name('organizations.security.index');
         Route::get('organizations/{organization:slug}/repositories', [RepositoryController::class, 'index'])->name('organizations.repositories.index');
         Route::post('organizations/{organization:slug}/repositories', [RepositoryController::class, 'store'])->name('organizations.repositories.store');
         Route::post('organizations/{organization:slug}/repositories/bulk', [RepositoryController::class, 'bulkStore'])->name('organizations.repositories.bulk-store');

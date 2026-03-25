@@ -3,6 +3,7 @@
 namespace App\Domains\Package\Contracts\Data;
 
 use App\Domains\Repository\Contracts\Enums\GitProvider;
+use App\Domains\Security\Contracts\Data\SecurityAdvisoryMatchData;
 use App\Models\PackageVersion;
 use Carbon\CarbonInterface;
 use Spatie\LaravelData\Data;
@@ -36,6 +37,8 @@ class PackageVersionDetailData extends Data
         public ?array $keywords,
         public bool $isStable,
         public bool $isDev,
+        /** @var SecurityAdvisoryMatchData[]|null */
+        public ?array $advisoryMatches = null,
     ) {}
 
     public static function fromModel(
@@ -52,6 +55,13 @@ class PackageVersionDetailData extends Data
         }
 
         $autoload = static::mergeAutoload($composerJson['autoload'] ?? []);
+
+        $advisoryMatchesData = null;
+        if ($version->relationLoaded('advisoryMatches') && $version->advisoryMatches->isNotEmpty()) {
+            $advisoryMatchesData = $version->advisoryMatches
+                ->map(fn ($match) => SecurityAdvisoryMatchData::fromModel($match))
+                ->all();
+        }
 
         return new self(
             uuid: $base->uuid,
@@ -71,6 +81,7 @@ class PackageVersionDetailData extends Data
             keywords: ! empty($composerJson['keywords']) ? $composerJson['keywords'] : null,
             isStable: $base->isStable(),
             isDev: $base->isDev(),
+            advisoryMatches: $advisoryMatchesData,
         );
     }
 

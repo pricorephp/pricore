@@ -25,6 +25,7 @@ enum ActivityType: string
     case MirrorRemoved = 'mirror.removed';
     case MirrorSynced = 'mirror.synced';
     case MirrorSyncFailed = 'mirror.sync_failed';
+    case VulnerabilitiesDetected = 'security.vulnerabilities_detected';
 
     public function label(): string
     {
@@ -47,6 +48,7 @@ enum ActivityType: string
             self::MirrorRemoved => 'Mirror removed',
             self::MirrorSynced => 'Mirror synced',
             self::MirrorSyncFailed => 'Mirror sync failed',
+            self::VulnerabilitiesDetected => 'Vulnerabilities detected',
         };
     }
 
@@ -71,6 +73,7 @@ enum ActivityType: string
             self::MirrorRemoved => 'copy',
             self::MirrorSynced => 'refresh-cw',
             self::MirrorSyncFailed => 'alert-circle',
+            self::VulnerabilitiesDetected => 'shield-alert',
         };
     }
 
@@ -83,6 +86,7 @@ enum ActivityType: string
             self::TokenCreated, self::TokenRevoked => 'token',
             self::SshKeyGenerated, self::SshKeyDeleted => 'settings',
             self::MirrorAdded, self::MirrorRemoved, self::MirrorSynced, self::MirrorSyncFailed => 'mirror',
+            self::VulnerabilitiesDetected => 'security',
         };
     }
 }

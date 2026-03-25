@@ -8,6 +8,7 @@ use App\Domains\Repository\Actions\CleanupGitCloneAction;
 use App\Domains\Repository\Contracts\Enums\RepositorySyncStatus;
 use App\Domains\Repository\Contracts\Enums\SyncStatus;
 use App\Domains\Repository\Events\RepositorySyncStatusUpdated;
+use App\Domains\Security\Jobs\ScanPackageVersionsJob;
 use App\Models\Repository;
 use App\Models\RepositorySyncLog;
 use Illuminate\Bus\Batch;
@@ -38,6 +39,7 @@ class CompleteSyncBatchJob implements ShouldQueue
         $cleanupGitCloneAction->handle($this->clonePath);
         $this->updateRepositoryStatus($repository, $batch);
         $this->recordActivity($repository, $syncLog, $recordActivityTask);
+        $this->scanForVulnerabilities($repository, $syncLog);
     }
 
     protected function getBatch(): ?Batch
@@ -148,5 +150,18 @@ class CompleteSyncBatchJob implements ShouldQueue
                 'sync_log_uuid' => $syncLog->uuid,
             ],
         );
+    }
+
+    protected function scanForVulnerabilities(Repository $repository, RepositorySyncLog $syncLog): void
+    {
+        $hasChanges = $syncLog->versions_added > 0 || $syncLog->versions_updated > 0;
+
+        if (! $hasChanges) {
+            return;
+        }
+
+        $repository->packages->each(function ($package) {
+            ScanPackageVersionsJob::dispatch($package);
+        });
     }
 }

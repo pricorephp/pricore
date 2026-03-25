@@ -82,6 +82,7 @@ class PackageController extends Controller
         $type = $request->query('type', '');
 
         $versionsQuery = $package->versions()
+            ->with('advisoryMatches.advisory')
             ->when($query, fn ($q) => $q->where(function ($q) use ($query) {
                 $q->whereLike('version', "%{$query}%")
                     ->orWhereLike('source_reference', "%{$query}%");
@@ -103,7 +104,10 @@ class PackageController extends Controller
         $activeVersion = null;
 
         if ($versionUuid) {
-            $versionModel = $package->versions()->where('uuid', $versionUuid)->first();
+            $versionModel = $package->versions()
+                ->with('advisoryMatches.advisory')
+                ->where('uuid', $versionUuid)
+                ->first();
 
             if ($versionModel) {
                 $activeVersion = PackageVersionDetailData::fromModel(

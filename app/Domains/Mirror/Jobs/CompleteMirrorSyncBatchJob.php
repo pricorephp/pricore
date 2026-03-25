@@ -7,6 +7,7 @@ use App\Domains\Activity\Contracts\Enums\ActivityType;
 use App\Domains\Mirror\Events\MirrorSyncStatusUpdated;
 use App\Domains\Repository\Contracts\Enums\RepositorySyncStatus;
 use App\Domains\Repository\Contracts\Enums\SyncStatus;
+use App\Domains\Security\Jobs\ScanPackageVersionsJob;
 use App\Models\Mirror;
 use App\Models\MirrorSyncLog;
 use Illuminate\Bus\Batch;
@@ -35,6 +36,7 @@ class CompleteMirrorSyncBatchJob implements ShouldQueue
         $this->completeSyncLog($syncLog, $batch);
         $this->updateMirrorStatus($mirror, $batch);
         $this->recordActivity($mirror, $syncLog, $recordActivityTask);
+        $this->scanForVulnerabilities($mirror, $syncLog);
     }
 
     protected function getBatch(): ?Batch
@@ -156,5 +158,18 @@ class CompleteMirrorSyncBatchJob implements ShouldQueue
                 'sync_log_uuid' => $syncLog->uuid,
             ],
         );
+    }
+
+    protected function scanForVulnerabilities(Mirror $mirror, MirrorSyncLog $syncLog): void
+    {
+        $hasChanges = $syncLog->versions_added > 0 || $syncLog->versions_updated > 0;
+
+        if (! $hasChanges) {
+            return;
+        }
+
+        $mirror->packages->each(function ($package) {
+            ScanPackageVersionsJob::dispatch($package);
+        });
     }
 }
