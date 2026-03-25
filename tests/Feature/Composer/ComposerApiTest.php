@@ -129,15 +129,15 @@ it('excludes dev versions from stable endpoint', function () {
 
     PackageVersion::factory()
         ->for($package)
-        ->create(['version' => '1.0.0']);
+        ->create(['version' => '1.0.0', 'normalized_version' => '1.0.0.0']);
 
     PackageVersion::factory()
         ->for($package)
-        ->create(['version' => 'dev-main']);
+        ->create(['version' => 'dev-main', 'normalized_version' => '9999999-dev']);
 
     PackageVersion::factory()
         ->for($package)
-        ->create(['version' => '2.0.0-dev']);
+        ->create(['version' => '2.0.0-dev', 'normalized_version' => '2.0.0.0-dev']);
 
     $response = authenticatedGet("/{$this->organization->slug}/p2/acme/package.json", $this->plainToken);
 
@@ -156,15 +156,15 @@ it('returns only dev versions from dev endpoint', function () {
 
     PackageVersion::factory()
         ->for($package)
-        ->create(['version' => '1.0.0']);
+        ->create(['version' => '1.0.0', 'normalized_version' => '1.0.0.0']);
 
     PackageVersion::factory()
         ->for($package)
-        ->create(['version' => 'dev-main']);
+        ->create(['version' => 'dev-main', 'normalized_version' => '9999999-dev']);
 
     PackageVersion::factory()
         ->for($package)
-        ->create(['version' => 'dev-develop']);
+        ->create(['version' => 'dev-develop', 'normalized_version' => '9999999-dev']);
 
     $response = authenticatedGet("/{$this->organization->slug}/p2/acme/package~dev.json", $this->plainToken);
 
