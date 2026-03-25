@@ -15,6 +15,7 @@ import {
     PackagePlus,
     RefreshCw,
     Shield,
+    ShieldAlert,
     UserMinus,
     UserPlus,
 } from 'lucide-react';
@@ -34,6 +35,7 @@ const iconMap: Record<string, LucideIcon> = {
     shield: Shield,
     mail: Mail,
     'key-round': KeyRound,
+    'shield-alert': ShieldAlert,
 };
 
 const categoryStyles: Record<string, { badge: string; standalone: string }> = {
@@ -56,6 +58,11 @@ const categoryStyles: Record<string, { badge: string; standalone: string }> = {
         badge: 'bg-gradient-to-b from-amber-400 to-amber-600 text-white shadow-sm shadow-amber-500/30 [text-shadow:0_1px_0_rgba(0,0,0,0.2)]',
         standalone:
             'bg-gradient-to-b from-amber-400 to-amber-600 text-white shadow-sm shadow-amber-500/30 [text-shadow:0_1px_0_rgba(0,0,0,0.2)]',
+    },
+    security: {
+        badge: 'bg-gradient-to-b from-red-400 to-red-600 text-white shadow-sm shadow-red-500/30 [text-shadow:0_1px_0_rgba(0,0,0,0.2)]',
+        standalone:
+            'bg-gradient-to-b from-red-400 to-red-600 text-white shadow-sm shadow-red-500/30 [text-shadow:0_1px_0_rgba(0,0,0,0.2)]',
     },
 };
 
@@ -250,6 +257,19 @@ function formatDescription(
                 action: (
                     <>
                         {verb('revoked')} token {bold(props.name)}
+                    </>
+                ),
+            };
+        case 'security.vulnerabilities_detected':
+            return {
+                actor: null,
+                action: (
+                    <>
+                        <span className="text-destructive">
+                            {props.matches_created} vulnerabilit
+                            {props.matches_created === 1 ? 'y' : 'ies'}
+                        </span>{' '}
+                        detected in {subject(props.name)}
                     </>
                 ),
             };
