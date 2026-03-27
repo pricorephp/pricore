@@ -222,8 +222,8 @@ export default function GitCredentialDialog({
                                 autoFocus
                             />
                             <p className="text-sm text-muted-foreground">
-                                The email address associated with your
-                                Atlassian account.
+                                The email address associated with your Atlassian
+                                account.
                             </p>
                         </div>
                         <div className="grid space-y-2">
@@ -246,26 +246,15 @@ export default function GitCredentialDialog({
                                     rel="noopener noreferrer"
                                     className="text-primary hover:underline"
                                 >
-                                    Atlassian Account Settings &rarr; API
-                                    tokens
+                                    Atlassian Account Settings &rarr; API tokens
                                 </a>{' '}
                                 and choose{' '}
-                                <strong>
-                                    Create API token with scopes
-                                </strong>
-                                . Select <strong>Bitbucket</strong> as the
-                                app and enable:{' '}
-                                <strong>read:user:bitbucket</strong>,{' '}
-                                <strong>
-                                    read:repository:bitbucket
-                                </strong>
-                                ,{' '}
-                                <strong>
-                                    read:workspace:bitbucket
-                                </strong>
-                                ,{' '}
-                                <strong>read:webhook:bitbucket</strong>,
-                                and{' '}
+                                <strong>Create API token with scopes</strong>.
+                                Select <strong>Bitbucket</strong> as the app and
+                                enable: <strong>read:user:bitbucket</strong>,{' '}
+                                <strong>read:repository:bitbucket</strong>,{' '}
+                                <strong>read:workspace:bitbucket</strong>,{' '}
+                                <strong>read:webhook:bitbucket</strong>, and{' '}
                                 <strong>write:webhook:bitbucket</strong>.
                             </p>
                         </div>

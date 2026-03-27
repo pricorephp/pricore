@@ -52,11 +52,11 @@ import {
     Copy,
     Download,
     EllipsisVertical,
-    HardDrive,
     ExternalLink,
     GitBranch,
     GitCommit,
     Globe,
+    HardDrive,
     Link2,
     Lock,
     Package as PackageIcon,
@@ -534,12 +534,8 @@ export default function PackageShow({
                                                             </span>
                                                         </TooltipTrigger>
                                                         <TooltipContent>
-                                                            Mirror
-                                                            stored
-                                                            and
-                                                            served
-                                                            by
-                                                            Pricore
+                                                            Mirror stored and
+                                                            served by Pricore
                                                         </TooltipContent>
                                                     </Tooltip>
                                                 )}
@@ -863,9 +859,7 @@ export default function PackageShow({
                                                             match: SecurityAdvisoryMatchData,
                                                         ) => (
                                                             <div
-                                                                key={
-                                                                    match.uuid
-                                                                }
+                                                                key={match.uuid}
                                                                 className="rounded-lg border p-3"
                                                             >
                                                                 <div className="flex items-start justify-between gap-2">

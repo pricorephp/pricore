@@ -119,12 +119,12 @@ class Package extends Model
     public function advisoryMatches(): HasManyThrough
     {
         return $this->hasManyThrough(
-            SecurityAdvisoryMatch::class,
-            PackageVersion::class,
-            'package_uuid',
-            'package_version_uuid',
-            'uuid',
-            'uuid',
+            related: SecurityAdvisoryMatch::class,
+            through: PackageVersion::class,
+            firstKey: 'package_uuid',
+            secondKey: 'package_version_uuid',
+            localKey: 'uuid',
+            secondLocalKey: 'uuid',
         );
     }
 }
