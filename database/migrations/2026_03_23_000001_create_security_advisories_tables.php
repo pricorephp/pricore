@@ -15,7 +15,7 @@ return new class extends Migration
             $table->string('title');
             $table->string('link')->nullable();
             $table->string('cve')->nullable()->index();
-            $table->string('affected_versions');
+            $table->text('affected_versions');
             $table->string('severity', 50)->index();
             $table->json('sources')->nullable();
             $table->timestamp('reported_at')->nullable();

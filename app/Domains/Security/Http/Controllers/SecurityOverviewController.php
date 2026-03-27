@@ -54,21 +54,21 @@ class SecurityOverviewController extends Controller
             ->select([
                 'packages.uuid as package_uuid',
                 'packages.name as package_name',
-                'package_versions.version as latest_version',
+                DB::raw('COUNT(DISTINCT package_versions.uuid) as affected_version_count'),
                 DB::raw('COUNT(*) as total_count'),
                 DB::raw("SUM(CASE WHEN security_advisories.severity = 'critical' THEN 1 ELSE 0 END) as critical_count"),
                 DB::raw("SUM(CASE WHEN security_advisories.severity = 'high' THEN 1 ELSE 0 END) as high_count"),
                 DB::raw("SUM(CASE WHEN security_advisories.severity = 'medium' THEN 1 ELSE 0 END) as medium_count"),
                 DB::raw("SUM(CASE WHEN security_advisories.severity = 'low' THEN 1 ELSE 0 END) as low_count"),
             ])
-            ->groupBy('packages.uuid', 'packages.name', 'package_versions.version')
+            ->groupBy('packages.uuid', 'packages.name')
             ->orderByRaw("SUM(CASE WHEN security_advisories.severity = 'critical' THEN 1 ELSE 0 END) DESC")
             ->orderByRaw('COUNT(*) DESC')
             ->get()
             ->map(fn (object $row) => new PackageSecuritySummaryData(
                 packageUuid: $row->package_uuid,
                 packageName: $row->package_name,
-                latestVersion: $row->latest_version,
+                affectedVersionCount: (int) $row->affected_version_count,
                 criticalCount: (int) $row->critical_count,
                 highCount: (int) $row->high_count,
                 mediumCount: (int) $row->medium_count,

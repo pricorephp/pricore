@@ -1,6 +1,8 @@
+import ScanSecurityController from '@/actions/App/Domains/Security/Http/Controllers/ScanSecurityController';
 import HeadingSmall from '@/components/heading-small';
 import { StatCard } from '@/components/stats/stat-card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardList } from '@/components/ui/card';
 import {
     Select,
@@ -13,13 +15,14 @@ import AppLayout from '@/layouts/app-layout';
 import { createOrganizationBreadcrumb } from '@/lib/breadcrumbs';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import {
-    AlertTriangle,
     ChevronRight,
+    LoaderCircle,
+    RefreshCw,
     Shield,
     ShieldAlert,
-    ShieldX,
 } from 'lucide-react';
 import { DateTime } from 'luxon';
+import { useEffect, useRef, useState } from 'react';
 
 type OrganizationData =
     App.Domains.Organization.Contracts.Data.OrganizationData;
@@ -45,6 +48,26 @@ interface SecurityIndexProps {
     lastSyncedAt: string | null;
 }
 
+function SeverityDot({
+    color,
+    label,
+    count,
+}: {
+    color: string;
+    label: string;
+    count: number;
+}) {
+    return (
+        <div className="flex flex-col items-center justify-center gap-1 px-4">
+            <div className="flex items-center gap-2">
+                <span className={`size-2 shrink-0 rounded-full ${color}`} />
+                <p className="text-2xl font-semibold tabular-nums">{count}</p>
+            </div>
+            <p className="text-sm text-muted-foreground">{label}</p>
+        </div>
+    );
+}
+
 function SeverityBadge({
     severity,
     count,
@@ -54,10 +77,7 @@ function SeverityBadge({
 }) {
     if (count === 0) return null;
 
-    const variants: Record<
-        string,
-        { className: string; label: string }
-    > = {
+    const variants: Record<string, { className: string; label: string }> = {
         critical: {
             className:
                 'border-red-200 bg-red-50 text-red-700 dark:border-red-800 dark:bg-red-950 dark:text-red-400',
@@ -111,16 +131,45 @@ export default function SecurityIndex({
         },
     ];
 
+    const [scanning, setScanning] = useState(false);
+    const scanningRef = useRef(false);
+
+    useEffect(() => {
+        if (!window.Echo) return;
+
+        const channel = window.Echo.private(
+            `organization.${organization.uuid}`,
+        );
+
+        channel.listen('.security.advisories-updated', () => {
+            router.reload();
+            if (scanningRef.current) {
+                setScanning(false);
+                scanningRef.current = false;
+            }
+        });
+
+        return () => {
+            window.Echo.leave(`organization.${organization.uuid}`);
+        };
+    }, [organization.uuid]);
+
+    const handleScan = () => {
+        setScanning(true);
+        scanningRef.current = true;
+        router.post(ScanSecurityController.url(organization.slug));
+    };
+
     const handleSeverityChange = (value: string) => {
         const params: Record<string, string> = {};
         if (value && value !== 'all') {
             params.severity = value;
         }
-        router.get(
-            `/organizations/${organization.slug}/security`,
-            params,
-            { preserveScroll: true, preserveState: true, replace: true },
-        );
+        router.get(`/organizations/${organization.slug}/security`, params, {
+            preserveScroll: true,
+            preserveState: true,
+            replace: true,
+        });
     };
 
     return (
@@ -131,18 +180,28 @@ export default function SecurityIndex({
                 <div className="flex items-center justify-between">
                     <div className="space-y-1">
                         <h1 className="text-xl font-medium">Security</h1>
-                        {lastSyncedAt && (
-                            <p className="text-sm text-muted-foreground">
-                                Advisories last synced{' '}
-                                {DateTime.fromISO(
-                                    lastSyncedAt,
-                                ).toRelative()}
-                            </p>
-                        )}
+                        <p className="text-muted-foreground">
+                            {lastSyncedAt
+                                ? `Advisories last synced ${DateTime.fromISO(lastSyncedAt).toRelative()}`
+                                : 'Advisories have not been synced yet'}
+                        </p>
                     </div>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleScan}
+                        disabled={scanning}
+                    >
+                        {scanning ? (
+                            <LoaderCircle className="h-4 w-4 animate-spin" />
+                        ) : (
+                            <RefreshCw className="h-4 w-4" />
+                        )}
+                        Scan Now
+                    </Button>
                 </div>
 
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+                <div className="grid gap-4 sm:grid-cols-2">
                     <StatCard
                         title="Vulnerabilities"
                         value={stats.totalVulnerabilities}
@@ -153,32 +212,30 @@ export default function SecurityIndex({
                                 : 'default'
                         }
                     />
-                    <StatCard
-                        title="Critical"
-                        value={stats.criticalCount}
-                        icon={ShieldX}
-                        variant={
-                            stats.criticalCount > 0 ? 'danger' : 'default'
-                        }
-                    />
-                    <StatCard
-                        title="High"
-                        value={stats.highCount}
-                        icon={AlertTriangle}
-                        variant={
-                            stats.highCount > 0 ? 'warning' : 'default'
-                        }
-                    />
-                    <StatCard
-                        title="Medium"
-                        value={stats.mediumCount}
-                        icon={AlertTriangle}
-                    />
-                    <StatCard
-                        title="Low"
-                        value={stats.lowCount}
-                        icon={Shield}
-                    />
+                    <Card>
+                        <CardContent className="grid h-full grid-cols-4 divide-x py-5">
+                            <SeverityDot
+                                color="bg-red-500"
+                                label="Critical"
+                                count={stats.criticalCount}
+                            />
+                            <SeverityDot
+                                color="bg-orange-500"
+                                label="High"
+                                count={stats.highCount}
+                            />
+                            <SeverityDot
+                                color="bg-amber-500"
+                                label="Medium"
+                                count={stats.mediumCount}
+                            />
+                            <SeverityDot
+                                color="bg-blue-500"
+                                label="Low"
+                                count={stats.lowCount}
+                            />
+                        </CardContent>
+                    </Card>
                 </div>
 
                 <div className="space-y-4">
@@ -202,9 +259,7 @@ export default function SecurityIndex({
                                     Critical
                                 </SelectItem>
                                 <SelectItem value="high">High</SelectItem>
-                                <SelectItem value="medium">
-                                    Medium
-                                </SelectItem>
+                                <SelectItem value="medium">Medium</SelectItem>
                                 <SelectItem value="low">Low</SelectItem>
                             </SelectContent>
                         </Select>
@@ -244,7 +299,11 @@ export default function SecurityIndex({
                                                     : 'ies'}
                                             </Badge>
                                             <span className="text-sm text-muted-foreground">
-                                                {pkg.latestVersion}
+                                                {pkg.affectedVersionCount}{' '}
+                                                {pkg.affectedVersionCount === 1
+                                                    ? 'version'
+                                                    : 'versions'}{' '}
+                                                affected
                                             </span>
                                         </div>
                                         <div className="mt-1.5 flex items-center gap-2">

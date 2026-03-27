@@ -11,7 +11,7 @@ class PackageSecuritySummaryData extends Data
     public function __construct(
         public string $packageUuid,
         public string $packageName,
-        public string $latestVersion,
+        public int $affectedVersionCount,
         public int $criticalCount,
         public int $highCount,
         public int $mediumCount,

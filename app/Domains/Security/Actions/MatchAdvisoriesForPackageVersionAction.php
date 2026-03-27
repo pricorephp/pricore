@@ -7,6 +7,7 @@ use App\Models\PackageVersion;
 use App\Models\SecurityAdvisory;
 use App\Models\SecurityAdvisoryMatch;
 use Composer\Semver\Semver;
+use Composer\Semver\VersionParser;
 use Illuminate\Support\Facades\Log;
 
 class MatchAdvisoriesForPackageVersionAction
@@ -78,10 +79,10 @@ class MatchAdvisoriesForPackageVersionAction
         $require = $composerJson['require'] ?? [];
         $requireDev = $composerJson['require-dev'] ?? [];
 
-        $dependencies = array_merge(array_keys($require), array_keys($requireDev));
+        $allDependencies = array_merge($require, $requireDev);
 
-        // Filter out php and ext-* entries
-        $dependencies = array_filter($dependencies, fn (string|int $name) => is_string($name) && ! str_starts_with($name, 'php') && ! str_starts_with($name, 'ext-') && str_contains($name, '/'));
+        // Filter out php and ext-* entries, keep name => constraint mapping
+        $dependencies = array_filter($allDependencies, fn (mixed $constraint, string|int $name) => is_string($name) && ! str_starts_with($name, 'php') && ! str_starts_with($name, 'ext-') && str_contains($name, '/'), ARRAY_FILTER_USE_BOTH);
 
         if (empty($dependencies)) {
             // Clean up any stale dependency matches
@@ -92,7 +93,7 @@ class MatchAdvisoriesForPackageVersionAction
             return 0;
         }
 
-        $advisories = SecurityAdvisory::whereIn('package_name', $dependencies)->get();
+        $advisories = SecurityAdvisory::whereIn('package_name', array_keys($dependencies))->get();
         $matchesCreated = 0;
 
         $existingMatches = $packageVersion->advisoryMatches()
@@ -104,6 +105,13 @@ class MatchAdvisoriesForPackageVersionAction
 
         foreach ($advisories as $advisory) {
             $depName = $advisory->package_name;
+            $requiredConstraint = $dependencies[$depName] ?? null;
+
+            // Skip if the required constraint can't overlap with the affected versions
+            if ($requiredConstraint && ! $this->constraintsIntersect($requiredConstraint, $advisory->affected_versions)) {
+                continue;
+            }
+
             $matchKey = "{$advisory->uuid}:{$depName}";
             $currentMatchKeys[] = $matchKey;
 
@@ -143,6 +151,24 @@ class MatchAdvisoriesForPackageVersionAction
             ]);
 
             return false;
+        }
+    }
+
+    /**
+     * Check whether two version constraints could overlap.
+     * E.g. "^11.0" and ">=5.5,<7.23.2" do not intersect.
+     */
+    protected function constraintsIntersect(string $requiredConstraint, string $affectedVersions): bool
+    {
+        try {
+            $parser = new VersionParser;
+            $required = $parser->parseConstraints($requiredConstraint);
+            $affected = $parser->parseConstraints($affectedVersions);
+
+            return $required->matches($affected);
+        } catch (\Throwable $e) {
+            // If we can't parse, err on the side of caution and flag it
+            return true;
         }
     }
 }

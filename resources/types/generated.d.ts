@@ -254,7 +254,7 @@ declare namespace App.Domains.Security.Contracts.Data {
 export type PackageSecuritySummaryData = {
 packageUuid: string;
 packageName: string;
-latestVersion: string;
+affectedVersionCount: number;
 criticalCount: number;
 highCount: number;
 mediumCount: number;

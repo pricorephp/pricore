@@ -5,17 +5,17 @@ namespace App\Domains\Security\Jobs;
 use App\Domains\Activity\Actions\RecordActivityTask;
 use App\Domains\Activity\Contracts\Enums\ActivityType;
 use App\Domains\Security\Actions\MatchAdvisoriesForPackageAction;
-use App\Domains\Security\Events\AdvisorySyncCompleted;
 use App\Domains\Security\Notifications\NewVulnerabilitiesNotification;
 use App\Models\Package;
 use App\Models\SecurityAdvisoryMatch;
+use Illuminate\Bus\Batchable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\Log;
 
 class ScanPackageVersionsJob implements ShouldQueue
 {
-    use Queueable;
+    use Batchable, Queueable;
 
     public int $timeout = 120;
 
@@ -53,9 +53,6 @@ class ScanPackageVersionsJob implements ShouldQueue
             ],
         );
 
-        // Broadcast real-time update
-        event(new AdvisorySyncCompleted($organization->uuid));
-
         // Send notification to org admins
         $this->notifyAdmins();
     }
@@ -80,8 +77,10 @@ class ScanPackageVersionsJob implements ShouldQueue
             ->join('security_advisories', 'security_advisory_matches.security_advisory_uuid', '=', 'security_advisories.uuid')
             ->join('package_versions', 'security_advisory_matches.package_version_uuid', '=', 'package_versions.uuid')
             ->where('package_versions.package_uuid', $this->package->uuid)
-            ->orderByRaw("CASE security_advisories.severity WHEN 'critical' THEN 1 WHEN 'high' THEN 2 WHEN 'medium' THEN 3 ELSE 4 END")
-            ->distinct()
+            ->select('security_advisories.title')
+            ->selectRaw("MIN(CASE security_advisories.severity WHEN 'critical' THEN 1 WHEN 'high' THEN 2 WHEN 'medium' THEN 3 ELSE 4 END) as severity_order")
+            ->groupBy('security_advisories.title')
+            ->orderBy('severity_order')
             ->limit(3)
             ->pluck('security_advisories.title')
             ->all();
