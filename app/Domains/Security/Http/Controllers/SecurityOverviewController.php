@@ -119,7 +119,7 @@ class SecurityOverviewController extends Controller
             ->orderBySemanticVersion('desc')
             ->get(['uuid', 'package_uuid'])
             ->groupBy('package_uuid')
-            ->map(fn ($versions) => $versions->first()->uuid)
+            ->map(fn ($versions) => $versions->first()?->uuid)
             ->values()
             ->all();
 
