@@ -38,6 +38,7 @@ export default defineConfig({
             { text: 'Access Tokens', link: '/guide/tokens' },
             { text: 'Registry Mirrors', link: '/guide/registry-mirrors' },
             { text: 'Distribution Mirroring', link: '/guide/dist-mirroring' },
+            { text: 'Security Auditing', link: '/guide/security-auditing' },
           ],
         },
         {

@@ -123,6 +123,62 @@ POST /{organization}/notify-batch
 
 Composer calls this endpoint automatically when the `notify-batch` URL is present in the root `packages.json`. Download counts are tracked per package version.
 
+### Security Advisories
+
+Returns known security advisories for the requested packages. This endpoint is compatible with `composer audit`.
+
+```
+POST /{organization}/api/security-advisories
+```
+
+**Request body:**
+
+```json
+{
+    "packages": ["monolog/monolog", "symfony/http-kernel"]
+}
+```
+
+**Response:**
+
+```json
+{
+    "advisories": {
+        "monolog/monolog": [
+            {
+                "advisoryId": "PKSA-abcd-1234",
+                "packageName": "monolog/monolog",
+                "title": "Remote code execution via log injection",
+                "link": "https://github.com/advisories/GHSA-xxxx",
+                "cve": "CVE-2024-12345",
+                "affectedVersions": ">=1.0,<1.5.2",
+                "sources": [
+                    { "name": "GitHub", "remoteId": "GHSA-xxxx-yyyy-zzzz" }
+                ],
+                "reportedAt": "2024-01-15T00:00:00+00:00",
+                "composerRepository": "https://packagist.org",
+                "severity": "high"
+            }
+        ]
+    }
+}
+```
+
+| Field | Description |
+|-------|-------------|
+| `advisoryId` | Unique identifier from the advisory source |
+| `packageName` | Composer package name |
+| `title` | Short description of the vulnerability |
+| `link` | URL to the full advisory disclosure |
+| `cve` | CVE identifier, if assigned |
+| `affectedVersions` | Composer version constraint describing affected versions |
+| `sources` | List of advisory sources with their remote identifiers |
+| `reportedAt` | ISO 8601 timestamp of when the advisory was reported |
+| `composerRepository` | The registry the advisory originates from |
+| `severity` | One of `critical`, `high`, `medium`, `low`, or `unknown` |
+
+Packages with advisories are included in the response with their advisory list. Packages without advisories are omitted. If no requested packages have advisories, `advisories` is an empty object.
+
 ## Webhooks
 
 ### GitHub Webhook
