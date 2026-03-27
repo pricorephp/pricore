@@ -70,6 +70,11 @@ class Organization extends Model
 
     protected $guarded = ['uuid'];
 
+    protected $attributes = [
+        'security_audits_enabled' => true,
+        'security_notifications_enabled' => true,
+    ];
+
     /**
      * @return array<string, string>
      */
