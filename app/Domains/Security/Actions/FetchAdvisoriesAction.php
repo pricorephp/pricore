@@ -81,7 +81,7 @@ class FetchAdvisoriesAction
                 'affected_versions' => $advisoryData['affectedVersions'] ?? '',
                 'severity' => $severity,
                 'sources' => $advisoryData['sources'] ?? null,
-                'reported_at' => isset($advisoryData['reportedAt']) ? $advisoryData['reportedAt'] : null,
+                'reported_at' => $advisoryData['reportedAt'] ?? null,
                 'composer_repository' => $advisoryData['composerRepository'] ?? null,
             ],
         );
