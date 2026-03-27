@@ -104,22 +104,25 @@ class SecurityOverviewController extends Controller
      */
     protected function getRelevantVersionUuids(Organization $organization): array
     {
-        $packages = Package::where('organization_uuid', $organization->uuid)->get();
+        $packageUuids = Package::where('organization_uuid', $organization->uuid)
+            ->pluck('uuid');
 
-        return $packages->flatMap(function (Package $package) {
-            // Latest stable version
-            $latestStable = PackageVersion::where('package_uuid', $package->uuid)
-                ->stable()
-                ->orderBySemanticVersion('desc')
-                ->value('uuid');
+        // All dev versions across all packages (single query)
+        $devVersionUuids = PackageVersion::whereIn('package_uuid', $packageUuids)
+            ->dev()
+            ->pluck('uuid')
+            ->all();
 
-            // All dev versions (active branches)
-            $devVersions = PackageVersion::where('package_uuid', $package->uuid)
-                ->dev()
-                ->pluck('uuid')
-                ->all();
+        // Latest stable version per package (single query + PHP grouping)
+        $latestStableUuids = PackageVersion::whereIn('package_uuid', $packageUuids)
+            ->stable()
+            ->orderBySemanticVersion('desc')
+            ->get(['uuid', 'package_uuid'])
+            ->groupBy('package_uuid')
+            ->map(fn ($versions) => $versions->first()->uuid)
+            ->values()
+            ->all();
 
-            return array_filter(array_merge([$latestStable], $devVersions));
-        })->values()->all();
+        return array_merge($latestStableUuids, $devVersionUuids);
     }
 }

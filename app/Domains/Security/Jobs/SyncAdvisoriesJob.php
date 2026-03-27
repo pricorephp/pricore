@@ -4,7 +4,7 @@ namespace App\Domains\Security\Jobs;
 
 use App\Domains\Security\Actions\FetchAdvisoriesAction;
 use App\Domains\Security\Exceptions\AdvisorySyncException;
-use App\Models\Organization;
+use App\Models\Package;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
@@ -42,9 +42,9 @@ class SyncAdvisoriesJob implements ShouldBeUnique, ShouldQueue
                 'advisories_updated' => $syncResultData->advisoriesUpdated,
             ]);
 
-            // Scan all organizations' packages for new advisory matches
-            Organization::each(function (Organization $organization) {
-                $organization->packages->each(function ($package) {
+            // Scan all packages for new advisory matches
+            Package::chunk(100, function ($packages) {
+                $packages->each(function (Package $package) {
                     ScanPackageVersionsJob::dispatch($package);
                 });
             });

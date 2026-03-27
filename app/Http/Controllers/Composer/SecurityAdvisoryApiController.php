@@ -12,7 +12,12 @@ class SecurityAdvisoryApiController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
-        $packageNames = $request->input('packages', []);
+        $validated = $request->validate([
+            'packages' => ['present', 'array'],
+            'packages.*' => ['string'],
+        ]);
+
+        $packageNames = $validated['packages'];
 
         if (empty($packageNames)) {
             return response()->json(['advisories' => []]);
