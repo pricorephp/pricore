@@ -29,6 +29,10 @@ class ScanPackageVersionsJob implements ShouldQueue
         MatchAdvisoriesForPackageAction $matchAdvisoriesForPackageAction,
         RecordActivityTask $recordActivityTask,
     ): void {
+        if (! $this->package->organization->security_audits_enabled) {
+            return;
+        }
+
         $matchesCreated = $matchAdvisoriesForPackageAction->handle($this->package);
 
         if ($matchesCreated === 0) {
@@ -60,6 +64,10 @@ class ScanPackageVersionsJob implements ShouldQueue
     protected function notifyAdmins(): void
     {
         $organization = $this->package->organization;
+
+        if (! $organization->security_notifications_enabled) {
+            return;
+        }
 
         // Get severity counts for all matches on this package
         $severityCounts = SecurityAdvisoryMatch::query()

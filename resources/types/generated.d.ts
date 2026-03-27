@@ -76,6 +76,8 @@ composerRepositoryUrl: string;
 permissions: App.Domains.Organization.Contracts.Data.OrganizationPermissionsData | null;
 onTrial: boolean | null;
 trialExpired: boolean | null;
+securityAuditsEnabled: boolean;
+securityNotificationsEnabled: boolean;
 };
 export type OrganizationInvitationData = {
 uuid: string;

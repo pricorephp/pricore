@@ -21,6 +21,8 @@ use Illuminate\Support\Carbon;
  * @property string $slug
  * @property string $owner_uuid
  * @property Carbon|null $trial_ends_at
+ * @property bool $security_audits_enabled
+ * @property bool $security_notifications_enabled
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property Carbon|null $deleted_at
@@ -75,6 +77,8 @@ class Organization extends Model
     {
         return [
             'trial_ends_at' => 'datetime',
+            'security_audits_enabled' => 'boolean',
+            'security_notifications_enabled' => 'boolean',
         ];
     }
 

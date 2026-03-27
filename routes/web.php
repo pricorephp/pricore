@@ -16,6 +16,7 @@ use App\Domains\Repository\Http\Controllers\SyncRepositoryController;
 use App\Domains\Repository\Http\Controllers\SyncWebhookController;
 use App\Domains\Security\Http\Controllers\ScanSecurityController;
 use App\Domains\Security\Http\Controllers\SecurityOverviewController;
+use App\Domains\Security\Http\Controllers\SecuritySettingsController;
 use App\Domains\Token\Http\Controllers\TokenController;
 use App\Http\Controllers\AcceptInvitationController;
 use App\Http\Controllers\Auth\GitHubAuthController;
@@ -94,6 +95,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::get('mirrors/{mirror:uuid}', [MirrorController::class, 'show'])->name('mirrors.show');
             Route::delete('mirrors/{mirror:uuid}', [MirrorController::class, 'destroy'])->name('mirrors.destroy');
             Route::post('mirrors/{mirror:uuid}/sync', SyncMirrorController::class)->name('mirrors.sync');
+
+            Route::get('security', [SecuritySettingsController::class, 'index'])->name('security.index');
+            Route::patch('security', [SecuritySettingsController::class, 'update'])->name('security.update');
 
         });
     });
