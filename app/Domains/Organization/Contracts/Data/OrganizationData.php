@@ -18,6 +18,8 @@ class OrganizationData extends Data
         public ?OrganizationPermissionsData $permissions = null,
         public ?bool $onTrial = null,
         public ?bool $trialExpired = null,
+        public bool $securityAuditsEnabled = true,
+        public bool $securityNotificationsEnabled = true,
     ) {}
 
     public static function fromModel(Organization $organization): self
@@ -28,6 +30,8 @@ class OrganizationData extends Data
             slug: $organization->slug,
             ownerUuid: $organization->owner_uuid,
             composerRepositoryUrl: url("/{$organization->slug}"),
+            securityAuditsEnabled: $organization->security_audits_enabled,
+            securityNotificationsEnabled: $organization->security_notifications_enabled,
         );
     }
 }

@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Support\Carbon;
 
 /**
@@ -34,6 +35,7 @@ use Illuminate\Support\Carbon;
  * @property-read int|null $downloads_count
  * @property-read Collection<int, PackageView> $views
  * @property-read int|null $views_count
+ * @property-read Collection<int, SecurityAdvisoryMatch> $advisoryMatches
  *
  * @method static \Database\Factories\PackageFactory factory($count = null, $state = [])
  * @method static Builder<static>|Package newModelQuery()
@@ -109,5 +111,20 @@ class Package extends Model
     public function views(): HasMany
     {
         return $this->hasMany(PackageView::class, 'package_uuid', 'uuid');
+    }
+
+    /**
+     * @return HasManyThrough<SecurityAdvisoryMatch, PackageVersion, $this>
+     */
+    public function advisoryMatches(): HasManyThrough
+    {
+        return $this->hasManyThrough(
+            related: SecurityAdvisoryMatch::class,
+            through: PackageVersion::class,
+            firstKey: 'package_uuid',
+            secondKey: 'package_version_uuid',
+            localKey: 'uuid',
+            secondLocalKey: 'uuid',
+        );
     }
 }

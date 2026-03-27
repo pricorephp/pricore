@@ -7,3 +7,5 @@ use Illuminate\Support\Facades\Schedule;
 Schedule::call(function () {
     Mirror::each(fn (Mirror $mirror) => SyncMirrorJob::dispatch($mirror));
 })->everyFourHours()->name('sync-mirrors');
+
+Schedule::command('security:sync-advisories')->everyFourHours()->name('sync-advisories');

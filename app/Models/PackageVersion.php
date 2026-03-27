@@ -7,9 +7,11 @@ use Database\Factories\PackageVersionFactory;
 use Eloquent;
 use Illuminate\Database\Connection;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Storage;
 
@@ -29,6 +31,7 @@ use Illuminate\Support\Facades\Storage;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property-read Package $package
+ * @property-read Collection<int, SecurityAdvisoryMatch> $advisoryMatches
  *
  * @method static Builder<static>|PackageVersion dev()
  * @method static \Database\Factories\PackageVersionFactory factory($count = null, $state = [])
@@ -80,6 +83,14 @@ class PackageVersion extends Model
     public function package(): BelongsTo
     {
         return $this->belongsTo(Package::class, 'package_uuid', 'uuid');
+    }
+
+    /**
+     * @return HasMany<SecurityAdvisoryMatch, $this>
+     */
+    public function advisoryMatches(): HasMany
+    {
+        return $this->hasMany(SecurityAdvisoryMatch::class, 'package_version_uuid', 'uuid');
     }
 
     /**

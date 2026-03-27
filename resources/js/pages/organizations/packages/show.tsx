@@ -52,15 +52,16 @@ import {
     Copy,
     Download,
     EllipsisVertical,
-    HardDrive,
     ExternalLink,
     GitBranch,
     GitCommit,
     Globe,
+    HardDrive,
     Link2,
     Lock,
     Package as PackageIcon,
     Search,
+    ShieldAlert,
     Terminal,
     Trash2,
     Users,
@@ -77,6 +78,8 @@ type PackageDownloadStatsData =
     App.Domains.Package.Contracts.Data.PackageDownloadStatsData;
 type PackageVersionDetailData =
     App.Domains.Package.Contracts.Data.PackageVersionDetailData;
+type SecurityAdvisoryMatchData =
+    App.Domains.Security.Contracts.Data.SecurityAdvisoryMatchData;
 
 interface PackageShowProps {
     organization: OrganizationData;
@@ -494,6 +497,32 @@ export default function PackageShow({
                                                 <span className="truncate font-medium tabular-nums">
                                                     {version.version}
                                                 </span>
+                                                {version.vulnerabilityCount >
+                                                    0 && (
+                                                    <span
+                                                        className={`inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 text-xs ${
+                                                            version.highestSeverity ===
+                                                                'critical' ||
+                                                            version.highestSeverity ===
+                                                                'high'
+                                                                ? 'border-red-200 bg-red-50 text-red-700 dark:border-red-800 dark:bg-red-950 dark:text-red-400'
+                                                                : version.highestSeverity ===
+                                                                    'medium'
+                                                                  ? 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-400'
+                                                                  : 'border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-800 dark:bg-blue-950 dark:text-blue-400'
+                                                        }`}
+                                                    >
+                                                        <ShieldAlert className="h-3 w-3" />
+                                                        {
+                                                            version.vulnerabilityCount
+                                                        }{' '}
+                                                        vulnerabilit
+                                                        {version.vulnerabilityCount ===
+                                                        1
+                                                            ? 'y'
+                                                            : 'ies'}
+                                                    </span>
+                                                )}
                                                 {version.distSize !== null && (
                                                     <Tooltip>
                                                         <TooltipTrigger asChild>
@@ -505,12 +534,8 @@ export default function PackageShow({
                                                             </span>
                                                         </TooltipTrigger>
                                                         <TooltipContent>
-                                                            Mirror
-                                                            stored
-                                                            and
-                                                            served
-                                                            by
-                                                            Pricore
+                                                            Mirror stored and
+                                                            served by Pricore
                                                         </TooltipContent>
                                                     </Tooltip>
                                                 )}
@@ -817,6 +842,112 @@ export default function PackageShow({
                                         </div>
                                     </>
                                 )}
+
+                                {activeVersion.advisoryMatches &&
+                                    activeVersion.advisoryMatches.length >
+                                        0 && (
+                                        <>
+                                            <Separator />
+                                            <div className="space-y-3">
+                                                <div className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground">
+                                                    <ShieldAlert className="h-4 w-4 text-red-500" />
+                                                    Security Advisories
+                                                </div>
+                                                <div className="space-y-2">
+                                                    {activeVersion.advisoryMatches.map(
+                                                        (
+                                                            match: SecurityAdvisoryMatchData,
+                                                        ) => (
+                                                            <div
+                                                                key={match.uuid}
+                                                                className="rounded-lg border p-3"
+                                                            >
+                                                                <div className="flex items-start justify-between gap-2">
+                                                                    <div className="min-w-0 flex-1">
+                                                                        <div className="flex items-center gap-2">
+                                                                            {match
+                                                                                .advisory
+                                                                                .link ? (
+                                                                                <a
+                                                                                    href={
+                                                                                        match
+                                                                                            .advisory
+                                                                                            .link
+                                                                                    }
+                                                                                    target="_blank"
+                                                                                    rel="noopener noreferrer"
+                                                                                    className="text-sm font-medium text-primary hover:underline"
+                                                                                >
+                                                                                    {
+                                                                                        match
+                                                                                            .advisory
+                                                                                            .title
+                                                                                    }
+                                                                                </a>
+                                                                            ) : (
+                                                                                <span className="text-sm font-medium">
+                                                                                    {
+                                                                                        match
+                                                                                            .advisory
+                                                                                            .title
+                                                                                    }
+                                                                                </span>
+                                                                            )}
+                                                                        </div>
+                                                                        <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                                                                            <Badge
+                                                                                variant={
+                                                                                    match
+                                                                                        .advisory
+                                                                                        .severity ===
+                                                                                        'critical' ||
+                                                                                    match
+                                                                                        .advisory
+                                                                                        .severity ===
+                                                                                        'high'
+                                                                                        ? 'destructive'
+                                                                                        : 'secondary'
+                                                                                }
+                                                                            >
+                                                                                {match.advisory.severity
+                                                                                    .charAt(
+                                                                                        0,
+                                                                                    )
+                                                                                    .toUpperCase() +
+                                                                                    match.advisory.severity.slice(
+                                                                                        1,
+                                                                                    )}
+                                                                            </Badge>
+                                                                            {match
+                                                                                .advisory
+                                                                                .cve && (
+                                                                                <Badge variant="outline">
+                                                                                    {
+                                                                                        match
+                                                                                            .advisory
+                                                                                            .cve
+                                                                                    }
+                                                                                </Badge>
+                                                                            )}
+                                                                            {match.matchType ===
+                                                                                'dependency' && (
+                                                                                <Badge variant="secondary">
+                                                                                    via{' '}
+                                                                                    {
+                                                                                        match.dependencyName
+                                                                                    }
+                                                                                </Badge>
+                                                                            )}
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        ),
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </>
+                                    )}
 
                                 {canManageVersions && (
                                     <>

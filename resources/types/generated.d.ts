@@ -14,7 +14,7 @@ createdAt: string | null;
 };
 }
 declare namespace App.Domains.Activity.Contracts.Enums {
-export type ActivityType = 'repository.added' | 'repository.removed' | 'repository.synced' | 'repository.sync_failed' | 'package.created' | 'package.removed' | 'member.added' | 'member.removed' | 'member.role_changed' | 'invitation.sent' | 'token.created' | 'token.revoked' | 'ssh_key.generated' | 'ssh_key.deleted' | 'mirror.added' | 'mirror.removed' | 'mirror.synced' | 'mirror.sync_failed';
+export type ActivityType = 'repository.added' | 'repository.removed' | 'repository.synced' | 'repository.sync_failed' | 'package.created' | 'package.removed' | 'member.added' | 'member.removed' | 'member.role_changed' | 'invitation.sent' | 'token.created' | 'token.revoked' | 'ssh_key.generated' | 'ssh_key.deleted' | 'mirror.added' | 'mirror.removed' | 'mirror.synced' | 'mirror.sync_failed' | 'security.vulnerabilities_detected';
 }
 declare namespace App.Domains.Auth.Contracts.Enums {
 export type GitHubOAuthIntent = 'login' | 'connect';
@@ -76,6 +76,8 @@ composerRepositoryUrl: string;
 permissions: App.Domains.Organization.Contracts.Data.OrganizationPermissionsData | null;
 onTrial: boolean | null;
 trialExpired: boolean | null;
+securityAuditsEnabled: boolean;
+securityNotificationsEnabled: boolean;
 };
 export type OrganizationInvitationData = {
 uuid: string;
@@ -162,6 +164,8 @@ sourceUrl: string | null;
 sourceReference: string | null;
 commitUrl: string | null;
 distSize: number | null;
+vulnerabilityCount: number;
+highestSeverity: App.Domains.Security.Contracts.Enums.AdvisorySeverity | null;
 };
 export type PackageVersionDetailData = {
 uuid: string;
@@ -181,6 +185,7 @@ authors: Array<any> | null;
 keywords: Array<any> | null;
 isStable: boolean;
 isDev: boolean;
+advisoryMatches: Array<App.Domains.Security.Contracts.Data.SecurityAdvisoryMatchData> | null;
 };
 export type VersionDailyDownloadData = {
 version: string;
@@ -247,6 +252,39 @@ organizationName: string;
 organizationSlug: string;
 };
 }
+declare namespace App.Domains.Security.Contracts.Data {
+export type PackageSecuritySummaryData = {
+packageUuid: string;
+packageName: string;
+affectedVersionCount: number;
+criticalCount: number;
+highCount: number;
+mediumCount: number;
+lowCount: number;
+totalCount: number;
+};
+export type SecurityAdvisoryData = {
+uuid: string;
+advisoryId: string;
+packageName: string;
+title: string;
+link: string | null;
+cve: string | null;
+affectedVersions: string;
+severity: App.Domains.Security.Contracts.Enums.AdvisorySeverity;
+reportedAt: string | null;
+};
+export type SecurityAdvisoryMatchData = {
+uuid: string;
+advisory: App.Domains.Security.Contracts.Data.SecurityAdvisoryData;
+matchType: App.Domains.Security.Contracts.Enums.AdvisoryMatchType;
+dependencyName: string | null;
+};
+}
+declare namespace App.Domains.Security.Contracts.Enums {
+export type AdvisoryMatchType = 'direct' | 'dependency';
+export type AdvisorySeverity = 'critical' | 'high' | 'medium' | 'low' | 'unknown';
+}
 declare namespace App.Domains.Token.Contracts.Data {
 export type AccessTokenData = {
 uuid: string;
@@ -260,19 +298,6 @@ plainToken: string;
 name: string;
 expiresAt: string | null;
 organizationUuid: string | null;
-};
-}
-declare namespace App.Domains.Update.Contracts.Data {
-export type ReleaseData = {
-version: string;
-body: string;
-url: string;
-publishedAt: string;
-};
-export type UpdateCheckData = {
-updateAvailable: boolean;
-latestVersion: string | null;
-releases: Array<any>;
 };
 }
 declare namespace App.Http.Data {

@@ -14,6 +14,9 @@ use App\Domains\Repository\Http\Controllers\Api\RepositorySuggestionController;
 use App\Domains\Repository\Http\Controllers\RepositoryController;
 use App\Domains\Repository\Http\Controllers\SyncRepositoryController;
 use App\Domains\Repository\Http\Controllers\SyncWebhookController;
+use App\Domains\Security\Http\Controllers\ScanSecurityController;
+use App\Domains\Security\Http\Controllers\SecurityOverviewController;
+use App\Domains\Security\Http\Controllers\SecuritySettingsController;
 use App\Domains\Token\Http\Controllers\TokenController;
 use App\Http\Controllers\AcceptInvitationController;
 use App\Http\Controllers\Auth\GitHubAuthController;
@@ -51,6 +54,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('organizations/{organization:slug}/packages/{package:uuid}', [PackageController::class, 'show'])->name('organizations.packages.show');
         Route::delete('organizations/{organization:slug}/packages/{package:uuid}', [PackageController::class, 'destroy'])->name('organizations.packages.destroy');
         Route::delete('organizations/{organization:slug}/packages/{package:uuid}/versions/{version:uuid}', [PackageVersionController::class, 'destroy'])->name('organizations.packages.versions.destroy');
+        Route::get('organizations/{organization:slug}/security', [SecurityOverviewController::class, 'index'])->name('organizations.security.index');
+        Route::post('organizations/{organization:slug}/security/scan', ScanSecurityController::class)->name('organizations.security.scan');
         Route::get('organizations/{organization:slug}/repositories', [RepositoryController::class, 'index'])->name('organizations.repositories.index');
         Route::post('organizations/{organization:slug}/repositories', [RepositoryController::class, 'store'])->name('organizations.repositories.store');
         Route::post('organizations/{organization:slug}/repositories/bulk', [RepositoryController::class, 'bulkStore'])->name('organizations.repositories.bulk-store');
@@ -90,6 +95,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::get('mirrors/{mirror:uuid}', [MirrorController::class, 'show'])->name('mirrors.show');
             Route::delete('mirrors/{mirror:uuid}', [MirrorController::class, 'destroy'])->name('mirrors.destroy');
             Route::post('mirrors/{mirror:uuid}/sync', SyncMirrorController::class)->name('mirrors.sync');
+
+            Route::get('security', [SecuritySettingsController::class, 'index'])->name('security.index');
+            Route::patch('security', [SecuritySettingsController::class, 'update'])->name('security.update');
 
         });
     });

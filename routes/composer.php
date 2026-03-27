@@ -4,6 +4,7 @@ use App\Http\Controllers\Composer\DistController;
 use App\Http\Controllers\Composer\MetadataController;
 use App\Http\Controllers\Composer\NotifyBatchController;
 use App\Http\Controllers\Composer\PackageController;
+use App\Http\Controllers\Composer\SecurityAdvisoryApiController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('{organization:slug}')
@@ -31,4 +32,8 @@ Route::prefix('{organization:slug}')
         // Download notification endpoint
         Route::post('notify-batch', NotifyBatchController::class)
             ->name('composer.notify-batch');
+
+        // Security advisories endpoint (Composer audit support)
+        Route::post('api/security-advisories', [SecurityAdvisoryApiController::class, 'index'])
+            ->name('composer.security-advisories');
     });

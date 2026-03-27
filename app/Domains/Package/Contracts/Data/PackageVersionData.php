@@ -3,6 +3,7 @@
 namespace App\Domains\Package\Contracts\Data;
 
 use App\Domains\Repository\Contracts\Enums\GitProvider;
+use App\Domains\Security\Contracts\Enums\AdvisorySeverity;
 use App\Models\PackageVersion;
 use Carbon\CarbonInterface;
 use Spatie\LaravelData\Data;
@@ -20,6 +21,8 @@ class PackageVersionData extends Data
         public ?string $sourceReference,
         public ?string $commitUrl,
         public ?int $distSize,
+        public int $vulnerabilityCount = 0,
+        public ?AdvisorySeverity $highestSeverity = null,
     ) {}
 
     public static function fromModel(
@@ -42,6 +45,17 @@ class PackageVersionData extends Data
             );
         }
 
+        $vulnerabilityCount = $version->relationLoaded('advisoryMatches')
+            ? $version->advisoryMatches->count()
+            : 0;
+
+        $highestSeverity = null;
+        if ($vulnerabilityCount > 0) {
+            $highestWeight = $version->advisoryMatches
+                ->max(fn ($match) => $match->advisory->severity->weight());
+            $highestSeverity = $highestWeight ? AdvisorySeverity::fromWeight($highestWeight) : null;
+        }
+
         return new self(
             uuid: $version->uuid,
             version: $version->version,
@@ -51,6 +65,8 @@ class PackageVersionData extends Data
             sourceReference: $version->source_reference,
             commitUrl: $commitUrl,
             distSize: $version->dist_size,
+            vulnerabilityCount: $vulnerabilityCount,
+            highestSeverity: $highestSeverity,
         );
     }
 

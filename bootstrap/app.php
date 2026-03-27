@@ -53,6 +53,7 @@ return Application::configure(basePath: dirname(__DIR__))
         __DIR__.'/../app/Domains/Repository/Commands',
         __DIR__.'/../app/Domains/Token/Commands',
         __DIR__.'/../app/Domains/Mirror/Commands',
+        __DIR__.'/../app/Domains/Security/Commands',
     ])
     ->withExceptions(function (Exceptions $exceptions): void {
         Integration::handles($exceptions);
