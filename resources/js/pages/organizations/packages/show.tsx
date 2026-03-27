@@ -43,6 +43,7 @@ import {
 import { useDebounce } from '@/hooks/use-debounce';
 import AppLayout from '@/layouts/app-layout';
 import { createOrganizationBreadcrumb } from '@/lib/breadcrumbs';
+import { formatBytes } from '@/lib/utils';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import {
     Calendar,
@@ -522,11 +523,25 @@ export default function PackageShow({
                                                             : 'ies'}
                                                     </span>
                                                 )}
-                                                {version.hasDist && (
-                                                    <span className="inline-flex items-center gap-1 rounded-md border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 text-xs text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-400">
-                                                        <HardDrive className="h-3 w-3" />
-                                                        Dist available
-                                                    </span>
+                                                {version.distSize !== null && (
+                                                    <Tooltip>
+                                                        <TooltipTrigger asChild>
+                                                            <span className="inline-flex items-center gap-1 rounded-md border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 text-xs text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-400">
+                                                                <HardDrive className="h-3 w-3" />
+                                                                {formatBytes(
+                                                                    version.distSize,
+                                                                )}
+                                                            </span>
+                                                        </TooltipTrigger>
+                                                        <TooltipContent>
+                                                            Mirror
+                                                            stored
+                                                            and
+                                                            served
+                                                            by
+                                                            Pricore
+                                                        </TooltipContent>
+                                                    </Tooltip>
                                                 )}
                                             </div>
                                             <div className="mt-1 flex items-center gap-3 text-sm text-muted-foreground">
@@ -645,10 +660,10 @@ export default function PackageShow({
                     }
                 }}
             >
-                <DialogContent className="max-h-[85vh] overflow-x-hidden overflow-y-auto sm:max-w-xl [&>button.absolute]:hidden">
+                <DialogContent className="max-h-[85vh] overflow-x-hidden overflow-y-auto sm:max-w-xl [&>*]:min-w-0 [&>button.absolute]:hidden">
                     {activeVersion && (
                         <>
-                            <div className="flex items-start justify-between gap-4">
+                            <div className="flex min-w-0 items-start justify-between gap-4">
                                 <div className="flex min-w-0 items-center gap-3">
                                     <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
                                         <PackageIcon className="h-5 w-5" />
@@ -657,16 +672,15 @@ export default function PackageShow({
                                         <DialogTitle className="truncate text-lg">
                                             {activeVersion.version}
                                         </DialogTitle>
-                                        <div className="flex min-w-0 items-center gap-1">
-                                            {activeVersion.description && (
-                                                <DialogDescription>
-                                                    {activeVersion.description}
-                                                </DialogDescription>
-                                            )}
-                                        </div>
+                                        {activeVersion.description && (
+                                            <DialogDescription className="line-clamp-2">
+                                                {activeVersion.description}
+                                            </DialogDescription>
+                                        )}
                                     </div>
                                 </div>
                                 <CopyButton
+                                    className="shrink-0"
                                     text={`${window.location.origin}/organizations/${organization.slug}/packages/${pkg.uuid}?version=${activeVersion.uuid}`}
                                     icon={Link2}
                                     tooltip="Link copied!"

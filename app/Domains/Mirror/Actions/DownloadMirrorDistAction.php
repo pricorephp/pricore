@@ -4,6 +4,7 @@ namespace App\Domains\Mirror\Actions;
 
 use App\Domains\Mirror\Exceptions\MirrorDistDownloadException;
 use App\Domains\Mirror\Services\RegistryClient\RegistryClientFactory;
+use App\Domains\Repository\Contracts\Data\DistArchiveData;
 use App\Models\Mirror;
 use App\Models\Package;
 use App\Models\PackageVersion;
@@ -13,17 +14,12 @@ use Illuminate\Support\Str;
 
 class DownloadMirrorDistAction
 {
-    /**
-     * Download and store a dist archive from the upstream registry.
-     *
-     * @return array{path: string, shasum: string}|null
-     */
     public function handle(
         Mirror $mirror,
         PackageVersion $packageVersion,
         Package $package,
         string $organizationSlug,
-    ): ?array {
+    ): ?DistArchiveData {
         $distUrl = $packageVersion->composer_json['dist']['url'] ?? null;
 
         if (! $distUrl) {
@@ -62,8 +58,9 @@ class DownloadMirrorDistAction
             }
 
             $shasum = hash_file('sha1', $tempPath);
+            $size = filesize($tempPath);
 
-            if ($shasum === false) {
+            if ($shasum === false || $size === false) {
                 return null;
             }
 
@@ -83,10 +80,11 @@ class DownloadMirrorDistAction
                 fclose($stream);
             }
 
-            return [
-                'path' => $storagePath,
-                'shasum' => $shasum,
-            ];
+            return new DistArchiveData(
+                path: $storagePath,
+                shasum: $shasum,
+                size: $size,
+            );
         } finally {
             if (file_exists($tempPath)) {
                 unlink($tempPath);

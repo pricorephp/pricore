@@ -26,6 +26,7 @@ use Illuminate\Support\Facades\Storage;
  * @property string|null $dist_url
  * @property string|null $dist_shasum
  * @property string|null $dist_path
+ * @property int|null $dist_size
  * @property Carbon|null $released_at
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
@@ -98,10 +99,10 @@ class PackageVersion extends Model
      */
     public function scopeStable(Builder $query): Builder
     {
-        // Only include semantic versions (e.g., 1.0.0, 2.3.4)
-        // Semantic versions start with a digit and don't end with -dev
-        return $query->whereRaw("SUBSTR(version, 1, 1) BETWEEN '0' AND '9'")
-            ->whereNotLike('version', '%-dev');
+        // Only include semantic versions (e.g., 1.0.0, v0.7.16)
+        // Normalized versions always start with a digit, even for v-prefixed versions
+        return $query->whereRaw("SUBSTR(normalized_version, 1, 1) BETWEEN '0' AND '9'")
+            ->whereNotLike('normalized_version', '%-dev');
     }
 
     /**

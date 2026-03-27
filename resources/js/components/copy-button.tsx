@@ -12,11 +12,13 @@ export function CopyButton({
     icon: Icon = Copy,
     tooltip = 'Copied!',
     variant = 'ghost',
+    className,
 }: {
     text: string;
     icon?: React.ComponentType<React.SVGProps<SVGSVGElement>>;
     tooltip?: string;
     variant?: 'ghost' | 'outline';
+    className?: string;
 }) {
     const [copied, setCopied] = useState(false);
     const isOutline = variant === 'outline';
@@ -57,7 +59,7 @@ export function CopyButton({
                     type="button"
                     variant={variant}
                     size="icon"
-                    className={isOutline ? 'h-8 w-8' : 'h-6 w-6'}
+                    className={`${isOutline ? 'h-8 w-8' : 'h-6 w-6'} ${className ?? ''}`}
                     onClick={copyToClipboard}
                 >
                     {copied ? (

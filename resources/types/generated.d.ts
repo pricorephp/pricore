@@ -161,7 +161,7 @@ releasedAt: string | null;
 sourceUrl: string | null;
 sourceReference: string | null;
 commitUrl: string | null;
-hasDist: boolean;
+distSize: number | null;
 vulnerabilityCount: number;
 highestSeverity: App.Domains.Security.Contracts.Enums.AdvisorySeverity | null;
 };
