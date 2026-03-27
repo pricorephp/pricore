@@ -82,7 +82,14 @@ class MatchAdvisoriesForPackageVersionAction
         $allDependencies = array_merge($require, $requireDev);
 
         // Filter out php and ext-* entries, keep name => constraint mapping
-        $dependencies = array_filter($allDependencies, fn (mixed $constraint, string|int $name) => is_string($name) && ! str_starts_with($name, 'php') && ! str_starts_with($name, 'ext-') && str_contains($name, '/'), ARRAY_FILTER_USE_BOTH);
+        $dependencies = array_filter(
+            array: $allDependencies,
+            callback: fn (mixed $constraint, string|int $name) => is_string($name)
+                && ! str_starts_with($name, 'php')
+                && ! str_starts_with($name, 'ext-')
+                && str_contains($name, '/'),
+            mode: ARRAY_FILTER_USE_BOTH,
+        );
 
         if (empty($dependencies)) {
             // Clean up any stale dependency matches
