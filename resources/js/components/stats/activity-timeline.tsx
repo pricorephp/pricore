@@ -6,6 +6,7 @@ import { Link } from '@inertiajs/react';
 import {
     Activity,
     AlertCircle,
+    Copy,
     GitBranch,
     KeyRound,
     type LucideIcon,
@@ -28,6 +29,7 @@ const iconMap: Record<string, LucideIcon> = {
     'git-branch': GitBranch,
     'refresh-cw': RefreshCw,
     'alert-circle': AlertCircle,
+    copy: Copy,
     'package-plus': PackagePlus,
     'package-minus': PackageMinus,
     'user-plus': UserPlus,
@@ -59,6 +61,11 @@ const categoryStyles: Record<string, { badge: string; standalone: string }> = {
         standalone:
             'bg-gradient-to-b from-amber-400 to-amber-600 text-white shadow-sm shadow-amber-500/30 [text-shadow:0_1px_0_rgba(0,0,0,0.2)]',
     },
+    mirror: {
+        badge: 'bg-gradient-to-b from-teal-400 to-teal-600 text-white shadow-sm shadow-teal-500/30 [text-shadow:0_1px_0_rgba(0,0,0,0.2)]',
+        standalone:
+            'bg-gradient-to-b from-teal-400 to-teal-600 text-white shadow-sm shadow-teal-500/30 [text-shadow:0_1px_0_rgba(0,0,0,0.2)]',
+    },
     security: {
         badge: 'bg-gradient-to-b from-red-400 to-red-600 text-white shadow-sm shadow-red-500/30 [text-shadow:0_1px_0_rgba(0,0,0,0.2)]',
         standalone:
@@ -87,6 +94,8 @@ function getSubjectUrl(
             return `/organizations/${organizationSlug}/packages/${subjectUuid}`;
         case 'access_token':
             return `/organizations/${organizationSlug}/settings/tokens`;
+        case 'mirror':
+            return `/organizations/${organizationSlug}/settings/mirrors`;
         case 'user':
             return `/organizations/${organizationSlug}/settings/members`;
         default:
@@ -257,6 +266,62 @@ function formatDescription(
                 action: (
                     <>
                         {verb('revoked')} token {bold(props.name)}
+                    </>
+                ),
+            };
+        case 'mirror.added':
+            return {
+                actor,
+                action: (
+                    <>
+                        {verb('added')} mirror {subject(props.name)}
+                    </>
+                ),
+            };
+        case 'mirror.removed':
+            return {
+                actor,
+                action: (
+                    <>
+                        {verb('removed')} mirror {bold(props.name)}
+                    </>
+                ),
+            };
+        case 'mirror.synced': {
+            const parts: string[] = [];
+            if (props.versions_added > 0) {
+                parts.push(
+                    `${props.versions_added} ${props.versions_added === 1 ? 'version' : 'versions'} added`,
+                );
+            }
+            if (props.versions_updated > 0) {
+                parts.push(`${props.versions_updated} updated`);
+            }
+            if (props.versions_removed > 0) {
+                parts.push(`${props.versions_removed} removed`);
+            }
+            return {
+                actor: null,
+                action: (
+                    <>
+                        {subject(props.name)} synced successfully
+                        {parts.length > 0 && (
+                            <span className="text-muted-foreground">
+                                {' '}
+                                &mdash; {parts.join(', ')}
+                            </span>
+                        )}
+                    </>
+                ),
+            };
+        }
+        case 'mirror.sync_failed':
+            return {
+                actor: null,
+                action: (
+                    <>
+                        {subject(props.name)} sync{' '}
+                        <span className="text-destructive">failed</span>
                     </>
                 ),
             };
