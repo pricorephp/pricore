@@ -269,10 +269,10 @@ export default function SecurityIndex({
                         <Card>
                             <CardContent className="py-12 text-center">
                                 <Shield className="mx-auto mb-3 h-10 w-10 text-muted-foreground/50" />
-                                <p className="font-medium">
+                                <p className="text-lg font-medium">
                                     No vulnerabilities found
                                 </p>
-                                <p className="mt-1 text-sm text-muted-foreground">
+                                <p className="mt-1 text-muted-foreground">
                                     {filters.severity
                                         ? 'No packages match the selected severity filter.'
                                         : 'All packages are clear of known security advisories.'}
