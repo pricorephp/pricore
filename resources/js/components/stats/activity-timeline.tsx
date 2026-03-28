@@ -6,6 +6,7 @@ import { Link } from '@inertiajs/react';
 import {
     Activity,
     AlertCircle,
+    Copy,
     GitBranch,
     KeyRound,
     type LucideIcon,
@@ -36,6 +37,7 @@ const iconMap: Record<string, LucideIcon> = {
     mail: Mail,
     'key-round': KeyRound,
     'shield-alert': ShieldAlert,
+    copy: Copy,
 };
 
 const categoryStyles: Record<string, { badge: string; standalone: string }> = {
@@ -64,6 +66,16 @@ const categoryStyles: Record<string, { badge: string; standalone: string }> = {
         standalone:
             'bg-gradient-to-b from-red-400 to-red-600 text-white shadow-sm shadow-red-500/30 [text-shadow:0_1px_0_rgba(0,0,0,0.2)]',
     },
+    settings: {
+        badge: 'bg-gradient-to-b from-neutral-400 to-neutral-600 text-white shadow-sm shadow-neutral-500/30 [text-shadow:0_1px_0_rgba(0,0,0,0.2)]',
+        standalone:
+            'bg-gradient-to-b from-neutral-400 to-neutral-600 text-white shadow-sm shadow-neutral-500/30 [text-shadow:0_1px_0_rgba(0,0,0,0.2)]',
+    },
+    mirror: {
+        badge: 'bg-gradient-to-b from-cyan-400 to-cyan-600 text-white shadow-sm shadow-cyan-500/30 [text-shadow:0_1px_0_rgba(0,0,0,0.2)]',
+        standalone:
+            'bg-gradient-to-b from-cyan-400 to-cyan-600 text-white shadow-sm shadow-cyan-500/30 [text-shadow:0_1px_0_rgba(0,0,0,0.2)]',
+    },
 };
 
 function getInitials(name: string): string {
@@ -89,6 +101,10 @@ function getSubjectUrl(
             return `/organizations/${organizationSlug}/settings/tokens`;
         case 'user':
             return `/organizations/${organizationSlug}/settings/members`;
+        case 'mirror':
+            return `/organizations/${organizationSlug}/settings/mirrors/${subjectUuid}`;
+        case 'organization_ssh_key':
+            return `/organizations/${organizationSlug}/settings/ssh-keys`;
         default:
             return null;
     }
@@ -257,6 +273,80 @@ function formatDescription(
                 action: (
                     <>
                         {verb('revoked')} token {bold(props.name)}
+                    </>
+                ),
+            };
+        case 'ssh_key.generated':
+            return {
+                actor,
+                action: (
+                    <>
+                        {verb('generated')} SSH key {subject(props.name)}
+                    </>
+                ),
+            };
+        case 'ssh_key.deleted':
+            return {
+                actor,
+                action: (
+                    <>
+                        {verb('deleted')} SSH key {bold(props.name)}
+                    </>
+                ),
+            };
+        case 'mirror.added':
+            return {
+                actor,
+                action: (
+                    <>
+                        {verb('added')} mirror {subject(props.name)}
+                    </>
+                ),
+            };
+        case 'mirror.removed':
+            return {
+                actor,
+                action: (
+                    <>
+                        {verb('removed')} mirror {bold(props.name)}
+                    </>
+                ),
+            };
+        case 'mirror.synced': {
+            const parts: string[] = [];
+            if (props.versions_added > 0) {
+                parts.push(
+                    `${props.versions_added} ${props.versions_added === 1 ? 'version' : 'versions'} added`,
+                );
+            }
+            if (props.versions_updated > 0) {
+                parts.push(`${props.versions_updated} updated`);
+            }
+            if (props.versions_removed > 0) {
+                parts.push(`${props.versions_removed} removed`);
+            }
+            return {
+                actor: null,
+                action: (
+                    <>
+                        {subject(props.name)} synced successfully
+                        {parts.length > 0 && (
+                            <span className="text-muted-foreground">
+                                {' '}
+                                &mdash; {parts.join(', ')}
+                            </span>
+                        )}
+                    </>
+                ),
+            };
+        }
+        case 'mirror.sync_failed':
+            return {
+                actor: null,
+                action: (
+                    <>
+                        {subject(props.name)} sync{' '}
+                        <span className="text-destructive">failed</span>
                     </>
                 ),
             };
