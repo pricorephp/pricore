@@ -1,7 +1,11 @@
 import '../css/app.css';
 import './echo';
 
-import { createInertiaApp, router } from '@inertiajs/react';
+import {
+    type ResolvedComponent,
+    createInertiaApp,
+    router,
+} from '@inertiajs/react';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { Settings } from 'luxon';
 import { StrictMode } from 'react';
@@ -48,7 +52,7 @@ createInertiaApp({
     resolve: (name) =>
         resolvePageComponent(
             `./pages/${name}.tsx`,
-            import.meta.glob('./pages/**/*.tsx'),
+            import.meta.glob<ResolvedComponent>('./pages/**/*.tsx'),
         ),
     setup({ el, App, props }) {
         const root = createRoot(el);
