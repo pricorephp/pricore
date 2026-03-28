@@ -57,7 +57,7 @@
         "concurrently": "^9.0.1",
         "globals": "^17.4.0",
         "input-otp": "^1.4.2",
-        "laravel-echo": "^2.3.0",
+        "laravel-echo": "^2.3.1",
         "laravel-vite-plugin": "^2.0",
         "lucide-react": "^0.577.0",
         "luxon": "^3.7.2",
