@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "08c536c2fee7b17a937a7ed679c767c0",
+    "content-hash": "11690528d666f7634bf5973c88a9d8ba",
     "packages": [
         {
             "name": "aws/aws-crt-php",
@@ -14374,7 +14374,6 @@
     "aliases": [],
     "minimum-stability": "stable",
     "stability-flags": {
-        "inertiajs/inertia-laravel": 10,
         "roave/security-advisories": 20
     },
     "prefer-stable": true,
