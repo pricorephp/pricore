@@ -30,7 +30,7 @@
         "typescript-eslint": "^8.57.2",
         "@babel/core": "^7.26.0",
         "@rolldown/plugin-babel": "^0.2.2",
-        "vitepress": "^1.6.4"
+        "vitepress": "^2.0.0-alpha.17"
     },
     "dependencies": {
         "@headlessui/react": "^2.2.0",
