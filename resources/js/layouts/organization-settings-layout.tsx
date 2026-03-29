@@ -227,10 +227,6 @@ export default function OrganizationSettingsLayout({
     return <SettingsContent>{children}</SettingsContent>;
 }
 
-export function withOrganizationSettingsLayout(page: React.ReactNode) {
-    return (
-        <OrganizationSettingsLayoutWrapper>
-            {page}
-        </OrganizationSettingsLayoutWrapper>
-    );
-}
+export const withOrganizationSettingsLayout = (page: React.ReactNode) => (
+    <OrganizationSettingsLayoutWrapper>{page}</OrganizationSettingsLayoutWrapper>
+);
