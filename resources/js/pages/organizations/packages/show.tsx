@@ -575,7 +575,7 @@ export default function PackageShow({
                                                         onClick={(e) =>
                                                             e.stopPropagation()
                                                         }
-                                                        className="flex items-center gap-1 text-primary hover:underline"
+                                                        className="flex items-center gap-1 hover:text-foreground hover:underline"
                                                     >
                                                         <Tag className="h-3.5 w-3.5" />
                                                         {version.sourceTag}
@@ -762,7 +762,7 @@ export default function PackageShow({
                                                 }
                                                 target="_blank"
                                                 rel="noopener noreferrer"
-                                                className="inline-flex items-center gap-1.5 font-medium text-primary transition-colors hover:underline"
+                                                className="inline-flex items-center gap-1.5 font-medium text-muted-foreground transition-colors hover:text-foreground hover:underline"
                                             >
                                                 {activeVersion.sourceTag}
                                                 <ExternalLink className="h-3.5 w-3.5" />
