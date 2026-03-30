@@ -76,6 +76,7 @@ class SyncRefAction
                     'composer_json' => $metadata->composerJson,
                     'source_url' => $sourceUrl,
                     'source_reference' => $ref->commit,
+                    'source_tag' => $ref->name,
                 ]);
 
                 return ['status' => 'updated', 'version' => $version, 'package' => $package];
@@ -88,6 +89,7 @@ class SyncRefAction
                 'composer_json' => $metadata->composerJson,
                 'source_url' => $sourceUrl,
                 'source_reference' => $ref->commit,
+                'source_tag' => $ref->name,
                 'released_at' => now(),
             ]);
 

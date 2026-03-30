@@ -19,7 +19,9 @@ class PackageVersionData extends Data
         public ?CarbonInterface $releasedAt,
         public ?string $sourceUrl,
         public ?string $sourceReference,
+        public ?string $sourceTag,
         public ?string $commitUrl,
+        public ?string $tagUrl,
         public ?int $distSize,
         public int $vulnerabilityCount = 0,
         public ?AdvisorySeverity $highestSeverity = null,
@@ -56,6 +58,21 @@ class PackageVersionData extends Data
             $highestSeverity = $highestWeight ? AdvisorySeverity::fromWeight($highestWeight) : null;
         }
 
+        $tagUrl = null;
+
+        if ($version->source_tag && $version->source_url) {
+            $versionProvider ??= $version->package->repository?->provider;
+            $versionRepoIdentifier ??= $version->package->repository?->repo_identifier;
+
+            $tagUrl = static::generateTagUrl(
+                sourceUrl: $version->source_url,
+                sourceTag: $version->source_tag,
+                version: $version->version,
+                provider: $versionProvider,
+                repoIdentifier: $versionRepoIdentifier,
+            );
+        }
+
         return new self(
             uuid: $version->uuid,
             version: $version->version,
@@ -63,7 +80,9 @@ class PackageVersionData extends Data
             releasedAt: $version->released_at,
             sourceUrl: $version->source_url,
             sourceReference: $version->source_reference,
+            sourceTag: $version->source_tag,
             commitUrl: $commitUrl,
+            tagUrl: $tagUrl,
             distSize: $version->dist_size,
             vulnerabilityCount: $vulnerabilityCount,
             highestSeverity: $highestSeverity,
@@ -122,6 +141,57 @@ class PackageVersionData extends Data
             $path = rtrim($url['path'] ?? '', '.git');
 
             return ($url['scheme'] ?? 'https').'://'.($url['host'] ?? '').$path.'/tree/'.$commitSha;
+        }
+
+        return null;
+    }
+
+    protected static function generateTagUrl(
+        ?string $sourceUrl,
+        string $sourceTag,
+        string $version,
+        ?GitProvider $provider,
+        ?string $repoIdentifier
+    ): ?string {
+        // Dev branches should not get tag URLs
+        if (str_starts_with($version, 'dev-') || str_ends_with($version, '-dev')) {
+            return null;
+        }
+
+        if ($provider && $repoIdentifier) {
+            return match ($provider) {
+                GitProvider::GitHub => "https://github.com/{$repoIdentifier}/releases/tag/{$sourceTag}",
+                GitProvider::GitLab => "https://gitlab.com/{$repoIdentifier}/-/tags/{$sourceTag}",
+                GitProvider::Bitbucket => "https://bitbucket.org/{$repoIdentifier}/src/{$sourceTag}",
+                GitProvider::Git => static::generateTagUrlFromSourceUrl($sourceUrl, $sourceTag),
+            };
+        }
+
+        return static::generateTagUrlFromSourceUrl($sourceUrl, $sourceTag);
+    }
+
+    protected static function generateTagUrlFromSourceUrl(
+        ?string $sourceUrl,
+        string $sourceTag
+    ): ?string {
+        if (! $sourceUrl) {
+            return null;
+        }
+
+        $cleanUrl = preg_replace('/^git@/', '', $sourceUrl) ?? '';
+        $cleanUrl = preg_replace('/\.git$/', '', $cleanUrl) ?? '';
+        $cleanUrl = str_replace(':', '/', $cleanUrl);
+
+        if (str_starts_with($cleanUrl, 'github.com/')) {
+            return "https://{$cleanUrl}/releases/tag/{$sourceTag}";
+        }
+
+        if (str_starts_with($cleanUrl, 'gitlab.com/')) {
+            return "https://{$cleanUrl}/-/tags/{$sourceTag}";
+        }
+
+        if (str_starts_with($cleanUrl, 'bitbucket.org/')) {
+            return "https://{$cleanUrl}/src/{$sourceTag}";
         }
 
         return null;
