@@ -15,6 +15,7 @@ it('creates a user and organization successfully', function () {
         ->expectsQuestion('Confirm Password', 'password123')
         ->expectsQuestion('Organization name', 'My Organization')
         ->expectsOutputToContain('Pricore has been set up successfully!')
+        ->expectsConfirmation('Would you like to sync security advisories?', 'no')
         ->assertSuccessful();
 
     $user = User::query()->where('email', 'john@example.com')->first();
@@ -53,6 +54,7 @@ it('warns when users already exist and allows continuing', function () {
         ->expectsQuestion('Password', 'password123')
         ->expectsQuestion('Confirm Password', 'password123')
         ->expectsQuestion('Organization name', 'Another Org')
+        ->expectsConfirmation('Would you like to sync security advisories?', 'no')
         ->assertSuccessful();
 
     expect(User::query()->where('email', 'jane@example.com')->exists())->toBeTrue();
@@ -67,6 +69,7 @@ it('does not warn when no users exist', function () {
         ->expectsQuestion('Password', 'password123')
         ->expectsQuestion('Confirm Password', 'password123')
         ->expectsQuestion('Organization name', 'My Org')
+        ->expectsConfirmation('Would you like to sync security advisories?', 'no')
         ->assertSuccessful();
 });
 
@@ -77,6 +80,7 @@ it('creates the user with a verified email', function () {
         ->expectsQuestion('Password', 'password123')
         ->expectsQuestion('Confirm Password', 'password123')
         ->expectsQuestion('Organization name', 'My Org')
+        ->expectsConfirmation('Would you like to sync security advisories?', 'no')
         ->assertSuccessful();
 
     $user = User::query()->where('email', 'john@example.com')->first();
@@ -91,6 +95,7 @@ it('creates the organization with the correct slug', function () {
         ->expectsQuestion('Password', 'password123')
         ->expectsQuestion('Confirm Password', 'password123')
         ->expectsQuestion('Organization name', 'Acme Corp')
+        ->expectsConfirmation('Would you like to sync security advisories?', 'no')
         ->assertSuccessful();
 
     $organization = Organization::query()->where('name', 'Acme Corp')->first();
@@ -107,6 +112,7 @@ it('hashes the user password', function () {
         ->expectsQuestion('Password', 'password123')
         ->expectsQuestion('Confirm Password', 'password123')
         ->expectsQuestion('Organization name', 'My Org')
+        ->expectsConfirmation('Would you like to sync security advisories?', 'no')
         ->assertSuccessful();
 
     $user = User::query()->where('email', 'john@example.com')->first();
