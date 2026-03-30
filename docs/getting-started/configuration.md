@@ -18,7 +18,7 @@ APP_URL=https://pricore.yourcompany.com
 | `APP_NAME` | Application name displayed in UI | `Pricore` |
 | `APP_ENV` | Environment (`local`, `production`) | `production` |
 | `APP_DEBUG` | Enable debug mode (disable in production) | `false` |
-| `APP_URL` | Public URL of your Pricore instance | - |
+| `APP_URL` | Public URL of your Pricore instance. When set to an `https://` URL, all generated URLs are forced to HTTPS — important when running behind a reverse proxy that terminates SSL. | - |
 
 ### Registration
 

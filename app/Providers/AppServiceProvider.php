@@ -14,6 +14,7 @@ use Illuminate\Auth\Events\Login;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 use SocialiteProviders\GitLab\GitLabExtendSocialite;
 use SocialiteProviders\Manager\SocialiteWasCalled;
@@ -27,6 +28,8 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        URL::forceHttps(str_starts_with(config('app.url'), 'https://'));
+
         Event::listen(Login::class, AcceptPendingInvitationListener::class);
         Event::listen(Registered::class, AcceptPendingInvitationListener::class);
         Event::listen(SocialiteWasCalled::class, GitLabExtendSocialite::class.'@handle');
