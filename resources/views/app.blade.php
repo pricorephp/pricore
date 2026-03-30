@@ -40,7 +40,7 @@
         <meta name="reverb-scheme" content="{{ config('broadcasting.connections.reverb.echo.scheme') }}">
     @endif
 
-    <title inertia>{{ config('app.name') }}</title>
+    <title data-inertia>{{ config('app.name') }}</title>
 
     <link rel="icon" href="/favicon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="/apple-touch-icon.png">
