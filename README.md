@@ -36,16 +36,12 @@ Don't want to self-host? Try [Hosted Pricore](https://app.pricore.dev) — a ful
 
 ## Features
 
-- **Private & Secure** - Token-based auth, per-package access control. Your code stays yours.
-- **Git-Based Mirroring** - Point Pricore at any Git repo. It mirrors, indexes, and serves automatically.
-- **Built on Laravel** - Familiar stack, easy to extend. If you know Laravel, you know Pricore.
-- **Blazing Fast** - Packages resolve in milliseconds. No waiting on external APIs.
-- **Web Dashboard** - Browse packages, manage tokens, and view download stats from a clean UI.
-- **Realtime Updates** - Sync status and activity feed update live via WebSockets. No refresh needed.
-- **Registry Mirrors** - Import packages from external Composer registries like Packagist or other private registries. Automatic syncing, dist mirroring, and multiple auth methods.
-- **Webhook Support** - Auto-update packages when you push. Works with GitHub, GitLab, and Bitbucket.
-- **Composer v2 Native** - Full Composer v2 API support including metadata-url for lightning-fast resolves.
-- **Open Source** - Apache 2.0 licensed. Run it, fork it, contribute to it. No vendor lock-in, ever.
+- **Git-Based Mirroring** - Point at any GitHub, GitLab, Bitbucket, or generic Git repo. Automatic syncing via webhooks.
+- **Registry Mirrors** - Import packages from Packagist or other Composer registries with dist mirroring.
+- **Composer v2 Native** - Full API support with lightning-fast package resolves.
+- **Security Auditing** - Vulnerability scanning via Packagist advisories with native `composer audit` support.
+- **Web Dashboard** - Browse packages, manage tokens, and view download stats in realtime.
+- **Built on Laravel** - Familiar stack, easy to extend. Open source under Apache 2.0.
 
 <p align="center">
   <a href="https://www.star-history.com/?repos=pricorephp%2Fpricore&type=date&legend=top-left"><img src="https://api.star-history.com/image?repos=pricorephp/pricore&type=date&legend=top-left" alt="Star History Chart" width="500" /></a>
