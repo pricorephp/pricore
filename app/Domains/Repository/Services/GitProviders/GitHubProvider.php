@@ -414,10 +414,16 @@ class GitHubProvider extends AbstractGitProvider
             $page = 1;
             $perPage = 100;
 
-            $endpoint = $owner ? "/users/{$owner}/repos" : '/user/repos';
-            $params = $owner
-                ? ['per_page' => $perPage, 'sort' => 'updated']
-                : ['per_page' => $perPage, 'sort' => 'updated', 'affiliation' => 'owner,collaborator,organization_member'];
+            $isAuthenticatedUser = $owner && $this->isAuthenticatedUser($owner);
+            $endpoint = match (true) {
+                ! $owner, $isAuthenticatedUser => '/user/repos',
+                default => "/orgs/{$owner}/repos",
+            };
+            $params = match (true) {
+                ! $owner => ['per_page' => $perPage, 'sort' => 'updated', 'affiliation' => 'owner,collaborator,organization_member'],
+                $isAuthenticatedUser => ['per_page' => $perPage, 'sort' => 'updated', 'affiliation' => 'owner'],
+                default => ['per_page' => $perPage, 'sort' => 'updated', 'type' => 'all'],
+            };
 
             do {
                 $response = $this->http->get($endpoint, array_merge($params, ['page' => $page]));
@@ -447,6 +453,17 @@ class GitHubProvider extends AbstractGitProvider
                 "Failed to fetch repositories: {$e->getMessage()}",
                 previous: $e
             );
+        }
+    }
+
+    protected function isAuthenticatedUser(string $owner): bool
+    {
+        try {
+            $response = $this->http->get('/user');
+
+            return $response->successful() && $response->json('login') === $owner;
+        } catch (\Exception) {
+            return false;
         }
     }
 }
