@@ -38,6 +38,7 @@ class PackageVersionFactory extends Factory
             'composer_json' => $this->generateComposerJson($version),
             'source_url' => fake()->url(),
             'source_reference' => fake()->sha1(),
+            'source_tag' => "v{$version}",
             'dist_url' => fake()->url().'/archive/'.$version.'.zip',
             'released_at' => fake()->dateTimeBetween('-2 years', 'now'),
         ];
@@ -94,6 +95,7 @@ class PackageVersionFactory extends Factory
             return [
                 'version' => $version,
                 'normalized_version' => '9999999-dev',
+                'source_tag' => null,
                 'composer_json' => array_merge($attributes['composer_json'] ?? [], [
                     'version' => $version,
                 ]),

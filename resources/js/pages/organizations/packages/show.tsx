@@ -62,6 +62,7 @@ import {
     Package as PackageIcon,
     Search,
     ShieldAlert,
+    Tag,
     Terminal,
     Trash2,
     Users,
@@ -564,6 +565,22 @@ export default function PackageShow({
                                                         )}
                                                     </span>
                                                 )}
+                                                {version.tagUrl && (
+                                                    <a
+                                                        href={
+                                                            version.tagUrl
+                                                        }
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        onClick={(e) =>
+                                                            e.stopPropagation()
+                                                        }
+                                                        className="flex items-center gap-1 hover:text-foreground hover:underline"
+                                                    >
+                                                        <Tag className="h-3.5 w-3.5" />
+                                                        {version.sourceTag}
+                                                    </a>
+                                                )}
                                             </div>
                                         </div>
                                         <CopyInstallButton
@@ -731,6 +748,25 @@ export default function PackageShow({
                                                     )}
                                                 </code>
                                             )}
+                                        </div>
+                                    )}
+                                    {activeVersion.tagUrl && (
+                                        <div>
+                                            <div className="mb-1.5 flex items-center gap-1.5 text-sm font-medium text-muted-foreground">
+                                                <Tag className="h-4 w-4" />
+                                                Tag
+                                            </div>
+                                            <a
+                                                href={
+                                                    activeVersion.tagUrl
+                                                }
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="inline-flex items-center gap-1.5 font-medium text-muted-foreground transition-colors hover:text-foreground hover:underline"
+                                            >
+                                                {activeVersion.sourceTag}
+                                                <ExternalLink className="h-3.5 w-3.5" />
+                                            </a>
                                         </div>
                                     )}
                                 </div>

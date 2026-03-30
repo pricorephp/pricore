@@ -23,6 +23,7 @@ use Illuminate\Support\Facades\Storage;
  * @property array<array-key, mixed> $composer_json
  * @property string|null $source_url
  * @property string|null $source_reference
+ * @property string|null $source_tag
  * @property string|null $dist_url
  * @property string|null $dist_shasum
  * @property string|null $dist_path
