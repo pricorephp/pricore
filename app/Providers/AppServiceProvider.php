@@ -29,6 +29,7 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         URL::forceHttps(str_starts_with(config('app.url'), 'https://'));
+
         Event::listen(Login::class, AcceptPendingInvitationListener::class);
         Event::listen(Registered::class, AcceptPendingInvitationListener::class);
         Event::listen(SocialiteWasCalled::class, GitLabExtendSocialite::class.'@handle');
