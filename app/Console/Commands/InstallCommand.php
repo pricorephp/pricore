@@ -3,11 +3,13 @@
 namespace App\Console\Commands;
 
 use App\Domains\Organization\Actions\CreateOrganizationAction;
+use App\Domains\Security\Actions\FetchAdvisoriesAction;
 use App\Models\User;
 use Illuminate\Console\Command;
 
 use function Laravel\Prompts\confirm;
 use function Laravel\Prompts\password;
+use function Laravel\Prompts\spin;
 use function Laravel\Prompts\text;
 
 class InstallCommand extends Command
@@ -22,7 +24,7 @@ class InstallCommand extends Command
      */
     protected $description = 'Set up the first user and organization for Pricore';
 
-    public function handle(CreateOrganizationAction $createOrganizationAction): int
+    public function handle(CreateOrganizationAction $createOrganizationAction, FetchAdvisoriesAction $fetchAdvisoriesAction): int
     {
         $this->renderLogo();
         $this->components->info('Let\'s set up your first user and organization.');
@@ -98,6 +100,15 @@ class InstallCommand extends Command
         $this->newLine();
 
         $this->components->info('Pricore has been set up successfully! You can now sign in at the URL above.');
+
+        if (confirm('Would you like to sync security advisories?', default: true)) {
+            $advisorySyncResultData = spin(
+                callback: fn () => $fetchAdvisoriesAction->handle(),
+                message: 'Syncing security advisories...',
+            );
+
+            $this->components->info("Synced {$advisorySyncResultData->total()} security advisories.");
+        }
 
         return self::SUCCESS;
     }
