@@ -176,7 +176,7 @@ RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 EXPOSE 8000
 
 # Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=30s --retries=3 \
+HEALTHCHECK --interval=30s --timeout=3s --start-period=90s --retries=3 \
     CMD curl -f http://localhost:8000/health || exit 1
 
 # FrankenPHP handles graceful shutdown via SIGTERM
