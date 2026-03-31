@@ -107,6 +107,29 @@ it('includes immutable caching headers on local dist downloads', function () {
     expect($response->headers->get('ETag'))->toBe('"abc123def456"');
 });
 
+it('downloads a dist archive for a branch version with slashes', function () {
+    $package = Package::factory()
+        ->for($this->organization, 'organization')
+        ->create(['name' => 'acme/test-package']);
+
+    $distPath = 'acme/acme/test-package/dev-feat_ISSUE-123-my-feature_abc123def456.zip';
+    Storage::disk('local')->put($distPath, 'fake-zip-content');
+
+    PackageVersion::factory()
+        ->for($package)
+        ->create([
+            'version' => 'dev-feat/ISSUE-123-my-feature',
+            'source_reference' => 'abc123def456',
+            'dist_url' => url('/acme/dists/acme/test-package/dev-feat/ISSUE-123-my-feature/abc123def456.zip'),
+            'dist_path' => $distPath,
+            'dist_shasum' => sha1('fake-zip-content'),
+        ]);
+
+    $response = distGet('/acme/dists/acme/test-package/dev-feat/ISSUE-123-my-feature/abc123def456.zip', $this->plainToken);
+
+    $response->assertOk();
+});
+
 it('requires authentication for dist download', function () {
     $response = test()->getJson('/acme/dists/acme/test-package/1.0.0/abc123.zip');
 

@@ -27,7 +27,7 @@ Route::prefix('{organization:slug}')
         // Dist archive download
         Route::get('dists/{vendor}/{package}/{version}/{reference}.zip', [DistController::class, 'download'])
             ->name('composer.dist.download')
-            ->where(['vendor' => '[a-z0-9_.-]+', 'package' => '[a-z0-9_.-]+']);
+            ->where(['vendor' => '[a-z0-9_.-]+', 'package' => '[a-z0-9_.-]+', 'version' => '[a-zA-Z0-9_./-]+', 'reference' => '[a-f0-9]+']);
 
         // Download notification endpoint
         Route::post('notify-batch', NotifyBatchController::class)
