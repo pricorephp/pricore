@@ -61,7 +61,7 @@
         "input-otp": "^1.4.2",
         "laravel-echo": "^2.3.1",
         "laravel-vite-plugin": "^3.0.0",
-        "lucide-react": "^0.577.0",
+        "lucide-react": "^1.7.0",
         "luxon": "^3.7.2",
         "pusher-js": "^8.4.0",
         "radix-ui": "^1.4.3",
