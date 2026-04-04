@@ -63,7 +63,7 @@
         "laravel-vite-plugin": "^3.0.0",
         "lucide-react": "^0.577.0",
         "luxon": "^3.7.2",
-        "pusher-js": "^8.4.0",
+        "pusher-js": "^8.5.0",
         "radix-ui": "^1.4.3",
         "react": "^19.2.0",
         "react-dom": "^19.2.0",
