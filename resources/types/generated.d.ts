@@ -196,6 +196,22 @@ version: string;
 dailyDownloads: Array<App.Domains.Organization.Contracts.Data.DailyDownloadData>;
 };
 }
+declare namespace App.Domains.Release.Contracts.Data {
+export type ReleaseData = {
+name: string;
+tagName: string;
+version: string;
+htmlUrl: string;
+publishedAt: string | null;
+bodyHtml: string;
+};
+export type ReleaseInfoData = {
+currentVersion: string | null;
+latestVersion: string | null;
+isOutdated: boolean;
+releases: Array<any>;
+};
+}
 declare namespace App.Domains.Repository.Contracts.Data {
 export type RepositoryData = {
 uuid: string;
