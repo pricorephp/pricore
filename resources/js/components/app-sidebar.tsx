@@ -1,10 +1,12 @@
 import { NavMain } from '@/components/nav-main';
+import ReleaseNotesDialog from '@/components/release-notes-dialog';
 import {
     Sidebar,
     SidebarContent,
     SidebarFooter,
     SidebarHeader,
 } from '@/components/ui/sidebar';
+import { useReleaseInfo } from '@/hooks/use-release-info';
 import { dashboard } from '@/routes';
 import { type NavItem, type SharedData } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
@@ -16,7 +18,7 @@ import {
     Settings,
     ShieldAlert,
 } from 'lucide-react';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import AppLogoIcon from './app-logo-icon';
 
 export function AppSidebar() {
@@ -24,6 +26,8 @@ export function AppSidebar() {
     const url = page.url;
     const version = page.props.version;
     const organizations = page.props.auth.organizations;
+    const { info: releaseInfo } = useReleaseInfo();
+    const [releaseNotesOpen, setReleaseNotesOpen] = useState(false);
 
     // Extract organization slug from URL
     const currentOrgSlug = useMemo(() => {
@@ -96,16 +100,24 @@ export function AppSidebar() {
             </SidebarContent>
 
             <SidebarFooter className="border-t border-sidebar-border pt-2">
-                {version && (
-                    <a
-                        href="https://github.com/pricorephp/pricore/releases"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-center text-[10.5px] text-sidebar-foreground/50 transition-colors hover:text-sidebar-foreground/70"
-                    >
-                        v{version}
-                    </a>
-                )}
+                <button
+                    type="button"
+                    onClick={() => setReleaseNotesOpen(true)}
+                    className="inline-flex items-center justify-center gap-1.5 text-[10.5px] text-sidebar-foreground/50 transition-colors hover:text-sidebar-foreground/70"
+                    title={
+                        releaseInfo?.isOutdated
+                            ? `Update available: v${releaseInfo.latestVersion}`
+                            : 'View release notes'
+                    }
+                >
+                    <span>{version ? `v${version}` : 'Releases'}</span>
+                    {releaseInfo?.isOutdated && (
+                        <span
+                            className="size-1.5 rounded-full bg-primary"
+                            aria-label="Update available"
+                        />
+                    )}
+                </button>
                 <a
                     href="https://docs.pricore.dev"
                     target="_blank"
@@ -118,6 +130,12 @@ export function AppSidebar() {
                     </span>
                 </a>
             </SidebarFooter>
+
+            <ReleaseNotesDialog
+                open={releaseNotesOpen}
+                onOpenChange={setReleaseNotesOpen}
+                info={releaseInfo}
+            />
         </Sidebar>
     );
 }

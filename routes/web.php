@@ -10,6 +10,7 @@ use App\Domains\Organization\Http\Controllers\SettingsController;
 use App\Domains\Organization\Http\Controllers\SshKeyController;
 use App\Domains\Package\Http\Controllers\PackageController;
 use App\Domains\Package\Http\Controllers\PackageVersionController;
+use App\Domains\Release\Http\Controllers\ReleaseController;
 use App\Domains\Repository\Http\Controllers\Api\RepositorySuggestionController;
 use App\Domains\Repository\Http\Controllers\RepositoryController;
 use App\Domains\Repository\Http\Controllers\SyncRepositoryController;
@@ -40,6 +41,8 @@ Route::post('invitations/{token}/accept', [AcceptInvitationController::class, 'a
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/', DashboardController::class)->name('dashboard');
+
+    Route::get('releases', ReleaseController::class)->name('releases.index');
 
     // Organizations
     Route::get('organizations', [OrganizationController::class, 'index'])->name('organizations.index');
