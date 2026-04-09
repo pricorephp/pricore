@@ -556,20 +556,37 @@ export default function PackageShow({
                                                         )}
                                                     </span>
                                                 )}
-                                                {version.sourceReference && (
-                                                    <span className="flex items-center gap-1 font-mono">
-                                                        <GitCommit className="h-3.5 w-3.5" />
-                                                        {version.sourceReference.substring(
-                                                            0,
-                                                            7,
-                                                        )}
-                                                    </span>
-                                                )}
+                                                {version.sourceReference &&
+                                                    (version.commitUrl ? (
+                                                        <a
+                                                            href={
+                                                                version.commitUrl
+                                                            }
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            onClick={(e) =>
+                                                                e.stopPropagation()
+                                                            }
+                                                            className="flex items-center gap-1 font-mono hover:text-foreground hover:underline"
+                                                        >
+                                                            <GitCommit className="h-3.5 w-3.5" />
+                                                            {version.sourceReference.substring(
+                                                                0,
+                                                                7,
+                                                            )}
+                                                        </a>
+                                                    ) : (
+                                                        <span className="flex items-center gap-1 font-mono">
+                                                            <GitCommit className="h-3.5 w-3.5" />
+                                                            {version.sourceReference.substring(
+                                                                0,
+                                                                7,
+                                                            )}
+                                                        </span>
+                                                    ))}
                                                 {version.tagUrl && (
                                                     <a
-                                                        href={
-                                                            version.tagUrl
-                                                        }
+                                                        href={version.tagUrl}
                                                         target="_blank"
                                                         rel="noopener noreferrer"
                                                         onClick={(e) =>
@@ -757,9 +774,7 @@ export default function PackageShow({
                                                 Tag
                                             </div>
                                             <a
-                                                href={
-                                                    activeVersion.tagUrl
-                                                }
+                                                href={activeVersion.tagUrl}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
                                                 className="inline-flex items-center gap-1.5 font-medium text-muted-foreground transition-colors hover:text-foreground hover:underline"
