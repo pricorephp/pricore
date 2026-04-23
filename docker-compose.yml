@@ -53,6 +53,7 @@ services:
       - APP_ENV=${APP_ENV:-production}
       - APP_DEBUG=${APP_DEBUG:-false}
       - APP_KEY=${APP_KEY:-}
+      - APP_URL=${APP_URL:-http://localhost:8000}
       - DB_CONNECTION=${DB_CONNECTION:-sqlite}
       - DB_DATABASE=${DB_DATABASE:-/app/database/database.sqlite}
       - REDIS_HOST=redis
@@ -90,6 +91,7 @@ services:
       - APP_ENV=${APP_ENV:-production}
       - APP_DEBUG=${APP_DEBUG:-false}
       - APP_KEY=${APP_KEY:-}
+      - APP_URL=${APP_URL:-http://localhost:8000}
       - DB_CONNECTION=${DB_CONNECTION:-sqlite}
       - DB_DATABASE=${DB_DATABASE:-/app/database/database.sqlite}
       - REDIS_HOST=redis
@@ -116,6 +118,7 @@ services:
       - APP_ENV=${APP_ENV:-production}
       - APP_DEBUG=${APP_DEBUG:-false}
       - APP_KEY=${APP_KEY:-}
+      - APP_URL=${APP_URL:-http://localhost:8000}
       - DB_CONNECTION=${DB_CONNECTION:-sqlite}
       - DB_DATABASE=${DB_DATABASE:-/app/database/database.sqlite}
       - REDIS_HOST=redis
