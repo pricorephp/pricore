@@ -3,6 +3,7 @@
 namespace App\Domains\Repository\Services\GitProviders;
 
 use App\Domains\Repository\Exceptions\GitProviderException;
+use Carbon\CarbonImmutable;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Http;
@@ -72,6 +73,13 @@ class GenericGitProvider extends AbstractGitProvider
         } finally {
             File::deleteDirectory($tempDir);
         }
+    }
+
+    public function getCommitDate(string $ref): ?CarbonImmutable
+    {
+        // Generic Git only has ls-remote without a clone, so commit dates are not
+        // available here. The SyncRefAction path runs against CachedGitProvider.
+        return null;
     }
 
     public function validateCredentials(): bool
