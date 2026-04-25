@@ -4,6 +4,7 @@ namespace App\Domains\Repository\Services\GitProviders;
 
 use App\Domains\Repository\Contracts\Interfaces\GitProviderInterface;
 use App\Domains\Repository\Exceptions\GitProviderException;
+use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Process;
 
 class CachedGitProvider implements GitProviderInterface
@@ -34,6 +35,29 @@ class CachedGitProvider implements GitProviderInterface
         }
 
         return $result->output();
+    }
+
+    public function getCommitDate(string $ref): ?CarbonImmutable
+    {
+        $result = Process::path($this->clonePath)
+            ->env(['GIT_TERMINAL_PROMPT' => '0'])
+            ->run(['git', 'show', '-s', '--format=%cI', $ref]);
+
+        if ($result->failed()) {
+            return null;
+        }
+
+        $date = trim($result->output());
+
+        if ($date === '') {
+            return null;
+        }
+
+        try {
+            return CarbonImmutable::parse($date);
+        } catch (\Exception) {
+            return null;
+        }
     }
 
     public function validateCredentials(): bool
