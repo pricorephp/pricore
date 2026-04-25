@@ -66,6 +66,7 @@ export default function AddRepositoryDialog({
     const [provider, setProvider] = useState<string>(defaultProvider);
     const [owners, setOwners] = useState<string[]>([]);
     const [selectedOwner, setSelectedOwner] = useState<string>('');
+    const [workspaceInput, setWorkspaceInput] = useState<string>('');
     const [loadingOwners, setLoadingOwners] = useState(false);
     const [repositories, setRepositories] = useState<RepositorySuggestion[]>(
         [],
@@ -75,6 +76,11 @@ export default function AddRepositoryDialog({
     const [repoIdentifier, setRepoIdentifier] = useState<string>('');
     const [searchQuery, setSearchQuery] = useState<string>('');
     const repoListContainerRef = useRef<HTMLDivElement>(null);
+
+    // Bitbucket sunset its workspace enumeration API in CHANGE-2770, so the
+    // user has to type their workspace slug instead of picking from a list.
+    const isManualOwnerEntry = provider === 'bitbucket';
+    const workspaceStorageKey = `pricore.bitbucket.workspace.${organizationSlug}`;
 
     const handleClose = (): void => {
         onClose();
@@ -88,6 +94,7 @@ export default function AddRepositoryDialog({
         setProvider(defaultProvider);
         setOwners([]);
         setSelectedOwner('');
+        setWorkspaceInput('');
         setLoadingOwners(false);
         setRepositories([]);
         setLoadingRepos(false);
@@ -99,6 +106,19 @@ export default function AddRepositoryDialog({
     // Fetch owners when provider changes
     useEffect(() => {
         if (!isOpen || provider === 'git') {
+            return;
+        }
+
+        if (isManualOwnerEntry) {
+            const remembered =
+                typeof window !== 'undefined'
+                    ? window.localStorage.getItem(workspaceStorageKey) ?? ''
+                    : '';
+            setOwners([]);
+            setSelectedOwner(remembered);
+            setWorkspaceInput(remembered);
+            setLoadingOwners(false);
+            setRepositories([]);
             return;
         }
 
@@ -139,7 +159,13 @@ export default function AddRepositoryDialog({
         fetchOwners();
 
         return () => controller.abort();
-    }, [provider, organizationSlug, isOpen]);
+    }, [
+        provider,
+        organizationSlug,
+        isOpen,
+        isManualOwnerEntry,
+        workspaceStorageKey,
+    ]);
 
     // Fetch repositories when owner is selected
     useEffect(() => {
@@ -164,7 +190,18 @@ export default function AddRepositoryDialog({
 
                 if (response.ok) {
                     const data = await response.json();
-                    setRepositories(data.repositories || []);
+                    const fetched = data.repositories || [];
+                    setRepositories(fetched);
+                    if (
+                        isManualOwnerEntry &&
+                        fetched.length > 0 &&
+                        typeof window !== 'undefined'
+                    ) {
+                        window.localStorage.setItem(
+                            workspaceStorageKey,
+                            selectedOwner,
+                        );
+                    }
                 } else {
                     setRepositories([]);
                 }
@@ -183,7 +220,14 @@ export default function AddRepositoryDialog({
         fetchRepositories();
 
         return () => controller.abort();
-    }, [selectedOwner, provider, organizationSlug, isOpen]);
+    }, [
+        selectedOwner,
+        provider,
+        organizationSlug,
+        isOpen,
+        isManualOwnerEntry,
+        workspaceStorageKey,
+    ]);
 
     const handleRepoSelect = (
         fullName: string,
@@ -324,40 +368,145 @@ export default function AddRepositoryDialog({
                                                 Loading...
                                             </span>
                                         </div>
-                                    ) : owners.length > 0 ? (
+                                    ) : isManualOwnerEntry || owners.length > 0 ? (
                                         <div className="space-y-3">
                                             <div className="flex gap-2">
-                                                <Select
-                                                    value={selectedOwner}
-                                                    onValueChange={(value) => {
-                                                        setSelectedOwner(value);
-                                                        setSearchQuery('');
-                                                    }}
-                                                >
-                                                    <SelectTrigger className="w-[180px] shrink-0">
-                                                        <SelectValue placeholder="Select owner" />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        {owners.map((owner) => (
-                                                            <SelectItem
-                                                                key={owner}
-                                                                value={owner}
+                                                {isManualOwnerEntry ? (
+                                                    <div className="flex w-full flex-col gap-2">
+                                                        <div className="flex w-full gap-2">
+                                                            <Input
+                                                                placeholder="Bitbucket workspace slug (e.g. pricorephp)"
+                                                                value={
+                                                                    workspaceInput
+                                                                }
+                                                                onChange={(e) =>
+                                                                    setWorkspaceInput(
+                                                                        e.target
+                                                                            .value,
+                                                                    )
+                                                                }
+                                                                onKeyDown={(
+                                                                    e,
+                                                                ) => {
+                                                                    if (
+                                                                        e.key ===
+                                                                        'Enter'
+                                                                    ) {
+                                                                        e.preventDefault();
+                                                                        const trimmed =
+                                                                            workspaceInput.trim();
+                                                                        if (
+                                                                            trimmed
+                                                                        ) {
+                                                                            setSearchQuery(
+                                                                                '',
+                                                                            );
+                                                                            setSelectedOwner(
+                                                                                trimmed,
+                                                                            );
+                                                                        }
+                                                                    }
+                                                                }}
+                                                                className="flex-1"
+                                                            />
+                                                            <Button
+                                                                type="button"
+                                                                variant="secondary"
+                                                                size="lg"
+                                                                className="shrink-0"
+                                                                disabled={
+                                                                    !workspaceInput.trim() ||
+                                                                    workspaceInput.trim() ===
+                                                                        selectedOwner
+                                                                }
+                                                                onClick={() => {
+                                                                    const trimmed =
+                                                                        workspaceInput.trim();
+                                                                    if (
+                                                                        !trimmed
+                                                                    )
+                                                                        return;
+                                                                    setSearchQuery(
+                                                                        '',
+                                                                    );
+                                                                    setSelectedOwner(
+                                                                        trimmed,
+                                                                    );
+                                                                }}
                                                             >
-                                                                {owner}
-                                                            </SelectItem>
-                                                        ))}
-                                                    </SelectContent>
-                                                </Select>
-                                                <Input
-                                                    placeholder="Search repositories..."
-                                                    value={searchQuery}
-                                                    onChange={(e) =>
-                                                        setSearchQuery(
-                                                            e.target.value,
-                                                        )
-                                                    }
-                                                    disabled={!selectedOwner}
-                                                />
+                                                                Load
+                                                            </Button>
+                                                        </div>
+                                                        <Input
+                                                            placeholder="Search repositories..."
+                                                            value={searchQuery}
+                                                            onChange={(e) =>
+                                                                setSearchQuery(
+                                                                    e.target
+                                                                        .value,
+                                                                )
+                                                            }
+                                                            disabled={
+                                                                !selectedOwner
+                                                            }
+                                                        />
+                                                    </div>
+                                                ) : (
+                                                    <>
+                                                        <Select
+                                                            value={
+                                                                selectedOwner
+                                                            }
+                                                            onValueChange={(
+                                                                value,
+                                                            ) => {
+                                                                setSelectedOwner(
+                                                                    value,
+                                                                );
+                                                                setSearchQuery(
+                                                                    '',
+                                                                );
+                                                            }}
+                                                        >
+                                                            <SelectTrigger className="w-[180px] shrink-0">
+                                                                <SelectValue placeholder="Select owner" />
+                                                            </SelectTrigger>
+                                                            <SelectContent>
+                                                                {owners.map(
+                                                                    (
+                                                                        owner,
+                                                                    ) => (
+                                                                        <SelectItem
+                                                                            key={
+                                                                                owner
+                                                                            }
+                                                                            value={
+                                                                                owner
+                                                                            }
+                                                                        >
+                                                                            {
+                                                                                owner
+                                                                            }
+                                                                        </SelectItem>
+                                                                    ),
+                                                                )}
+                                                            </SelectContent>
+                                                        </Select>
+                                                        <Input
+                                                            placeholder="Search repositories..."
+                                                            value={searchQuery}
+                                                            onChange={(e) =>
+                                                                setSearchQuery(
+                                                                    e.target
+                                                                        .value,
+                                                                )
+                                                            }
+                                                            disabled={
+                                                                !selectedOwner
+                                                            }
+                                                        />
+                                                    </>
+                                                )}
                                             </div>
                                             {loadingRepos ? (
                                                 <div className="flex items-center gap-2 rounded-md border border-input bg-transparent px-3 py-2">
@@ -491,6 +640,16 @@ export default function AddRepositoryDialog({
                                                 <div className="px-2 py-4 text-center text-muted-foreground">
                                                     No repositories found for
                                                     this owner.
+                                                </div>
+                                            ) : isManualOwnerEntry &&
+                                              !selectedOwner ? (
+                                                <div className="px-2 py-4 text-center text-sm text-muted-foreground">
+                                                    Enter a Bitbucket workspace
+                                                    slug to load its
+                                                    repositories. You can find
+                                                    it in your Bitbucket URL:
+                                                    bitbucket.org/{'{'}
+                                                    workspace{'}'}/...
                                                 </div>
                                             ) : null}
                                             <input

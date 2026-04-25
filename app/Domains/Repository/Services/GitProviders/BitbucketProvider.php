@@ -69,7 +69,9 @@ class BitbucketProvider extends AbstractGitProvider
             $params = ['pagelen' => 100];
 
             do {
-                $response = $this->http->get($url, $params);
+                $response = $params === []
+                    ? $this->http->get($url)
+                    : $this->http->get($url, $params);
 
                 if ($response->failed()) {
                     throw new GitProviderException(
@@ -115,7 +117,9 @@ class BitbucketProvider extends AbstractGitProvider
             $params = ['pagelen' => 100];
 
             do {
-                $response = $this->http->get($url, $params);
+                $response = $params === []
+                    ? $this->http->get($url)
+                    : $this->http->get($url, $params);
 
                 if ($response->failed()) {
                     throw new GitProviderException(
@@ -295,56 +299,17 @@ class BitbucketProvider extends AbstractGitProvider
     }
 
     /**
+     * Bitbucket Cloud sunset its cross-workspace enumeration APIs in
+     * CHANGE-2770 (2026-04-14): /workspaces, /repositories?role=member, and
+     * related endpoints all return a deprecation error. There is no
+     * replacement for listing the workspaces an authenticated user belongs to,
+     * so the UI must collect the workspace slug from the user instead.
+     *
      * @return array<int, string>
      */
     public function getOwners(): array
     {
-        try {
-            $owners = [];
-
-            $userResponse = $this->http->get('/user');
-            $this->throwIfResponseUnauthorized($userResponse);
-
-            if ($userResponse->successful()) {
-                $owners[] = $userResponse->json('username');
-            }
-
-            $url = '/workspaces';
-            $params = ['pagelen' => 100];
-
-            do {
-                $response = $this->http->get($url, $params);
-                $this->throwIfResponseUnauthorized($response);
-
-                if ($response->failed()) {
-                    break;
-                }
-
-                $data = $response->json();
-
-                foreach ($data['values'] ?? [] as $workspace) {
-                    $slug = $workspace['slug'];
-                    if (! in_array($slug, $owners)) {
-                        $owners[] = $slug;
-                    }
-                }
-
-                $url = $this->extractNextPath($data['next'] ?? null);
-                $params = [];
-            } while ($url !== null);
-
-            return $owners;
-        } catch (\Exception $e) {
-
-            Log::error('Bitbucket API error fetching owners', [
-                'error' => $e->getMessage(),
-            ]);
-
-            throw new GitProviderException(
-                "Failed to fetch owners: {$e->getMessage()}",
-                previous: $e
-            );
-        }
+        return [];
     }
 
     /**
@@ -352,13 +317,21 @@ class BitbucketProvider extends AbstractGitProvider
      */
     public function getRepositories(?string $owner = null): array
     {
+        if ($owner === null || $owner === '') {
+            throw new GitProviderException(
+                'Bitbucket requires a workspace to list repositories. Cross-workspace listing was sunset by Atlassian on 2026-04-14.'
+            );
+        }
+
         try {
             $repositories = [];
-            $url = $owner ? "/repositories/{$owner}" : '/repositories';
-            $params = $owner ? ['pagelen' => 100] : ['pagelen' => 100, 'role' => 'member'];
+            $url = "/repositories/{$owner}";
+            $params = ['pagelen' => 100];
 
             do {
-                $response = $this->http->get($url, $params);
+                $response = $params === []
+                    ? $this->http->get($url)
+                    : $this->http->get($url, $params);
                 $this->throwIfResponseUnauthorized($response);
 
                 if ($response->failed()) {
@@ -379,7 +352,6 @@ class BitbucketProvider extends AbstractGitProvider
 
             return $repositories;
         } catch (\Exception $e) {
-
             Log::error('Bitbucket API error fetching repositories', [
                 'error' => $e->getMessage(),
             ]);
