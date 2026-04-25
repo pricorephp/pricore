@@ -69,7 +69,9 @@ class BitbucketProvider extends AbstractGitProvider
             $params = ['pagelen' => 100];
 
             do {
-                $response = $this->http->get($url, $params);
+                $response = $params === []
+                    ? $this->http->get($url)
+                    : $this->http->get($url, $params);
 
                 if ($response->failed()) {
                     throw new GitProviderException(
@@ -115,7 +117,9 @@ class BitbucketProvider extends AbstractGitProvider
             $params = ['pagelen' => 100];
 
             do {
-                $response = $this->http->get($url, $params);
+                $response = $params === []
+                    ? $this->http->get($url)
+                    : $this->http->get($url, $params);
 
                 if ($response->failed()) {
                     throw new GitProviderException(
@@ -313,7 +317,9 @@ class BitbucketProvider extends AbstractGitProvider
             $params = ['pagelen' => 100];
 
             do {
-                $response = $this->http->get($url, $params);
+                $response = $params === []
+                    ? $this->http->get($url)
+                    : $this->http->get($url, $params);
                 $this->throwIfResponseUnauthorized($response);
 
                 if ($response->failed()) {
@@ -358,7 +364,9 @@ class BitbucketProvider extends AbstractGitProvider
             $params = $owner ? ['pagelen' => 100] : ['pagelen' => 100, 'role' => 'member'];
 
             do {
-                $response = $this->http->get($url, $params);
+                $response = $params === []
+                    ? $this->http->get($url)
+                    : $this->http->get($url, $params);
                 $this->throwIfResponseUnauthorized($response);
 
                 if ($response->failed()) {
