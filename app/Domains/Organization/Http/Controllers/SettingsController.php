@@ -34,6 +34,8 @@ class SettingsController
 
     public function update(UpdateOrganizationRequest $request, Organization $organization): RedirectResponse
     {
+        $this->authorize('viewSettings', $organization);
+
         $user = $request->user();
         $isOwner = $user !== null && $organization->owner_uuid === $user->uuid;
 

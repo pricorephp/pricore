@@ -31,6 +31,8 @@ class PackageController extends Controller
 
     public function index(Organization $organization): Response
     {
+        $this->authorize('view', $organization);
+
         $packages = $organization->packages()
             ->with(['repository', 'mirror'])
             ->withCount('versions')
@@ -72,6 +74,8 @@ class PackageController extends Controller
 
     public function show(Request $request, Organization $organization, Package $package): Response
     {
+        $this->authorize('view', $organization);
+
         if ($request->user() && ! $request->hasAny(['query', 'type', 'page', 'version'])) {
             $this->recordPackageView->handle($request->user(), $package);
         }

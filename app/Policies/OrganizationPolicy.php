@@ -8,6 +8,11 @@ use App\Models\User;
 
 class OrganizationPolicy
 {
+    public function view(User $user, Organization $organization): bool
+    {
+        return $organization->members()->where('user_uuid', $user->uuid)->exists();
+    }
+
     public function viewSettings(User $user, Organization $organization): bool
     {
         /** @var User|null $member */

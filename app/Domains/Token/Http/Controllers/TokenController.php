@@ -11,12 +11,15 @@ use App\Domains\Token\Requests\StoreAccessTokenRequest;
 use App\Http\Controllers\Controller;
 use App\Models\AccessToken;
 use App\Models\Organization;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class TokenController extends Controller
 {
+    use AuthorizesRequests;
+
     public function __construct(
         protected CreateAccessTokenAction $createAccessToken,
         protected RecordActivityTask $recordActivity,
@@ -24,6 +27,8 @@ class TokenController extends Controller
 
     public function index(Organization $organization): Response
     {
+        $this->authorize('viewSettings', $organization);
+
         $tokens = AccessToken::query()
             ->where('organization_uuid', $organization->uuid)
             ->orderBy('created_at', 'desc')
@@ -38,6 +43,8 @@ class TokenController extends Controller
 
     public function store(StoreAccessTokenRequest $request, Organization $organization): Response
     {
+        $this->authorize('viewSettings', $organization);
+
         $result = $this->createAccessToken->handle(
             organization: $organization,
             user: null,
@@ -60,6 +67,8 @@ class TokenController extends Controller
 
     public function destroy(Organization $organization, AccessToken $token): RedirectResponse
     {
+        $this->authorize('viewSettings', $organization);
+
         if ($token->organization_uuid !== $organization->uuid) {
             abort(403);
         }

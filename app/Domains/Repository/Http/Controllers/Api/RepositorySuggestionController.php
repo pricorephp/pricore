@@ -12,13 +12,18 @@ use App\Models\Organization;
 use App\Models\Repository;
 use App\Models\User;
 use App\Models\UserGitCredential;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class RepositorySuggestionController extends Controller
 {
+    use AuthorizesRequests;
+
     public function index(Request $request, Organization $organization): JsonResponse
     {
+        $this->authorize('viewSettings', $organization);
+
         $provider = GitProvider::tryFrom($request->query('provider'));
 
         if (! $provider) {
@@ -75,6 +80,8 @@ class RepositorySuggestionController extends Controller
 
     public function owners(Request $request, Organization $organization): JsonResponse
     {
+        $this->authorize('viewSettings', $organization);
+
         $provider = GitProvider::tryFrom($request->query('provider'));
 
         if (! $provider) {

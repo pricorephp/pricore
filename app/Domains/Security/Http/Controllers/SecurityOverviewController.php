@@ -10,6 +10,7 @@ use App\Models\AdvisorySyncMetadata;
 use App\Models\Organization;
 use App\Models\Package;
 use App\Models\PackageVersion;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
@@ -17,8 +18,12 @@ use Inertia\Response;
 
 class SecurityOverviewController extends Controller
 {
+    use AuthorizesRequests;
+
     public function index(Request $request, Organization $organization): Response
     {
+        $this->authorize('view', $organization);
+
         $severityFilter = $request->query('severity', '');
 
         // Latest stable version + all dev versions per package

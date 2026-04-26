@@ -36,6 +36,8 @@ class OrganizationController extends Controller
 
     public function show(Organization $organization): Response
     {
+        $this->authorize('view', $organization);
+
         /** @var User $user */
         $user = auth()->user();
 
