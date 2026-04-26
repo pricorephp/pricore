@@ -128,6 +128,15 @@ it('forbids plain Member role from admin-only org routes', function () {
     }
 });
 
+it('blocks non-members at the route middleware before the controller runs', function () {
+    $organization = Organization::factory()->create();
+    $outsider = User::factory()->create();
+
+    $this->actingAs($outsider)
+        ->get("/organizations/{$organization->slug}")
+        ->assertForbidden();
+});
+
 it('rejects token creation by a non-member and persists nothing', function () {
     $organization = Organization::factory()->create();
     $attacker = User::factory()->create();
