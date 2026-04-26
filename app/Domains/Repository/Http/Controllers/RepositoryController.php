@@ -22,6 +22,7 @@ use App\Models\Organization;
 use App\Models\Repository;
 use App\Models\User;
 use App\Models\UserGitCredential;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -29,6 +30,8 @@ use Inertia\Response;
 
 class RepositoryController extends Controller
 {
+    use AuthorizesRequests;
+
     public function __construct(
         protected ExtractRepositoryNameAction $extractRepositoryNameAction,
         protected RegisterWebhookAction $registerWebhookAction,
@@ -38,6 +41,8 @@ class RepositoryController extends Controller
 
     public function index(Organization $organization): Response
     {
+        $this->authorize('view', $organization);
+
         $repositories = $organization->repositories()
             ->withCount('packages')
             ->orderBy('name')
@@ -67,6 +72,8 @@ class RepositoryController extends Controller
 
     public function store(StoreRepositoryRequest $request, Organization $organization): RedirectResponse
     {
+        $this->authorize('deleteRepository', $organization);
+
         $name = $request->name ?? $this->extractRepositoryNameAction->handle(
             $request->repo_identifier,
             GitProvider::from($request->provider)
@@ -119,6 +126,8 @@ class RepositoryController extends Controller
         Organization $organization,
         BulkCreateRepositoriesAction $bulkCreateAction,
     ): RedirectResponse {
+        $this->authorize('deleteRepository', $organization);
+
         /** @var User $user */
         $user = $request->user();
 
@@ -136,6 +145,8 @@ class RepositoryController extends Controller
 
     public function show(Organization $organization, Repository $repository): Response
     {
+        $this->authorize('view', $organization);
+
         $repository->load('organization');
         $repository->loadCount('packages');
 
@@ -178,6 +189,8 @@ class RepositoryController extends Controller
 
     public function update(Organization $organization, Repository $repository): RedirectResponse
     {
+        $this->authorize('deleteRepository', $organization);
+
         // Placeholder for future updates
         return redirect()
             ->route('organizations.repositories.edit', [$organization, $repository])

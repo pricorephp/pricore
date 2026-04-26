@@ -48,8 +48,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('organizations', [OrganizationController::class, 'index'])->name('organizations.index');
     Route::post('organizations', [OrganizationController::class, 'store'])->name('organizations.store');
 
-    // Organization routes (with access tracking)
-    Route::middleware('track.organization')->group(function () {
+    // Organization routes (membership-gated, with access tracking)
+    Route::middleware(['organization.member', 'track.organization'])->group(function () {
         Route::get('organizations/{organization:slug}', [OrganizationController::class, 'show'])->name('organizations.show');
         Route::delete('organizations/{organization:slug}', [OrganizationController::class, 'destroy'])->name('organizations.destroy');
         Route::post('organizations/{organization:slug}/dismiss-onboarding', DismissOnboardingController::class)->name('organizations.dismiss-onboarding');

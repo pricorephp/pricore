@@ -57,6 +57,8 @@ class MemberController
 
     public function store(AddMemberRequest $request, Organization $organization, SendOrganizationInvitationAction $sendInvitation): RedirectResponse
     {
+        $this->authorize('manageMembers', $organization);
+
         $email = $request->validated('email');
         $role = OrganizationRole::from($request->validated('role'));
 
@@ -87,6 +89,8 @@ class MemberController
 
     public function update(UpdateMemberRoleRequest $request, Organization $organization, OrganizationUser $member, RecordActivityTask $recordActivity): RedirectResponse
     {
+        $this->authorize('manageMembers', $organization);
+
         if ($member->organization_uuid !== $organization->uuid) {
             abort(404);
         }
