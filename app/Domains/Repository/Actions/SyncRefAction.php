@@ -8,6 +8,7 @@ use App\Domains\Repository\Contracts\Interfaces\GitProviderInterface;
 use App\Models\Package;
 use App\Models\PackageVersion;
 use App\Models\Repository;
+use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -57,7 +58,9 @@ class SyncRefAction
             }
         }
 
-        $result = DB::transaction(function () use ($metadata, $ref, $package, $repository, $provider): array {
+        $releasedAt = $this->resolveReleasedAt($provider, $ref, $metadata);
+
+        $result = DB::transaction(function () use ($metadata, $ref, $package, $repository, $provider, $releasedAt): array {
             if (! $package) {
                 $package = $this->findOrCreatePackage->handle($repository, $metadata->name);
             }
@@ -77,6 +80,7 @@ class SyncRefAction
                     'source_url' => $sourceUrl,
                     'source_reference' => $ref->commit,
                     'source_tag' => $ref->name,
+                    'released_at' => $releasedAt,
                 ]);
 
                 return ['status' => 'updated', 'version' => $version, 'package' => $package];
@@ -90,7 +94,7 @@ class SyncRefAction
                 'source_url' => $sourceUrl,
                 'source_reference' => $ref->commit,
                 'source_tag' => $ref->name,
-                'released_at' => now(),
+                'released_at' => $releasedAt,
             ]);
 
             return ['status' => 'added', 'version' => $version, 'package' => $package];
@@ -101,6 +105,28 @@ class SyncRefAction
         }
 
         return $result['status'];
+    }
+
+    protected function resolveReleasedAt(
+        GitProviderInterface $provider,
+        RefData $ref,
+        ComposerMetadataData $metadata,
+    ): CarbonImmutable {
+        $commitDate = $provider->getCommitDate($ref->commit);
+
+        if ($commitDate) {
+            return $commitDate;
+        }
+
+        if (isset($metadata->composerJson['time']) && is_string($metadata->composerJson['time'])) {
+            try {
+                return CarbonImmutable::parse($metadata->composerJson['time']);
+            } catch (\Exception) {
+                // fall through to now()
+            }
+        }
+
+        return CarbonImmutable::now();
     }
 
     protected function createDistForVersion(
