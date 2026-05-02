@@ -85,6 +85,7 @@ RUN apk add --no-cache \
     oniguruma-dev \
     postgresql-dev \
     linux-headers \
+    git \
     openssh-client \
     && install-php-extensions \
     pdo_sqlite \
