@@ -5,7 +5,9 @@ namespace App\Domains\Package\Contracts\Data;
 use App\Domains\Repository\Contracts\Enums\GitProvider;
 use App\Domains\Security\Contracts\Data\SecurityAdvisoryMatchData;
 use App\Models\PackageVersion;
+use App\Services\Markdown\MarkdownRenderer;
 use Carbon\CarbonInterface;
+use Illuminate\Support\Facades\App;
 use Spatie\LaravelData\Data;
 use Spatie\TypeScriptTransformer\Attributes\TypeScript;
 
@@ -39,6 +41,7 @@ class PackageVersionDetailData extends Data
         public ?array $keywords,
         public bool $isStable,
         public bool $isDev,
+        public ?string $readmeHtml = null,
         /** @var SecurityAdvisoryMatchData[]|null */
         public ?array $advisoryMatches = null,
     ) {}
@@ -46,7 +49,8 @@ class PackageVersionDetailData extends Data
     public static function fromModel(
         PackageVersion $version,
         ?GitProvider $provider = null,
-        ?string $repoIdentifier = null
+        ?string $repoIdentifier = null,
+        ?string $customBaseUrl = null,
     ): self {
         $base = PackageVersionData::fromModel($version, $provider, $repoIdentifier);
         $composerJson = $version->composer_json ?? [];
@@ -64,6 +68,8 @@ class PackageVersionDetailData extends Data
                 ->map(fn ($match) => SecurityAdvisoryMatchData::fromModel($match))
                 ->all();
         }
+
+        $readmeHtml = static::renderReadme($version, $provider, $repoIdentifier, $customBaseUrl);
 
         return new self(
             uuid: $base->uuid,
@@ -85,7 +91,37 @@ class PackageVersionDetailData extends Data
             keywords: ! empty($composerJson['keywords']) ? $composerJson['keywords'] : null,
             isStable: $base->isStable(),
             isDev: $base->isDev(),
+            readmeHtml: $readmeHtml,
             advisoryMatches: $advisoryMatchesData,
+        );
+    }
+
+    protected static function renderReadme(
+        PackageVersion $version,
+        ?GitProvider $provider,
+        ?string $repoIdentifier,
+        ?string $customBaseUrl,
+    ): ?string {
+        if (empty($version->readme)) {
+            return null;
+        }
+
+        $blobBaseUrl = null;
+        $rawFileBaseUrl = null;
+
+        // Prefer the immutable commit SHA over the moving tag/branch name so README
+        // links keep pointing at the same content even if the tag is later moved.
+        $ref = $version->source_reference ?: $version->source_tag;
+
+        if ($provider !== null && $repoIdentifier !== null && $ref !== null && $ref !== '') {
+            $blobBaseUrl = $provider->blobBaseUrl($repoIdentifier, $ref, $customBaseUrl);
+            $rawFileBaseUrl = $provider->rawFileBaseUrl($repoIdentifier, $ref, $customBaseUrl);
+        }
+
+        return App::make(MarkdownRenderer::class)->render(
+            $version->readme,
+            $blobBaseUrl,
+            $rawFileBaseUrl,
         );
     }
 

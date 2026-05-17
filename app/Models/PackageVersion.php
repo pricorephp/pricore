@@ -21,6 +21,7 @@ use Illuminate\Support\Facades\Storage;
  * @property string $version
  * @property string $normalized_version
  * @property array<array-key, mixed> $composer_json
+ * @property string|null $readme
  * @property string|null $source_url
  * @property string|null $source_reference
  * @property string|null $source_tag
@@ -46,6 +47,7 @@ use Illuminate\Support\Facades\Storage;
  * @method static Builder<static>|PackageVersion whereDistUrl($value)
  * @method static Builder<static>|PackageVersion whereNormalizedVersion($value)
  * @method static Builder<static>|PackageVersion wherePackageUuid($value)
+ * @method static Builder<static>|PackageVersion whereReadme($value)
  * @method static Builder<static>|PackageVersion whereReleasedAt($value)
  * @method static Builder<static>|PackageVersion whereSourceReference($value)
  * @method static Builder<static>|PackageVersion whereSourceUrl($value)

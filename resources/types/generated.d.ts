@@ -152,6 +152,8 @@ mirrorUuid: string | null;
 };
 export type PackageDownloadStatsData = {
 totalDownloads: number;
+currentPeriodDownloads: number;
+previousPeriodDownloads: number;
 dailyDownloads: Array<App.Domains.Organization.Contracts.Data.DailyDownloadData>;
 versionDailyDownloads: Array<App.Domains.Package.Contracts.Data.VersionDailyDownloadData>;
 };
@@ -189,6 +191,7 @@ authors: Array<any> | null;
 keywords: Array<any> | null;
 isStable: boolean;
 isDev: boolean;
+readmeHtml: string | null;
 advisoryMatches: Array<App.Domains.Security.Contracts.Data.SecurityAdvisoryMatchData> | null;
 };
 export type VersionDailyDownloadData = {

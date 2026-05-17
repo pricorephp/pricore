@@ -118,9 +118,22 @@ class PackageController extends Controller
                     $versionModel,
                     $package->repository?->provider,
                     $package->repository?->repo_identifier,
+                    $package->repository?->custom_base_url,
                 );
             }
         }
+
+        $primaryVersionModel = $package->versions()->stable()->orderBySemanticVersion('desc')->first()
+            ?? $package->versions()->orderBySemanticVersion('desc')->first();
+
+        $primaryVersion = $primaryVersionModel
+            ? PackageVersionDetailData::fromModel(
+                $primaryVersionModel,
+                $package->repository?->provider,
+                $package->repository?->repo_identifier,
+                $package->repository?->custom_base_url,
+            )
+            : null;
 
         return Inertia::render('organizations/packages/show', [
             'organization' => OrganizationData::fromModel($organization),
@@ -134,6 +147,7 @@ class PackageController extends Controller
             'canManageVersions' => request()->user()?->can('deleteRepository', $organization) ?? false,
             'canDeletePackage' => request()->user()?->can('deleteRepository', $organization) ?? false,
             'activeVersion' => $activeVersion,
+            'primaryVersion' => $primaryVersion,
         ]);
     }
 }

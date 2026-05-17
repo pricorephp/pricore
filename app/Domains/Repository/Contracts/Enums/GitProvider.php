@@ -63,6 +63,36 @@ enum GitProvider: string
     }
 
     /**
+     * Base URL (with trailing slash) for resolving relative <img src> in a repository file.
+     *
+     * Returns null for providers where the layout is unknown (generic Git).
+     */
+    public function rawFileBaseUrl(string $repoIdentifier, string $ref, ?string $baseUrl = null): ?string
+    {
+        return match ($this) {
+            self::GitHub => "https://raw.githubusercontent.com/{$repoIdentifier}/{$ref}/",
+            self::GitLab => rtrim($baseUrl ?? 'https://gitlab.com', '/')."/{$repoIdentifier}/-/raw/{$ref}/",
+            self::Bitbucket => "https://bitbucket.org/{$repoIdentifier}/raw/{$ref}/",
+            self::Git => null,
+        };
+    }
+
+    /**
+     * Base URL (with trailing slash) for resolving relative <a href> in a repository file.
+     *
+     * Returns null for providers where the layout is unknown (generic Git).
+     */
+    public function blobBaseUrl(string $repoIdentifier, string $ref, ?string $baseUrl = null): ?string
+    {
+        return match ($this) {
+            self::GitHub => "https://github.com/{$repoIdentifier}/blob/{$ref}/",
+            self::GitLab => rtrim($baseUrl ?? 'https://gitlab.com', '/')."/{$repoIdentifier}/-/blob/{$ref}/",
+            self::Bitbucket => "https://bitbucket.org/{$repoIdentifier}/src/{$ref}/",
+            self::Git => null,
+        };
+    }
+
+    /**
      * @return array<string, string>
      */
     public static function options(): array

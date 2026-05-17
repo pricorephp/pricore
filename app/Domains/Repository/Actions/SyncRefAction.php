@@ -16,6 +16,7 @@ class SyncRefAction
     public function __construct(
         protected FindOrCreatePackageAction $findOrCreatePackage,
         protected CreateDistArchiveAction $createDistArchive,
+        protected FetchReadmeAction $fetchReadmeAction,
     ) {}
 
     /**
@@ -57,7 +58,9 @@ class SyncRefAction
             }
         }
 
-        $result = DB::transaction(function () use ($metadata, $ref, $package, $repository, $provider): array {
+        $readme = $this->fetchReadmeAction->handle($provider, $ref->name);
+
+        $result = DB::transaction(function () use ($metadata, $ref, $package, $repository, $provider, $readme): array {
             if (! $package) {
                 $package = $this->findOrCreatePackage->handle($repository, $metadata->name);
             }
@@ -74,6 +77,7 @@ class SyncRefAction
                 $version->update([
                     'normalized_version' => $metadata->normalizedVersion,
                     'composer_json' => $metadata->composerJson,
+                    'readme' => $readme,
                     'source_url' => $sourceUrl,
                     'source_reference' => $ref->commit,
                     'source_tag' => $ref->name,
@@ -87,6 +91,7 @@ class SyncRefAction
                 'version' => $metadata->version,
                 'normalized_version' => $metadata->normalizedVersion,
                 'composer_json' => $metadata->composerJson,
+                'readme' => $readme,
                 'source_url' => $sourceUrl,
                 'source_reference' => $ref->commit,
                 'source_tag' => $ref->name,

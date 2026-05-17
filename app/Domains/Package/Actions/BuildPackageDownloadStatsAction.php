@@ -14,6 +14,8 @@ class BuildPackageDownloadStatsAction
     public function handle(Package $package): PackageDownloadStatsData
     {
         $startDate = Carbon::now()->subDays(29)->startOfDay();
+        $previousPeriodStart = Carbon::now()->subDays(59)->startOfDay();
+        $previousPeriodEnd = Carbon::now()->subDays(30)->endOfDay();
 
         $dailyCounts = $package->downloads()
             ->where('downloaded_at', '>=', $startDate)
@@ -23,18 +25,27 @@ class BuildPackageDownloadStatsAction
             ->pluck('downloads', 'date');
 
         $dailyDownloads = [];
+        $currentPeriodDownloads = 0;
         for ($i = 29; $i >= 0; $i--) {
             $date = Carbon::now()->subDays($i)->format('Y-m-d');
+            $count = (int) ($dailyCounts[$date] ?? 0);
+            $currentPeriodDownloads += $count;
             $dailyDownloads[] = new DailyDownloadData(
                 date: $date,
-                downloads: (int) ($dailyCounts[$date] ?? 0),
+                downloads: $count,
             );
         }
+
+        $previousPeriodDownloads = (int) $package->downloads()
+            ->whereBetween('downloaded_at', [$previousPeriodStart, $previousPeriodEnd])
+            ->count();
 
         $versionDailyDownloads = $this->buildVersionDailyDownloads($package, $startDate);
 
         return new PackageDownloadStatsData(
             totalDownloads: $package->downloads()->count(),
+            currentPeriodDownloads: $currentPeriodDownloads,
+            previousPeriodDownloads: $previousPeriodDownloads,
             dailyDownloads: $dailyDownloads,
             versionDailyDownloads: $versionDailyDownloads,
         );
