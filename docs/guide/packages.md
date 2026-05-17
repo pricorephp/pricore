@@ -22,22 +22,14 @@ The recommended way to create packages is by connecting a Git repository:
 2. Pricore automatically discovers `composer.json` and creates the package
 3. Tags become release versions, branches become dev versions
 
-### Manual Creation
-
-For packages not hosted in Git:
-
-1. Navigate to **Packages** > **Create Package**
-2. Enter the package name and metadata
-3. Upload or configure versions manually
-
 ## Package Versions
 
 Versions in Pricore follow Composer's versioning rules:
 
-| Source | Version Format | Example |
-|--------|---------------|---------|
-| Git tag | Semantic version | `1.0.0`, `v2.1.3` |
-| Git branch | Dev version | `dev-main`, `dev-feature-x` |
+| Source     | Version Format   | Example                     |
+| ---------- | ---------------- | --------------------------- |
+| Git tag    | Semantic version | `1.0.0`, `v2.1.3`           |
+| Git branch | Dev version      | `dev-main`, `dev-feature-x` |
 
 ### Version Metadata
 
