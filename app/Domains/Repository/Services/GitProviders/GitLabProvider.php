@@ -4,6 +4,7 @@ namespace App\Domains\Repository\Services\GitProviders;
 
 use App\Domains\Repository\Contracts\Data\RepositorySuggestionData;
 use App\Domains\Repository\Exceptions\GitProviderException;
+use Carbon\CarbonImmutable;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Http\Client\Response;
@@ -202,6 +203,36 @@ class GitLabProvider extends AbstractGitProvider
                 "Failed to fetch file content: {$e->getMessage()}",
                 previous: $e
             );
+        }
+    }
+
+    public function getCommitDate(string $ref): ?CarbonImmutable
+    {
+        try {
+            $projectPath = $this->getEncodedProjectPath();
+            $response = $this->http->get("/projects/{$projectPath}/repository/commits/{$ref}");
+
+            if ($response->status() === 404) {
+                return null;
+            }
+
+            if ($response->failed()) {
+                throw new GitProviderException(
+                    "Failed to fetch commit from GitLab: {$response->body()}"
+                );
+            }
+
+            $date = $response->json('committed_date') ?? $response->json('authored_date');
+
+            return $date ? CarbonImmutable::parse($date) : null;
+        } catch (\Exception $e) {
+            Log::warning('GitLab API error fetching commit date', [
+                'repository' => $this->repositoryIdentifier,
+                'ref' => $ref,
+                'error' => $e->getMessage(),
+            ]);
+
+            return null;
         }
     }
 

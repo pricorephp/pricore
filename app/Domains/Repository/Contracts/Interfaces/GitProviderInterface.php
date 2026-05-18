@@ -2,6 +2,8 @@
 
 namespace App\Domains\Repository\Contracts\Interfaces;
 
+use Carbon\CarbonImmutable;
+
 interface GitProviderInterface
 {
     /**
@@ -15,6 +17,8 @@ interface GitProviderInterface
     public function getBranches(): array;
 
     public function getFileContent(string $ref, string $path): ?string;
+
+    public function getCommitDate(string $ref): ?CarbonImmutable;
 
     public function validateCredentials(): bool;
 

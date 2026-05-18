@@ -4,6 +4,7 @@ namespace App\Domains\Repository\Services\GitProviders;
 
 use App\Domains\Repository\Contracts\Data\RepositorySuggestionData;
 use App\Domains\Repository\Exceptions\GitProviderException;
+use Carbon\CarbonImmutable;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Http\Client\Response;
@@ -223,6 +224,35 @@ class GitHubProvider extends AbstractGitProvider
                 "Failed to fetch file content: {$e->getMessage()}",
                 previous: $e
             );
+        }
+    }
+
+    public function getCommitDate(string $ref): ?CarbonImmutable
+    {
+        try {
+            $response = $this->http->get("/repos/{$this->repositoryIdentifier}/commits/{$ref}");
+
+            if ($response->status() === 404) {
+                return null;
+            }
+
+            if ($response->failed()) {
+                throw new GitProviderException(
+                    "Failed to fetch commit from GitHub: {$response->body()}"
+                );
+            }
+
+            $date = $response->json('commit.committer.date') ?? $response->json('commit.author.date');
+
+            return $date ? CarbonImmutable::parse($date) : null;
+        } catch (\Exception $e) {
+            Log::warning('GitHub API error fetching commit date', [
+                'repository' => $this->repositoryIdentifier,
+                'ref' => $ref,
+                'error' => $e->getMessage(),
+            ]);
+
+            return null;
         }
     }
 
