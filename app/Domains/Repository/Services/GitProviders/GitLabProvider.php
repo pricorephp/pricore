@@ -57,7 +57,7 @@ class GitLabProvider extends AbstractGitProvider
 
     public function getBaseUrl(): string
     {
-        return rtrim($this->getCredential('url', 'https://gitlab.com'), '/');
+        return rtrim($this->getCredential('url', config('services.gitlab.instance_uri')), '/');
     }
 
     protected function getEncodedProjectPath(): string

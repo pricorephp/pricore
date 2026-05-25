@@ -26,6 +26,7 @@ interface GitCredentialsPageProps {
     providers: Record<string, string>;
     githubConnectUrl: string;
     gitlabConnectUrl: string;
+    gitlabInstanceUri: string;
 }
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -44,6 +45,7 @@ export default function GitCredentials({
     providers,
     githubConnectUrl,
     gitlabConnectUrl,
+    gitlabInstanceUri,
 }: GitCredentialsPageProps) {
     const [dialogOpen, setDialogOpen] = useState(false);
     const [editingCredential, setEditingCredential] =
@@ -255,6 +257,7 @@ export default function GitCredentials({
                             providers={providers}
                             githubConnectUrl={githubConnectUrl}
                             gitlabConnectUrl={gitlabConnectUrl}
+                            gitlabInstanceUri={gitlabInstanceUri}
                             isOpen={dialogOpen}
                             onClose={() => {
                                 setDialogOpen(false);

@@ -29,6 +29,7 @@ class UserGitCredentialController extends Controller
             'providers' => GitProvider::options(),
             'githubConnectUrl' => route('settings.github.connect'),
             'gitlabConnectUrl' => route('settings.gitlab.connect'),
+            'gitlabInstanceUri' => rtrim(config('services.gitlab.instance_uri'), '/'),
         ]);
     }
 

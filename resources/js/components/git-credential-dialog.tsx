@@ -25,6 +25,7 @@ interface GitCredentialDialogProps {
     providers: Record<string, string>;
     githubConnectUrl?: string;
     gitlabConnectUrl?: string;
+    gitlabInstanceUri: string;
     isOpen: boolean;
     onClose: () => void;
 }
@@ -35,6 +36,7 @@ export default function GitCredentialDialog({
     providers,
     githubConnectUrl,
     gitlabConnectUrl,
+    gitlabInstanceUri,
     isOpen,
     onClose,
 }: GitCredentialDialogProps) {
@@ -196,11 +198,14 @@ export default function GitCredentialDialog({
                                 id="url"
                                 name="credentials[url]"
                                 type="url"
-                                placeholder="https://gitlab.com"
+                                placeholder={gitlabInstanceUri}
                             />
                             <p className="text-sm text-muted-foreground">
-                                Leave empty for GitLab.com, or enter your
-                                self-hosted GitLab instance URL
+                                Leave empty for{' '}
+                                <span className="font-mono">
+                                    {gitlabInstanceUri}
+                                </span>
+                                , or enter another GitLab instance URL.
                             </p>
                         </div>
                     </>

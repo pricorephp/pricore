@@ -86,6 +86,6 @@ class BulkCreateRepositoriesAction
             ->where('provider', $provider)
             ->first();
 
-        return $credential?->credentials['url'] ?? null;
+        return $credential?->credentials['url'] ?? config('services.gitlab.instance_uri');
     }
 }
