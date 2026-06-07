@@ -1,6 +1,7 @@
 <?php
 
 use App\Domains\Repository\Contracts\Enums\GitProvider;
+use App\Models\Repository;
 use App\Models\UserGitCredential;
 use Illuminate\Database\Migrations\Migration;
 
@@ -28,6 +29,26 @@ return new class extends Migration
                 ];
 
                 $credential->save();
+            });
+
+        Repository::query()
+            ->where('provider', GitProvider::GitLab)
+            ->whereNull('custom_base_url')
+            ->whereNotNull('credential_user_uuid')
+            ->get()
+            ->each(function (Repository $repository): void {
+                $credential = UserGitCredential::query()
+                    ->where('user_uuid', $repository->credential_user_uuid)
+                    ->where('provider', GitProvider::GitLab)
+                    ->first();
+
+                $url = $credential?->credentials['url'] ?? null;
+
+                if (! $url) {
+                    return;
+                }
+
+                $repository->update(['custom_base_url' => $url]);
             });
     }
 
