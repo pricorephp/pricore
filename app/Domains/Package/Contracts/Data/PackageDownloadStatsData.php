@@ -16,6 +16,8 @@ class PackageDownloadStatsData extends Data
      */
     public function __construct(
         public int $totalDownloads,
+        public int $currentPeriodDownloads,
+        public int $previousPeriodDownloads,
         #[TypeScriptType('array<'.DailyDownloadData::class.'>')]
         public array $dailyDownloads,
         #[TypeScriptType('array<'.VersionDailyDownloadData::class.'>')]

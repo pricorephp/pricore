@@ -2,6 +2,7 @@ import {
     destroy,
     store,
 } from '@/actions/App/Domains/Token/Http/Controllers/TokenController';
+import { CopyButton } from '@/components/copy-button';
 import CreateTokenDialog from '@/components/create-token-dialog';
 import InfoBox from '@/components/info-box';
 import RevokeTokenDialog from '@/components/revoke-token-dialog';
@@ -67,6 +68,8 @@ export default function Tokens({
         setRevokeDialogOpen(true);
     };
 
+    const composerRepoCommand = `composer config repositories.${organization.slug} composer ${organization.composerRepositoryUrl}`;
+
     return (
         <div className="space-y-6">
             <div className="flex items-center justify-between">
@@ -80,6 +83,22 @@ export default function Tokens({
                     <Plus className="h-4 w-4" />
                     Create Token
                 </Button>
+            </div>
+
+            <div className="space-y-2 rounded-lg border bg-card p-4">
+                <div className="space-y-0.5">
+                    <p className="font-medium">Registry URL</p>
+                    <p className="text-sm text-muted-foreground">
+                        Run this once per project to register{' '}
+                        {organization.name} as a Composer repository.
+                    </p>
+                </div>
+                <div className="flex items-center gap-2 rounded-md border bg-muted/50 px-3 py-2">
+                    <code className="flex-1 truncate font-mono text-sm">
+                        {composerRepoCommand}
+                    </code>
+                    <CopyButton text={composerRepoCommand} />
+                </div>
             </div>
 
             <div className="rounded-lg border bg-card px-4 py-2">

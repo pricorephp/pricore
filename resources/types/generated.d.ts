@@ -152,6 +152,8 @@ mirrorUuid: string | null;
 };
 export type PackageDownloadStatsData = {
 totalDownloads: number;
+currentPeriodDownloads: number;
+previousPeriodDownloads: number;
 dailyDownloads: Array<App.Domains.Organization.Contracts.Data.DailyDownloadData>;
 versionDailyDownloads: Array<App.Domains.Package.Contracts.Data.VersionDailyDownloadData>;
 };
@@ -184,11 +186,16 @@ type: string | null;
 license: string | null;
 require: Array<any> | null;
 requireDev: Array<any> | null;
+conflict: Array<any> | null;
+provide: Array<any> | null;
+replace: Array<any> | null;
+suggest: Array<any> | null;
 autoload: Array<any> | null;
 authors: Array<any> | null;
 keywords: Array<any> | null;
 isStable: boolean;
 isDev: boolean;
+readmeHtml: string | null;
 advisoryMatches: Array<App.Domains.Security.Contracts.Data.SecurityAdvisoryMatchData> | null;
 };
 export type VersionDailyDownloadData = {

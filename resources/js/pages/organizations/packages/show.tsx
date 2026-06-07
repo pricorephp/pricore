@@ -1,6 +1,7 @@
 import { show } from '@/actions/App/Domains/Repository/Http/Controllers/RepositoryController';
 import { CopyButton } from '@/components/copy-button';
 import HeadingSmall from '@/components/heading-small';
+import { StatCard } from '@/components/stats/stat-card';
 import { VersionDownloadChart } from '@/components/stats/version-download-chart';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -43,9 +44,13 @@ import {
 import { useDebounce } from '@/hooks/use-debounce';
 import AppLayout from '@/layouts/app-layout';
 import { createOrganizationBreadcrumb } from '@/lib/breadcrumbs';
-import { formatBytes } from '@/lib/utils';
+import { cn, formatBytes } from '@/lib/utils';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import {
+    Activity,
+    BarChart3,
+    BookOpen,
+    Boxes,
     Calendar,
     Check,
     ChevronRight,
@@ -57,19 +62,46 @@ import {
     GitCommit,
     Globe,
     HardDrive,
+    Info,
+    Layers,
     Link2,
     Lock,
     Package as PackageIcon,
+    Scale,
     Search,
     ShieldAlert,
     Tag,
     Terminal,
     Trash2,
+    TrendingDown,
+    TrendingUp,
     Users,
     X,
 } from 'lucide-react';
 import { DateTime } from 'luxon';
 import { useEffect, useRef, useState } from 'react';
+
+type PackageTab = 'overview' | 'stats' | 'versions';
+
+const PACKAGE_TABS: ReadonlyArray<{
+    value: PackageTab;
+    label: string;
+    icon: typeof Info;
+}> = [
+    { value: 'overview', label: 'Overview', icon: Info },
+    { value: 'stats', label: 'Stats', icon: BarChart3 },
+    { value: 'versions', label: 'Versions', icon: Layers },
+];
+
+function parseTabFromUrl(search: string): PackageTab {
+    const value = new URLSearchParams(search).get('tab');
+
+    if (value === 'versions' || value === 'stats') {
+        return value;
+    }
+
+    return 'overview';
+}
 
 type OrganizationData =
     App.Domains.Organization.Contracts.Data.OrganizationData;
@@ -105,6 +137,7 @@ interface PackageShowProps {
     canManageVersions: boolean;
     canDeletePackage: boolean;
     activeVersion: PackageVersionDetailData | null;
+    primaryVersion: PackageVersionDetailData | null;
 }
 
 function CopyInstallButton({ text }: { text: string }) {
@@ -156,6 +189,506 @@ function CopyInstallButton({ text }: { text: string }) {
     );
 }
 
+function DependencyList({
+    title,
+    entries,
+}: {
+    title: string;
+    entries: PackageVersionDetailData['require'];
+}) {
+    const map = entries as unknown as Record<string, string> | null;
+
+    if (!map || Object.keys(map).length === 0) {
+        return null;
+    }
+
+    return (
+        <div>
+            <div className="mb-2 text-sm font-medium text-muted-foreground">
+                {title}
+            </div>
+            <div className="divide-y rounded-lg border bg-muted/30">
+                {Object.entries(map).map(([name, constraint]) => (
+                    <div
+                        key={name}
+                        className="flex items-baseline justify-between gap-3 px-3 py-2 text-sm"
+                    >
+                        <code className="min-w-0 truncate font-mono text-foreground">
+                            {name}
+                        </code>
+                        <code className="shrink-0 text-right font-mono text-xs text-muted-foreground">
+                            {constraint}
+                        </code>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+}
+
+function PackageDetailsCard({
+    version,
+}: {
+    version: PackageVersionDetailData;
+}) {
+    const phpRequirement = (
+        version.require as unknown as Record<string, string> | null
+    )?.php;
+
+    const authors =
+        (version.authors as unknown as Array<{
+            name?: string;
+            email?: string;
+            homepage?: string;
+        }> | null) ?? [];
+    const keywords = (version.keywords as unknown as string[] | null) ?? [];
+
+    const facts: Array<{ icon: typeof Tag; label: string; value: string }> = [];
+
+    facts.push({
+        icon: Tag,
+        label: 'Latest version',
+        value: version.version,
+    });
+
+    if (version.type) {
+        facts.push({ icon: PackageIcon, label: 'Type', value: version.type });
+    }
+
+    if (version.license) {
+        facts.push({ icon: Scale, label: 'License', value: version.license });
+    }
+
+    if (phpRequirement) {
+        facts.push({
+            icon: Terminal,
+            label: 'PHP requirement',
+            value: phpRequirement,
+        });
+    }
+
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>Package details</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+                {version.description && (
+                    <p className="text-foreground">{version.description}</p>
+                )}
+
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    {facts.map((fact) => (
+                        <div
+                            key={fact.label}
+                            className="flex items-start gap-2 text-sm"
+                        >
+                            <fact.icon className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+                            <div className="min-w-0">
+                                <div className="text-muted-foreground">
+                                    {fact.label}
+                                </div>
+                                <div className="truncate font-medium">
+                                    {fact.value}
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+
+                {authors.length > 0 && (
+                    <div className="space-y-2">
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <Users className="h-4 w-4" />
+                            <span>Author{authors.length === 1 ? '' : 's'}</span>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                            {authors.map((author, index) => (
+                                <Badge
+                                    key={`${author.name ?? index}-${index}`}
+                                    variant="secondary"
+                                >
+                                    {author.name ?? author.email ?? 'Unknown'}
+                                </Badge>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                {keywords.length > 0 && (
+                    <div className="space-y-2">
+                        <div className="text-sm text-muted-foreground">
+                            Keywords
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                            {keywords.map((keyword) => (
+                                <Badge key={keyword} variant="outline">
+                                    {keyword}
+                                </Badge>
+                            ))}
+                        </div>
+                    </div>
+                )}
+            </CardContent>
+        </Card>
+    );
+}
+
+function ReadmeSection({ version }: { version: PackageVersionDetailData }) {
+    if (!version.readmeHtml) {
+        return null;
+    }
+
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                    <BookOpen className="h-4 w-4 text-muted-foreground" />
+                    <span>Readme</span>
+                    <span className="text-sm font-normal text-muted-foreground">
+                        from {version.version}
+                    </span>
+                </CardTitle>
+            </CardHeader>
+            <CardContent>
+                <div
+                    className="prose prose-sm max-w-none break-words dark:prose-invert"
+                    dangerouslySetInnerHTML={{ __html: version.readmeHtml }}
+                />
+            </CardContent>
+        </Card>
+    );
+}
+
+function formatCompact(value: number): string {
+    if (!Number.isFinite(value)) {
+        return '0';
+    }
+
+    return new Intl.NumberFormat(undefined, {
+        notation: 'compact',
+        maximumFractionDigits: 1,
+    }).format(value);
+}
+
+function StatsTabContent({
+    downloadStats,
+}: {
+    downloadStats: PackageDownloadStatsData;
+}) {
+    const currentPeriod = downloadStats.currentPeriodDownloads;
+    const previousPeriod = downloadStats.previousPeriodDownloads;
+
+    let trendLabel: string;
+    if (previousPeriod === 0) {
+        trendLabel = currentPeriod === 0 ? 'No prior data' : 'New activity';
+    } else {
+        const change =
+            ((currentPeriod - previousPeriod) / previousPeriod) * 100;
+        const sign = change > 0 ? '+' : '';
+        trendLabel = `${sign}${change.toFixed(1)}% vs previous 30 days`;
+    }
+
+    const TrendIcon =
+        previousPeriod > 0 && currentPeriod < previousPeriod
+            ? TrendingDown
+            : TrendingUp;
+
+    const dailyAverage = currentPeriod / 30;
+
+    return (
+        <div className="space-y-6">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                <StatCard
+                    title="Total downloads"
+                    value={formatCompact(downloadStats.totalDownloads)}
+                    description="All-time installs across every version"
+                    icon={Download}
+                />
+                <StatCard
+                    title="Last 30 days"
+                    value={formatCompact(currentPeriod)}
+                    description={trendLabel}
+                    icon={TrendIcon}
+                />
+                <StatCard
+                    title="Daily average"
+                    value={formatCompact(dailyAverage)}
+                    description="Mean installs per day over the last 30 days"
+                    icon={Activity}
+                />
+            </div>
+
+            <VersionDownloadChart
+                title="Downloads (Last 30 Days)"
+                versionData={downloadStats.versionDailyDownloads}
+                fallbackData={downloadStats.dailyDownloads}
+            />
+        </div>
+    );
+}
+
+interface VersionsTabContentProps {
+    versions: PackageShowProps['versions'];
+    queryFilter: string;
+    typeFilter: string;
+    hasActiveFilters: boolean;
+    onQueryChange: (value: string) => void;
+    onTypeChange: (value: string) => void;
+    onClear: () => void;
+    onOpenVersion: (uuid: string) => void;
+    onPageChange: (page: number) => void;
+    packageName: string;
+}
+
+function VersionsTabContent({
+    versions,
+    queryFilter,
+    typeFilter,
+    hasActiveFilters,
+    onQueryChange,
+    onTypeChange,
+    onClear,
+    onOpenVersion,
+    onPageChange,
+    packageName,
+}: VersionsTabContentProps) {
+    return (
+        <div className="space-y-4">
+            <HeadingSmall
+                title="Versions"
+                description={`${versions.total} version${versions.total === 1 ? '' : 's'} available`}
+            />
+
+            <div className="flex flex-wrap items-center gap-3">
+                <div className="relative min-w-48 flex-1">
+                    <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                        placeholder="Filter by version or source hash..."
+                        value={queryFilter}
+                        onChange={(e) => onQueryChange(e.target.value)}
+                        className="pl-9"
+                    />
+                </div>
+                <Select value={typeFilter} onValueChange={onTypeChange}>
+                    <SelectTrigger className="w-40">
+                        <SelectValue placeholder="All types" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="all">All types</SelectItem>
+                        <SelectItem value="stable">Stable</SelectItem>
+                        <SelectItem value="dev">Dev</SelectItem>
+                    </SelectContent>
+                </Select>
+                {hasActiveFilters && (
+                    <Button variant="ghost" size="sm" onClick={onClear}>
+                        <X className="mr-1 h-4 w-4" />
+                        Clear filters
+                    </Button>
+                )}
+            </div>
+
+            {versions.data.length === 0 ? (
+                <Card>
+                    <CardContent className="py-8 text-center text-muted-foreground">
+                        {hasActiveFilters
+                            ? 'No versions match the current filters.'
+                            : 'No versions available yet.'}
+                    </CardContent>
+                </Card>
+            ) : (
+                <>
+                    <CardList>
+                        {versions.data.map((version, index) => (
+                            <div
+                                key={version.uuid}
+                                role="button"
+                                tabIndex={0}
+                                onClick={() => onOpenVersion(version.uuid)}
+                                className={`group/version flex w-full cursor-pointer items-center gap-4 px-5 py-4 text-left transition-colors hover:bg-muted/50 ${index < versions.data.length - 1 ? 'border-b' : ''}`}
+                            >
+                                <div className="min-w-0 flex-1">
+                                    <div className="flex items-center gap-2">
+                                        <span className="truncate font-medium tabular-nums">
+                                            {version.version}
+                                        </span>
+                                        {version.vulnerabilityCount > 0 && (
+                                            <span
+                                                className={`inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 text-xs ${
+                                                    version.highestSeverity ===
+                                                        'critical' ||
+                                                    version.highestSeverity ===
+                                                        'high'
+                                                        ? 'border-red-200 bg-red-50 text-red-700 dark:border-red-800 dark:bg-red-950 dark:text-red-400'
+                                                        : version.highestSeverity ===
+                                                            'medium'
+                                                          ? 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-400'
+                                                          : 'border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-800 dark:bg-blue-950 dark:text-blue-400'
+                                                }`}
+                                            >
+                                                <ShieldAlert className="h-3 w-3" />
+                                                {version.vulnerabilityCount}{' '}
+                                                vulnerabilit
+                                                {version.vulnerabilityCount ===
+                                                1
+                                                    ? 'y'
+                                                    : 'ies'}
+                                            </span>
+                                        )}
+                                        {version.distSize !== null && (
+                                            <Tooltip>
+                                                <TooltipTrigger asChild>
+                                                    <span className="inline-flex items-center gap-1 rounded-md border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 text-xs text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-400">
+                                                        <HardDrive className="h-3 w-3" />
+                                                        {formatBytes(
+                                                            version.distSize,
+                                                        )}
+                                                    </span>
+                                                </TooltipTrigger>
+                                                <TooltipContent>
+                                                    Mirror stored and served by
+                                                    Pricore
+                                                </TooltipContent>
+                                            </Tooltip>
+                                        )}
+                                    </div>
+                                    <div className="mt-1 flex items-center gap-3 text-sm text-muted-foreground">
+                                        {version.releasedAt && (
+                                            <span className="flex items-center gap-1">
+                                                <Calendar className="h-3.5 w-3.5" />
+                                                {DateTime.fromISO(
+                                                    version.releasedAt,
+                                                ).toRelative()}
+                                                <span>&middot;</span>
+                                                {DateTime.fromISO(
+                                                    version.releasedAt,
+                                                ).toLocaleString(
+                                                    DateTime.DATETIME_MED,
+                                                )}
+                                            </span>
+                                        )}
+                                        {version.sourceReference &&
+                                            (version.commitUrl ? (
+                                                <a
+                                                    href={version.commitUrl}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    onClick={(e) =>
+                                                        e.stopPropagation()
+                                                    }
+                                                    className="flex items-center gap-1 font-mono hover:text-foreground hover:underline"
+                                                >
+                                                    <GitCommit className="h-3.5 w-3.5" />
+                                                    {version.sourceReference.substring(
+                                                        0,
+                                                        7,
+                                                    )}
+                                                </a>
+                                            ) : (
+                                                <span className="flex items-center gap-1 font-mono">
+                                                    <GitCommit className="h-3.5 w-3.5" />
+                                                    {version.sourceReference.substring(
+                                                        0,
+                                                        7,
+                                                    )}
+                                                </span>
+                                            ))}
+                                        {version.tagUrl && (
+                                            <a
+                                                href={version.tagUrl}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                onClick={(e) =>
+                                                    e.stopPropagation()
+                                                }
+                                                className="flex items-center gap-1 hover:text-foreground hover:underline"
+                                            >
+                                                <Tag className="h-3.5 w-3.5" />
+                                                {version.sourceTag}
+                                            </a>
+                                        )}
+                                    </div>
+                                </div>
+                                <CopyInstallButton
+                                    text={`composer require ${packageName}:${version.version}`}
+                                />
+                                <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+                            </div>
+                        ))}
+                    </CardList>
+
+                    {versions.last_page > 1 && (
+                        <div className="flex items-center justify-between">
+                            <div className="text-muted-foreground">
+                                Showing{' '}
+                                {(versions.current_page - 1) *
+                                    versions.per_page +
+                                    1}{' '}
+                                to{' '}
+                                {Math.min(
+                                    versions.current_page * versions.per_page,
+                                    versions.total,
+                                )}{' '}
+                                of {versions.total} versions
+                            </div>
+                            <div className="flex gap-2">
+                                {versions.links.map((link, index) => {
+                                    if (
+                                        link.url === null ||
+                                        link.label === '...'
+                                    ) {
+                                        return (
+                                            <span
+                                                key={index}
+                                                className="px-3 py-2 text-muted-foreground"
+                                            >
+                                                <span
+                                                    dangerouslySetInnerHTML={{
+                                                        __html: link.label,
+                                                    }}
+                                                />
+                                            </span>
+                                        );
+                                    }
+
+                                    const pageNumber = new URL(
+                                        link.url,
+                                    ).searchParams.get('page');
+
+                                    return (
+                                        <button
+                                            key={index}
+                                            type="button"
+                                            onClick={() =>
+                                                onPageChange(
+                                                    pageNumber
+                                                        ? Number(pageNumber)
+                                                        : 1,
+                                                )
+                                            }
+                                            className={`rounded px-3 py-2 transition-colors ${
+                                                link.active
+                                                    ? 'bg-primary text-primary-foreground'
+                                                    : 'bg-card text-muted-foreground/110 hover:bg-muted/80'
+                                            }`}
+                                        >
+                                            <span
+                                                dangerouslySetInnerHTML={{
+                                                    __html: link.label,
+                                                }}
+                                            />
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    )}
+                </>
+            )}
+        </div>
+    );
+}
+
 export default function PackageShow({
     organization,
     package: pkg,
@@ -165,6 +698,7 @@ export default function PackageShow({
     canManageVersions,
     canDeletePackage,
     activeVersion,
+    primaryVersion,
 }: PackageShowProps) {
     const { auth } = usePage<{
         auth: { organizations: OrganizationData[] };
@@ -173,10 +707,36 @@ export default function PackageShow({
     const [queryFilter, setQueryFilter] = useState(filters.query);
     const [typeFilter, setTypeFilter] = useState(filters.type || 'all');
     const [page, setPage] = useState(versions.current_page);
+    const [activeTab, setActiveTab] = useState<PackageTab>(() =>
+        typeof window === 'undefined'
+            ? 'overview'
+            : parseTabFromUrl(window.location.search),
+    );
 
     const debouncedQuery = useDebounce(queryFilter, 300);
 
     const isInitialMount = useRef(true);
+
+    useEffect(() => {
+        if (typeof window === 'undefined') {
+            return;
+        }
+
+        const params = new URLSearchParams(window.location.search);
+
+        if (activeTab === 'overview') {
+            params.delete('tab');
+        } else {
+            params.set('tab', activeTab);
+        }
+
+        const query = params.toString();
+        const next = `${window.location.pathname}${query ? `?${query}` : ''}`;
+
+        if (next !== window.location.pathname + window.location.search) {
+            window.history.replaceState(null, '', next);
+        }
+    }, [activeTab]);
 
     useEffect(() => {
         if (isInitialMount.current) {
@@ -195,6 +755,9 @@ export default function PackageShow({
         if (page > 1) {
             params.page = String(page);
         }
+        if (activeTab !== 'overview') {
+            params.tab = activeTab;
+        }
 
         router.get(
             `/organizations/${organization.slug}/packages/${pkg.uuid}`,
@@ -205,6 +768,11 @@ export default function PackageShow({
                 replace: true,
             },
         );
+        // activeTab is intentionally omitted: switching tabs is a client-only
+        // action and should not trigger an Inertia request. We include it in
+        // the params above so the URL stays in sync when a filter changes
+        // while the user is on a non-default tab.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [debouncedQuery, typeFilter, page, organization.slug, pkg.uuid]);
 
     const hasActiveFilters = queryFilter !== '' || typeFilter !== 'all';
@@ -261,8 +829,6 @@ export default function PackageShow({
             href: `/organizations/${organization.slug}/packages/${pkg.uuid}`,
         },
     ];
-
-    const composerRepoCommand = `composer config repositories.${organization.slug} composer ${organization.composerRepositoryUrl}`;
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -405,280 +971,67 @@ export default function PackageShow({
                     </div>
                 </div>
 
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Composer Configuration</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <p className="text-muted-foreground">
-                            Add this repository to your project to install
-                            packages from this organization:
-                        </p>
-                        <div className="flex items-center gap-2 rounded-lg border bg-muted/50 px-4 py-3">
-                            <code className="flex-1 truncate font-mono text-sm">
-                                {composerRepoCommand}
-                            </code>
-                            <CopyButton text={composerRepoCommand} />
-                        </div>
-                    </CardContent>
-                </Card>
+                <Separator />
 
-                <VersionDownloadChart
-                    title="Downloads (Last 30 Days)"
-                    versionData={downloadStats.versionDailyDownloads}
-                    fallbackData={downloadStats.dailyDownloads}
-                />
+                <div className="flex flex-col gap-8 lg:flex-row lg:gap-12">
+                    <aside className="w-full shrink-0 lg:w-48">
+                        <nav className="flex space-x-2 lg:flex-col lg:space-y-1 lg:space-x-0">
+                            {PACKAGE_TABS.map((tab) => {
+                                const isActive = activeTab === tab.value;
 
-                <div className="space-y-4">
-                    <HeadingSmall
-                        title="Versions"
-                        description={`${versions.total} version${versions.total === 1 ? '' : 's'} available`}
-                    />
+                                return (
+                                    <Button
+                                        key={tab.value}
+                                        size="sm"
+                                        variant="ghost"
+                                        onClick={() => setActiveTab(tab.value)}
+                                        className={cn(
+                                            'w-full justify-start',
+                                            isActive && 'bg-muted',
+                                        )}
+                                    >
+                                        <tab.icon className="h-4 w-4" />
+                                        {tab.label}
+                                    </Button>
+                                );
+                            })}
+                        </nav>
+                    </aside>
 
-                    <div className="flex flex-wrap items-center gap-3">
-                        <div className="relative min-w-48 flex-1">
-                            <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                            <Input
-                                placeholder="Filter by version or source hash..."
-                                value={queryFilter}
-                                onChange={(e) =>
-                                    handleQueryChange(e.target.value)
-                                }
-                                className="pl-9"
+                    <div className="w-full min-w-0 flex-1 space-y-6">
+                        {activeTab === 'overview' && (
+                            <>
+                                {primaryVersion && (
+                                    <PackageDetailsCard
+                                        version={primaryVersion}
+                                    />
+                                )}
+
+                                {primaryVersion?.readmeHtml && (
+                                    <ReadmeSection version={primaryVersion} />
+                                )}
+                            </>
+                        )}
+
+                        {activeTab === 'stats' && (
+                            <StatsTabContent downloadStats={downloadStats} />
+                        )}
+
+                        {activeTab === 'versions' && (
+                            <VersionsTabContent
+                                versions={versions}
+                                queryFilter={queryFilter}
+                                typeFilter={typeFilter}
+                                hasActiveFilters={hasActiveFilters}
+                                onQueryChange={handleQueryChange}
+                                onTypeChange={handleTypeChange}
+                                onClear={clearFilters}
+                                onOpenVersion={openVersion}
+                                onPageChange={setPage}
+                                packageName={pkg.name}
                             />
-                        </div>
-                        <Select
-                            value={typeFilter}
-                            onValueChange={handleTypeChange}
-                        >
-                            <SelectTrigger className="w-40">
-                                <SelectValue placeholder="All types" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">All types</SelectItem>
-                                <SelectItem value="stable">Stable</SelectItem>
-                                <SelectItem value="dev">Dev</SelectItem>
-                            </SelectContent>
-                        </Select>
-                        {hasActiveFilters && (
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={clearFilters}
-                            >
-                                <X className="mr-1 h-4 w-4" />
-                                Clear filters
-                            </Button>
                         )}
                     </div>
-
-                    {versions.data.length === 0 ? (
-                        <Card>
-                            <CardContent className="py-8 text-center text-muted-foreground">
-                                {hasActiveFilters
-                                    ? 'No versions match the current filters.'
-                                    : 'No versions available yet.'}
-                            </CardContent>
-                        </Card>
-                    ) : (
-                        <>
-                            <CardList>
-                                {versions.data.map((version, index) => (
-                                    <div
-                                        key={version.uuid}
-                                        role="button"
-                                        tabIndex={0}
-                                        onClick={() =>
-                                            openVersion(version.uuid)
-                                        }
-                                        className={`group/version flex w-full cursor-pointer items-center gap-4 px-5 py-4 text-left transition-colors hover:bg-muted/50 ${index < versions.data.length - 1 ? 'border-b' : ''}`}
-                                    >
-                                        <div className="min-w-0 flex-1">
-                                            <div className="flex items-center gap-2">
-                                                <span className="truncate font-medium tabular-nums">
-                                                    {version.version}
-                                                </span>
-                                                {version.vulnerabilityCount >
-                                                    0 && (
-                                                    <span
-                                                        className={`inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 text-xs ${
-                                                            version.highestSeverity ===
-                                                                'critical' ||
-                                                            version.highestSeverity ===
-                                                                'high'
-                                                                ? 'border-red-200 bg-red-50 text-red-700 dark:border-red-800 dark:bg-red-950 dark:text-red-400'
-                                                                : version.highestSeverity ===
-                                                                    'medium'
-                                                                  ? 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-400'
-                                                                  : 'border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-800 dark:bg-blue-950 dark:text-blue-400'
-                                                        }`}
-                                                    >
-                                                        <ShieldAlert className="h-3 w-3" />
-                                                        {
-                                                            version.vulnerabilityCount
-                                                        }{' '}
-                                                        vulnerabilit
-                                                        {version.vulnerabilityCount ===
-                                                        1
-                                                            ? 'y'
-                                                            : 'ies'}
-                                                    </span>
-                                                )}
-                                                {version.distSize !== null && (
-                                                    <Tooltip>
-                                                        <TooltipTrigger asChild>
-                                                            <span className="inline-flex items-center gap-1 rounded-md border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 text-xs text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-400">
-                                                                <HardDrive className="h-3 w-3" />
-                                                                {formatBytes(
-                                                                    version.distSize,
-                                                                )}
-                                                            </span>
-                                                        </TooltipTrigger>
-                                                        <TooltipContent>
-                                                            Mirror stored and
-                                                            served by Pricore
-                                                        </TooltipContent>
-                                                    </Tooltip>
-                                                )}
-                                            </div>
-                                            <div className="mt-1 flex items-center gap-3 text-sm text-muted-foreground">
-                                                {version.releasedAt && (
-                                                    <span className="flex items-center gap-1">
-                                                        <Calendar className="h-3.5 w-3.5" />
-                                                        {DateTime.fromISO(
-                                                            version.releasedAt,
-                                                        ).toRelative()}
-                                                        <span>&middot;</span>
-                                                        {DateTime.fromISO(
-                                                            version.releasedAt,
-                                                        ).toLocaleString(
-                                                            DateTime.DATETIME_MED,
-                                                        )}
-                                                    </span>
-                                                )}
-                                                {version.sourceReference &&
-                                                    (version.commitUrl ? (
-                                                        <a
-                                                            href={
-                                                                version.commitUrl
-                                                            }
-                                                            target="_blank"
-                                                            rel="noopener noreferrer"
-                                                            onClick={(e) =>
-                                                                e.stopPropagation()
-                                                            }
-                                                            className="flex items-center gap-1 font-mono hover:text-foreground hover:underline"
-                                                        >
-                                                            <GitCommit className="h-3.5 w-3.5" />
-                                                            {version.sourceReference.substring(
-                                                                0,
-                                                                7,
-                                                            )}
-                                                        </a>
-                                                    ) : (
-                                                        <span className="flex items-center gap-1 font-mono">
-                                                            <GitCommit className="h-3.5 w-3.5" />
-                                                            {version.sourceReference.substring(
-                                                                0,
-                                                                7,
-                                                            )}
-                                                        </span>
-                                                    ))}
-                                                {version.tagUrl && (
-                                                    <a
-                                                        href={version.tagUrl}
-                                                        target="_blank"
-                                                        rel="noopener noreferrer"
-                                                        onClick={(e) =>
-                                                            e.stopPropagation()
-                                                        }
-                                                        className="flex items-center gap-1 hover:text-foreground hover:underline"
-                                                    >
-                                                        <Tag className="h-3.5 w-3.5" />
-                                                        {version.sourceTag}
-                                                    </a>
-                                                )}
-                                            </div>
-                                        </div>
-                                        <CopyInstallButton
-                                            text={`composer require ${pkg.name}:${version.version}`}
-                                        />
-                                        <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
-                                    </div>
-                                ))}
-                            </CardList>
-
-                            {versions.last_page > 1 && (
-                                <div className="flex items-center justify-between">
-                                    <div className="text-muted-foreground">
-                                        Showing{' '}
-                                        {(versions.current_page - 1) *
-                                            versions.per_page +
-                                            1}{' '}
-                                        to{' '}
-                                        {Math.min(
-                                            versions.current_page *
-                                                versions.per_page,
-                                            versions.total,
-                                        )}{' '}
-                                        of {versions.total} versions
-                                    </div>
-                                    <div className="flex gap-2">
-                                        {versions.links.map((link, index) => {
-                                            if (
-                                                link.url === null ||
-                                                link.label === '...'
-                                            ) {
-                                                return (
-                                                    <span
-                                                        key={index}
-                                                        className="px-3 py-2 text-muted-foreground"
-                                                    >
-                                                        <span
-                                                            dangerouslySetInnerHTML={{
-                                                                __html: link.label,
-                                                            }}
-                                                        />
-                                                    </span>
-                                                );
-                                            }
-
-                                            const pageNumber = new URL(
-                                                link.url,
-                                            ).searchParams.get('page');
-
-                                            return (
-                                                <button
-                                                    key={index}
-                                                    type="button"
-                                                    onClick={() =>
-                                                        setPage(
-                                                            pageNumber
-                                                                ? Number(
-                                                                      pageNumber,
-                                                                  )
-                                                                : 1,
-                                                        )
-                                                    }
-                                                    className={`rounded px-3 py-2 transition-colors ${
-                                                        link.active
-                                                            ? 'bg-primary text-primary-foreground'
-                                                            : 'bg-card text-muted-foreground/110 hover:bg-muted/80'
-                                                    }`}
-                                                >
-                                                    <span
-                                                        dangerouslySetInnerHTML={{
-                                                            __html: link.label,
-                                                        }}
-                                                    />
-                                                </button>
-                                            );
-                                        })}
-                                    </div>
-                                </div>
-                            )}
-                        </>
-                    )}
                 </div>
             </div>
 
@@ -890,6 +1243,49 @@ export default function PackageShow({
                                                         </div>
                                                     </div>
                                                 )}
+                                        </div>
+                                    </>
+                                )}
+
+                                {(activeVersion.require ||
+                                    activeVersion.requireDev ||
+                                    activeVersion.conflict ||
+                                    activeVersion.provide ||
+                                    activeVersion.replace ||
+                                    activeVersion.suggest) && (
+                                    <>
+                                        <Separator />
+                                        <div className="space-y-4">
+                                            <div className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground">
+                                                <Boxes className="h-4 w-4" />
+                                                Requirements
+                                            </div>
+                                            <DependencyList
+                                                title="Requires"
+                                                entries={activeVersion.require}
+                                            />
+                                            <DependencyList
+                                                title="Requires (Dev)"
+                                                entries={
+                                                    activeVersion.requireDev
+                                                }
+                                            />
+                                            <DependencyList
+                                                title="Conflicts"
+                                                entries={activeVersion.conflict}
+                                            />
+                                            <DependencyList
+                                                title="Replaces"
+                                                entries={activeVersion.replace}
+                                            />
+                                            <DependencyList
+                                                title="Provides"
+                                                entries={activeVersion.provide}
+                                            />
+                                            <DependencyList
+                                                title="Suggests"
+                                                entries={activeVersion.suggest}
+                                            />
                                         </div>
                                     </>
                                 )}
