@@ -45,15 +45,61 @@ export default function ImportRepositoriesDialog({
     onClose,
     configuredProviders,
 }: ImportRepositoriesDialogProps) {
+    return (
+        <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+            <DialogContent className="sm:max-w-2xl">
+                <DialogHeader>
+                    <DialogTitle>Import Repositories</DialogTitle>
+                    <DialogDescription>
+                        Select multiple repositories to import at once. Packages
+                        will be discovered automatically when versions are
+                        synced.
+                    </DialogDescription>
+                </DialogHeader>
+                {isOpen && (
+                    <ImportRepositoriesDialogBody
+                        organizationSlug={organizationSlug}
+                        onClose={onClose}
+                        configuredProviders={configuredProviders}
+                    />
+                )}
+            </DialogContent>
+        </Dialog>
+    );
+}
+
+interface ImportRepositoriesDialogBodyProps {
+    organizationSlug: string;
+    onClose: () => void;
+    configuredProviders: string[];
+}
+
+function readRememberedWorkspace(provider: string, storageKey: string): string {
+    if (provider !== 'bitbucket' || typeof window === 'undefined') {
+        return '';
+    }
+    return window.localStorage.getItem(storageKey) ?? '';
+}
+
+function ImportRepositoriesDialogBody({
+    organizationSlug,
+    onClose,
+    configuredProviders,
+}: ImportRepositoriesDialogBodyProps) {
     const supportedProviders = configuredProviders.filter(
         (p) => p in gitProviders,
     );
     const defaultProvider = supportedProviders[0] ?? '';
+    const workspaceStorageKey = `pricore.bitbucket.workspace.${organizationSlug}`;
+    const initialWorkspace = readRememberedWorkspace(
+        defaultProvider,
+        workspaceStorageKey,
+    );
 
     const [provider, setProvider] = useState(defaultProvider);
     const [owners, setOwners] = useState<string[]>([]);
-    const [selectedOwner, setSelectedOwner] = useState('');
-    const [workspaceInput, setWorkspaceInput] = useState('');
+    const [selectedOwner, setSelectedOwner] = useState(initialWorkspace);
+    const [workspaceInput, setWorkspaceInput] = useState(initialWorkspace);
     const [loadingOwners, setLoadingOwners] = useState(false);
     const [repositories, setRepositories] = useState<RepositorySuggestion[]>(
         [],
@@ -66,44 +112,23 @@ export default function ImportRepositoriesDialog({
     // Bitbucket sunset its workspace enumeration API in CHANGE-2770, so the
     // user has to type their workspace slug instead of picking from a list.
     const isManualOwnerEntry = provider === 'bitbucket';
-    const workspaceStorageKey = `pricore.bitbucket.workspace.${organizationSlug}`;
 
-    const handleClose = () => {
-        onClose();
+    const handleProviderChange = (newProvider: string): void => {
+        const remembered = readRememberedWorkspace(
+            newProvider,
+            workspaceStorageKey,
+        );
+        setProvider(newProvider);
+        setOwners([]);
+        setSelectedOwner(remembered);
+        setWorkspaceInput(remembered);
+        setRepositories([]);
+        setSelectedRepos(new Set());
+        setSearchQuery('');
     };
 
     useEffect(() => {
-        if (!isOpen) {
-            return;
-        }
-
-        setProvider(defaultProvider);
-        setOwners([]);
-        setSelectedOwner('');
-        setWorkspaceInput('');
-        setLoadingOwners(false);
-        setRepositories([]);
-        setLoadingRepos(false);
-        setSelectedRepos(new Set());
-        setSearchQuery('');
-        setProcessing(false);
-    }, [isOpen, defaultProvider]);
-
-    useEffect(() => {
-        if (!isOpen || !provider) {
-            return;
-        }
-
-        if (isManualOwnerEntry) {
-            const remembered =
-                typeof window !== 'undefined'
-                    ? window.localStorage.getItem(workspaceStorageKey) ?? ''
-                    : '';
-            setOwners([]);
-            setSelectedOwner(remembered);
-            setWorkspaceInput(remembered);
-            setLoadingOwners(false);
-            setRepositories([]);
+        if (!provider || isManualOwnerEntry) {
             return;
         }
 
@@ -144,16 +169,10 @@ export default function ImportRepositoriesDialog({
         fetchOwners();
 
         return () => controller.abort();
-    }, [
-        provider,
-        organizationSlug,
-        isOpen,
-        isManualOwnerEntry,
-        workspaceStorageKey,
-    ]);
+    }, [provider, organizationSlug, isManualOwnerEntry]);
 
     useEffect(() => {
-        if (!isOpen || !provider || !selectedOwner) {
+        if (!provider || !selectedOwner) {
             return;
         }
 
@@ -207,7 +226,6 @@ export default function ImportRepositoriesDialog({
         selectedOwner,
         provider,
         organizationSlug,
-        isOpen,
         isManualOwnerEntry,
         workspaceStorageKey,
     ]);
@@ -273,7 +291,7 @@ export default function ImportRepositoriesDialog({
                 repositories: repositoriesPayload,
             },
             {
-                onSuccess: () => handleClose(),
+                onSuccess: () => onClose(),
                 onError: () => setProcessing(false),
                 onFinish: () => setProcessing(false),
             },
@@ -281,259 +299,239 @@ export default function ImportRepositoriesDialog({
     };
 
     return (
-        <Dialog open={isOpen} onOpenChange={handleClose}>
-            <DialogContent className="sm:max-w-2xl">
-                <DialogHeader>
-                    <DialogTitle>Import Repositories</DialogTitle>
-                    <DialogDescription>
-                        Select multiple repositories to import at once. Packages
-                        will be discovered automatically when versions are
-                        synced.
-                    </DialogDescription>
-                </DialogHeader>
+        <>
+            <div className="space-y-4">
+                <Select value={provider} onValueChange={handleProviderChange}>
+                    <SelectTrigger>
+                        <SelectValue placeholder="Select a provider" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {supportedProviders.map((p) => (
+                            <SelectItem key={p} value={p}>
+                                <GitProviderIcon
+                                    provider={p}
+                                    className="size-4"
+                                />
+                                {gitProviders[p]}
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
 
-                <div className="space-y-4">
-                    <Select value={provider} onValueChange={setProvider}>
-                        <SelectTrigger>
-                            <SelectValue placeholder="Select a provider" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {supportedProviders.map((p) => (
-                                <SelectItem key={p} value={p}>
-                                    <GitProviderIcon
-                                        provider={p}
-                                        className="size-4"
+                {loadingOwners ? (
+                    <div className="flex items-center gap-2 rounded-md border px-3 py-8">
+                        <Spinner className="size-4" />
+                        <span className="text-muted-foreground">
+                            Loading...
+                        </span>
+                    </div>
+                ) : isManualOwnerEntry || owners.length > 0 ? (
+                    <>
+                        <div className="flex gap-2">
+                            {isManualOwnerEntry ? (
+                                <form
+                                    className="flex w-full flex-col gap-2"
+                                    onSubmit={(e) => {
+                                        e.preventDefault();
+                                        const trimmed = workspaceInput.trim();
+                                        if (!trimmed) return;
+                                        setSearchQuery('');
+                                        setSelectedOwner(trimmed);
+                                    }}
+                                >
+                                    <div className="flex w-full gap-2">
+                                        <Input
+                                            placeholder="Bitbucket workspace slug (e.g. pricorephp)"
+                                            value={workspaceInput}
+                                            onChange={(e) =>
+                                                setWorkspaceInput(
+                                                    e.target.value,
+                                                )
+                                            }
+                                            className="flex-1"
+                                        />
+                                        <Button
+                                            type="submit"
+                                            variant="secondary"
+                                            size="lg"
+                                            className="shrink-0"
+                                            disabled={
+                                                !workspaceInput.trim() ||
+                                                workspaceInput.trim() ===
+                                                    selectedOwner
+                                            }
+                                        >
+                                            Load
+                                        </Button>
+                                    </div>
+                                    <Input
+                                        placeholder="Search repositories..."
+                                        value={searchQuery}
+                                        onChange={(e) =>
+                                            setSearchQuery(e.target.value)
+                                        }
+                                        disabled={!selectedOwner}
                                     />
-                                    {gitProviders[p]}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-
-                    {loadingOwners ? (
-                        <div className="flex items-center gap-2 rounded-md border px-3 py-8">
-                            <Spinner className="size-4" />
-                            <span className="text-muted-foreground">
-                                Loading...
-                            </span>
-                        </div>
-                    ) : isManualOwnerEntry || owners.length > 0 ? (
-                        <>
-                            <div className="flex gap-2">
-                                {isManualOwnerEntry ? (
-                                    <form
-                                        className="flex w-full flex-col gap-2"
-                                        onSubmit={(e) => {
-                                            e.preventDefault();
-                                            const trimmed =
-                                                workspaceInput.trim();
-                                            if (!trimmed) return;
+                                </form>
+                            ) : (
+                                <>
+                                    <Select
+                                        value={selectedOwner}
+                                        onValueChange={(value) => {
+                                            setSelectedOwner(value);
                                             setSearchQuery('');
-                                            setSelectedOwner(trimmed);
                                         }}
                                     >
-                                        <div className="flex w-full gap-2">
-                                            <Input
-                                                placeholder="Bitbucket workspace slug (e.g. pricorephp)"
-                                                value={workspaceInput}
-                                                onChange={(e) =>
-                                                    setWorkspaceInput(
-                                                        e.target.value,
-                                                    )
-                                                }
-                                                className="flex-1"
-                                            />
-                                            <Button
-                                                type="submit"
-                                                variant="secondary"
-                                                size="lg"
-                                                className="shrink-0"
-                                                disabled={
-                                                    !workspaceInput.trim() ||
-                                                    workspaceInput.trim() ===
-                                                        selectedOwner
-                                                }
-                                            >
-                                                Load
-                                            </Button>
-                                        </div>
-                                        <Input
-                                            placeholder="Search repositories..."
-                                            value={searchQuery}
-                                            onChange={(e) =>
-                                                setSearchQuery(e.target.value)
-                                            }
-                                            disabled={!selectedOwner}
-                                        />
-                                    </form>
-                                ) : (
-                                    <>
-                                        <Select
-                                            value={selectedOwner}
-                                            onValueChange={(value) => {
-                                                setSelectedOwner(value);
-                                                setSearchQuery('');
-                                            }}
-                                        >
-                                            <SelectTrigger className="w-[180px] shrink-0">
-                                                <SelectValue placeholder="Select owner" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                {owners.map((owner) => (
-                                                    <SelectItem
-                                                        key={owner}
-                                                        value={owner}
-                                                    >
-                                                        {owner}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                        <Input
-                                            placeholder="Search repositories..."
-                                            value={searchQuery}
-                                            onChange={(e) =>
-                                                setSearchQuery(e.target.value)
-                                            }
-                                            disabled={!selectedOwner}
-                                        />
-                                    </>
-                                )}
-                            </div>
+                                        <SelectTrigger className="w-[180px] shrink-0">
+                                            <SelectValue placeholder="Select owner" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {owners.map((owner) => (
+                                                <SelectItem
+                                                    key={owner}
+                                                    value={owner}
+                                                >
+                                                    {owner}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                    <Input
+                                        placeholder="Search repositories..."
+                                        value={searchQuery}
+                                        onChange={(e) =>
+                                            setSearchQuery(e.target.value)
+                                        }
+                                        disabled={!selectedOwner}
+                                    />
+                                </>
+                            )}
+                        </div>
 
-                            {loadingRepos ? (
-                                <div className="flex items-center gap-2 rounded-md border px-3 py-8">
-                                    <Spinner className="size-4" />
+                        {loadingRepos ? (
+                            <div className="flex items-center gap-2 rounded-md border px-3 py-8">
+                                <Spinner className="size-4" />
+                                <span className="text-muted-foreground">
+                                    Loading repositories...
+                                </span>
+                            </div>
+                        ) : selectedOwner && repositories.length > 0 ? (
+                            <>
+                                <div className="flex items-center justify-between text-sm">
+                                    <button
+                                        type="button"
+                                        className="text-primary hover:underline"
+                                        onClick={toggleAll}
+                                    >
+                                        {allSelectableSelected
+                                            ? 'Deselect all'
+                                            : 'Select all'}
+                                    </button>
                                     <span className="text-muted-foreground">
-                                        Loading repositories...
+                                        {selectedRepos.size} selected
                                     </span>
                                 </div>
-                            ) : selectedOwner && repositories.length > 0 ? (
-                                <>
-                                    <div className="flex items-center justify-between text-sm">
-                                        <button
-                                            type="button"
-                                            className="text-primary hover:underline"
-                                            onClick={toggleAll}
-                                        >
-                                            {allSelectableSelected
-                                                ? 'Deselect all'
-                                                : 'Select all'}
-                                        </button>
-                                        <span className="text-muted-foreground">
-                                            {selectedRepos.size} selected
-                                        </span>
-                                    </div>
 
-                                    <div className="max-h-72 space-y-1 overflow-y-auto rounded-md border p-2">
-                                        {filteredRepositories.length > 0 ? (
-                                            filteredRepositories.map((repo) => (
-                                                <label
-                                                    key={repo.fullName}
-                                                    className={`flex items-start gap-3 rounded-md p-2 ${
-                                                        repo.isConnected
-                                                            ? 'cursor-default opacity-60'
-                                                            : 'cursor-pointer hover:bg-accent'
-                                                    }`}
-                                                >
-                                                    <Checkbox
-                                                        checked={
-                                                            repo.isConnected ||
-                                                            selectedRepos.has(
-                                                                repo.fullName,
-                                                            )
-                                                        }
-                                                        disabled={
-                                                            repo.isConnected
-                                                        }
-                                                        onCheckedChange={() =>
-                                                            toggleRepo(
-                                                                repo.fullName,
-                                                            )
-                                                        }
-                                                        className="mt-0.5"
-                                                    />
-                                                    <div className="flex flex-1 flex-col">
-                                                        <div className="flex items-center gap-2">
-                                                            <span className="font-medium">
-                                                                {repo.fullName}
-                                                            </span>
-                                                            {repo.isConnected && (
-                                                                <Badge variant="secondary">
-                                                                    Connected
+                                <div className="max-h-72 space-y-1 overflow-y-auto rounded-md border p-2">
+                                    {filteredRepositories.length > 0 ? (
+                                        filteredRepositories.map((repo) => (
+                                            <label
+                                                key={repo.fullName}
+                                                className={`flex items-start gap-3 rounded-md p-2 ${
+                                                    repo.isConnected
+                                                        ? 'cursor-default opacity-60'
+                                                        : 'cursor-pointer hover:bg-accent'
+                                                }`}
+                                            >
+                                                <Checkbox
+                                                    checked={
+                                                        repo.isConnected ||
+                                                        selectedRepos.has(
+                                                            repo.fullName,
+                                                        )
+                                                    }
+                                                    disabled={repo.isConnected}
+                                                    onCheckedChange={() =>
+                                                        toggleRepo(
+                                                            repo.fullName,
+                                                        )
+                                                    }
+                                                    className="mt-0.5"
+                                                />
+                                                <div className="flex flex-1 flex-col">
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="font-medium">
+                                                            {repo.fullName}
+                                                        </span>
+                                                        {repo.isConnected && (
+                                                            <Badge variant="secondary">
+                                                                Connected
+                                                            </Badge>
+                                                        )}
+                                                        {repo.isPrivate &&
+                                                            !repo.isConnected && (
+                                                                <Badge variant="outline">
+                                                                    Private
                                                                 </Badge>
                                                             )}
-                                                            {repo.isPrivate &&
-                                                                !repo.isConnected && (
-                                                                    <Badge variant="outline">
-                                                                        Private
-                                                                    </Badge>
-                                                                )}
-                                                        </div>
-                                                        {repo.description && (
-                                                            <span className="text-xs text-muted-foreground">
-                                                                {
-                                                                    repo.description
-                                                                }
-                                                            </span>
-                                                        )}
                                                     </div>
-                                                </label>
-                                            ))
-                                        ) : (
-                                            <div className="px-2 py-4 text-center text-muted-foreground">
-                                                No repositories found
-                                            </div>
-                                        )}
-                                    </div>
-                                </>
-                            ) : selectedOwner && repositories.length === 0 ? (
-                                <div className="px-2 py-4 text-center text-muted-foreground">
-                                    No repositories found for this owner.
+                                                    {repo.description && (
+                                                        <span className="text-xs text-muted-foreground">
+                                                            {repo.description}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </label>
+                                        ))
+                                    ) : (
+                                        <div className="px-2 py-4 text-center text-muted-foreground">
+                                            No repositories found
+                                        </div>
+                                    )}
                                 </div>
-                            ) : isManualOwnerEntry && !selectedOwner ? (
-                                <div className="px-2 py-4 text-center text-sm text-muted-foreground">
-                                    Enter a Bitbucket workspace slug to load
-                                    its repositories. You can find it in the
-                                    Bitbucket URL: bitbucket.org/{'{'}
-                                    workspace{'}'}/...
-                                </div>
-                            ) : null}
-                        </>
-                    ) : (
-                        <div className="rounded-md border border-destructive bg-destructive/10 p-3 text-destructive">
-                            No repositories found. Please configure your Git
-                            credentials in settings.
-                        </div>
-                    )}
-                </div>
-
-                <DialogFooter>
-                    <Button
-                        type="button"
-                        variant="secondary"
-                        onClick={handleClose}
-                    >
-                        Cancel
-                    </Button>
-                    <Button
-                        type="button"
-                        onClick={handleSubmit}
-                        disabled={processing || selectedRepos.size === 0}
-                    >
-                        {processing ? (
-                            <>
-                                <Spinner className="size-4" />
-                                Importing...
                             </>
-                        ) : selectedRepos.size > 0 ? (
-                            `Import ${selectedRepos.size} ${selectedRepos.size === 1 ? 'Repository' : 'Repositories'}`
-                        ) : (
-                            'Import Repositories'
-                        )}
-                    </Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
+                        ) : selectedOwner && repositories.length === 0 ? (
+                            <div className="px-2 py-4 text-center text-muted-foreground">
+                                No repositories found for this owner.
+                            </div>
+                        ) : isManualOwnerEntry && !selectedOwner ? (
+                            <div className="px-2 py-4 text-center text-sm text-muted-foreground">
+                                Enter a Bitbucket workspace slug to load its
+                                repositories. You can find it in the Bitbucket
+                                URL: bitbucket.org/{'{'}
+                                workspace{'}'}/...
+                            </div>
+                        ) : null}
+                    </>
+                ) : (
+                    <div className="rounded-md border border-destructive bg-destructive/10 p-3 text-destructive">
+                        No repositories found. Please configure your Git
+                        credentials in settings.
+                    </div>
+                )}
+            </div>
+
+            <DialogFooter>
+                <Button type="button" variant="secondary" onClick={onClose}>
+                    Cancel
+                </Button>
+                <Button
+                    type="button"
+                    onClick={handleSubmit}
+                    disabled={processing || selectedRepos.size === 0}
+                >
+                    {processing ? (
+                        <>
+                            <Spinner className="size-4" />
+                            Importing...
+                        </>
+                    ) : selectedRepos.size > 0 ? (
+                        `Import ${selectedRepos.size} ${selectedRepos.size === 1 ? 'Repository' : 'Repositories'}`
+                    ) : (
+                        'Import Repositories'
+                    )}
+                </Button>
+            </DialogFooter>
+        </>
     );
 }

@@ -60,8 +60,7 @@ export default function ReleaseNotesDialog({
                                     key={release.tagName}
                                     release={release}
                                     isCurrent={
-                                        release.version ===
-                                        info?.currentVersion
+                                        release.version === info?.currentVersion
                                     }
                                 />
                             ))}

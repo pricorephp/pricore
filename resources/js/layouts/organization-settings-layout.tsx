@@ -228,5 +228,7 @@ export default function OrganizationSettingsLayout({
 }
 
 export const withOrganizationSettingsLayout = (page: React.ReactNode) => (
-    <OrganizationSettingsLayoutWrapper>{page}</OrganizationSettingsLayoutWrapper>
+    <OrganizationSettingsLayoutWrapper>
+        {page}
+    </OrganizationSettingsLayoutWrapper>
 );
