@@ -95,9 +95,9 @@ class GitLabAuthController extends Controller
 
         /** @var TwoUser $gitlabUser */
         $updated = $syncCredential->handle(
-            $user,
-            $gitlabUser->token,
-            rtrim(config('services.gitlab.instance_uri'), '/'),
+            user: $user,
+            token: $gitlabUser->token,
+            url: rtrim(config('services.gitlab.instance_uri'), '/'),
         );
 
         $message = $updated
