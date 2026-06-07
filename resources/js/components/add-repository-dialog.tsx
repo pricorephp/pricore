@@ -50,6 +50,50 @@ export default function AddRepositoryDialog({
     configuredProviders = [],
     sshKeys = [],
 }: AddRepositoryDialogProps) {
+    return (
+        <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Add Repository</DialogTitle>
+                    <DialogDescription>
+                        Connect a Git repository to automatically discover and
+                        sync Composer packages. Packages will be created
+                        automatically when versions are synced.
+                    </DialogDescription>
+                </DialogHeader>
+                {isOpen && (
+                    <AddRepositoryDialogBody
+                        organizationSlug={organizationSlug}
+                        onClose={onClose}
+                        configuredProviders={configuredProviders}
+                        sshKeys={sshKeys}
+                    />
+                )}
+            </DialogContent>
+        </Dialog>
+    );
+}
+
+interface AddRepositoryDialogBodyProps {
+    organizationSlug: string;
+    onClose: () => void;
+    configuredProviders: string[];
+    sshKeys: OrganizationSshKeyData[];
+}
+
+function readRememberedWorkspace(provider: string, storageKey: string): string {
+    if (provider !== 'bitbucket' || typeof window === 'undefined') {
+        return '';
+    }
+    return window.localStorage.getItem(storageKey) ?? '';
+}
+
+function AddRepositoryDialogBody({
+    organizationSlug,
+    onClose,
+    configuredProviders,
+    sshKeys,
+}: AddRepositoryDialogBodyProps) {
     const availableProviders =
         configuredProviders.length > 0
             ? Object.fromEntries(
@@ -62,11 +106,18 @@ export default function AddRepositoryDialog({
 
     const defaultProvider =
         configuredProviders.length > 0 ? configuredProviders[0] : 'git';
+    const workspaceStorageKey = `pricore.bitbucket.workspace.${organizationSlug}`;
+    const initialWorkspace = readRememberedWorkspace(
+        defaultProvider,
+        workspaceStorageKey,
+    );
 
     const [provider, setProvider] = useState<string>(defaultProvider);
     const [owners, setOwners] = useState<string[]>([]);
-    const [selectedOwner, setSelectedOwner] = useState<string>('');
-    const [workspaceInput, setWorkspaceInput] = useState<string>('');
+    const [selectedOwner, setSelectedOwner] =
+        useState<string>(initialWorkspace);
+    const [workspaceInput, setWorkspaceInput] =
+        useState<string>(initialWorkspace);
     const [loadingOwners, setLoadingOwners] = useState(false);
     const [repositories, setRepositories] = useState<RepositorySuggestion[]>(
         [],
@@ -80,45 +131,24 @@ export default function AddRepositoryDialog({
     // Bitbucket sunset its workspace enumeration API in CHANGE-2770, so the
     // user has to type their workspace slug instead of picking from a list.
     const isManualOwnerEntry = provider === 'bitbucket';
-    const workspaceStorageKey = `pricore.bitbucket.workspace.${organizationSlug}`;
 
-    const handleClose = (): void => {
-        onClose();
-    };
-
-    useEffect(() => {
-        if (!isOpen) {
-            return;
-        }
-
-        setProvider(defaultProvider);
+    const handleProviderChange = (newProvider: string): void => {
+        const remembered = readRememberedWorkspace(
+            newProvider,
+            workspaceStorageKey,
+        );
+        setProvider(newProvider);
         setOwners([]);
-        setSelectedOwner('');
-        setWorkspaceInput('');
-        setLoadingOwners(false);
+        setSelectedOwner(remembered);
+        setWorkspaceInput(remembered);
         setRepositories([]);
-        setLoadingRepos(false);
         setSelectedRepo('');
         setRepoIdentifier('');
         setSearchQuery('');
-    }, [isOpen, defaultProvider]);
+    };
 
-    // Fetch owners when provider changes
     useEffect(() => {
-        if (!isOpen || provider === 'git') {
-            return;
-        }
-
-        if (isManualOwnerEntry) {
-            const remembered =
-                typeof window !== 'undefined'
-                    ? window.localStorage.getItem(workspaceStorageKey) ?? ''
-                    : '';
-            setOwners([]);
-            setSelectedOwner(remembered);
-            setWorkspaceInput(remembered);
-            setLoadingOwners(false);
-            setRepositories([]);
+        if (provider === 'git' || isManualOwnerEntry) {
             return;
         }
 
@@ -159,17 +189,10 @@ export default function AddRepositoryDialog({
         fetchOwners();
 
         return () => controller.abort();
-    }, [
-        provider,
-        organizationSlug,
-        isOpen,
-        isManualOwnerEntry,
-        workspaceStorageKey,
-    ]);
+    }, [provider, organizationSlug, isManualOwnerEntry]);
 
-    // Fetch repositories when owner is selected
     useEffect(() => {
-        if (!isOpen || provider === 'git' || !selectedOwner) {
+        if (provider === 'git' || !selectedOwner) {
             return;
         }
 
@@ -224,7 +247,6 @@ export default function AddRepositoryDialog({
         selectedOwner,
         provider,
         organizationSlug,
-        isOpen,
         isManualOwnerEntry,
         workspaceStorageKey,
     ]);
@@ -284,260 +306,251 @@ export default function AddRepositoryDialog({
     };
 
     return (
-        <Dialog open={isOpen} onOpenChange={handleClose}>
-            <DialogContent>
-                <DialogHeader>
-                    <DialogTitle>Add Repository</DialogTitle>
-                    <DialogDescription>
-                        Connect a Git repository to automatically discover and
-                        sync Composer packages. Packages will be created
-                        automatically when versions are synced.
-                    </DialogDescription>
-                </DialogHeader>
+        <Form
+            action={store.url(organizationSlug)}
+            method="post"
+            onSuccess={onClose}
+            resetOnSuccess
+            className="space-y-4"
+        >
+            {({ processing, errors, wasSuccessful }) => (
+                <>
+                    <div className="grid space-y-2">
+                        <Label htmlFor="provider">
+                            Git Provider <span className="text-red-500">*</span>
+                        </Label>
+                        <Select
+                            name="provider"
+                            defaultValue={provider}
+                            onValueChange={handleProviderChange}
+                            required
+                        >
+                            <SelectTrigger>
+                                <SelectValue placeholder="Select a provider" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {Object.entries(availableProviders).map(
+                                    ([value, label]) => (
+                                        <SelectItem key={value} value={value}>
+                                            <GitProviderIcon
+                                                provider={value}
+                                                className="size-4"
+                                            />
+                                            {label}
+                                        </SelectItem>
+                                    ),
+                                )}
+                            </SelectContent>
+                        </Select>
+                        {errors.provider && !processing && !wasSuccessful && (
+                            <p className="text-destructive">
+                                {errors.provider}
+                            </p>
+                        )}
+                        <p className="text-sm text-muted-foreground">
+                            Need to add more providers? Configure them in{' '}
+                            <Link
+                                href="/settings/git-credentials"
+                                className="font-medium text-primary underline underline-offset-4 hover:no-underline"
+                            >
+                                your settings
+                            </Link>
+                            .
+                        </p>
+                    </div>
 
-                <Form
-                    action={store.url(organizationSlug)}
-                    method="post"
-                    onSuccess={handleClose}
-                    resetOnSuccess
-                    className="space-y-4"
-                >
-                    {({ processing, errors, wasSuccessful }) => (
-                        <>
-                            <div className="grid space-y-2">
-                                <Label htmlFor="provider">
-                                    Git Provider{' '}
-                                    <span className="text-red-500">*</span>
-                                </Label>
-                                <Select
-                                    name="provider"
-                                    defaultValue={provider}
-                                    onValueChange={setProvider}
-                                    required
-                                >
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Select a provider" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {Object.entries(availableProviders).map(
-                                            ([value, label]) => (
-                                                <SelectItem
-                                                    key={value}
-                                                    value={value}
-                                                >
-                                                    <GitProviderIcon
-                                                        provider={value}
-                                                        className="size-4"
-                                                    />
-                                                    {label}
-                                                </SelectItem>
-                                            ),
-                                        )}
-                                    </SelectContent>
-                                </Select>
-                                {errors.provider &&
-                                    !processing &&
-                                    !wasSuccessful && (
-                                        <p className="text-destructive">
-                                            {errors.provider}
-                                        </p>
-                                    )}
-                                <p className="text-sm text-muted-foreground">
-                                    Need to add more providers? Configure them
-                                    in{' '}
-                                    <Link
-                                        href="/settings/git-credentials"
-                                        className="font-medium text-primary underline underline-offset-4 hover:no-underline"
-                                    >
-                                        your settings
-                                    </Link>
-                                    .
-                                </p>
-                            </div>
-
-                            <div className="grid space-y-2">
-                                <Label htmlFor="repo_identifier">
-                                    Repository{' '}
-                                    <span className="text-red-500">*</span>
-                                </Label>
-                                {provider !== 'git' ? (
-                                    loadingOwners ? (
-                                        <div className="flex items-center gap-2 rounded-md border border-input bg-transparent px-3 py-2">
-                                            <Spinner className="size-4" />
-                                            <span className="text-muted-foreground">
-                                                Loading...
-                                            </span>
-                                        </div>
-                                    ) : isManualOwnerEntry || owners.length > 0 ? (
-                                        <div className="space-y-3">
-                                            <div className="flex gap-2">
-                                                {isManualOwnerEntry ? (
-                                                    <div className="flex w-full flex-col gap-2">
-                                                        <div className="flex w-full gap-2">
-                                                            <Input
-                                                                placeholder="Bitbucket workspace slug (e.g. pricorephp)"
-                                                                value={
-                                                                    workspaceInput
-                                                                }
-                                                                onChange={(e) =>
-                                                                    setWorkspaceInput(
-                                                                        e.target
-                                                                            .value,
-                                                                    )
-                                                                }
-                                                                onKeyDown={(
-                                                                    e,
-                                                                ) => {
-                                                                    if (
-                                                                        e.key ===
-                                                                        'Enter'
-                                                                    ) {
-                                                                        e.preventDefault();
-                                                                        const trimmed =
-                                                                            workspaceInput.trim();
-                                                                        if (
-                                                                            trimmed
-                                                                        ) {
-                                                                            setSearchQuery(
-                                                                                '',
-                                                                            );
-                                                                            setSelectedOwner(
-                                                                                trimmed,
-                                                                            );
-                                                                        }
-                                                                    }
-                                                                }}
-                                                                className="flex-1"
-                                                            />
-                                                            <Button
-                                                                type="button"
-                                                                variant="secondary"
-                                                                size="lg"
-                                                                className="shrink-0"
-                                                                disabled={
-                                                                    !workspaceInput.trim() ||
-                                                                    workspaceInput.trim() ===
-                                                                        selectedOwner
-                                                                }
-                                                                onClick={() => {
-                                                                    const trimmed =
-                                                                        workspaceInput.trim();
-                                                                    if (
-                                                                        !trimmed
-                                                                    )
-                                                                        return;
+                    <div className="grid space-y-2">
+                        <Label htmlFor="repo_identifier">
+                            Repository <span className="text-red-500">*</span>
+                        </Label>
+                        {provider !== 'git' ? (
+                            loadingOwners ? (
+                                <div className="flex items-center gap-2 rounded-md border border-input bg-transparent px-3 py-2">
+                                    <Spinner className="size-4" />
+                                    <span className="text-muted-foreground">
+                                        Loading...
+                                    </span>
+                                </div>
+                            ) : isManualOwnerEntry || owners.length > 0 ? (
+                                <div className="space-y-3">
+                                    <div className="flex gap-2">
+                                        {isManualOwnerEntry ? (
+                                            <div className="flex w-full flex-col gap-2">
+                                                <div className="flex w-full gap-2">
+                                                    <Input
+                                                        placeholder="Bitbucket workspace slug (e.g. pricorephp)"
+                                                        value={workspaceInput}
+                                                        onChange={(e) =>
+                                                            setWorkspaceInput(
+                                                                e.target.value,
+                                                            )
+                                                        }
+                                                        onKeyDown={(e) => {
+                                                            if (
+                                                                e.key ===
+                                                                'Enter'
+                                                            ) {
+                                                                e.preventDefault();
+                                                                const trimmed =
+                                                                    workspaceInput.trim();
+                                                                if (trimmed) {
                                                                     setSearchQuery(
                                                                         '',
                                                                     );
                                                                     setSelectedOwner(
                                                                         trimmed,
                                                                     );
-                                                                }}
-                                                            >
-                                                                Load
-                                                            </Button>
-                                                        </div>
-                                                        <Input
-                                                            placeholder="Search repositories..."
-                                                            value={searchQuery}
-                                                            onChange={(e) =>
-                                                                setSearchQuery(
-                                                                    e.target
-                                                                        .value,
-                                                                )
+                                                                }
                                                             }
-                                                            disabled={
-                                                                !selectedOwner
-                                                            }
-                                                        />
-                                                    </div>
-                                                ) : (
-                                                    <>
-                                                        <Select
-                                                            value={
+                                                        }}
+                                                        className="flex-1"
+                                                    />
+                                                    <Button
+                                                        type="button"
+                                                        variant="secondary"
+                                                        size="lg"
+                                                        className="shrink-0"
+                                                        disabled={
+                                                            !workspaceInput.trim() ||
+                                                            workspaceInput.trim() ===
                                                                 selectedOwner
-                                                            }
-                                                            onValueChange={(
-                                                                value,
-                                                            ) => {
-                                                                setSelectedOwner(
-                                                                    value,
-                                                                );
-                                                                setSearchQuery(
-                                                                    '',
-                                                                );
-                                                            }}
-                                                        >
-                                                            <SelectTrigger className="w-[180px] shrink-0">
-                                                                <SelectValue placeholder="Select owner" />
-                                                            </SelectTrigger>
-                                                            <SelectContent>
-                                                                {owners.map(
-                                                                    (
-                                                                        owner,
-                                                                    ) => (
-                                                                        <SelectItem
-                                                                            key={
-                                                                                owner
-                                                                            }
-                                                                            value={
-                                                                                owner
-                                                                            }
-                                                                        >
-                                                                            {
-                                                                                owner
-                                                                            }
-                                                                        </SelectItem>
-                                                                    ),
-                                                                )}
-                                                            </SelectContent>
-                                                        </Select>
-                                                        <Input
-                                                            placeholder="Search repositories..."
-                                                            value={searchQuery}
-                                                            onChange={(e) =>
-                                                                setSearchQuery(
-                                                                    e.target
-                                                                        .value,
-                                                                )
-                                                            }
-                                                            disabled={
-                                                                !selectedOwner
-                                                            }
-                                                        />
-                                                    </>
-                                                )}
-                                            </div>
-                                            {loadingRepos ? (
-                                                <div className="flex items-center gap-2 rounded-md border border-input bg-transparent px-3 py-2">
-                                                    <Spinner className="size-4" />
-                                                    <span className="text-muted-foreground">
-                                                        Loading repositories...
-                                                    </span>
+                                                        }
+                                                        onClick={() => {
+                                                            const trimmed =
+                                                                workspaceInput.trim();
+                                                            if (!trimmed)
+                                                                return;
+                                                            setSearchQuery('');
+                                                            setSelectedOwner(
+                                                                trimmed,
+                                                            );
+                                                        }}
+                                                    >
+                                                        Load
+                                                    </Button>
                                                 </div>
-                                            ) : selectedOwner &&
-                                              repositories.length > 0 ? (
-                                                <div
-                                                    ref={repoListContainerRef}
-                                                    className="max-h-64 space-y-2 overflow-y-auto rounded-md border p-2"
+                                                <Input
+                                                    placeholder="Search repositories..."
+                                                    value={searchQuery}
+                                                    onChange={(e) =>
+                                                        setSearchQuery(
+                                                            e.target.value,
+                                                        )
+                                                    }
+                                                    disabled={!selectedOwner}
+                                                />
+                                            </div>
+                                        ) : (
+                                            <>
+                                                <Select
+                                                    value={selectedOwner}
+                                                    onValueChange={(value) => {
+                                                        setSelectedOwner(value);
+                                                        setSearchQuery('');
+                                                    }}
                                                 >
-                                                    {filteredRepositories.length >
-                                                    0 ? (
-                                                        filteredRepositories.map(
-                                                            (repo) => {
-                                                                const handleLabelClick =
-                                                                    (
-                                                                        e: React.MouseEvent<HTMLLabelElement>,
-                                                                    ): void => {
-                                                                        // If clicking directly on the radio button, let it handle it
-                                                                        if (
-                                                                            e.target instanceof
-                                                                            HTMLInputElement
-                                                                        ) {
-                                                                            return;
-                                                                        }
-                                                                        // Otherwise, programmatically trigger the radio button
-                                                                        e.preventDefault();
+                                                    <SelectTrigger className="w-[180px] shrink-0">
+                                                        <SelectValue placeholder="Select owner" />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        {owners.map((owner) => (
+                                                            <SelectItem
+                                                                key={owner}
+                                                                value={owner}
+                                                            >
+                                                                {owner}
+                                                            </SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
+                                                <Input
+                                                    placeholder="Search repositories..."
+                                                    value={searchQuery}
+                                                    onChange={(e) =>
+                                                        setSearchQuery(
+                                                            e.target.value,
+                                                        )
+                                                    }
+                                                    disabled={!selectedOwner}
+                                                />
+                                            </>
+                                        )}
+                                    </div>
+                                    {loadingRepos ? (
+                                        <div className="flex items-center gap-2 rounded-md border border-input bg-transparent px-3 py-2">
+                                            <Spinner className="size-4" />
+                                            <span className="text-muted-foreground">
+                                                Loading repositories...
+                                            </span>
+                                        </div>
+                                    ) : selectedOwner &&
+                                      repositories.length > 0 ? (
+                                        <div
+                                            ref={repoListContainerRef}
+                                            className="max-h-64 space-y-2 overflow-y-auto rounded-md border p-2"
+                                        >
+                                            {filteredRepositories.length > 0 ? (
+                                                filteredRepositories.map(
+                                                    (repo) => {
+                                                        const handleLabelClick =
+                                                            (
+                                                                e: React.MouseEvent<HTMLLabelElement>,
+                                                            ): void => {
+                                                                // If clicking directly on the radio button, let it handle it
+                                                                if (
+                                                                    e.target instanceof
+                                                                    HTMLInputElement
+                                                                ) {
+                                                                    return;
+                                                                }
+                                                                // Otherwise, programmatically trigger the radio button
+                                                                e.preventDefault();
+                                                                const scrollTop =
+                                                                    repoListContainerRef
+                                                                        .current
+                                                                        ?.scrollTop ??
+                                                                    0;
+                                                                handleRepoSelect(
+                                                                    repo.fullName,
+                                                                );
+                                                                // Restore scroll position after state update
+                                                                setTimeout(
+                                                                    () => {
+                                                                        repoListContainerRef.current?.scrollTo(
+                                                                            {
+                                                                                top: scrollTop,
+                                                                                behavior:
+                                                                                    'instant',
+                                                                            },
+                                                                        );
+                                                                    },
+                                                                    0,
+                                                                );
+                                                            };
+
+                                                        return (
+                                                            <label
+                                                                key={
+                                                                    repo.fullName
+                                                                }
+                                                                onClick={
+                                                                    handleLabelClick
+                                                                }
+                                                                className="flex cursor-pointer items-start gap-3 rounded-md p-2 hover:bg-accent"
+                                                            >
+                                                                <input
+                                                                    type="radio"
+                                                                    name="selected_repo"
+                                                                    value={
+                                                                        repo.fullName
+                                                                    }
+                                                                    checked={
+                                                                        selectedRepo ===
+                                                                        repo.fullName
+                                                                    }
+                                                                    onChange={(
+                                                                        e,
+                                                                    ) => {
                                                                         const scrollTop =
                                                                             repoListContainerRef
                                                                                 .current
@@ -545,6 +558,7 @@ export default function AddRepositoryDialog({
                                                                             0;
                                                                         handleRepoSelect(
                                                                             repo.fullName,
+                                                                            e,
                                                                         );
                                                                         // Restore scroll position after state update
                                                                         setTimeout(
@@ -559,245 +573,184 @@ export default function AddRepositoryDialog({
                                                                             },
                                                                             0,
                                                                         );
-                                                                    };
-
-                                                                return (
-                                                                    <label
-                                                                        key={
+                                                                    }}
+                                                                    className="mt-1 size-4"
+                                                                    required
+                                                                />
+                                                                <div className="flex flex-1 flex-col">
+                                                                    <span className="font-medium">
+                                                                        {
                                                                             repo.fullName
                                                                         }
-                                                                        onClick={
-                                                                            handleLabelClick
-                                                                        }
-                                                                        className="flex cursor-pointer items-start gap-3 rounded-md p-2 hover:bg-accent"
-                                                                    >
-                                                                        <input
-                                                                            type="radio"
-                                                                            name="selected_repo"
-                                                                            value={
-                                                                                repo.fullName
+                                                                    </span>
+                                                                    {repo.description && (
+                                                                        <span className="text-xs text-muted-foreground">
+                                                                            {
+                                                                                repo.description
                                                                             }
-                                                                            checked={
-                                                                                selectedRepo ===
-                                                                                repo.fullName
-                                                                            }
-                                                                            onChange={(
-                                                                                e,
-                                                                            ) => {
-                                                                                const scrollTop =
-                                                                                    repoListContainerRef
-                                                                                        .current
-                                                                                        ?.scrollTop ??
-                                                                                    0;
-                                                                                handleRepoSelect(
-                                                                                    repo.fullName,
-                                                                                    e,
-                                                                                );
-                                                                                // Restore scroll position after state update
-                                                                                setTimeout(
-                                                                                    () => {
-                                                                                        repoListContainerRef.current?.scrollTo(
-                                                                                            {
-                                                                                                top: scrollTop,
-                                                                                                behavior:
-                                                                                                    'instant',
-                                                                                            },
-                                                                                        );
-                                                                                    },
-                                                                                    0,
-                                                                                );
-                                                                            }}
-                                                                            className="mt-1 size-4"
-                                                                            required
-                                                                        />
-                                                                        <div className="flex flex-1 flex-col">
-                                                                            <span className="font-medium">
-                                                                                {
-                                                                                    repo.fullName
-                                                                                }
-                                                                            </span>
-                                                                            {repo.description && (
-                                                                                <span className="text-xs text-muted-foreground">
-                                                                                    {
-                                                                                        repo.description
-                                                                                    }
-                                                                                </span>
-                                                                            )}
-                                                                        </div>
-                                                                    </label>
-                                                                );
-                                                            },
-                                                        )
-                                                    ) : (
-                                                        <div className="px-2 py-4 text-center text-muted-foreground">
-                                                            No repositories
-                                                            found
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            ) : selectedOwner &&
-                                              repositories.length === 0 ? (
-                                                <div className="px-2 py-4 text-center text-muted-foreground">
-                                                    No repositories found for
-                                                    this owner.
-                                                </div>
-                                            ) : isManualOwnerEntry &&
-                                              !selectedOwner ? (
-                                                <div className="px-2 py-4 text-center text-sm text-muted-foreground">
-                                                    Enter a Bitbucket workspace
-                                                    slug to load its
-                                                    repositories. You can find
-                                                    it in your Bitbucket URL:
-                                                    bitbucket.org/{'{'}
-                                                    workspace{'}'}/...
-                                                </div>
-                                            ) : null}
-                                            <input
-                                                type="hidden"
-                                                name="repo_identifier"
-                                                value={repoIdentifier}
-                                                required
-                                            />
-                                        </div>
-                                    ) : (
-                                        <>
-                                            <div className="rounded-md border border-destructive bg-destructive/10 p-3 text-destructive">
-                                                No repositories found. Please
-                                                configure your credentials in
-                                                settings.
-                                            </div>
-                                            <input
-                                                type="hidden"
-                                                name="repo_identifier"
-                                                value=""
-                                                required
-                                            />
-                                        </>
-                                    )
-                                ) : (
-                                    <>
-                                        <Input
-                                            id="repo_identifier"
-                                            name="repo_identifier"
-                                            required
-                                            placeholder={getRepoIdentifierPlaceholder()}
-                                            value={repoIdentifier}
-                                            onChange={(e) =>
-                                                setRepoIdentifier(
-                                                    e.target.value,
+                                                                        </span>
+                                                                    )}
+                                                                </div>
+                                                            </label>
+                                                        );
+                                                    },
                                                 )
-                                            }
-                                        />
-                                        <p className="text-xs text-muted-foreground">
-                                            {getRepoIdentifierHelp()}
-                                        </p>
-                                    </>
-                                )}
-                                {errors.repo_identifier &&
-                                    !processing &&
-                                    !wasSuccessful && (
-                                        <p className="text-destructive">
-                                            {errors.repo_identifier}
-                                        </p>
-                                    )}
-                            </div>
-
-                            {provider === 'git' && (
-                                <div className="grid space-y-2">
-                                    <Label htmlFor="ssh_key_uuid">
-                                        SSH Key
-                                    </Label>
-                                    {sshKeys.length > 0 ? (
-                                        <Select name="ssh_key_uuid">
-                                            <SelectTrigger>
-                                                <SelectValue placeholder="No SSH key (public repos only)" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                {sshKeys.map((sshKey) => (
-                                                    <SelectItem
-                                                        key={sshKey.uuid}
-                                                        value={sshKey.uuid}
-                                                    >
-                                                        {sshKey.name}
-                                                        <span className="ml-2 text-xs text-muted-foreground">
-                                                            {sshKey.fingerprint}
-                                                        </span>
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                    ) : (
-                                        <p className="text-sm text-muted-foreground">
-                                            No SSH keys configured.{' '}
-                                            <Link
-                                                href={`/organizations/${organizationSlug}/settings/ssh-keys`}
-                                                className="font-medium text-primary underline underline-offset-4 hover:no-underline"
-                                            >
-                                                Generate one
-                                            </Link>{' '}
-                                            to authenticate with private
-                                            repositories.
-                                        </p>
-                                    )}
-                                    {errors.ssh_key_uuid &&
-                                        !processing &&
-                                        !wasSuccessful && (
-                                            <p className="text-destructive">
-                                                {errors.ssh_key_uuid}
-                                            </p>
-                                        )}
+                                            ) : (
+                                                <div className="px-2 py-4 text-center text-muted-foreground">
+                                                    No repositories found
+                                                </div>
+                                            )}
+                                        </div>
+                                    ) : selectedOwner &&
+                                      repositories.length === 0 ? (
+                                        <div className="px-2 py-4 text-center text-muted-foreground">
+                                            No repositories found for this
+                                            owner.
+                                        </div>
+                                    ) : isManualOwnerEntry && !selectedOwner ? (
+                                        <div className="px-2 py-4 text-center text-sm text-muted-foreground">
+                                            Enter a Bitbucket workspace slug to
+                                            load its repositories. You can find
+                                            it in your Bitbucket URL:
+                                            bitbucket.org/{'{'}
+                                            workspace{'}'}/...
+                                        </div>
+                                    ) : null}
+                                    <input
+                                        type="hidden"
+                                        name="repo_identifier"
+                                        value={repoIdentifier}
+                                        required
+                                    />
                                 </div>
-                            )}
-
-                            <div className="grid space-y-2">
-                                <Label htmlFor="default_branch">
-                                    Default Branch (optional)
-                                </Label>
+                            ) : (
+                                <>
+                                    <div className="rounded-md border border-destructive bg-destructive/10 p-3 text-destructive">
+                                        No repositories found. Please configure
+                                        your credentials in settings.
+                                    </div>
+                                    <input
+                                        type="hidden"
+                                        name="repo_identifier"
+                                        value=""
+                                        required
+                                    />
+                                </>
+                            )
+                        ) : (
+                            <>
                                 <Input
-                                    id="default_branch"
-                                    name="default_branch"
-                                    placeholder="main"
-                                />
-                                {errors.default_branch &&
-                                    !processing &&
-                                    !wasSuccessful && (
-                                        <p className="text-destructive">
-                                            {errors.default_branch}
-                                        </p>
-                                    )}
-                                <p className="text-sm text-muted-foreground">
-                                    The default branch to sync from. If not
-                                    specified, the repository's default branch
-                                    will be used.
-                                </p>
-                            </div>
-
-                            <DialogFooter>
-                                <Button
-                                    type="button"
-                                    variant="secondary"
-                                    onClick={handleClose}
-                                >
-                                    Cancel
-                                </Button>
-                                <Button
-                                    type="submit"
-                                    disabled={
-                                        processing ||
-                                        (provider !== 'git' &&
-                                            (!selectedRepo ||
-                                                repositories.length === 0))
+                                    id="repo_identifier"
+                                    name="repo_identifier"
+                                    required
+                                    placeholder={getRepoIdentifierPlaceholder()}
+                                    value={repoIdentifier}
+                                    onChange={(e) =>
+                                        setRepoIdentifier(e.target.value)
                                     }
-                                >
-                                    {processing
-                                        ? 'Adding...'
-                                        : 'Add Repository'}
-                                </Button>
-                            </DialogFooter>
-                        </>
+                                />
+                                <p className="text-xs text-muted-foreground">
+                                    {getRepoIdentifierHelp()}
+                                </p>
+                            </>
+                        )}
+                        {errors.repo_identifier &&
+                            !processing &&
+                            !wasSuccessful && (
+                                <p className="text-destructive">
+                                    {errors.repo_identifier}
+                                </p>
+                            )}
+                    </div>
+
+                    {provider === 'git' && (
+                        <div className="grid space-y-2">
+                            <Label htmlFor="ssh_key_uuid">SSH Key</Label>
+                            {sshKeys.length > 0 ? (
+                                <Select name="ssh_key_uuid">
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="No SSH key (public repos only)" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {sshKeys.map((sshKey) => (
+                                            <SelectItem
+                                                key={sshKey.uuid}
+                                                value={sshKey.uuid}
+                                            >
+                                                {sshKey.name}
+                                                <span className="ml-2 text-xs text-muted-foreground">
+                                                    {sshKey.fingerprint}
+                                                </span>
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            ) : (
+                                <p className="text-sm text-muted-foreground">
+                                    No SSH keys configured.{' '}
+                                    <Link
+                                        href={`/organizations/${organizationSlug}/settings/ssh-keys`}
+                                        className="font-medium text-primary underline underline-offset-4 hover:no-underline"
+                                    >
+                                        Generate one
+                                    </Link>{' '}
+                                    to authenticate with private repositories.
+                                </p>
+                            )}
+                            {errors.ssh_key_uuid &&
+                                !processing &&
+                                !wasSuccessful && (
+                                    <p className="text-destructive">
+                                        {errors.ssh_key_uuid}
+                                    </p>
+                                )}
+                        </div>
                     )}
-                </Form>
-            </DialogContent>
-        </Dialog>
+
+                    <div className="grid space-y-2">
+                        <Label htmlFor="default_branch">
+                            Default Branch (optional)
+                        </Label>
+                        <Input
+                            id="default_branch"
+                            name="default_branch"
+                            placeholder="main"
+                        />
+                        {errors.default_branch &&
+                            !processing &&
+                            !wasSuccessful && (
+                                <p className="text-destructive">
+                                    {errors.default_branch}
+                                </p>
+                            )}
+                        <p className="text-sm text-muted-foreground">
+                            The default branch to sync from. If not specified,
+                            the repository's default branch will be used.
+                        </p>
+                    </div>
+
+                    <DialogFooter>
+                        <Button
+                            type="button"
+                            variant="secondary"
+                            onClick={onClose}
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            type="submit"
+                            disabled={
+                                processing ||
+                                (provider !== 'git' &&
+                                    (!selectedRepo ||
+                                        repositories.length === 0))
+                            }
+                        >
+                            {processing ? 'Adding...' : 'Add Repository'}
+                        </Button>
+                    </DialogFooter>
+                </>
+            )}
+        </Form>
     );
 }
