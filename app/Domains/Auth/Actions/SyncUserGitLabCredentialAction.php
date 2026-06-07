@@ -8,13 +8,15 @@ use App\Models\UserGitCredential;
 
 class SyncUserGitLabCredentialAction
 {
-    public function handle(User $user, string $token): bool
+    public function handle(User $user, string $token, string $url): bool
     {
+        $credentials = ['token' => $token, 'url' => $url];
+
         $credential = $user->gitCredentials()->where('provider', GitProvider::GitLab)->first();
 
         if ($credential) {
             $credential->update([
-                'credentials' => ['token' => $token],
+                'credentials' => $credentials,
             ]);
 
             return true;
@@ -23,7 +25,7 @@ class SyncUserGitLabCredentialAction
         UserGitCredential::create([
             'user_uuid' => $user->uuid,
             'provider' => GitProvider::GitLab,
-            'credentials' => ['token' => $token],
+            'credentials' => $credentials,
         ]);
 
         return false;
