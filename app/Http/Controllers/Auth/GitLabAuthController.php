@@ -94,7 +94,11 @@ class GitLabAuthController extends Controller
         $updateProfile->handle($user, $gitlabUser);
 
         /** @var TwoUser $gitlabUser */
-        $updated = $syncCredential->handle($user, $gitlabUser->token);
+        $updated = $syncCredential->handle(
+            user: $user,
+            token: $gitlabUser->token,
+            url: rtrim(config('services.gitlab.instance_uri'), '/'),
+        );
 
         $message = $updated
             ? 'GitLab credentials updated successfully.'

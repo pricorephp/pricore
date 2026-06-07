@@ -241,8 +241,11 @@ test('connect callback creates git credential for user', function () {
         ->where('provider', 'gitlab')
         ->first();
 
+    $expectedUrl = rtrim((string) config('services.gitlab.instance_uri'), '/');
+
     expect($credential)->not->toBeNull()
-        ->and($credential->credentials['token'])->toBe('glpat-elevated_token');
+        ->and($credential->credentials['token'])->toBe('glpat-elevated_token')
+        ->and($credential->credentials['url'])->toBe($expectedUrl);
 });
 
 test('connect callback updates existing credential', function () {
@@ -262,7 +265,30 @@ test('connect callback updates existing credential', function () {
     $response->assertRedirect(route('settings.git-credentials'));
     $response->assertSessionHas('status', 'GitLab credentials updated successfully.');
 
-    expect(UserGitCredential::where('user_uuid', $user->uuid)->count())->toBe(1);
+    $credential = UserGitCredential::where('user_uuid', $user->uuid)->sole();
+    $expectedUrl = rtrim((string) config('services.gitlab.instance_uri'), '/');
+
+    expect($credential->credentials['token'])->toBe('glpat-elevated_token')
+        ->and($credential->credentials['url'])->toBe($expectedUrl);
+});
+
+test('connect callback persists configured GitLab instance URI', function () {
+    config()->set('services.gitlab.instance_uri', 'https://gitlab.example.com/');
+
+    $user = User::factory()->withGitLab()->create();
+
+    $socialiteUser = mockGitLabSocialiteUser(['id' => $user->gitlab_id, 'token' => 'glpat-elevated_token']);
+    mockGitLabSocialiteCallback($socialiteUser);
+
+    $this->actingAs($user)
+        ->withSession(['gitlab_oauth_intent' => GitLabOAuthIntent::Connect])
+        ->get(route('auth.gitlab.callback'));
+
+    $credential = UserGitCredential::where('user_uuid', $user->uuid)
+        ->where('provider', 'gitlab')
+        ->sole();
+
+    expect($credential->credentials['url'])->toBe('https://gitlab.example.com');
 });
 
 test('connect callback without auth redirects to login', function () {
