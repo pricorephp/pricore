@@ -50,6 +50,7 @@ import {
     Activity,
     BarChart3,
     BookOpen,
+    Boxes,
     Calendar,
     Check,
     ChevronRight,
@@ -185,6 +186,43 @@ function CopyInstallButton({ text }: { text: string }) {
             </TooltipTrigger>
             <TooltipContent>Copy install command</TooltipContent>
         </Tooltip>
+    );
+}
+
+function DependencyList({
+    title,
+    entries,
+}: {
+    title: string;
+    entries: PackageVersionDetailData['require'];
+}) {
+    const map = entries as unknown as Record<string, string> | null;
+
+    if (!map || Object.keys(map).length === 0) {
+        return null;
+    }
+
+    return (
+        <div>
+            <div className="mb-2 text-sm font-medium text-muted-foreground">
+                {title}
+            </div>
+            <div className="divide-y rounded-lg border bg-muted/30">
+                {Object.entries(map).map(([name, constraint]) => (
+                    <div
+                        key={name}
+                        className="flex items-baseline justify-between gap-3 px-3 py-2 text-sm"
+                    >
+                        <code className="min-w-0 truncate font-mono text-foreground">
+                            {name}
+                        </code>
+                        <code className="shrink-0 text-right font-mono text-xs text-muted-foreground">
+                            {constraint}
+                        </code>
+                    </div>
+                ))}
+            </div>
+        </div>
     );
 }
 
@@ -1205,6 +1243,49 @@ export default function PackageShow({
                                                         </div>
                                                     </div>
                                                 )}
+                                        </div>
+                                    </>
+                                )}
+
+                                {(activeVersion.require ||
+                                    activeVersion.requireDev ||
+                                    activeVersion.conflict ||
+                                    activeVersion.provide ||
+                                    activeVersion.replace ||
+                                    activeVersion.suggest) && (
+                                    <>
+                                        <Separator />
+                                        <div className="space-y-4">
+                                            <div className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground">
+                                                <Boxes className="h-4 w-4" />
+                                                Requirements
+                                            </div>
+                                            <DependencyList
+                                                title="Requires"
+                                                entries={activeVersion.require}
+                                            />
+                                            <DependencyList
+                                                title="Requires (Dev)"
+                                                entries={
+                                                    activeVersion.requireDev
+                                                }
+                                            />
+                                            <DependencyList
+                                                title="Conflicts"
+                                                entries={activeVersion.conflict}
+                                            />
+                                            <DependencyList
+                                                title="Replaces"
+                                                entries={activeVersion.replace}
+                                            />
+                                            <DependencyList
+                                                title="Provides"
+                                                entries={activeVersion.provide}
+                                            />
+                                            <DependencyList
+                                                title="Suggests"
+                                                entries={activeVersion.suggest}
+                                            />
                                         </div>
                                     </>
                                 )}

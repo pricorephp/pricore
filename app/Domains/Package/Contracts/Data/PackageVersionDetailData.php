@@ -17,6 +17,10 @@ class PackageVersionDetailData extends Data
     /**
      * @param  array<string, string>|null  $require
      * @param  array<string, string>|null  $requireDev
+     * @param  array<string, string>|null  $conflict
+     * @param  array<string, string>|null  $provide
+     * @param  array<string, string>|null  $replace
+     * @param  array<string, string>|null  $suggest
      * @param  array<string, string>|null  $autoload
      * @param  array<int, array{name?: string, email?: string, homepage?: string}>|null  $authors
      * @param  array<int, string>|null  $keywords
@@ -36,6 +40,10 @@ class PackageVersionDetailData extends Data
         public ?string $license,
         public ?array $require,
         public ?array $requireDev,
+        public ?array $conflict,
+        public ?array $provide,
+        public ?array $replace,
+        public ?array $suggest,
         public ?array $autoload,
         public ?array $authors,
         public ?array $keywords,
@@ -86,6 +94,10 @@ class PackageVersionDetailData extends Data
             license: $license,
             require: ! empty($composerJson['require']) ? $composerJson['require'] : null,
             requireDev: ! empty($composerJson['require-dev']) ? $composerJson['require-dev'] : null,
+            conflict: ! empty($composerJson['conflict']) ? $composerJson['conflict'] : null,
+            provide: ! empty($composerJson['provide']) ? $composerJson['provide'] : null,
+            replace: ! empty($composerJson['replace']) ? $composerJson['replace'] : null,
+            suggest: ! empty($composerJson['suggest']) ? $composerJson['suggest'] : null,
             autoload: ! empty($autoload) ? $autoload : null,
             authors: ! empty($composerJson['authors']) ? $composerJson['authors'] : null,
             keywords: ! empty($composerJson['keywords']) ? $composerJson['keywords'] : null,

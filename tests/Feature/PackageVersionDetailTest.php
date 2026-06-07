@@ -93,6 +93,18 @@ it('includes composer_json fields in activeVersion', function () {
             'require-dev' => [
                 'phpunit/phpunit' => '^10.0',
             ],
+            'conflict' => [
+                'some/legacy-package' => '<2.0',
+            ],
+            'provide' => [
+                'psr/log-implementation' => '1.0',
+            ],
+            'replace' => [
+                'old/vendor-package' => 'self.version',
+            ],
+            'suggest' => [
+                'ext-redis' => 'For faster caching',
+            ],
             'autoload' => [
                 'psr-4' => [
                     'Vendor\\TestPackage\\' => 'src/',
@@ -116,6 +128,10 @@ it('includes composer_json fields in activeVersion', function () {
         ->where('activeVersion.license', 'MIT')
         ->has('activeVersion.require', 2)
         ->has('activeVersion.requireDev', 1)
+        ->has('activeVersion.conflict', 1)
+        ->has('activeVersion.provide', 1)
+        ->has('activeVersion.replace', 1)
+        ->has('activeVersion.suggest', 1)
         ->has('activeVersion.autoload', 1)
         ->has('activeVersion.authors', 1)
         ->has('activeVersion.keywords', 2)
