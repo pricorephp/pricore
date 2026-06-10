@@ -80,6 +80,19 @@ class RegistryClientFactory
         array $rootMetadata,
         Mirror $mirror,
     ): RegistryClientInterface {
+        // Composer v2 format: a metadata-url template points to per-package
+        // metadata files. Prioritized over the v1 formats below.
+        $metadataUrl = $rootMetadata['metadata-url'] ?? null;
+
+        if (is_string($metadataUrl) && $metadataUrl !== '') {
+            return new V2RegistryClient(
+                httpClient: $httpClient,
+                baseUrl: $mirror->url,
+                metadataUrlTemplate: $metadataUrl,
+                availablePackages: static::resolveAvailablePackages($rootMetadata, $mirror->url),
+            );
+        }
+
         // Inline format: packages key contains all package data directly
         $packages = $rootMetadata['packages'] ?? null;
 
@@ -98,6 +111,32 @@ class RegistryClientFactory
 
         throw new MirrorSyncException(
             "Unsupported registry format at {$mirror->url}: no packages or includes found in packages.json"
+        );
+    }
+
+    /**
+     * Resolve the list of mirrorable package names from a Composer v2 root.
+     *
+     * Only registries that advertise their packages via "available-packages"
+     * (optionally narrowed by "available-package-patterns") can be enumerated.
+     * Registries that expose packages solely through a "list" endpoint — such
+     * as Packagist — are not supported, as eagerly mirroring them is impractical.
+     *
+     * @param  array<string, mixed>  $rootMetadata
+     * @return array<int, string>
+     */
+    protected static function resolveAvailablePackages(array $rootMetadata, string $baseUrl): array
+    {
+        $availablePackages = $rootMetadata['available-packages'] ?? null;
+
+        if (is_array($availablePackages)) {
+            return array_values(array_filter($availablePackages, 'is_string'));
+        }
+
+        throw new MirrorSyncException(
+            "Unsupported Composer v2 registry at {$baseUrl}: it does not advertise an ".
+            '"available-packages" list. Registries that only expose a "list" endpoint '.
+            '(such as Packagist) cannot be mirrored.'
         );
     }
 

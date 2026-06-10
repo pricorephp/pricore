@@ -10,6 +10,7 @@ use App\Models\MirrorSyncLog;
 use App\Models\Organization;
 use App\Models\Package;
 use App\Models\PackageVersion;
+use Composer\MetadataMinifier\MetadataMinifier;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Http;
 
@@ -192,6 +193,33 @@ it('completes with empty sync when all versions are unchanged', function () {
     $syncLog = MirrorSyncLog::where('mirror_uuid', $this->mirror->uuid)->latest()->first();
     expect($syncLog->status)->toBe(SyncStatus::Success);
     expect($syncLog->versions_skipped)->toBe(1);
+});
+
+it('supports the Composer v2 metadata format', function () {
+    Bus::fake(SyncMirrorVersionJob::class);
+
+    Http::fake([
+        'satis.example.com/packages.json' => Http::response([
+            'metadata-url' => '/p2/%package%.json',
+            'available-packages' => ['vendor/pkg'],
+        ]),
+        'satis.example.com/p2/vendor/pkg.json' => Http::response([
+            'minified' => 'composer/2.0',
+            'packages' => [
+                'vendor/pkg' => MetadataMinifier::minify([
+                    ['name' => 'vendor/pkg', 'version' => '2.0.0', 'version_normalized' => '2.0.0.0', 'dist' => ['reference' => 'def']],
+                    ['name' => 'vendor/pkg', 'version' => '1.0.0', 'version_normalized' => '1.0.0.0', 'dist' => ['reference' => 'abc']],
+                ]),
+            ],
+        ]),
+        'satis.example.com/p2/vendor/pkg~dev.json' => Http::response('Not Found', 404),
+    ]);
+
+    SyncMirrorJob::dispatchSync($this->mirror);
+
+    $syncLog = MirrorSyncLog::where('mirror_uuid', $this->mirror->uuid)->latest()->first();
+    expect($syncLog->details['packages_found'])->toBe(1);
+    expect($syncLog->details['versions_found'])->toBe(2);
 });
 
 it('supports includes format in packages.json', function () {
