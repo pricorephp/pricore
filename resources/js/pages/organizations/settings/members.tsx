@@ -34,8 +34,17 @@ import {
 import { useInitials } from '@/hooks/use-initials';
 import { withOrganizationSettingsLayout } from '@/layouts/organization-settings-layout';
 import { Form, router, usePage } from '@inertiajs/react';
-import { Mail, RefreshCw, Trash2, UserPlus } from 'lucide-react';
-import { useState } from 'react';
+import {
+    ArrowDown,
+    ArrowUp,
+    ChevronsUpDown,
+    Mail,
+    RefreshCw,
+    Search,
+    Trash2,
+    UserPlus,
+} from 'lucide-react';
+import { useMemo, useState } from 'react';
 
 type OrganizationData =
     App.Domains.Organization.Contracts.Data.OrganizationData;
@@ -50,11 +59,65 @@ interface Props {
     roleOptions: Record<string, string>;
 }
 
+type SortKey = 'name' | 'role' | 'joined';
+type SortDirection = 'asc' | 'desc';
+
+const roleOrder: Record<string, number> = { owner: 0, admin: 1, member: 2 };
+
 export default function Members({ members, invitations, roleOptions }: Props) {
     const page = usePage<{ organization: OrganizationData }>();
     const { organization } = page.props;
     const [addDialogOpen, setAddDialogOpen] = useState(false);
+    const [search, setSearch] = useState('');
+    const [roleFilter, setRoleFilter] = useState('all');
+    const [sortKey, setSortKey] = useState<SortKey>('name');
+    const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
     const getInitials = useInitials();
+
+    const toggleSort = (key: SortKey) => {
+        if (sortKey === key) {
+            setSortDirection((direction) =>
+                direction === 'asc' ? 'desc' : 'asc',
+            );
+        } else {
+            setSortKey(key);
+            setSortDirection('asc');
+        }
+    };
+
+    const visibleMembers = useMemo(() => {
+        const query = search.trim().toLowerCase();
+
+        const filtered = members.filter((member) => {
+            const matchesSearch =
+                query === '' ||
+                member.name.toLowerCase().includes(query) ||
+                member.email.toLowerCase().includes(query);
+            const matchesRole =
+                roleFilter === 'all' || member.role === roleFilter;
+
+            return matchesSearch && matchesRole;
+        });
+
+        const sorted = [...filtered].sort((a, b) => {
+            let comparison = 0;
+
+            if (sortKey === 'name') {
+                comparison = a.name.localeCompare(b.name);
+            } else if (sortKey === 'role') {
+                comparison =
+                    (roleOrder[a.role] ?? 99) - (roleOrder[b.role] ?? 99);
+            } else {
+                const aTime = a.joinedAt ? new Date(a.joinedAt).getTime() : 0;
+                const bTime = b.joinedAt ? new Date(b.joinedAt).getTime() : 0;
+                comparison = aTime - bTime;
+            }
+
+            return sortDirection === 'asc' ? comparison : -comparison;
+        });
+
+        return sorted;
+    }, [members, search, roleFilter, sortKey, sortDirection]);
 
     const handleRoleChange = (memberUuid: string, role: string) => {
         router.patch(
@@ -207,17 +270,78 @@ export default function Members({ members, invitations, roleOptions }: Props) {
                 </Dialog>
             </div>
 
-            <Table>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                <div className="relative flex-1">
+                    <Search className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                        type="search"
+                        value={search}
+                        onChange={(event) => setSearch(event.target.value)}
+                        placeholder="Search by name or email"
+                        className="pl-9"
+                    />
+                </div>
+                <Select value={roleFilter} onValueChange={setRoleFilter}>
+                    <SelectTrigger className="w-full sm:w-44">
+                        <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="all">All roles</SelectItem>
+                        <SelectItem value="owner">Owner</SelectItem>
+                        {Object.entries(roleOptions).map(([value, label]) => (
+                            <SelectItem key={value} value={value}>
+                                {label}
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+            </div>
+
+            <Table className="bg-card">
                 <TableHeader>
                     <TableRow>
-                        <TableHead>Member</TableHead>
-                        <TableHead>Role</TableHead>
-                        <TableHead>Joined</TableHead>
+                        <TableHead>
+                            <SortButton
+                                label="Member"
+                                sortKey="name"
+                                activeKey={sortKey}
+                                direction={sortDirection}
+                                onSort={toggleSort}
+                            />
+                        </TableHead>
+                        <TableHead>
+                            <SortButton
+                                label="Role"
+                                sortKey="role"
+                                activeKey={sortKey}
+                                direction={sortDirection}
+                                onSort={toggleSort}
+                            />
+                        </TableHead>
+                        <TableHead>
+                            <SortButton
+                                label="Joined"
+                                sortKey="joined"
+                                activeKey={sortKey}
+                                direction={sortDirection}
+                                onSort={toggleSort}
+                            />
+                        </TableHead>
                         <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    {members.map((member) => (
+                    {visibleMembers.length === 0 && (
+                        <TableRow>
+                            <TableCell
+                                colSpan={4}
+                                className="py-8 text-center text-muted-foreground"
+                            >
+                                No members match your filters.
+                            </TableCell>
+                        </TableRow>
+                    )}
+                    {visibleMembers.map((member) => (
                         <TableRow key={member.uuid}>
                             <TableCell>
                                 <div className="flex items-center gap-3">
@@ -368,6 +492,43 @@ export default function Members({ members, invitations, roleOptions }: Props) {
                 </div>
             )}
         </div>
+    );
+}
+
+interface SortButtonProps {
+    label: string;
+    sortKey: SortKey;
+    activeKey: SortKey;
+    direction: SortDirection;
+    onSort: (key: SortKey) => void;
+}
+
+function SortButton({
+    label,
+    sortKey,
+    activeKey,
+    direction,
+    onSort,
+}: SortButtonProps) {
+    const isActive = activeKey === sortKey;
+
+    return (
+        <button
+            type="button"
+            onClick={() => onSort(sortKey)}
+            className="-mx-1 inline-flex items-center gap-1 rounded px-1 py-0.5 font-semibold tracking-wider uppercase transition-colors hover:text-foreground"
+        >
+            {label}
+            {isActive ? (
+                direction === 'asc' ? (
+                    <ArrowUp className="h-3.5 w-3.5" />
+                ) : (
+                    <ArrowDown className="h-3.5 w-3.5" />
+                )
+            ) : (
+                <ChevronsUpDown className="h-3.5 w-3.5 opacity-50" />
+            )}
+        </button>
     );
 }
 
