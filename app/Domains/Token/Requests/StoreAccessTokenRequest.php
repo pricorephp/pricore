@@ -2,8 +2,10 @@
 
 namespace App\Domains\Token\Requests;
 
+use App\Domains\Token\Contracts\Enums\TokenScope;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreAccessTokenRequest extends FormRequest
 {
@@ -15,6 +17,8 @@ class StoreAccessTokenRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'max:255'],
             'expires_at' => ['nullable', 'string'],
+            'scopes' => ['nullable', 'array'],
+            'scopes.*' => [Rule::enum(TokenScope::class)],
         ];
     }
 

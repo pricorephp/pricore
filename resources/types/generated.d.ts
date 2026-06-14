@@ -14,7 +14,7 @@ createdAt: string | null;
 };
 }
 declare namespace App.Domains.Activity.Contracts.Enums {
-export type ActivityType = 'repository.added' | 'repository.removed' | 'repository.synced' | 'repository.sync_failed' | 'package.created' | 'package.removed' | 'member.added' | 'member.removed' | 'member.role_changed' | 'invitation.sent' | 'token.created' | 'token.revoked' | 'ssh_key.generated' | 'ssh_key.deleted' | 'mirror.added' | 'mirror.removed' | 'mirror.synced' | 'mirror.sync_failed' | 'security.vulnerabilities_detected';
+export type ActivityType = 'repository.added' | 'repository.removed' | 'repository.synced' | 'repository.sync_failed' | 'package.created' | 'package.removed' | 'member.added' | 'member.removed' | 'member.role_changed' | 'invitation.sent' | 'token.created' | 'token.updated' | 'token.revoked' | 'ssh_key.generated' | 'ssh_key.deleted' | 'mirror.added' | 'mirror.removed' | 'mirror.synced' | 'mirror.sync_failed' | 'security.vulnerabilities_detected';
 }
 declare namespace App.Domains.Auth.Contracts.Enums {
 export type GitHubOAuthIntent = 'login' | 'connect';
@@ -319,13 +319,18 @@ name: string;
 lastUsedAt: string | null;
 expiresAt: string | null;
 createdAt: string;
+scopes: Array<any>;
 };
 export type TokenCreatedData = {
 plainToken: string;
 name: string;
 expiresAt: string | null;
 organizationUuid: string | null;
+scopes: Array<any>;
 };
+}
+declare namespace App.Domains.Token.Contracts.Enums {
+export type TokenScope = 'composer' | 'read:organizations' | 'write:organizations' | 'delete:organizations' | 'read:repositories' | 'write:repositories' | 'delete:repositories' | 'read:packages' | 'write:packages' | 'delete:packages' | 'read:members' | 'write:members' | 'read:mirrors' | 'write:mirrors' | 'delete:mirrors' | 'read:tokens' | 'write:tokens';
 }
 declare namespace App.Http.Data {
 export type AuthData = {

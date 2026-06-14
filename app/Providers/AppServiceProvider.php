@@ -12,8 +12,12 @@ use App\Models\Repository;
 use App\Models\User;
 use Illuminate\Auth\Events\Login;
 use Illuminate\Auth\Events\Registered;
+use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Relations\Relation;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 use SocialiteProviders\GitLab\GitLabExtendSocialite;
@@ -43,5 +47,16 @@ class AppServiceProvider extends ServiceProvider
             'organization_ssh_key' => OrganizationSshKey::class,
             'mirror' => Mirror::class,
         ]);
+
+        RateLimiter::for('api', function (Request $request) {
+            $accessToken = $request->get('accessToken');
+            $key = $accessToken instanceof AccessToken ? $accessToken->uuid : (string) $request->ip();
+
+            return Limit::perMinute(120)->by($key);
+        });
+
+        // Scramble auto-allows API docs in the local environment; elsewhere
+        // restrict the interactive docs UI to authenticated users.
+        Gate::define('viewApiDocs', fn (?User $user) => $user !== null);
     }
 }

@@ -1,9 +1,11 @@
 import {
     destroy,
     store,
+    update,
 } from '@/actions/App/Domains/Token/Http/Controllers/TokenController';
 import { CopyButton } from '@/components/copy-button';
 import CreateTokenDialog from '@/components/create-token-dialog';
+import EditTokenDialog from '@/components/edit-token-dialog';
 import InfoBox from '@/components/info-box';
 import RevokeTokenDialog from '@/components/revoke-token-dialog';
 import TokenCreatedDialog from '@/components/token-created-dialog';
@@ -31,6 +33,10 @@ export default function Tokens({
 }: TokensPageProps) {
     const [createDialogOpen, setCreateDialogOpen] = useState(false);
     const [revokeDialogOpen, setRevokeDialogOpen] = useState(false);
+    const [editDialogOpen, setEditDialogOpen] = useState(false);
+    const [editingToken, setEditingToken] = useState<AccessTokenData | null>(
+        null,
+    );
     const [tokenCreatedDialogOpen, setTokenCreatedDialogOpen] =
         useState(!!tokenCreated);
     const [selectedToken, setSelectedToken] = useState<{
@@ -68,15 +74,21 @@ export default function Tokens({
         setRevokeDialogOpen(true);
     };
 
+    const handleEdit = (token: AccessTokenData) => {
+        setEditingToken(token);
+        setEditDialogOpen(true);
+    };
+
     const composerRepoCommand = `composer config repositories.${organization.slug} composer ${organization.composerRepositoryUrl}`;
 
     return (
         <div className="space-y-6">
             <div className="flex items-center justify-between">
                 <div>
-                    <h3 className="text-lg font-medium">Composer Tokens</h3>
+                    <h3 className="text-lg font-medium">Access Tokens</h3>
                     <p className="text-muted-foreground">
-                        Manage access tokens for Composer authentication
+                        Shared tokens for this organization's packages and
+                        automation
                     </p>
                 </div>
                 <Button onClick={() => setCreateDialogOpen(true)}>
@@ -102,20 +114,39 @@ export default function Tokens({
             </div>
 
             <div className="rounded-lg border bg-card px-4 py-2">
-                <TokenList tokens={tokens} onRevoke={handleRevoke} />
+                <TokenList
+                    tokens={tokens}
+                    onEdit={handleEdit}
+                    onRevoke={handleRevoke}
+                />
             </div>
 
             <InfoBox
                 title="About Organization Tokens"
-                description="Organization tokens grant access to packages within this organization only. Each token can be configured with an expiration date for security. For tokens that work across all your organizations, visit your personal token settings."
+                description={`Organization tokens belong to ${organization.name} and are shared by everyone who can manage its settings — ideal for CI pipelines and servers, and they keep working after a member leaves. They install this organization's packages with Composer and can act on it through the Pricore API. For a token tied to you personally and usable across all your organizations, use your personal access tokens.`}
             />
 
             <CreateTokenDialog
                 storeUrl={store.url(organization.slug)}
-                description="Create a new token for access to this organization's packages."
+                description={`A shared token for the ${organization.name} organization.`}
                 isOpen={createDialogOpen}
                 onClose={() => setCreateDialogOpen(false)}
             />
+
+            {editingToken && (
+                <EditTokenDialog
+                    updateUrl={update.url([
+                        organization.slug,
+                        editingToken.uuid,
+                    ])}
+                    token={editingToken}
+                    isOpen={editDialogOpen}
+                    onClose={() => {
+                        setEditDialogOpen(false);
+                        setEditingToken(null);
+                    }}
+                />
+            )}
 
             {selectedToken && (
                 <RevokeTokenDialog
@@ -137,6 +168,7 @@ export default function Tokens({
                     token={tokenCreated.plainToken}
                     name={tokenCreated.name}
                     expiresAt={tokenCreated.expiresAt}
+                    scopes={tokenCreated.scopes}
                     isOpen={tokenCreatedDialogOpen}
                     onClose={() => setTokenCreatedDialogOpen(false)}
                 />

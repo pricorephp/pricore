@@ -1,10 +1,79 @@
 # API Reference
 
-Pricore provides a Composer-compatible API for package distribution and webhook endpoints for automatic syncing.
+Pricore exposes three HTTP interfaces:
 
-## Authentication
+- **Management API (REST)** — a JSON API under `/api/v1` for managing organizations, repositories, packages, members, mirrors, and access tokens programmatically.
+- **Composer Repository API** — the Composer v2-compatible endpoints used by `composer` to resolve and download packages.
+- **Webhooks** — endpoints your Git provider calls to trigger automatic syncing.
 
-The Composer API requires authentication via access token. Two methods are supported:
+## Management API (REST)
+
+The Management API lets you automate Pricore — for example, an installer can mint a Composer token and connect a repository without anyone touching the UI.
+
+- **Base URL:** `https://pricore.yourcompany.com/api/v1`
+- **Format:** JSON. Send `Accept: application/json`.
+- **Interactive docs:** browse and try endpoints at `/docs/api`. The full OpenAPI 3.1 specification is published at [`/openapi.json`](/openapi.json).
+- **Rate limit:** 120 requests/minute per token.
+
+### Authentication
+
+Send an access token as a Bearer token:
+
+```bash
+curl -H "Authorization: Bearer YOUR_TOKEN" \
+     -H "Accept: application/json" \
+     https://pricore.yourcompany.com/api/v1/user
+```
+
+Two kinds of token work:
+
+- **Personal access tokens** act as your user and can reach every organization you belong to. Create them under **Settings → Access Tokens**, or via `POST /api/v1/user/tokens`.
+- **Organization tokens** are scoped to a single organization. Create them under the organization's token settings, or via `POST /api/v1/organizations/{organization}/tokens`.
+
+### Scopes
+
+Every token carries a set of scopes that limit what it can do. Requests are checked against both the token's scopes **and** your role in the organization, so a token can never exceed its owner's permissions. Tokens created before scopes existed retain full access.
+
+| Scope | Grants |
+|-------|--------|
+| `composer` | Composer registry access (package resolution & downloads) |
+| `read:organizations` / `write:organizations` / `delete:organizations` | View / create & update / delete organizations |
+| `read:repositories` / `write:repositories` / `delete:repositories` | View / add & sync / delete repositories |
+| `read:packages` / `write:packages` / `delete:packages` | View / manage / delete packages & versions |
+| `read:members` / `write:members` | View / manage members & invitations |
+| `read:mirrors` / `write:mirrors` / `delete:mirrors` | View / add & sync / delete mirrors |
+| `read:tokens` / `write:tokens` | View / create & revoke access tokens |
+
+### Pagination
+
+List endpoints return a paginated envelope. Use `?page=` and `?per_page=` (max 100) to navigate:
+
+```json
+{
+    "data": [ /* … */ ],
+    "links": { "first": "…", "last": "…", "prev": null, "next": "…" },
+    "meta": { "current_page": 1, "per_page": 25, "total": 42 }
+}
+```
+
+### Resources
+
+| Resource | Endpoints |
+|----------|-----------|
+| User | `GET /user`, `GET /user/organizations`, `GET\|POST\|DELETE /user/tokens` |
+| Organizations | `GET\|POST /organizations`, `GET\|PATCH\|DELETE /organizations/{organization}` |
+| Repositories | `GET\|POST /…/repositories`, `POST /…/repositories/bulk`, `GET\|POST(sync)\|DELETE /…/repositories/{uuid}` |
+| Packages | `GET /…/packages`, `GET\|DELETE /…/packages/{uuid}`, `GET /…/packages/{uuid}/versions`, `DELETE /…/packages/{uuid}/versions/{uuid}` |
+| Members | `GET\|POST /…/members`, `PATCH\|DELETE /…/members/{uuid}` |
+| Invitations | `GET /…/invitations`, `POST /…/invitations/{uuid}/resend`, `DELETE /…/invitations/{uuid}` |
+| Mirrors | `GET\|POST /…/mirrors`, `GET\|POST(sync)\|DELETE /…/mirrors/{uuid}` |
+| Tokens | `GET\|POST /…/tokens`, `DELETE /…/tokens/{uuid}` |
+
+See the [OpenAPI specification](/openapi.json) for request/response schemas of every endpoint.
+
+## Composer API Authentication
+
+The Composer API requires authentication via an access token that carries the `composer` scope (tokens created before scopes existed retain access). Two methods are supported:
 
 ### HTTP Basic Auth
 

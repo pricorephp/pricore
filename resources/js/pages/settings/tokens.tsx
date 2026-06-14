@@ -1,8 +1,10 @@
 import {
     destroy,
     store,
+    update,
 } from '@/actions/App/Domains/Token/Http/Controllers/UserTokenController';
 import CreateTokenDialog from '@/components/create-token-dialog';
+import EditTokenDialog from '@/components/edit-token-dialog';
 import InfoBox from '@/components/info-box';
 import RevokeTokenDialog from '@/components/revoke-token-dialog';
 import TokenCreatedDialog from '@/components/token-created-dialog';
@@ -30,7 +32,7 @@ const breadcrumbs: BreadcrumbItem[] = [
         href: editProfile().url,
     },
     {
-        title: 'Tokens',
+        title: 'Access Tokens',
         href: tokensIndex().url,
     },
 ];
@@ -38,6 +40,10 @@ const breadcrumbs: BreadcrumbItem[] = [
 export default function Tokens({ tokens, tokenCreated }: TokensPageProps) {
     const [createDialogOpen, setCreateDialogOpen] = useState(false);
     const [revokeDialogOpen, setRevokeDialogOpen] = useState(false);
+    const [editDialogOpen, setEditDialogOpen] = useState(false);
+    const [editingToken, setEditingToken] = useState<AccessTokenData | null>(
+        null,
+    );
     const [tokenCreatedDialogOpen, setTokenCreatedDialogOpen] =
         useState(!!tokenCreated);
     const [selectedToken, setSelectedToken] = useState<{
@@ -75,6 +81,11 @@ export default function Tokens({ tokens, tokenCreated }: TokensPageProps) {
         setRevokeDialogOpen(true);
     };
 
+    const handleEdit = (token: AccessTokenData) => {
+        setEditingToken(token);
+        setEditDialogOpen(true);
+    };
+
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <SettingsLayout>
@@ -82,11 +93,11 @@ export default function Tokens({ tokens, tokenCreated }: TokensPageProps) {
                     <div className="flex items-center justify-between">
                         <div>
                             <h3 className="text-lg font-medium">
-                                Personal Tokens
+                                Personal Access Tokens
                             </h3>
                             <p className="text-muted-foreground">
-                                Manage personal access tokens for Composer
-                                authentication
+                                Install packages with Composer across every
+                                organization you belong to
                             </p>
                         </div>
                         <Button onClick={() => setCreateDialogOpen(true)}>
@@ -96,20 +107,36 @@ export default function Tokens({ tokens, tokenCreated }: TokensPageProps) {
                     </div>
 
                     <div className="rounded-lg border bg-card px-4 py-2">
-                        <TokenList tokens={tokens} onRevoke={handleRevoke} />
+                        <TokenList
+                            tokens={tokens}
+                            onEdit={handleEdit}
+                            onRevoke={handleRevoke}
+                        />
                     </div>
 
                     <InfoBox
-                        title="About Personal Tokens"
-                        description="Personal tokens grant access to packages across all organizations you belong to. For tokens scoped to a single organization, visit that organization's token settings."
+                        title="About Personal Access Tokens"
+                        description="Personal tokens act as you across every organization you belong to — for installing packages with Composer and for the Pricore API. For a token limited to a single organization, visit that organization's token settings."
                     />
 
                     <CreateTokenDialog
                         storeUrl={store.url()}
-                        description="Create a personal token that grants access to packages across all your organizations."
+                        description="Acts as you across every organization you belong to."
                         isOpen={createDialogOpen}
                         onClose={() => setCreateDialogOpen(false)}
                     />
+
+                    {editingToken && (
+                        <EditTokenDialog
+                            updateUrl={update.url(editingToken.uuid)}
+                            token={editingToken}
+                            isOpen={editDialogOpen}
+                            onClose={() => {
+                                setEditDialogOpen(false);
+                                setEditingToken(null);
+                            }}
+                        />
+                    )}
 
                     {selectedToken && (
                         <RevokeTokenDialog
@@ -128,6 +155,7 @@ export default function Tokens({ tokens, tokenCreated }: TokensPageProps) {
                             token={tokenCreated.plainToken}
                             name={tokenCreated.name}
                             expiresAt={tokenCreated.expiresAt}
+                            scopes={tokenCreated.scopes}
                             isOpen={tokenCreatedDialogOpen}
                             onClose={() => setTokenCreatedDialogOpen(false)}
                         />
