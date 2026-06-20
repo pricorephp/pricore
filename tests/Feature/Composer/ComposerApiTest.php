@@ -77,6 +77,37 @@ it('returns package metadata in composer v2 format', function () {
         ->assertJsonPath('packages.acme/awesome-package.0.source.reference', 'abc123');
 });
 
+it('preserves the v prefix in the version field while normalizing separately', function () {
+    $package = Package::factory()
+        ->for($this->organization, 'organization')
+        ->create(['name' => 'acme/awesome-package']);
+
+    PackageVersion::factory()
+        ->for($package)
+        ->create([
+            'version' => 'v1.2.0',
+            'normalized_version' => '1.2.0.0',
+            'composer_json' => [
+                'name' => 'acme/awesome-package',
+                'type' => 'library',
+            ],
+            'source_url' => 'https://github.com/acme/awesome-package.git',
+            'source_reference' => 'abc123',
+        ]);
+
+    $response = authenticatedGet("/{$this->organization->slug}/p2/acme/awesome-package.json", $this->plainToken);
+
+    $response->assertOk();
+
+    $versions = $response->json('packages.acme/awesome-package');
+
+    // The pretty version keeps the original tag (so {$version} placeholders and
+    // installed pretty versions match), while the normalized form drives comparison.
+    expect($versions)->toHaveCount(1)
+        ->and($versions[0]['version'])->toBe('v1.2.0')
+        ->and($versions[0]['version_normalized'])->toBe('1.2.0.0');
+});
+
 it('returns multiple versions ordered by release date', function () {
     $package = Package::factory()
         ->for($this->organization, 'organization')

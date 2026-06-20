@@ -66,7 +66,7 @@ it('filters out refs with unchanged commit SHAs', function () {
     PackageVersion::factory()
         ->forPackage($package)
         ->create([
-            'version' => '1.0.0',
+            'version' => 'v1.0.0',
             'source_reference' => 'abc123',
         ]);
 
@@ -100,7 +100,7 @@ it('keeps refs with changed commit SHAs', function () {
     PackageVersion::factory()
         ->forPackage($package)
         ->create([
-            'version' => '1.0.0',
+            'version' => 'v1.0.0',
             'source_reference' => 'old-sha',
         ]);
 
@@ -166,7 +166,7 @@ it('filters tags and branches independently', function () {
     PackageVersion::factory()
         ->forPackage($package)
         ->create([
-            'version' => '1.0.0',
+            'version' => 'v1.0.0',
             'source_reference' => 'tag-sha',
         ]);
 

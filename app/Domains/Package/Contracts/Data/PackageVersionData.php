@@ -199,7 +199,7 @@ class PackageVersionData extends Data
 
     public function isStable(): bool
     {
-        return ! str_contains($this->version, 'dev') && preg_match('/^\d+\.\d+/', $this->version);
+        return ! str_contains($this->version, 'dev') && preg_match('/^v?\d+\.\d+/', $this->version);
     }
 
     public function isDev(): bool
