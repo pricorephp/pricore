@@ -56,7 +56,7 @@ it('syncs a single ref and creates a package version', function () {
     expect(PackageVersion::count())->toBe(1);
 
     $version = PackageVersion::first();
-    expect($version->version)->toBe('1.0.0');
+    expect($version->version)->toBe('v1.0.0');
     expect($version->source_reference)->toBe('abc123');
 });
 

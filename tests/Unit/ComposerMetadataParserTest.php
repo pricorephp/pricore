@@ -17,7 +17,7 @@ it('parses valid composer.json with tag version', function () {
 
     expect($result)->toBeInstanceOf(ComposerMetadataData::class)
         ->and($result->name)->toBe('vendor/package')
-        ->and($result->version)->toBe('1.0.0')
+        ->and($result->version)->toBe('v1.0.0')
         ->and($result->normalizedVersion)->toBe('1.0.0.0')
         ->and($result->type)->toBe('library')
         ->and($result->description)->toBe('Test package')
@@ -50,7 +50,7 @@ it('adds dev- prefix to non-semver branch names', function (string $ref, string 
     'simple branch' => ['develop', 'dev-develop'],
     'branch with slash' => ['feature/my-feature', 'dev-feature/my-feature'],
     'release branch' => ['carconnect-release', 'dev-carconnect-release'],
-    'tag version' => ['v1.0.0', '1.0.0'],
+    'tag version' => ['v1.0.0', 'v1.0.0'],
     'tag without v' => ['1.2.3', '1.2.3'],
 ]);
 

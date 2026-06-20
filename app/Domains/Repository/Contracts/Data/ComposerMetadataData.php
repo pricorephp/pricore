@@ -88,13 +88,10 @@ class ComposerMetadataData extends Data
      */
     public static function extractVersion(string $ref): string
     {
-        // Remove 'v' prefix if present (e.g., v1.0.0 -> 1.0.0)
-        if (str_starts_with($ref, 'v') && preg_match('/^v\d/', $ref)) {
-            return substr($ref, 1);
-        }
-
-        // Branch names need dev- prefix for Composer compatibility
-        if (! preg_match('/^\d+\.\d+/', $ref)) {
+        // Branch names need a dev- prefix for Composer compatibility. Version tags are
+        // kept verbatim (e.g. v1.0.0 stays v1.0.0) so the pretty version matches the
+        // original Git tag; Composer derives the normalized form separately.
+        if (! preg_match('/^v?\d+\.\d+/', $ref)) {
             return "dev-{$ref}";
         }
 
