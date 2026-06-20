@@ -1,0 +1,1990 @@
+{
+    "openapi": "3.1.0",
+    "info": {
+        "title": "Pricore API",
+        "version": "v1",
+        "description": "REST API for managing a Pricore registry: organizations, repositories, packages, members, mirrors, and access tokens. Authenticate with a personal or organization access token sent as `Authorization: Bearer <token>`."
+    },
+    "servers": [
+        {
+            "url": "http://pricore.test/api/v1"
+        }
+    ],
+    "security": [
+        {
+            "http": []
+        }
+    ],
+    "paths": {
+        "/organizations/{organization}/invitations": {
+            "get": {
+                "operationId": "v1.invitations.index",
+                "tags": [
+                    "Invitation"
+                ],
+                "parameters": [
+                    {
+                        "name": "organization",
+                        "in": "path",
+                        "required": true,
+                        "description": "The organization slug",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "`PaginatedDataCollection`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PaginatedDataCollection"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    }
+                }
+            }
+        },
+        "/organizations/{organization}/invitations/{invitation}/resend": {
+            "post": {
+                "operationId": "v1.invitations.resend",
+                "tags": [
+                    "Invitation"
+                ],
+                "parameters": [
+                    {
+                        "name": "organization",
+                        "in": "path",
+                        "required": true,
+                        "description": "The organization slug",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "invitation",
+                        "in": "path",
+                        "required": true,
+                        "description": "The invitation UUID",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "`OrganizationInvitationData`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/OrganizationInvitationData"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "An error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "description": "Error overview.",
+                                            "example": "This invitation has already been accepted."
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    }
+                }
+            }
+        },
+        "/organizations/{organization}/invitations/{invitation}": {
+            "delete": {
+                "operationId": "v1.invitations.destroy",
+                "tags": [
+                    "Invitation"
+                ],
+                "parameters": [
+                    {
+                        "name": "organization",
+                        "in": "path",
+                        "required": true,
+                        "description": "The organization slug",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "invitation",
+                        "in": "path",
+                        "required": true,
+                        "description": "The invitation UUID",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No content"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    }
+                }
+            }
+        },
+        "/organizations/{organization}/members": {
+            "get": {
+                "operationId": "v1.members.index",
+                "tags": [
+                    "Member"
+                ],
+                "parameters": [
+                    {
+                        "name": "organization",
+                        "in": "path",
+                        "required": true,
+                        "description": "The organization slug",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "`PaginatedDataCollection`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PaginatedDataCollection"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    }
+                }
+            },
+            "post": {
+                "operationId": "v1.members.store",
+                "tags": [
+                    "Member"
+                ],
+                "parameters": [
+                    {
+                        "name": "organization",
+                        "in": "path",
+                        "required": true,
+                        "description": "The organization slug",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/AddMemberRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "`OrganizationInvitationData`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/OrganizationInvitationData"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    }
+                }
+            }
+        },
+        "/organizations/{organization}/members/{member}": {
+            "patch": {
+                "operationId": "v1.members.update",
+                "tags": [
+                    "Member"
+                ],
+                "parameters": [
+                    {
+                        "name": "organization",
+                        "in": "path",
+                        "required": true,
+                        "description": "The organization slug",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "member",
+                        "in": "path",
+                        "required": true,
+                        "description": "The member UUID",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UpdateMemberRoleRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "`OrganizationMemberData`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/OrganizationMemberData"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    }
+                }
+            },
+            "delete": {
+                "operationId": "v1.members.destroy",
+                "tags": [
+                    "Member"
+                ],
+                "parameters": [
+                    {
+                        "name": "organization",
+                        "in": "path",
+                        "required": true,
+                        "description": "The organization slug",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "member",
+                        "in": "path",
+                        "required": true,
+                        "description": "The member UUID",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No content"
+                    },
+                    "422": {
+                        "description": "An error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "description": "Error overview.",
+                                            "example": "Cannot remove the organization owner."
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    }
+                }
+            }
+        },
+        "/organizations/{organization}/mirrors": {
+            "get": {
+                "operationId": "v1.mirrors.index",
+                "tags": [
+                    "Mirror"
+                ],
+                "parameters": [
+                    {
+                        "name": "organization",
+                        "in": "path",
+                        "required": true,
+                        "description": "The organization slug",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "`PaginatedDataCollection`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PaginatedDataCollection"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    }
+                }
+            },
+            "post": {
+                "operationId": "v1.mirrors.store",
+                "tags": [
+                    "Mirror"
+                ],
+                "parameters": [
+                    {
+                        "name": "organization",
+                        "in": "path",
+                        "required": true,
+                        "description": "The organization slug",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StoreMirrorRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "`MirrorData`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MirrorData"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/organizations/{organization}/mirrors/{mirror}": {
+            "get": {
+                "operationId": "v1.mirrors.show",
+                "tags": [
+                    "Mirror"
+                ],
+                "parameters": [
+                    {
+                        "name": "organization",
+                        "in": "path",
+                        "required": true,
+                        "description": "The organization slug",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "mirror",
+                        "in": "path",
+                        "required": true,
+                        "description": "The mirror UUID",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "`MirrorData`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MirrorData"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    }
+                }
+            },
+            "delete": {
+                "operationId": "v1.mirrors.destroy",
+                "tags": [
+                    "Mirror"
+                ],
+                "parameters": [
+                    {
+                        "name": "organization",
+                        "in": "path",
+                        "required": true,
+                        "description": "The organization slug",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "mirror",
+                        "in": "path",
+                        "required": true,
+                        "description": "The mirror UUID",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No content"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    }
+                }
+            }
+        },
+        "/organizations/{organization}/mirrors/{mirror}/sync": {
+            "post": {
+                "operationId": "v1.mirrors.sync",
+                "tags": [
+                    "Mirror"
+                ],
+                "parameters": [
+                    {
+                        "name": "organization",
+                        "in": "path",
+                        "required": true,
+                        "description": "The organization slug",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "mirror",
+                        "in": "path",
+                        "required": true,
+                        "description": "The mirror UUID",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "`MirrorData`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MirrorData"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    }
+                }
+            }
+        },
+        "/organizations": {
+            "get": {
+                "operationId": "v1.organizations.index",
+                "summary": "List organizations accessible to the authenticated token",
+                "tags": [
+                    "Organization"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "`PaginatedDataCollection`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PaginatedDataCollection"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "operationId": "v1.organizations.store",
+                "summary": "Create a new organization owned by the authenticated user",
+                "tags": [
+                    "Organization"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StoreOrganizationRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "`OrganizationData`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/OrganizationData"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/organizations/{organization}": {
+            "get": {
+                "operationId": "v1.organizations.show",
+                "tags": [
+                    "Organization"
+                ],
+                "parameters": [
+                    {
+                        "name": "organization",
+                        "in": "path",
+                        "required": true,
+                        "description": "The organization slug",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "`OrganizationData`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/OrganizationData"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    }
+                }
+            },
+            "patch": {
+                "operationId": "v1.organizations.update",
+                "tags": [
+                    "Organization"
+                ],
+                "parameters": [
+                    {
+                        "name": "organization",
+                        "in": "path",
+                        "required": true,
+                        "description": "The organization slug",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UpdateOrganizationRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "`OrganizationData`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/OrganizationData"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    }
+                }
+            },
+            "delete": {
+                "operationId": "v1.organizations.destroy",
+                "tags": [
+                    "Organization"
+                ],
+                "parameters": [
+                    {
+                        "name": "organization",
+                        "in": "path",
+                        "required": true,
+                        "description": "The organization slug",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No content"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    }
+                }
+            }
+        },
+        "/organizations/{organization}/packages": {
+            "get": {
+                "operationId": "v1.packages.index",
+                "tags": [
+                    "Package"
+                ],
+                "parameters": [
+                    {
+                        "name": "organization",
+                        "in": "path",
+                        "required": true,
+                        "description": "The organization slug",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "`PaginatedDataCollection`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PaginatedDataCollection"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    }
+                }
+            }
+        },
+        "/organizations/{organization}/packages/{package}": {
+            "get": {
+                "operationId": "v1.packages.show",
+                "tags": [
+                    "Package"
+                ],
+                "parameters": [
+                    {
+                        "name": "organization",
+                        "in": "path",
+                        "required": true,
+                        "description": "The organization slug",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "package",
+                        "in": "path",
+                        "required": true,
+                        "description": "The package UUID",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "`PackageData`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PackageData"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    }
+                }
+            },
+            "delete": {
+                "operationId": "v1.packages.destroy",
+                "tags": [
+                    "Package"
+                ],
+                "parameters": [
+                    {
+                        "name": "organization",
+                        "in": "path",
+                        "required": true,
+                        "description": "The organization slug",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "package",
+                        "in": "path",
+                        "required": true,
+                        "description": "The package UUID",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No content"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    }
+                }
+            }
+        },
+        "/organizations/{organization}/packages/{package}/versions": {
+            "get": {
+                "operationId": "v1.packages.versions.index",
+                "tags": [
+                    "PackageVersion"
+                ],
+                "parameters": [
+                    {
+                        "name": "organization",
+                        "in": "path",
+                        "required": true,
+                        "description": "The organization slug",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "package",
+                        "in": "path",
+                        "required": true,
+                        "description": "The package UUID",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "`PaginatedDataCollection`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PaginatedDataCollection"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    }
+                }
+            }
+        },
+        "/organizations/{organization}/packages/{package}/versions/{version}": {
+            "delete": {
+                "operationId": "v1.packages.versions.destroy",
+                "tags": [
+                    "PackageVersion"
+                ],
+                "parameters": [
+                    {
+                        "name": "organization",
+                        "in": "path",
+                        "required": true,
+                        "description": "The organization slug",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "package",
+                        "in": "path",
+                        "required": true,
+                        "description": "The package UUID",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "version",
+                        "in": "path",
+                        "required": true,
+                        "description": "The version UUID",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No content"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    }
+                }
+            }
+        },
+        "/organizations/{organization}/repositories": {
+            "get": {
+                "operationId": "v1.repositories.index",
+                "tags": [
+                    "Repository"
+                ],
+                "parameters": [
+                    {
+                        "name": "organization",
+                        "in": "path",
+                        "required": true,
+                        "description": "The organization slug",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "`PaginatedDataCollection`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PaginatedDataCollection"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    }
+                }
+            },
+            "post": {
+                "operationId": "v1.repositories.store",
+                "tags": [
+                    "Repository"
+                ],
+                "parameters": [
+                    {
+                        "name": "organization",
+                        "in": "path",
+                        "required": true,
+                        "description": "The organization slug",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StoreRepositoryRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "`RepositoryData`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/RepositoryData"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/organizations/{organization}/repositories/bulk": {
+            "post": {
+                "operationId": "v1.repositories.bulk",
+                "tags": [
+                    "Repository"
+                ],
+                "parameters": [
+                    {
+                        "name": "organization",
+                        "in": "path",
+                        "required": true,
+                        "description": "The organization slug",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/BulkStoreRepositoryRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "`BulkImportResultData`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/BulkImportResultData"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/organizations/{organization}/repositories/{repository}": {
+            "get": {
+                "operationId": "v1.repositories.show",
+                "tags": [
+                    "Repository"
+                ],
+                "parameters": [
+                    {
+                        "name": "organization",
+                        "in": "path",
+                        "required": true,
+                        "description": "The organization slug",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "repository",
+                        "in": "path",
+                        "required": true,
+                        "description": "The repository UUID",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "`RepositoryData`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/RepositoryData"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    }
+                }
+            },
+            "delete": {
+                "operationId": "v1.repositories.destroy",
+                "tags": [
+                    "Repository"
+                ],
+                "parameters": [
+                    {
+                        "name": "organization",
+                        "in": "path",
+                        "required": true,
+                        "description": "The organization slug",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "repository",
+                        "in": "path",
+                        "required": true,
+                        "description": "The repository UUID",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No content"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    }
+                }
+            }
+        },
+        "/organizations/{organization}/repositories/{repository}/sync": {
+            "post": {
+                "operationId": "v1.repositories.sync",
+                "tags": [
+                    "Repository"
+                ],
+                "parameters": [
+                    {
+                        "name": "organization",
+                        "in": "path",
+                        "required": true,
+                        "description": "The organization slug",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "repository",
+                        "in": "path",
+                        "required": true,
+                        "description": "The repository UUID",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "`RepositoryData`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/RepositoryData"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    }
+                }
+            }
+        },
+        "/organizations/{organization}/tokens": {
+            "get": {
+                "operationId": "v1.tokens.index",
+                "tags": [
+                    "Token"
+                ],
+                "parameters": [
+                    {
+                        "name": "organization",
+                        "in": "path",
+                        "required": true,
+                        "description": "The organization slug",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "`PaginatedDataCollection`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PaginatedDataCollection"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    }
+                }
+            },
+            "post": {
+                "operationId": "v1.tokens.store",
+                "tags": [
+                    "Token"
+                ],
+                "parameters": [
+                    {
+                        "name": "organization",
+                        "in": "path",
+                        "required": true,
+                        "description": "The organization slug",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StoreAccessTokenRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "`TokenCreatedData`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TokenCreatedData"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/organizations/{organization}/tokens/{token}": {
+            "patch": {
+                "operationId": "v1.tokens.update",
+                "tags": [
+                    "Token"
+                ],
+                "parameters": [
+                    {
+                        "name": "organization",
+                        "in": "path",
+                        "required": true,
+                        "description": "The organization slug",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "token",
+                        "in": "path",
+                        "required": true,
+                        "description": "The token UUID",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UpdateAccessTokenRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "`AccessTokenData`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AccessTokenData"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            },
+            "delete": {
+                "operationId": "v1.tokens.destroy",
+                "tags": [
+                    "Token"
+                ],
+                "parameters": [
+                    {
+                        "name": "organization",
+                        "in": "path",
+                        "required": true,
+                        "description": "The organization slug",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "token",
+                        "in": "path",
+                        "required": true,
+                        "description": "The token UUID",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No content"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    }
+                }
+            }
+        },
+        "/user": {
+            "get": {
+                "operationId": "v1.user.show",
+                "summary": "Get the authenticated user's profile",
+                "tags": [
+                    "User"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "uuid": {
+                                            "type": "string"
+                                        },
+                                        "name": {
+                                            "type": "string"
+                                        },
+                                        "email": {
+                                            "type": "string"
+                                        },
+                                        "avatar": {
+                                            "type": [
+                                                "string",
+                                                "null"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "uuid",
+                                        "name",
+                                        "email",
+                                        "avatar"
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/user/organizations": {
+            "get": {
+                "operationId": "v1.user.organizations",
+                "summary": "List the organizations the authenticated user belongs to",
+                "tags": [
+                    "User"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "`PaginatedDataCollection`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PaginatedDataCollection"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/user/tokens": {
+            "get": {
+                "operationId": "v1.user.tokens.index",
+                "tags": [
+                    "UserToken"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "`PaginatedDataCollection`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PaginatedDataCollection"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "operationId": "v1.user.tokens.store",
+                "tags": [
+                    "UserToken"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StoreAccessTokenRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "`TokenCreatedData`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TokenCreatedData"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/user/tokens/{token}": {
+            "patch": {
+                "operationId": "v1.user.tokens.update",
+                "tags": [
+                    "UserToken"
+                ],
+                "parameters": [
+                    {
+                        "name": "token",
+                        "in": "path",
+                        "required": true,
+                        "description": "The token UUID",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UpdateAccessTokenRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "`AccessTokenData`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AccessTokenData"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            },
+            "delete": {
+                "operationId": "v1.user.tokens.destroy",
+                "tags": [
+                    "UserToken"
+                ],
+                "parameters": [
+                    {
+                        "name": "token",
+                        "in": "path",
+                        "required": true,
+                        "description": "The token UUID",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No content"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "securitySchemes": {
+            "http": {
+                "type": "http",
+                "scheme": "bearer"
+            }
+        },
+        "schemas": {
+            "AccessTokenData": {
+                "type": "object",
+                "additionalProperties": {},
+                "title": "AccessTokenData"
+            },
+            "AddMemberRequest": {
+                "type": "object",
+                "properties": {
+                    "email": {
+                        "type": "string",
+                        "format": "email"
+                    },
+                    "role": {
+                        "type": "string",
+                        "enum": [
+                            "admin",
+                            "member"
+                        ]
+                    }
+                },
+                "required": [
+                    "email",
+                    "role"
+                ],
+                "title": "AddMemberRequest"
+            },
+            "BulkImportResultData": {
+                "type": "object",
+                "additionalProperties": {},
+                "title": "BulkImportResultData"
+            },
+            "BulkStoreRepositoryRequest": {
+                "type": "object",
+                "properties": {
+                    "provider": {
+                        "$ref": "#/components/schemas/GitProvider"
+                    },
+                    "repositories": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "repo_identifier": {
+                                    "type": "string",
+                                    "maxLength": 500
+                                }
+                            },
+                            "required": [
+                                "repo_identifier"
+                            ]
+                        },
+                        "minItems": 1,
+                        "maxItems": 50
+                    }
+                },
+                "required": [
+                    "provider",
+                    "repositories"
+                ],
+                "title": "BulkStoreRepositoryRequest"
+            },
+            "GitProvider": {
+                "type": "string",
+                "enum": [
+                    "github",
+                    "gitlab",
+                    "bitbucket",
+                    "git"
+                ],
+                "title": "GitProvider"
+            },
+            "MirrorAuthType": {
+                "type": "string",
+                "enum": [
+                    "none",
+                    "basic",
+                    "bearer"
+                ],
+                "title": "MirrorAuthType"
+            },
+            "MirrorData": {
+                "type": "object",
+                "additionalProperties": {},
+                "title": "MirrorData"
+            },
+            "OrganizationData": {
+                "type": "object",
+                "additionalProperties": {},
+                "title": "OrganizationData"
+            },
+            "OrganizationInvitationData": {
+                "type": "object",
+                "additionalProperties": {},
+                "title": "OrganizationInvitationData"
+            },
+            "OrganizationMemberData": {
+                "type": "object",
+                "additionalProperties": {},
+                "title": "OrganizationMemberData"
+            },
+            "PackageData": {
+                "type": "object",
+                "additionalProperties": {},
+                "title": "PackageData"
+            },
+            "PaginatedDataCollection": {
+                "type": "object",
+                "additionalProperties": {},
+                "title": "PaginatedDataCollection"
+            },
+            "RepositoryData": {
+                "type": "object",
+                "additionalProperties": {},
+                "title": "RepositoryData"
+            },
+            "StoreAccessTokenRequest": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "maxLength": 255
+                    },
+                    "expires_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "scopes": {
+                        "type": [
+                            "array",
+                            "null"
+                        ],
+                        "items": {
+                            "$ref": "#/components/schemas/TokenScope"
+                        }
+                    }
+                },
+                "required": [
+                    "name"
+                ],
+                "title": "StoreAccessTokenRequest"
+            },
+            "StoreMirrorRequest": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "maxLength": 255
+                    },
+                    "url": {
+                        "type": "string",
+                        "format": "uri",
+                        "maxLength": 2048
+                    },
+                    "auth_type": {
+                        "$ref": "#/components/schemas/MirrorAuthType"
+                    },
+                    "username": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 255
+                    },
+                    "password": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 1024
+                    },
+                    "token": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 1024
+                    },
+                    "mirror_dist": {
+                        "type": "boolean"
+                    }
+                },
+                "required": [
+                    "name",
+                    "url",
+                    "auth_type"
+                ],
+                "title": "StoreMirrorRequest"
+            },
+            "StoreOrganizationRequest": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "maxLength": 255
+                    }
+                },
+                "required": [
+                    "name"
+                ],
+                "title": "StoreOrganizationRequest"
+            },
+            "StoreRepositoryRequest": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 255
+                    },
+                    "provider": {
+                        "$ref": "#/components/schemas/GitProvider"
+                    },
+                    "repo_identifier": {
+                        "type": "string",
+                        "maxLength": 500
+                    },
+                    "default_branch": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 255
+                    },
+                    "ssh_key_uuid": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "uuid"
+                    }
+                },
+                "required": [
+                    "provider",
+                    "repo_identifier"
+                ],
+                "title": "StoreRepositoryRequest"
+            },
+            "TokenCreatedData": {
+                "type": "object",
+                "additionalProperties": {},
+                "title": "TokenCreatedData"
+            },
+            "TokenScope": {
+                "type": "string",
+                "enum": [
+                    "composer",
+                    "read:organizations",
+                    "write:organizations",
+                    "delete:organizations",
+                    "read:repositories",
+                    "write:repositories",
+                    "delete:repositories",
+                    "read:packages",
+                    "write:packages",
+                    "delete:packages",
+                    "read:members",
+                    "write:members",
+                    "read:mirrors",
+                    "write:mirrors",
+                    "delete:mirrors",
+                    "read:tokens",
+                    "write:tokens"
+                ],
+                "title": "TokenScope"
+            },
+            "UpdateAccessTokenRequest": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "maxLength": 255
+                    },
+                    "scopes": {
+                        "type": [
+                            "array",
+                            "null"
+                        ],
+                        "items": {
+                            "$ref": "#/components/schemas/TokenScope"
+                        }
+                    }
+                },
+                "required": [
+                    "name"
+                ],
+                "title": "UpdateAccessTokenRequest"
+            },
+            "UpdateMemberRoleRequest": {
+                "type": "object",
+                "properties": {
+                    "role": {
+                        "type": "string",
+                        "enum": [
+                            "admin",
+                            "member"
+                        ]
+                    }
+                },
+                "required": [
+                    "role"
+                ],
+                "title": "UpdateMemberRoleRequest"
+            },
+            "UpdateOrganizationRequest": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "maxLength": 255
+                    }
+                },
+                "required": [
+                    "name"
+                ],
+                "title": "UpdateOrganizationRequest"
+            }
+        },
+        "responses": {
+            "ValidationException": {
+                "description": "Validation error",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "message": {
+                                    "type": "string",
+                                    "description": "Errors overview."
+                                },
+                                "errors": {
+                                    "type": "object",
+                                    "description": "A detailed description of each field that failed validation.",
+                                    "additionalProperties": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            },
+                            "required": [
+                                "message",
+                                "errors"
+                            ]
+                        }
+                    }
+                }
+            },
+            "ModelNotFoundException": {
+                "description": "Not found",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "message": {
+                                    "type": "string",
+                                    "description": "Error overview."
+                                }
+                            },
+                            "required": [
+                                "message"
+                            ]
+                        }
+                    }
+                }
+            },
+            "AuthorizationException": {
+                "description": "Authorization error",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "message": {
+                                    "type": "string",
+                                    "description": "Error overview."
+                                }
+                            },
+                            "required": [
+                                "message"
+                            ]
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

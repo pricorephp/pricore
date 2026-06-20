@@ -2,6 +2,9 @@
 
 namespace App\Http\Middleware;
 
+use App\Domains\Token\Contracts\Enums\TokenScope;
+use App\Domains\Token\Services\AccessTokenResolver;
+use App\Domains\Token\Services\TokenScopeChecker;
 use App\Models\AccessToken;
 use App\Models\Organization;
 use Closure;
@@ -10,18 +13,21 @@ use Symfony\Component\HttpFoundation\Response;
 
 class ComposerTokenAuth
 {
+    public function __construct(
+        protected AccessTokenResolver $accessTokenResolver,
+        protected TokenScopeChecker $scopeChecker,
+    ) {}
+
     public function handle(Request $request, Closure $next): Response
     {
-        $token = $this->extractToken($request);
-
-        if (! $token) {
-            return $this->unauthorized();
-        }
-
-        $accessToken = $this->findAccessToken($token);
+        $accessToken = $this->accessTokenResolver->fromRequest($request);
 
         if (! $accessToken || ! $accessToken->isValid()) {
             return $this->unauthorized();
+        }
+
+        if (! $this->scopeChecker->hasScope($accessToken, TokenScope::Composer)) {
+            return $this->forbidden();
         }
 
         $organization = $request->route('organization');
@@ -40,46 +46,6 @@ class ComposerTokenAuth
         $request->merge(['accessToken' => $accessToken]);
 
         return $next($request);
-    }
-
-    protected function extractToken(Request $request): ?string
-    {
-        $header = $request->header('Authorization');
-
-        if (! $header) {
-            return null;
-        }
-
-        // Check for Bearer token
-        if (preg_match('/^Bearer\s+(.+)$/i', $header, $matches)) {
-            return $matches[1];
-        }
-
-        // Check for Basic auth (token as password, username is ignored)
-        if (preg_match('/^Basic\s+(.+)$/i', $header, $matches)) {
-            $decoded = base64_decode($matches[1], true);
-            if ($decoded === false) {
-                return null;
-            }
-
-            // Basic auth format: username:password
-            // The token must be in the password field (e.g., "token:YOUR_TOKEN")
-            $parts = explode(':', $decoded, 2);
-
-            return $parts[1] ?? null;
-        }
-
-        return null;
-    }
-
-    protected function findAccessToken(string $token): ?AccessToken
-    {
-        $tokenHash = hash('sha256', $token);
-
-        return AccessToken::query()
-            ->where('token_hash', $tokenHash)
-            ->with(['organization', 'user'])
-            ->first();
     }
 
     protected function canAccessOrganization(AccessToken $accessToken, ?Organization $organization): bool
@@ -110,5 +76,12 @@ class ComposerTokenAuth
         ], 401, [
             'WWW-Authenticate' => 'Bearer realm="Pricore"',
         ]);
+    }
+
+    protected function forbidden(): Response
+    {
+        return response()->json([
+            'message' => 'This token does not have Composer registry access.',
+        ], 403);
     }
 }

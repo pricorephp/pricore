@@ -87,6 +87,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
             Route::get('tokens', [TokenController::class, 'index'])->name('tokens.index');
             Route::post('tokens', [TokenController::class, 'store'])->name('tokens.store');
+            Route::patch('tokens/{token}', [TokenController::class, 'update'])->name('tokens.update');
             Route::delete('tokens/{token}', [TokenController::class, 'destroy'])->name('tokens.destroy');
 
             Route::get('ssh-keys', [SshKeyController::class, 'index'])->name('ssh-keys');

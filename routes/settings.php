@@ -45,5 +45,6 @@ Route::middleware('auth')->group(function () {
 
     Route::get('settings/tokens', [UserTokenController::class, 'index'])->name('settings.tokens.index');
     Route::post('settings/tokens', [UserTokenController::class, 'store'])->name('settings.tokens.store');
+    Route::patch('settings/tokens/{token}', [UserTokenController::class, 'update'])->name('settings.tokens.update');
     Route::delete('settings/tokens/{token}', [UserTokenController::class, 'destroy'])->name('settings.tokens.destroy');
 });

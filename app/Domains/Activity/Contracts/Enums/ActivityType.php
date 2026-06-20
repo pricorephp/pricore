@@ -18,6 +18,7 @@ enum ActivityType: string
     case MemberRoleChanged = 'member.role_changed';
     case InvitationSent = 'invitation.sent';
     case TokenCreated = 'token.created';
+    case TokenUpdated = 'token.updated';
     case TokenRevoked = 'token.revoked';
     case SshKeyGenerated = 'ssh_key.generated';
     case SshKeyDeleted = 'ssh_key.deleted';
@@ -41,6 +42,7 @@ enum ActivityType: string
             self::MemberRoleChanged => 'Role changed',
             self::InvitationSent => 'Invitation sent',
             self::TokenCreated => 'Token created',
+            self::TokenUpdated => 'Token updated',
             self::TokenRevoked => 'Token revoked',
             self::SshKeyGenerated => 'SSH key generated',
             self::SshKeyDeleted => 'SSH key deleted',
@@ -66,6 +68,7 @@ enum ActivityType: string
             self::MemberRoleChanged => 'shield',
             self::InvitationSent => 'mail',
             self::TokenCreated => 'key-round',
+            self::TokenUpdated => 'key-round',
             self::TokenRevoked => 'key-round',
             self::SshKeyGenerated => 'key-round',
             self::SshKeyDeleted => 'key-round',
@@ -83,7 +86,7 @@ enum ActivityType: string
             self::RepositoryAdded, self::RepositoryRemoved, self::RepositorySynced, self::RepositorySyncFailed => 'repository',
             self::PackageCreated, self::PackageRemoved => 'package',
             self::MemberAdded, self::MemberRemoved, self::MemberRoleChanged, self::InvitationSent => 'member',
-            self::TokenCreated, self::TokenRevoked => 'token',
+            self::TokenCreated, self::TokenUpdated, self::TokenRevoked => 'token',
             self::SshKeyGenerated, self::SshKeyDeleted => 'settings',
             self::MirrorAdded, self::MirrorRemoved, self::MirrorSynced, self::MirrorSyncFailed => 'mirror',
             self::VulnerabilitiesDetected => 'security',
