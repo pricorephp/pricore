@@ -418,6 +418,26 @@ it('returns ETag header on metadata responses', function () {
         ->assertHeader('ETag');
 });
 
+it('serves metadata without a token when anonymous access is enabled', function () {
+    $this->organization->update(['anonymous_access_enabled' => true]);
+
+    $package = Package::factory()
+        ->for($this->organization, 'organization')
+        ->create(['name' => 'acme/awesome-package']);
+
+    PackageVersion::factory()
+        ->for($package)
+        ->create(['version' => '1.0.0', 'normalized_version' => '1.0.0.0']);
+
+    test()->getJson("/{$this->organization->slug}/packages.json")
+        ->assertOk()
+        ->assertJsonPath('available-packages', ['acme/awesome-package']);
+
+    test()->getJson("/{$this->organization->slug}/p2/acme/awesome-package.json")
+        ->assertOk()
+        ->assertJsonPath('packages.acme/awesome-package.0.version', '1.0.0');
+});
+
 it('does not leak packages from other organizations', function () {
     $otherOrg = Organization::factory()->create(['slug' => 'other-org']);
 

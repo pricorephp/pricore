@@ -12,34 +12,39 @@ class ComposerTokenAuth
 {
     public function handle(Request $request, Closure $next): Response
     {
+        $organization = $this->resolveOrganization($request);
+
         $token = $this->extractToken($request);
+        $accessToken = $token ? $this->findAccessToken($token) : null;
 
-        if (! $token) {
-            return $this->unauthorized();
+        if ($accessToken && $accessToken->isValid() && $this->canAccessOrganization($accessToken, $organization)) {
+            $accessToken->markAsUsed();
+
+            $request->merge(['accessToken' => $accessToken]);
+
+            return $next($request);
         }
 
-        $accessToken = $this->findAccessToken($token);
+        // Fall back to anonymous access when the organization allows it
+        if ($organization?->anonymous_access_enabled) {
+            $request->merge(['accessToken' => null]);
 
-        if (! $accessToken || ! $accessToken->isValid()) {
-            return $this->unauthorized();
+            return $next($request);
         }
 
+        return $this->unauthorized();
+    }
+
+    protected function resolveOrganization(Request $request): ?Organization
+    {
         $organization = $request->route('organization');
 
         // Resolve the organization from slug if route model binding hasn't run yet
         if (is_string($organization)) {
-            $organization = Organization::where('slug', $organization)->first();
+            return Organization::where('slug', $organization)->first();
         }
 
-        if (! $this->canAccessOrganization($accessToken, $organization)) {
-            return $this->unauthorized();
-        }
-
-        $accessToken->markAsUsed();
-
-        $request->merge(['accessToken' => $accessToken]);
-
-        return $next($request);
+        return $organization instanceof Organization ? $organization : null;
     }
 
     protected function extractToken(Request $request): ?string
