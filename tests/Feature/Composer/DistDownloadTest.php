@@ -130,6 +130,75 @@ it('downloads a dist archive for a branch version with slashes', function () {
     $response->assertOk();
 });
 
+it('downloads a dist archive when requesting a v-prefixed version without the prefix', function () {
+    $package = Package::factory()
+        ->for($this->organization, 'organization')
+        ->create(['name' => 'acme/test-package']);
+
+    $distPath = 'acme/acme/test-package/v1.2.0_abc123def456.zip';
+    Storage::disk('local')->put($distPath, 'fake-zip-content');
+
+    PackageVersion::factory()
+        ->for($package)
+        ->create([
+            'version' => 'v1.2.0',
+            'source_reference' => 'abc123def456',
+            'dist_url' => url('/acme/dists/acme/test-package/v1.2.0/abc123def456.zip'),
+            'dist_path' => $distPath,
+            'dist_shasum' => sha1('fake-zip-content'),
+        ]);
+
+    $response = distGet('/acme/dists/acme/test-package/1.2.0/abc123def456.zip', $this->plainToken);
+
+    $response->assertOk();
+});
+
+it('downloads a dist archive when requesting an unprefixed version with a v prefix', function () {
+    $package = Package::factory()
+        ->for($this->organization, 'organization')
+        ->create(['name' => 'acme/test-package']);
+
+    $distPath = 'acme/acme/test-package/1.2.0_abc123def456.zip';
+    Storage::disk('local')->put($distPath, 'fake-zip-content');
+
+    PackageVersion::factory()
+        ->for($package)
+        ->create([
+            'version' => '1.2.0',
+            'source_reference' => 'abc123def456',
+            'dist_url' => url('/acme/dists/acme/test-package/1.2.0/abc123def456.zip'),
+            'dist_path' => $distPath,
+            'dist_shasum' => sha1('fake-zip-content'),
+        ]);
+
+    $response = distGet('/acme/dists/acme/test-package/v1.2.0/abc123def456.zip', $this->plainToken);
+
+    $response->assertOk();
+});
+
+it('returns 404 for a legacy version request with a non-matching reference', function () {
+    $package = Package::factory()
+        ->for($this->organization, 'organization')
+        ->create(['name' => 'acme/test-package']);
+
+    $distPath = 'acme/acme/test-package/v1.2.0_abc123def456.zip';
+    Storage::disk('local')->put($distPath, 'fake-zip-content');
+
+    PackageVersion::factory()
+        ->for($package)
+        ->create([
+            'version' => 'v1.2.0',
+            'source_reference' => 'abc123def456',
+            'dist_url' => url('/acme/dists/acme/test-package/v1.2.0/abc123def456.zip'),
+            'dist_path' => $distPath,
+            'dist_shasum' => sha1('fake-zip-content'),
+        ]);
+
+    $response = distGet('/acme/dists/acme/test-package/1.2.0/0123456789ab.zip', $this->plainToken);
+
+    $response->assertNotFound();
+});
+
 it('requires authentication for dist download', function () {
     $response = test()->getJson('/acme/dists/acme/test-package/1.0.0/abc123.zip');
 

@@ -109,6 +109,24 @@ class PackageVersion extends Model
     }
 
     /**
+     * Lock files created before versions kept their v prefix reference dist
+     * URLs without it, so match the version with and without the prefix.
+     *
+     * @param  Builder<PackageVersion>  $query
+     * @return Builder<PackageVersion>
+     */
+    public function scopeMatchingVersion(Builder $query, string $version): Builder
+    {
+        $candidates = match (true) {
+            preg_match('/^\d/', $version) === 1 => [$version, "v{$version}"],
+            preg_match('/^v\d/', $version) === 1 => [$version, substr($version, 1)],
+            default => [$version],
+        };
+
+        return $query->whereIn('version', $candidates);
+    }
+
+    /**
      * @param  Builder<PackageVersion>  $query
      * @return Builder<PackageVersion>
      */
