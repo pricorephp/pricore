@@ -21,15 +21,17 @@ class DistController extends Controller
     ): Response {
         $packageName = "{$vendor}/{$package}";
 
-        $packageVersion = PackageVersion::query()
+        $packageVersions = PackageVersion::query()
             ->whereHas('package', function ($query) use ($organization, $packageName) {
                 $query->where('organization_uuid', $organization->uuid)
                     ->where('name', $packageName);
             })
-            ->where('version', $version)
+            ->matchingVersion($version)
             ->where('source_reference', $reference)
             ->whereNotNull('dist_path')
-            ->first();
+            ->get();
+
+        $packageVersion = $packageVersions->firstWhere('version', $version) ?? $packageVersions->first();
 
         if (! $packageVersion || ! $packageVersion->dist_path) {
             return response()->json(['error' => 'Not found'], 404);
