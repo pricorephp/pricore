@@ -31,6 +31,7 @@ class SecuritySettingsController extends Controller
         $validated = $request->validate([
             'security_audits_enabled' => ['required', 'boolean'],
             'security_notifications_enabled' => ['required', 'boolean'],
+            'anonymous_access_enabled' => ['required', 'boolean'],
         ]);
 
         $organization->update($validated);

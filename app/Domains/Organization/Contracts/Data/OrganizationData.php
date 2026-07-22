@@ -20,6 +20,7 @@ class OrganizationData extends Data
         public ?bool $trialExpired = null,
         public bool $securityAuditsEnabled = true,
         public bool $securityNotificationsEnabled = true,
+        public bool $anonymousAccessEnabled = false,
     ) {}
 
     public static function fromModel(Organization $organization): self
@@ -32,6 +33,7 @@ class OrganizationData extends Data
             composerRepositoryUrl: url("/{$organization->slug}"),
             securityAuditsEnabled: $organization->security_audits_enabled,
             securityNotificationsEnabled: $organization->security_notifications_enabled,
+            anonymousAccessEnabled: $organization->anonymous_access_enabled,
         );
     }
 }
