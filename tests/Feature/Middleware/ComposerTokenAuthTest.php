@@ -73,3 +73,29 @@ it('returns 401 for an expired token', function () {
         ['Authorization' => 'Basic '.$credentials]
     )->assertUnauthorized();
 });
+
+it('allows anonymous access when the organization enables it', function () {
+    $organization = Organization::factory()->create(['anonymous_access_enabled' => true]);
+
+    $this->getJson(
+        route('composer.packages.index', $organization),
+    )->assertSuccessful();
+});
+
+it('falls back to anonymous access for an invalid token when enabled', function () {
+    $organization = Organization::factory()->create(['anonymous_access_enabled' => true]);
+
+    $this->getJson(
+        route('composer.packages.index', $organization),
+        ['Authorization' => 'Bearer not-a-real-token']
+    )->assertSuccessful();
+});
+
+it('still serves a valid token when anonymous access is enabled', function () {
+    $this->organization->update(['anonymous_access_enabled' => true]);
+
+    $this->getJson(
+        route('composer.packages.index', $this->organization),
+        ['Authorization' => 'Bearer '.$this->plainToken]
+    )->assertSuccessful();
+});

@@ -78,6 +78,7 @@ onTrial: boolean | null;
 trialExpired: boolean | null;
 securityAuditsEnabled: boolean;
 securityNotificationsEnabled: boolean;
+anonymousAccessEnabled: boolean;
 };
 export type OrganizationInvitationData = {
 uuid: string;

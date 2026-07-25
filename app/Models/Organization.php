@@ -23,6 +23,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $trial_ends_at
  * @property bool $security_audits_enabled
  * @property bool $security_notifications_enabled
+ * @property bool $anonymous_access_enabled
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property Carbon|null $deleted_at
@@ -73,6 +74,7 @@ class Organization extends Model
     protected $attributes = [
         'security_audits_enabled' => true,
         'security_notifications_enabled' => true,
+        'anonymous_access_enabled' => false,
     ];
 
     /**
@@ -84,6 +86,7 @@ class Organization extends Model
             'trial_ends_at' => 'datetime',
             'security_audits_enabled' => 'boolean',
             'security_notifications_enabled' => 'boolean',
+            'anonymous_access_enabled' => 'boolean',
         ];
     }
 
