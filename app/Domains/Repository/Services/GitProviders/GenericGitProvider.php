@@ -114,8 +114,8 @@ class GenericGitProvider extends AbstractGitProvider
             return $url;
         }
 
-        // Basic check if URL is http(s) and we have credentials
-        if (Str::startsWith($url, ['http://', 'https://']) && $this->hasCredential('username') && $this->hasCredential('password')) {
+        // The URL is guaranteed http(s) here, so only credentials remain to check
+        if ($this->hasCredential('username') && $this->hasCredential('password')) {
             $username = urlencode($this->getCredential('username'));
             $password = urlencode($this->getCredential('password'));
 

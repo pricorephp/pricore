@@ -75,7 +75,7 @@ class V2RegistryClient implements RegistryClientInterface
                 continue;
             }
 
-            foreach (MetadataMinifier::expand($minifiedVersions) as $composerJson) {
+            foreach (MetadataMinifier::expand(array_values($minifiedVersions)) as $composerJson) {
                 $version = (string) ($composerJson['version'] ?? '');
 
                 if ($version === '') {

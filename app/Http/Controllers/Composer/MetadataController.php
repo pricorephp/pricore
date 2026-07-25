@@ -69,10 +69,11 @@ class MetadataController extends Controller
             ->orderBy('released_at', 'desc')
             ->get();
 
-        $versionsMetadata = $versions
-            ->map(fn ($version) => VersionMetadataData::fromPackageVersion($version)->toArray())
-            ->values()
-            ->all();
+        $versionsMetadata = array_values(
+            $versions
+                ->map(fn ($version) => VersionMetadataData::fromPackageVersion($version)->toArray())
+                ->all()
+        );
 
         $minified = MetadataMinifier::minify($versionsMetadata);
 
