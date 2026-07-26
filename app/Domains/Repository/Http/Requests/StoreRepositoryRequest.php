@@ -3,6 +3,7 @@
 namespace App\Domains\Repository\Http\Requests;
 
 use App\Domains\Repository\Contracts\Enums\GitProvider;
+use App\Domains\Repository\Rules\ValidRepositoryIdentifier;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -17,7 +18,12 @@ class StoreRepositoryRequest extends FormRequest
         return [
             'name' => ['nullable', 'string', 'max:255'],
             'provider' => ['required', 'string', Rule::enum(GitProvider::class)],
-            'repo_identifier' => ['required', 'string', 'max:500'],
+            'repo_identifier' => [
+                'required',
+                'string',
+                'max:500',
+                new ValidRepositoryIdentifier(GitProvider::tryFrom((string) $this->input('provider'))),
+            ],
             'default_branch' => ['nullable', 'string', 'max:255'],
             'ssh_key_uuid' => ['nullable', 'uuid', Rule::exists('organization_ssh_keys', 'uuid')],
         ];
