@@ -12,7 +12,40 @@ on:
 
 jobs:
   ci:
+    name: tests (${{ matrix.database }})
     runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        database: [sqlite, mysql, pgsql]
+
+    services:
+      mysql:
+        image: mysql:8
+        env:
+          MYSQL_ROOT_PASSWORD: password
+          MYSQL_DATABASE: pricore
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -ppassword"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: password
+          POSTGRES_DB: pricore
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd=pg_isready
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
 
     steps:
       - name: Checkout
@@ -45,6 +78,33 @@ jobs:
 
       - name: Generate Application Key
         run: php artisan key:generate
+
+      # phpunit.xml pins sqlite; these env vars override it for the other engines so
+      # the suite actually exercises the databases self-hosters run in production.
+      - name: Configure database connection
+        run: |
+          case "${{ matrix.database }}" in
+            mysql)
+              {
+                echo "DB_CONNECTION=mysql"
+                echo "DB_HOST=127.0.0.1"
+                echo "DB_PORT=3306"
+                echo "DB_DATABASE=pricore"
+                echo "DB_USERNAME=root"
+                echo "DB_PASSWORD=password"
+              } >> "$GITHUB_ENV"
+              ;;
+            pgsql)
+              {
+                echo "DB_CONNECTION=pgsql"
+                echo "DB_HOST=127.0.0.1"
+                echo "DB_PORT=5432"
+                echo "DB_DATABASE=pricore"
+                echo "DB_USERNAME=postgres"
+                echo "DB_PASSWORD=password"
+              } >> "$GITHUB_ENV"
+              ;;
+          esac
 
       - name: Tests
         run: ./vendor/bin/pest
