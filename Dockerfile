@@ -162,8 +162,9 @@ RUN echo ':8000 {' > /etc/caddy/Caddyfile && \
     echo '    root * /app/public' >> /etc/caddy/Caddyfile && \
     echo '    encode zstd gzip' >> /etc/caddy/Caddyfile && \
     echo '' >> /etc/caddy/Caddyfile && \
-    echo '    # Health check endpoint' >> /etc/caddy/Caddyfile && \
-    echo '    respond /health 200' >> /etc/caddy/Caddyfile && \
+    echo '    # Health checks hit /up, which boots the framework and verifies its' >> /etc/caddy/Caddyfile && \
+    echo '    # dependencies. Answering here in Caddy would report healthy even' >> /etc/caddy/Caddyfile && \
+    echo '    # when PHP or the database is down.' >> /etc/caddy/Caddyfile && \
     echo '' >> /etc/caddy/Caddyfile && \
     echo '    # Handle PHP requests' >> /etc/caddy/Caddyfile && \
     echo '    php_server' >> /etc/caddy/Caddyfile && \
@@ -177,8 +178,8 @@ RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 EXPOSE 8000
 
 # Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=90s --retries=3 \
-    CMD curl -f http://localhost:8000/health || exit 1
+HEALTHCHECK --interval=30s --timeout=5s --start-period=90s --retries=3 \
+    CMD curl -f http://localhost:8000/up || exit 1
 
 # FrankenPHP handles graceful shutdown via SIGTERM
 STOPSIGNAL SIGTERM

@@ -6,22 +6,29 @@ use App\Models\AccessToken;
 use App\Models\Organization;
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\RateLimiter;
 use Symfony\Component\HttpFoundation\Response;
 
 class ComposerTokenAuth
 {
     public function handle(Request $request, Closure $next): Response
     {
+        if ($this->hasTooManyFailures($request)) {
+            return response()->json([
+                'message' => 'Too many authentication attempts.',
+            ], 429);
+        }
+
         $token = $this->extractToken($request);
 
         if (! $token) {
-            return $this->unauthorized();
+            return $this->unauthorized($request);
         }
 
         $accessToken = $this->findAccessToken($token);
 
         if (! $accessToken || ! $accessToken->isValid()) {
-            return $this->unauthorized();
+            return $this->unauthorized($request);
         }
 
         $organization = $request->route('organization');
@@ -32,7 +39,7 @@ class ComposerTokenAuth
         }
 
         if (! $this->canAccessOrganization($accessToken, $organization)) {
-            return $this->unauthorized();
+            return $this->unauthorized($request);
         }
 
         $accessToken->markAsUsed();
@@ -40,6 +47,23 @@ class ComposerTokenAuth
         $request->merge(['accessToken' => $accessToken]);
 
         return $next($request);
+    }
+
+    /**
+     * Only failed attempts are counted. Successful traffic is metered separately by
+     * the `composer` limiter, which has to stay generous enough for a real install.
+     */
+    protected function hasTooManyFailures(Request $request): bool
+    {
+        return RateLimiter::tooManyAttempts(
+            $this->throttleKey($request),
+            (int) config('pricore.rate_limits.composer_auth'),
+        );
+    }
+
+    protected function throttleKey(Request $request): string
+    {
+        return 'composer-auth:'.$request->ip();
     }
 
     protected function extractToken(Request $request): ?string
@@ -103,8 +127,10 @@ class ComposerTokenAuth
         return false;
     }
 
-    protected function unauthorized(): Response
+    protected function unauthorized(Request $request): Response
     {
+        RateLimiter::hit($this->throttleKey($request));
+
         return response()->json([
             'message' => 'Unauthorized',
         ], 401, [

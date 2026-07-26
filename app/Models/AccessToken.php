@@ -92,8 +92,16 @@ class AccessToken extends Model
         return ! $this->isExpired();
     }
 
+    /**
+     * Composer issues hundreds of requests per install, so this is coarse on purpose —
+     * writing on every request would turn a read-only endpoint into a write-heavy one.
+     */
     public function markAsUsed(): void
     {
+        if ($this->last_used_at && $this->last_used_at->gt(now()->subMinute())) {
+            return;
+        }
+
         $this->last_used_at = now();
         $this->saveQuietly();
     }

@@ -7,6 +7,7 @@ use App\Models\Organization;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
+use Illuminate\Support\Str;
 
 use function Laravel\Prompts\info;
 use function Laravel\Prompts\note;
@@ -115,8 +116,11 @@ class CreateTokenCommand extends Command
     {
         if ($identifier = $this->option('organization')) {
             $organization = Organization::query()
-                ->where('uuid', $identifier)
-                ->orWhere('slug', $identifier)
+                ->where('slug', $identifier)
+                ->when(
+                    Str::isUuid($identifier),
+                    fn ($query) => $query->orWhere('uuid', $identifier),
+                )
                 ->first();
 
             if (! $organization) {
@@ -148,7 +152,7 @@ class CreateTokenCommand extends Command
     protected function selectUser(): ?User
     {
         if ($identifier = $this->option('user')) {
-            $user = User::find($identifier);
+            $user = Str::isUuid($identifier) ? User::find($identifier) : null;
 
             if (! $user) {
                 $this->error("User '{$identifier}' not found.");

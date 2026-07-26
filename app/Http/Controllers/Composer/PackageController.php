@@ -24,6 +24,12 @@ class PackageController extends Controller
             'metadata-url' => "{$baseUrl}/%package%.json",
             'available-packages' => $availablePackages,
             'notify-batch' => $notifyBatchUrl,
+            // How `composer audit` discovers the advisory endpoint. Without this key
+            // the API below is never called, however correct it is.
+            'security-advisories' => [
+                'metadata' => false,
+                'api-url' => url("/{$organization->slug}/api/security-advisories"),
+            ],
         ]);
 
         $lastModified = $organization->packages()->max('updated_at');

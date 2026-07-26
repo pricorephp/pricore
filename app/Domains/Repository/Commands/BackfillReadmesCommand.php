@@ -7,6 +7,7 @@ use App\Domains\Repository\Services\GitProviders\GitProviderFactory;
 use App\Models\PackageVersion;
 use App\Models\Repository;
 use Illuminate\Console\Command;
+use Illuminate\Support\Str;
 
 class BackfillReadmesCommand extends Command
 {
@@ -19,6 +20,12 @@ class BackfillReadmesCommand extends Command
     public function handle(FetchReadmeAction $fetchReadmeAction): int
     {
         $repositoryFilter = $this->option('repository');
+
+        if ($repositoryFilter && ! Str::isUuid($repositoryFilter)) {
+            $this->error("'{$repositoryFilter}' is not a valid repository UUID.");
+
+            return self::FAILURE;
+        }
 
         $query = PackageVersion::query()
             ->whereNull('readme')

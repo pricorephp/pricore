@@ -4,6 +4,8 @@ namespace App\Domains\Repository\Actions;
 
 use App\Domains\Repository\Contracts\Enums\GitProvider;
 use App\Domains\Repository\Exceptions\GitProviderException;
+use App\Domains\Repository\Rules\ValidRepositoryIdentifier;
+use App\Domains\Repository\Support\GitCredentialScrubber;
 use App\Models\Repository;
 use Illuminate\Support\Facades\Process;
 use Illuminate\Support\Str;
@@ -14,6 +16,12 @@ class CreateGitCloneAction
     {
         if ($repository->provider !== GitProvider::Git) {
             return null;
+        }
+
+        // Guard at the point of use, not just at request validation — git treats
+        // `ext::` addresses as commands to run and a leading dash as an option.
+        if (! ValidRepositoryIdentifier::passes($repository->repo_identifier, GitProvider::Git)) {
+            throw new GitProviderException('Refusing to clone an unsupported repository URL.');
         }
 
         $clonePath = storage_path("app/git-clones/{$repository->uuid}");
@@ -37,10 +45,10 @@ class CreateGitCloneAction
 
         try {
             $result = Process::env($env)
-                ->run(['git', 'clone', '--bare', $repository->repo_identifier, $clonePath]);
+                ->run(['git', 'clone', '--bare', '--', $repository->repo_identifier, $clonePath]);
 
             if ($result->failed()) {
-                throw new GitProviderException('Failed to clone repository: '.$result->errorOutput());
+                throw new GitProviderException('Failed to clone repository: '.GitCredentialScrubber::scrub($result->errorOutput()));
             }
         } finally {
             if ($tempKeyFile !== null && file_exists($tempKeyFile)) {
@@ -61,7 +69,7 @@ class CreateGitCloneAction
                 ->run(['git', 'fetch', '--all', '--prune']);
 
             if ($result->failed()) {
-                throw new GitProviderException('Failed to update repository clone: '.$result->errorOutput());
+                throw new GitProviderException('Failed to update repository clone: '.GitCredentialScrubber::scrub($result->errorOutput()));
             }
         } finally {
             if ($tempKeyFile !== null && file_exists($tempKeyFile)) {

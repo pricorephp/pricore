@@ -40,7 +40,11 @@ GET /{organization}/packages.json
 {
     "metadata-url": "https://pricore.yourcompany.com/your-org/p2/%package%.json",
     "available-packages": ["acme/billing", "acme/utils"],
-    "notify-batch": "https://pricore.yourcompany.com/your-org/notify-batch"
+    "notify-batch": "https://pricore.yourcompany.com/your-org/notify-batch",
+    "security-advisories": {
+        "metadata": false,
+        "api-url": "https://pricore.yourcompany.com/your-org/api/security-advisories"
+    }
 }
 ```
 
@@ -49,6 +53,7 @@ GET /{organization}/packages.json
 | `metadata-url` | URL template Composer uses to resolve individual package metadata |
 | `available-packages` | Exhaustive list of packages in this repository — lets Composer skip unnecessary metadata lookups for packages that don't exist here |
 | `notify-batch` | URL where Composer sends download notifications after installing packages |
+| `security-advisories` | How Composer discovers the advisory endpoint used by `composer audit`. `metadata: false` means advisories are fetched from `api-url` on demand rather than embedded in every metadata response |
 
 Responses include caching headers (`Cache-Control`, `ETag`, `Last-Modified`). Clients can send `If-None-Match` with a previously received `ETag` to receive a `304 Not Modified` response when content hasn't changed.
 

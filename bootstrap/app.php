@@ -31,13 +31,8 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->encryptCookies(except: ['appearance', 'sidebar_state']);
 
-        $trustedProxies = explode(',', env('TRUSTED_PROXIES', ''));
-
-        if ($trustedProxies === ['*']) {
-            $trustedProxies = '*';
-        }
-
-        $middleware->trustProxies(at: $trustedProxies);
+        // Trusted proxies are configured in AppServiceProvider::boot(), where the
+        // config repository is available — see the note there.
 
         $middleware->web(append: [
             HandleAppearance::class,

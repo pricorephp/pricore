@@ -16,6 +16,7 @@ use App\Models\Package;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -107,7 +108,9 @@ class PackageController extends Controller
         $versionUuid = $request->query('version');
         $activeVersion = null;
 
-        if ($versionUuid) {
+        // Comes straight off the query string; Postgres rejects a malformed uuid
+        // outright rather than simply matching nothing.
+        if ($versionUuid && Str::isUuid($versionUuid)) {
             $versionModel = $package->versions()
                 ->with('advisoryMatches.advisory')
                 ->where('uuid', $versionUuid)

@@ -8,7 +8,7 @@ use App\Http\Controllers\Composer\SecurityAdvisoryApiController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('{organization:slug}')
-    ->middleware('composer.token')
+    ->middleware(['throttle:composer', 'composer.token'])
     ->group(function () {
         // Root packages.json - returns metadata-url template
         Route::get('packages.json', [PackageController::class, 'index'])
