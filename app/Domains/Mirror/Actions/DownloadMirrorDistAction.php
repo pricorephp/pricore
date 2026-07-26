@@ -8,12 +8,15 @@ use App\Domains\Repository\Contracts\Data\DistArchiveData;
 use App\Models\Mirror;
 use App\Models\Package;
 use App\Models\PackageVersion;
+use App\Services\Http\OutboundUrlGuard;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class DownloadMirrorDistAction
 {
+    public function __construct(private readonly OutboundUrlGuard $outboundUrlGuard) {}
+
     public function handle(
         Mirror $mirror,
         PackageVersion $packageVersion,
@@ -23,6 +26,20 @@ class DownloadMirrorDistAction
         $distUrl = $packageVersion->composer_json['dist']['url'] ?? null;
 
         if (! $distUrl) {
+            return null;
+        }
+
+        // The dist URL comes from the remote registry's metadata, not from us — a
+        // hostile or compromised registry could otherwise point this fetch at the
+        // private network or a cloud metadata endpoint.
+        if (! $this->outboundUrlGuard->allows($distUrl)) {
+            Log::warning('Refused mirror dist download to a blocked host', [
+                'mirror' => $mirror->name,
+                'package' => $package->name,
+                'version' => $packageVersion->version,
+                'dist_url' => $distUrl,
+            ]);
+
             return null;
         }
 

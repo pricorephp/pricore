@@ -52,7 +52,12 @@ class GitProviderFactory
             return [];
         }
 
-        $organizationSshKey = OrganizationSshKey::find($repository->ssh_key_uuid);
+        // Scoped to the owning organization: a key belonging to another organization
+        // must never be usable from here, even if its UUID ends up on the repository.
+        $organizationSshKey = OrganizationSshKey::query()
+            ->where('uuid', $repository->ssh_key_uuid)
+            ->where('organization_uuid', $repository->organization_uuid)
+            ->first();
 
         if (! $organizationSshKey) {
             return [];

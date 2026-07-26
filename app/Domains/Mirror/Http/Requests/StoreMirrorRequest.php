@@ -3,6 +3,7 @@
 namespace App\Domains\Mirror\Http\Requests;
 
 use App\Domains\Mirror\Contracts\Enums\MirrorAuthType;
+use App\Rules\AllowedOutboundUrl;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -15,7 +16,7 @@ class StoreMirrorRequest extends FormRequest
     {
         return [
             'name' => ['required', 'string', 'max:255'],
-            'url' => ['required', 'url', 'max:2048'],
+            'url' => ['required', 'url', 'max:2048', app(AllowedOutboundUrl::class)],
             'auth_type' => ['required', Rule::enum(MirrorAuthType::class)],
             'username' => ['required_if:auth_type,basic', 'nullable', 'string', 'max:255'],
             'password' => ['required_if:auth_type,basic', 'nullable', 'string', 'max:1024'],

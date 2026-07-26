@@ -11,17 +11,17 @@ use App\Domains\Repository\Http\Middleware\VerifyGitLabWebhookSignature;
 use Illuminate\Support\Facades\Route;
 
 Route::post('webhooks/github/{repository:uuid}', GitHubWebhookController::class)
-    ->middleware(VerifyGitHubWebhookSignature::class)
+    ->middleware(['throttle:webhooks', VerifyGitHubWebhookSignature::class])
     ->name('webhooks.github');
 
 Route::post('webhooks/gitlab/{repository:uuid}', GitLabWebhookController::class)
-    ->middleware(VerifyGitLabWebhookSignature::class)
+    ->middleware(['throttle:webhooks', VerifyGitLabWebhookSignature::class])
     ->name('webhooks.gitlab');
 
 Route::post('webhooks/bitbucket/{repository:uuid}', BitbucketWebhookController::class)
-    ->middleware(VerifyBitbucketWebhookSignature::class)
+    ->middleware(['throttle:webhooks', VerifyBitbucketWebhookSignature::class])
     ->name('webhooks.bitbucket');
 
 Route::post('webhooks/git/{repository:uuid}', GenericGitWebhookController::class)
-    ->middleware(VerifyGenericGitWebhookToken::class)
+    ->middleware(['throttle:webhooks', VerifyGenericGitWebhookToken::class])
     ->name('webhooks.git');

@@ -314,6 +314,43 @@ TRUSTED_PROXIES=192.168.1.0/24,10.0.0.0/8
 |----------|-------------|---------|
 | `TRUSTED_PROXIES` | Comma-separated list of trusted proxy IP addresses or CIDR ranges. Use `*` to trust all proxies. | `''` (empty) |
 
+### Outbound Request Restrictions
+
+Pricore fetches repositories, registry metadata and dist archives from URLs that users
+supply. To stop those fetches being aimed at your own network, addresses that resolve
+into a reserved or private range are refused — loopback, link-local (including the
+cloud metadata endpoint at `169.254.169.254`), and the RFC1918 ranges.
+
+If your Git server or Composer registry is on an internal network, allow it explicitly:
+
+```bash
+OUTBOUND_ALLOWED_HOSTS=git.internal.example,packages.internal.example
+```
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `OUTBOUND_ALLOWED_HOSTS` | Comma-separated hostnames permitted even when they resolve into a blocked range. Subdomains of a listed host are included. | `''` (empty) |
+
+Only list hosts you control — each entry is a host Pricore may be directed to fetch from.
+
+### Rate Limits
+
+The Composer API and webhook receivers are rate limited. The defaults suit most
+installations; raise `RATE_LIMIT_COMPOSER` if large `composer update` runs on a big
+monorepo start returning `429`.
+
+```bash
+RATE_LIMIT_COMPOSER=600
+RATE_LIMIT_COMPOSER_AUTH=30
+RATE_LIMIT_WEBHOOKS=60
+```
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `RATE_LIMIT_COMPOSER` | Requests per minute per access token for the Composer API. | `600` |
+| `RATE_LIMIT_COMPOSER_AUTH` | Failed authentication attempts per minute per IP before that IP is locked out. Successful requests are not counted. | `30` |
+| `RATE_LIMIT_WEBHOOKS` | Webhook deliveries per minute per repository. | `60` |
+
 ### Two-Factor Authentication
 
 Two-factor authentication is enabled by default. Users can enable it in their account settings.

@@ -14,6 +14,7 @@ use App\Domains\Repository\Contracts\Interfaces\GitProviderInterface;
 use App\Domains\Repository\Events\RepositorySyncStatusUpdated;
 use App\Domains\Repository\Exceptions\GitProviderException;
 use App\Domains\Repository\Services\GitProviders\GitProviderFactory;
+use App\Domains\Repository\Support\GitCredentialScrubber;
 use App\Models\Repository;
 use App\Models\RepositorySyncLog;
 use Illuminate\Bus\Batch;
@@ -181,10 +182,12 @@ class SyncRepositoryJob implements ShouldBeUnique, ShouldQueue
 
     protected function handleSyncFailure(RepositorySyncLog $syncLog, Throwable $e): void
     {
+        $message = GitCredentialScrubber::scrub($e->getMessage());
+
         $syncLog->update([
             'status' => SyncStatus::Failed,
             'completed_at' => now(),
-            'error_message' => $e->getMessage(),
+            'error_message' => $message,
         ]);
 
         $this->repository->update([
@@ -200,7 +203,7 @@ class SyncRepositoryJob implements ShouldBeUnique, ShouldQueue
 
         Log::error('Repository sync failed', [
             'repository' => $this->repository->name,
-            'error' => $e->getMessage(),
+            'error' => $message,
             'trace' => $e->getTraceAsString(),
         ]);
     }

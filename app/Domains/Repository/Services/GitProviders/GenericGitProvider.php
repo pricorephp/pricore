@@ -2,7 +2,10 @@
 
 namespace App\Domains\Repository\Services\GitProviders;
 
+use App\Domains\Repository\Contracts\Enums\GitProvider;
 use App\Domains\Repository\Exceptions\GitProviderException;
+use App\Domains\Repository\Rules\ValidRepositoryIdentifier;
+use App\Domains\Repository\Support\GitCredentialScrubber;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Http;
@@ -22,7 +25,7 @@ class GenericGitProvider extends AbstractGitProvider
      */
     public function getTags(): array
     {
-        $output = $this->runGitCommand(['ls-remote', '--tags', '--refs', $this->getAuthenticatedUrl()]);
+        $output = $this->runGitCommand(['ls-remote', '--tags', '--refs', '--', $this->getAuthenticatedUrl()]);
 
         return $this->parseLsRemoteOutput($output, 'refs/tags/');
     }
@@ -32,7 +35,7 @@ class GenericGitProvider extends AbstractGitProvider
      */
     public function getBranches(): array
     {
-        $output = $this->runGitCommand(['ls-remote', '--heads', $this->getAuthenticatedUrl()]);
+        $output = $this->runGitCommand(['ls-remote', '--heads', '--', $this->getAuthenticatedUrl()]);
 
         return $this->parseLsRemoteOutput($output, 'refs/heads/');
     }
@@ -52,6 +55,7 @@ class GenericGitProvider extends AbstractGitProvider
                 'clone',
                 '--depth', '1',
                 '--branch', $ref,
+                '--',
                 $this->getAuthenticatedUrl(),
                 $tempDir,
             ]);
@@ -77,7 +81,7 @@ class GenericGitProvider extends AbstractGitProvider
     public function validateCredentials(): bool
     {
         try {
-            $this->runGitCommand(['ls-remote', $this->getAuthenticatedUrl(), 'HEAD']);
+            $this->runGitCommand(['ls-remote', '--', $this->getAuthenticatedUrl(), 'HEAD']);
 
             return true;
         } catch (\Exception $e) {
@@ -109,13 +113,20 @@ class GenericGitProvider extends AbstractGitProvider
     {
         $url = $this->repositoryIdentifier;
 
+        // Never hand git an address it could interpret as a transport helper, a local
+        // path, or an option. Request validation covers new repositories; this covers
+        // rows stored before that validation existed, or written by any other path.
+        if (! ValidRepositoryIdentifier::passes($url, GitProvider::Git)) {
+            throw new GitProviderException('Refusing to use an unsupported repository URL.');
+        }
+
         // SSH URLs are passed through unchanged — auth is handled via GIT_SSH_COMMAND
         if ($this->hasCredential('ssh_key') || ! Str::startsWith($url, ['http://', 'https://'])) {
             return $url;
         }
 
-        // Basic check if URL is http(s) and we have credentials
-        if (Str::startsWith($url, ['http://', 'https://']) && $this->hasCredential('username') && $this->hasCredential('password')) {
+        // The URL is guaranteed http(s) here, so only credentials remain to check
+        if ($this->hasCredential('username') && $this->hasCredential('password')) {
             $username = urlencode($this->getCredential('username'));
             $password = urlencode($this->getCredential('password'));
 
@@ -162,7 +173,7 @@ class GenericGitProvider extends AbstractGitProvider
             $result = Process::env($env)->run(array_merge(['git'], $command));
 
             if ($result->failed()) {
-                throw new GitProviderException('Git command failed: '.$result->errorOutput());
+                throw new GitProviderException('Git command failed: '.GitCredentialScrubber::scrub($result->errorOutput()));
             }
 
             return trim($result->output());

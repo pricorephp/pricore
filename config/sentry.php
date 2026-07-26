@@ -1,5 +1,9 @@
 <?php
 
+use App\Domains\Repository\Support\GitCredentialScrubber;
+use Sentry\Event;
+use Sentry\EventHint;
+
 /**
  * Sentry Laravel SDK configuration file.
  *
@@ -43,6 +47,19 @@ return [
 
     // @see: https://docs.sentry.io/platforms/php/guides/laravel/configuration/options/#ignore_exceptions
     // 'ignore_exceptions' => [],
+
+    /*
+     * Backstop for credentials embedded in git remote URLs. Git echoes the remote it
+     * failed to reach, so a clone failure against https://user:secret@host would
+     * otherwise carry the secret into an exception message reported here.
+     */
+    'before_send' => function (Event $event, ?EventHint $hint): Event {
+        foreach ($event->getExceptions() as $exception) {
+            $exception->setValue(GitCredentialScrubber::scrub($exception->getValue()));
+        }
+
+        return $event;
+    },
 
     // @see: https://docs.sentry.io/platforms/php/guides/laravel/configuration/options/#ignore_transactions
     'ignore_transactions' => [
