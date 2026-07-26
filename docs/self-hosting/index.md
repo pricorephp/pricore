@@ -50,6 +50,14 @@ For custom setups or environments without Docker:
 4. Configure environment
 5. Set up a web server (nginx, Apache, or FrankenPHP)
 6. Configure process manager (systemd, supervisor)
+7. Create the first user and organization:
+
+```bash
+php artisan pricore:install
+```
+
+Registration is invite-only by default, so this command is how you get your first
+account. To allow anyone to register instead, see [`SIGN_UP_ENABLED`](/getting-started/configuration#registration).
 
 ## Scaling
 
