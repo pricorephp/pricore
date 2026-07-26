@@ -21,7 +21,14 @@ cd pricore
 
 # Install dependencies and set up the project
 composer setup
+
+# Create your first user and organization
+php artisan pricore:install
 ```
+
+Registration is invite-only by default, so `pricore:install` is how you get an account
+to sign in with. Set `SIGN_UP_ENABLED=true` in `.env` if you would rather register
+through the UI.
 
 ### Running the Development Server
 
