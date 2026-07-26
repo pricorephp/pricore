@@ -77,4 +77,4 @@ php artisan test --coverage
 
 ## Security
 
-If you discover a security vulnerability, please send an email to **pricore@maartenbode.com** instead of using the issue tracker. All security vulnerabilities will be promptly addressed.
+If you discover a security vulnerability, please report it privately rather than using the issue tracker. See [SECURITY.md](SECURITY.md) for how to reach us and what to include.
