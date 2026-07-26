@@ -7,6 +7,7 @@ use App\Models\Mirror;
 use App\Models\Organization;
 use Illuminate\Console\Command;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Str;
 
 use function Laravel\Prompts\spin;
 
@@ -62,8 +63,11 @@ class SyncMirrorCommand extends Command
 
         if ($organizationIdentifier = $this->option('organization')) {
             $organization = Organization::query()
-                ->where('uuid', $organizationIdentifier)
-                ->orWhere('slug', $organizationIdentifier)
+                ->where('slug', $organizationIdentifier)
+                ->when(
+                    Str::isUuid($organizationIdentifier),
+                    fn ($query) => $query->orWhere('uuid', $organizationIdentifier),
+                )
                 ->first();
 
             if (! $organization) {

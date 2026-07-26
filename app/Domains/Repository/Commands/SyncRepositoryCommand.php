@@ -7,6 +7,7 @@ use App\Models\Organization;
 use App\Models\Repository;
 use Illuminate\Console\Command;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Str;
 
 use function Laravel\Prompts\spin;
 
@@ -69,8 +70,11 @@ class SyncRepositoryCommand extends Command
 
         if ($organizationIdentifier = $this->option('organization')) {
             $organization = Organization::query()
-                ->where('uuid', $organizationIdentifier)
-                ->orWhere('slug', $organizationIdentifier)
+                ->where('slug', $organizationIdentifier)
+                ->when(
+                    Str::isUuid($organizationIdentifier),
+                    fn ($query) => $query->orWhere('uuid', $organizationIdentifier),
+                )
                 ->first();
 
             if (! $organization) {
@@ -84,7 +88,7 @@ class SyncRepositoryCommand extends Command
         }
 
         if ($repositoryUuid = $this->argument('repository')) {
-            $repository = Repository::find($repositoryUuid);
+            $repository = Str::isUuid($repositoryUuid) ? Repository::find($repositoryUuid) : null;
 
             if (! $repository) {
                 $this->error("Repository '{$repositoryUuid}' not found.");

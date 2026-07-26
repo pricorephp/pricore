@@ -6,6 +6,7 @@ use App\Domains\Repository\Contracts\Enums\GitProvider;
 use App\Models\User;
 use App\Models\UserGitCredential;
 use Illuminate\Console\Command;
+use Illuminate\Support\Str;
 
 use function Laravel\Prompts\password;
 use function Laravel\Prompts\search;
@@ -71,8 +72,11 @@ class AddGitCredentialsCommand extends Command
     {
         if ($userIdentifier = $this->argument('user')) {
             return User::query()
-                ->where('uuid', $userIdentifier)
-                ->orWhere('email', $userIdentifier)
+                ->where('email', $userIdentifier)
+                ->when(
+                    Str::isUuid($userIdentifier),
+                    fn ($query) => $query->orWhere('uuid', $userIdentifier),
+                )
                 ->first();
         }
 
