@@ -357,6 +357,29 @@ it('includes available-packages and notify-batch in packages.json', function () 
         ->assertJsonPath('notify-batch', url("/{$this->organization->slug}/notify-batch"));
 });
 
+// Composer only calls the advisory endpoint if packages.json advertises it, so
+// `composer audit` silently does nothing without this key.
+it('advertises the security advisory api so composer audit can discover it', function () {
+    $response = authenticatedGet("/{$this->organization->slug}/packages.json", $this->plainToken);
+
+    $response->assertOk()
+        ->assertJsonPath('security-advisories.metadata', false)
+        ->assertJsonPath(
+            'security-advisories.api-url',
+            url("/{$this->organization->slug}/api/security-advisories")
+        );
+});
+
+it('serves advisories from the url it advertises', function () {
+    $advisoryUrl = authenticatedGet("/{$this->organization->slug}/packages.json", $this->plainToken)
+        ->json('security-advisories.api-url');
+
+    test()->withHeaders(['Authorization' => "Bearer {$this->plainToken}"])
+        ->postJson($advisoryUrl, ['packages' => ['acme/awesome-package']])
+        ->assertOk()
+        ->assertJsonStructure(['advisories']);
+});
+
 it('returns minified metadata for multiple versions', function () {
     $package = Package::factory()
         ->for($this->organization, 'organization')
