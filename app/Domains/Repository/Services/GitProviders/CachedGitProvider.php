@@ -25,6 +25,10 @@ class CachedGitProvider implements GitProviderInterface
 
     public function getFileContent(string $ref, string $path): ?string
     {
+        if (! $this->isUsableRef($ref)) {
+            return null;
+        }
+
         $result = Process::path($this->clonePath)
             ->env(['GIT_TERMINAL_PROMPT' => '0'])
             ->run(['git', 'show', "{$ref}:{$path}"]);
@@ -63,10 +67,23 @@ class CachedGitProvider implements GitProviderInterface
 
     public function downloadArchive(string $ref, string $outputPath): bool
     {
+        if (! $this->isUsableRef($ref)) {
+            return false;
+        }
+
         $result = Process::path($this->clonePath)
             ->env(['GIT_TERMINAL_PROMPT' => '0'])
             ->run(['git', 'archive', '--format=zip', "--output={$outputPath}", $ref]);
 
         return $result->successful() && file_exists($outputPath);
+    }
+
+    /**
+     * Neither `git show` nor `git archive` takes a `--` separator before a revision,
+     * so a ref from a remote that begins with a dash would be read as an option.
+     */
+    protected function isUsableRef(string $ref): bool
+    {
+        return $ref !== '' && ! str_starts_with($ref, '-');
     }
 }

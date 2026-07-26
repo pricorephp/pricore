@@ -4,6 +4,7 @@ namespace App\Domains\Repository\Actions;
 
 use App\Domains\Repository\Contracts\Enums\GitProvider;
 use App\Domains\Repository\Exceptions\GitProviderException;
+use App\Domains\Repository\Rules\ValidRepositoryIdentifier;
 use App\Models\Repository;
 use Illuminate\Support\Facades\Process;
 use Illuminate\Support\Str;
@@ -14,6 +15,12 @@ class CreateGitCloneAction
     {
         if ($repository->provider !== GitProvider::Git) {
             return null;
+        }
+
+        // Guarded at the point of use, not only at request validation: git runs the
+        // command in an `ext::` address and reads a leading dash as an option.
+        if (! ValidRepositoryIdentifier::passes($repository->repo_identifier, GitProvider::Git)) {
+            throw new GitProviderException('Refusing to clone an unsupported repository URL.');
         }
 
         $clonePath = storage_path("app/git-clones/{$repository->uuid}");
@@ -37,7 +44,7 @@ class CreateGitCloneAction
 
         try {
             $result = Process::env($env)
-                ->run(['git', 'clone', '--bare', $repository->repo_identifier, $clonePath]);
+                ->run(['git', 'clone', '--bare', '--', $repository->repo_identifier, $clonePath]);
 
             if ($result->failed()) {
                 throw new GitProviderException('Failed to clone repository: '.$result->errorOutput());
