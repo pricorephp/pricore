@@ -43,10 +43,6 @@ Don't want to self-host? Try [Hosted Pricore](https://app.pricore.dev) — a ful
 - **Web Dashboard** - Browse packages, manage tokens, and view download stats in realtime.
 - **Built on Laravel** - Familiar stack, easy to extend. Open source under Apache 2.0.
 
-<p align="center">
-  <a href="https://www.star-history.com/?repos=pricorephp%2Fpricore&type=date&legend=top-left"><img src="https://api.star-history.com/image?repos=pricorephp/pricore&type=date&legend=top-left" alt="Star History Chart" width="500" /></a>
-</p>
-
 ## Quick Start with Docker
 
 60 seconds to a working registry. Three commands. That's all it takes.
