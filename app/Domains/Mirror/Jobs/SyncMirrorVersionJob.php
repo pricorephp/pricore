@@ -8,6 +8,7 @@ use App\Domains\Mirror\Actions\SyncMirrorPackageVersionAction;
 use App\Domains\Mirror\Contracts\Enums\SyncVersionResult;
 use App\Domains\Mirror\Exceptions\MirrorDistDownloadException;
 use App\Domains\Mirror\Services\RegistryClient\RegistryClientFactory;
+use App\Domains\Repository\Actions\RecordDistArchiveAction;
 use App\Models\Mirror;
 use App\Models\Package;
 use App\Models\PackageVersion;
@@ -39,6 +40,7 @@ class SyncMirrorVersionJob implements ShouldQueue
         FindOrCreateMirrorPackageAction $findOrCreateMirrorPackageAction,
         SyncMirrorPackageVersionAction $syncMirrorPackageVersionAction,
         DownloadMirrorDistAction $downloadMirrorDistAction,
+        RecordDistArchiveAction $recordDistArchiveAction,
     ): void {
         if ($this->batch()?->cancelled()) {
             return;
@@ -65,12 +67,13 @@ class SyncMirrorVersionJob implements ShouldQueue
         $this->incrementCounter($result);
 
         if ($this->mirror->mirror_dist && config('pricore.dist.enabled')) {
-            $this->mirrorDist($downloadMirrorDistAction, $package);
+            $this->mirrorDist($downloadMirrorDistAction, $recordDistArchiveAction, $package);
         }
     }
 
     protected function mirrorDist(
         DownloadMirrorDistAction $downloadMirrorDistAction,
+        RecordDistArchiveAction $recordDistArchiveAction,
         Package $package,
     ): void {
         $packageVersion = PackageVersion::query()
@@ -78,7 +81,18 @@ class SyncMirrorVersionJob implements ShouldQueue
             ->where('version', $this->version)
             ->first();
 
-        if (! $packageVersion || $packageVersion->dist_path) {
+        if (! $packageVersion || ! $packageVersion->source_reference) {
+            return;
+        }
+
+        // Ask whether we hold an archive for the reference we are serving now,
+        // not merely whether we hold one at all: a dev version whose upstream
+        // reference moved needs re-downloading.
+        $alreadyMirrored = $packageVersion->archives()
+            ->where('source_reference', $packageVersion->source_reference)
+            ->exists();
+
+        if ($alreadyMirrored) {
             return;
         }
 
@@ -96,14 +110,7 @@ class SyncMirrorVersionJob implements ShouldQueue
                 return;
             }
 
-            $distUrl = url("/{$organizationSlug}/dists/{$package->name}/{$packageVersion->version}/{$packageVersion->source_reference}.zip");
-
-            $packageVersion->update([
-                'dist_url' => $distUrl,
-                'dist_path' => $dist->path,
-                'dist_shasum' => $dist->shasum,
-                'dist_size' => $dist->size,
-            ]);
+            $recordDistArchiveAction->handle($packageVersion, $dist, $organizationSlug);
         } catch (MirrorDistDownloadException $e) {
             $this->incrementCounter(SyncVersionResult::DistFailed);
 

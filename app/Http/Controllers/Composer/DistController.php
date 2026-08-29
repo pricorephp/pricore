@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers\Composer;
 
+use App\Domains\Composer\Actions\ResolveDistArchiveAction;
 use App\Http\Controllers\Controller;
 use App\Models\Organization;
-use App\Models\PackageVersion;
 use Illuminate\Filesystem\FilesystemAdapter;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\Response;
@@ -18,33 +18,21 @@ class DistController extends Controller
         string $package,
         string $version,
         string $reference,
+        ResolveDistArchiveAction $resolveDistArchiveAction,
     ): Response {
-        $packageName = "{$vendor}/{$package}";
+        $distPath = $resolveDistArchiveAction->handle(
+            organization: $organization,
+            packageName: "{$vendor}/{$package}",
+            version: $version,
+            reference: $reference,
+        );
 
-        $packageVersions = PackageVersion::query()
-            ->whereHas('package', function ($query) use ($organization, $packageName) {
-                $query->where('organization_uuid', $organization->uuid)
-                    ->where('name', $packageName);
-            })
-            ->matchingVersion($version)
-            ->where('source_reference', $reference)
-            ->whereNotNull('dist_path')
-            ->get();
-
-        $packageVersion = $packageVersions->firstWhere('version', $version) ?? $packageVersions->first();
-
-        if (! $packageVersion || ! $packageVersion->dist_path) {
+        if (! $distPath) {
             return response()->json(['error' => 'Not found'], 404);
         }
-
-        $distPath = $packageVersion->dist_path;
 
         /** @var FilesystemAdapter $disk */
         $disk = Storage::disk(config('pricore.dist.disk'));
-
-        if (! $disk->exists($distPath)) {
-            return response()->json(['error' => 'Not found'], 404);
-        }
 
         /** @var string $diskName */
         $diskName = config('pricore.dist.disk');

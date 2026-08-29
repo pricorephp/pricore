@@ -17,6 +17,8 @@ class SyncRefAction
         protected FindOrCreatePackageAction $findOrCreatePackage,
         protected CreateDistArchiveAction $createDistArchive,
         protected FetchReadmeAction $fetchReadmeAction,
+        protected RecordDistArchiveAction $recordDistArchiveAction,
+        protected DetachDistArchivesTask $detachDistArchivesTask,
     ) {}
 
     /**
@@ -73,6 +75,11 @@ class SyncRefAction
                 ->first();
 
             if ($version) {
+                // The archive still describes the old commit, so release it
+                // before the reference moves. Same transaction: a stale pointer
+                // would serve the previous archive under the new reference.
+                $this->detachDistArchivesTask->handle($version);
+
                 // Version exists but commit SHA changed - update it
                 $version->update([
                     'normalized_version' => $metadata->normalizedVersion,
@@ -123,14 +130,7 @@ class SyncRefAction
                 return;
             }
 
-            $distUrl = url("/{$organizationSlug}/dists/{$package->name}/{$version->version}/{$version->source_reference}.zip");
-
-            $version->update([
-                'dist_url' => $distUrl,
-                'dist_path' => $dist->path,
-                'dist_shasum' => $dist->shasum,
-                'dist_size' => $dist->size,
-            ]);
+            $this->recordDistArchiveAction->handle($version, $dist, $organizationSlug);
         } catch (\Throwable $e) {
             Log::warning('Failed to create dist archive', [
                 'package' => $package->name,

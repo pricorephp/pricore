@@ -25,6 +25,7 @@ When disabled, Pricore serves only `source` references and Composer falls back t
 | `DIST_ENABLED` | Enable or disable dist archive creation | `true` |
 | `DIST_DISK` | Storage disk for archives (`local` or `s3`) | `local` |
 | `DIST_SIGNED_URL_EXPIRY` | Signed URL expiry in minutes (S3 only) | `30` |
+| `DIST_KEEP_DETACHED_DAYS` | Days to keep archives a branch has moved past | unset (keep forever) |
 
 ### Local Storage
 
@@ -59,13 +60,37 @@ Dist archive creation depends on your Git provider's capabilities:
 
 When a provider does not support archive downloads, the sync continues normally — packages are served with `source` references only.
 
+## Branch Versions and Lock Files
+
+Tags are immutable, but branches move. When a branch like `main` receives a new commit, Pricore builds a fresh archive for it — and keeps the previous one.
+
+This matters for `composer install`. A `composer.lock` pins the exact commit that was resolved, and `install` downloads that commit specifically rather than re-reading metadata. If the older archive were discarded when the branch moved, every lock file pinning it would fail to install until someone ran `composer update`.
+
+So each archive is recorded against its own commit. When a branch moves on, the previous archive is marked **detached**: no longer what the branch resolves to, but still downloadable by the commit that named it.
+
 ## Archive Retention
 
-By default, Pricore keeps dist archives for all versions. You can configure per-package retention to automatically clean up old archives and save disk space.
+By default, Pricore keeps dist archives for all versions, including detached ones. Two settings control cleanup, both applied by the `dist:cleanup` command.
 
-The `dist_keep_last_releases` setting on each package controls how many stable release archives to keep. When set to a value greater than `0`, the `dist:cleanup` command removes archives for older stable versions while keeping the most recent ones.
+### Stable releases
+
+The `dist_keep_last_releases` setting on each package controls how many stable release archives to keep. When set to a value greater than `0`, `dist:cleanup` removes archives for older stable versions while keeping the most recent ones.
 
 For example, if `dist_keep_last_releases` is set to `5`, only the 5 most recent stable version archives are kept. Dev versions and pre-release versions are not affected.
+
+### Detached branch archives
+
+`DIST_KEEP_DETACHED_DAYS` bounds how long archives are kept after their branch moves past them:
+
+```bash
+DIST_KEEP_DETACHED_DAYS=30
+```
+
+The window is measured from when an archive **stopped being current**, not from when it was built — a long-lived branch archive superseded yesterday is kept for the full window regardless of its age.
+
+::: warning
+Leaving this unset keeps every detached archive indefinitely, which is the safe default: any commit ever synced stays installable. Setting it trades that guarantee for disk space. Lock files pinning a commit older than the window will fail to install.
+:::
 
 ### Running Cleanup
 
@@ -116,5 +141,12 @@ Composer prefers `dist` over `source` by default, so installs automatically use 
 ### Disk space growing
 
 - Configure `dist_keep_last_releases` on packages with many releases
-- Schedule `php artisan dist:cleanup` to run daily
+- Set `DIST_KEEP_DETACHED_DAYS` to bound archives from moved branches
+- Schedule `php artisan dist:cleanup` to run daily — it is not scheduled by default
 - Consider using S3 storage for large registries
+
+### `composer install` fails with 404 on a branch version
+
+The lock file pins a commit whose archive is no longer stored. This happens when
+`DIST_KEEP_DETACHED_DAYS` is set and the commit fell outside the window. Either
+raise the window, or run `composer update` to move the lock to the current head.

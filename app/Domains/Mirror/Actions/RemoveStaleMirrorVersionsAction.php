@@ -31,12 +31,16 @@ class RemoveStaleMirrorVersionsAction
                 continue;
             }
 
-            $deleted = (int) PackageVersion::query()
+            // One at a time so the deleting hook removes each version's archive
+            // files; a bulk delete fires no events and strands them.
+            PackageVersion::query()
                 ->where('package_uuid', $package->uuid)
                 ->whereNotIn('version', $upstreamVersions)
-                ->delete();
-
-            $totalDeleted += $deleted;
+                ->lazyById(100, 'uuid')
+                ->each(function (PackageVersion $version) use (&$totalDeleted) {
+                    $version->delete();
+                    $totalDeleted++;
+                });
         }
 
         if ($totalDeleted > 0) {

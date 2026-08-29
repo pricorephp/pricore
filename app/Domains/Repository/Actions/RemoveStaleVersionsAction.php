@@ -33,10 +33,18 @@ class RemoveStaleVersionsAction
             return 0;
         }
 
-        $deleted = PackageVersion::query()
+        // Deleted one model at a time so the deleting hook removes each version's
+        // archive files; a bulk delete fires no events and strands them.
+        $deleted = 0;
+
+        PackageVersion::query()
             ->whereIn('package_uuid', $packageUuids)
             ->whereNotIn('version', $currentVersions)
-            ->delete();
+            ->lazyById(100, 'uuid')
+            ->each(function (PackageVersion $version) use (&$deleted) {
+                $version->delete();
+                $deleted++;
+            });
 
         if ($deleted > 0) {
             Log::info('Removed stale package versions', [

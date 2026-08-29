@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Storage;
 
@@ -34,6 +35,8 @@ use Illuminate\Support\Facades\Storage;
  * @property Carbon|null $updated_at
  * @property-read Package $package
  * @property-read Collection<int, SecurityAdvisoryMatch> $advisoryMatches
+ * @property-read Collection<int, DistArchive> $archives
+ * @property-read DistArchive|null $currentArchive
  *
  * @method static Builder<static>|PackageVersion dev()
  * @method static \Database\Factories\PackageVersionFactory factory($count = null, $state = [])
@@ -74,8 +77,16 @@ class PackageVersion extends Model
     protected static function booted(): void
     {
         static::deleting(function (PackageVersion $version) {
+            $disk = Storage::disk(config('pricore.dist.disk'));
+
+            // A version owns every archive ever built for it, not just the one
+            // dist_path points at. The rows themselves go by foreign key cascade.
+            foreach ($version->archives as $archive) {
+                $disk->delete($archive->path);
+            }
+
             if ($version->dist_path) {
-                Storage::disk(config('pricore.dist.disk'))->delete($version->dist_path);
+                $disk->delete($version->dist_path);
             }
         });
     }
@@ -94,6 +105,23 @@ class PackageVersion extends Model
     public function advisoryMatches(): HasMany
     {
         return $this->hasMany(SecurityAdvisoryMatch::class, 'package_version_uuid', 'uuid');
+    }
+
+    /**
+     * @return HasMany<DistArchive, $this>
+     */
+    public function archives(): HasMany
+    {
+        return $this->hasMany(DistArchive::class, 'package_version_uuid', 'uuid');
+    }
+
+    /**
+     * @return HasOne<DistArchive, $this>
+     */
+    public function currentArchive(): HasOne
+    {
+        return $this->hasOne(DistArchive::class, 'package_version_uuid', 'uuid')
+            ->whereNull('detached_at');
     }
 
     /**

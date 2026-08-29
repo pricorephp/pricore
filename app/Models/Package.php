@@ -30,6 +30,7 @@ use Illuminate\Support\Carbon;
  * @property-read Repository|null $repository
  * @property-read Mirror|null $mirror
  * @property-read Collection<int, PackageVersion> $versions
+ * @property-read Collection<int, DistArchive> $distArchives
  * @property-read int|null $versions_count
  * @property-read Collection<int, PackageDownload> $downloads
  * @property-read int|null $downloads_count
@@ -95,6 +96,17 @@ class Package extends Model
     public function versions(): HasMany
     {
         return $this->hasMany(PackageVersion::class, 'package_uuid', 'uuid');
+    }
+
+    /**
+     * Every archive built for this package, across all its versions. Denormalized
+     * onto the package so files can be purged in bulk before a cascade delete.
+     *
+     * @return HasMany<DistArchive, $this>
+     */
+    public function distArchives(): HasMany
+    {
+        return $this->hasMany(DistArchive::class, 'package_uuid', 'uuid');
     }
 
     /**
