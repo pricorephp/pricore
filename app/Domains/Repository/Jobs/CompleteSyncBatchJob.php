@@ -123,7 +123,7 @@ class CompleteSyncBatchJob implements ShouldQueue
             return;
         }
 
-        $organization = $repository->organization;
+        $organization = $repository->organization()->first();
 
         if (! $organization) {
             Log::info('Skipping repository sync activity because organization is unavailable', [

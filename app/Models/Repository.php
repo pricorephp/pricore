@@ -32,7 +32,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property-read User|null $credentialUser
- * @property-read Organization|null $organization
+ * @property-read Organization $organization
  * @property-read OrganizationSshKey|null $sshKey
  * @property-read Collection<int, Package> $packages
  * @property-read int|null $packages_count
