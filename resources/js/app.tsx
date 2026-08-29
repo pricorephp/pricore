@@ -20,12 +20,33 @@ Settings.defaultLocale = 'en';
 
 const appName = import.meta.env.VITE_APP_NAME || 'Pricore';
 
+type AnalyticsPayload = {
+    event: string;
+    method?: string;
+};
+
+const trackAnalytics = (payload?: AnalyticsPayload | null) => {
+    if (!payload) return;
+
+    const analyticsWindow = window as Window & {
+        gtag?: (...args: unknown[]) => void;
+    };
+
+    analyticsWindow.gtag?.(
+        'event',
+        payload.event,
+        payload.method ? { method: payload.method } : undefined,
+    );
+};
+
 // Handle flash messages via router events
 let previousFlash: SharedData['flash'] = null;
 
 router.on('success', (event) => {
     const props = event.detail.page.props as unknown as SharedData;
     const flash = props.flash;
+
+    trackAnalytics(props.analytics as AnalyticsPayload | null | undefined);
 
     // Only show toast if flash message is new
     if (flash?.status && flash.status !== previousFlash?.status) {
@@ -56,6 +77,11 @@ createInertiaApp({
         ),
     setup({ el, App, props }) {
         const root = createRoot(el);
+
+        trackAnalytics(
+            props.initialPage.props.analytics as
+                AnalyticsPayload | null | undefined,
+        );
 
         root.render(
             <StrictMode>

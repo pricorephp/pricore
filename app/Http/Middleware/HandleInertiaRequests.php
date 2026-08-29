@@ -69,6 +69,7 @@ class HandleInertiaRequests extends Middleware
             'search' => $user ? fn () => $this->searchData($request) : new SearchData(packages: [], repositories: []),
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
             'cloud' => class_exists(PricoreCloudServiceProvider::class),
+            'analytics' => $request->session()->get('analytics'),
             'flash' => new FlashData(
                 status: $request->session()->get('status') ?? $request->session()->get('success'),
                 error: $request->session()->get('error'),

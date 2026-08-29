@@ -78,6 +78,10 @@ test('callback creates new user from GitHub', function () {
         ->get(route('auth.github.callback'));
 
     $response->assertRedirect(route('dashboard'));
+    $response->assertSessionHas('analytics', [
+        'event' => 'sign_up',
+        'method' => 'github',
+    ]);
     $this->assertAuthenticated();
 
     $user = User::where('email', 'john@example.com')->first();
