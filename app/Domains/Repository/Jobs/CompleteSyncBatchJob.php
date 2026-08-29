@@ -119,9 +119,25 @@ class CompleteSyncBatchJob implements ShouldQueue
             || $syncLog->versions_updated > 0
             || $syncLog->versions_removed > 0;
 
+        if (! $syncLog->status->isFailed() && ! $hasChanges) {
+            return;
+        }
+
+        $organization = $repository->organization()->first();
+
+        if (! $organization) {
+            Log::info('Skipping repository sync activity because organization is unavailable', [
+                'repository_uuid' => $repository->uuid,
+                'organization_uuid' => $repository->organization_uuid,
+                'sync_log_uuid' => $syncLog->uuid,
+            ]);
+
+            return;
+        }
+
         if ($syncLog->status->isFailed()) {
             $recordActivityTask->handle(
-                organization: $repository->organization,
+                organization: $organization,
                 type: ActivityType::RepositorySyncFailed,
                 subject: $repository,
                 properties: [
@@ -134,12 +150,8 @@ class CompleteSyncBatchJob implements ShouldQueue
             return;
         }
 
-        if (! $hasChanges) {
-            return;
-        }
-
         $recordActivityTask->handle(
-            organization: $repository->organization,
+            organization: $organization,
             type: ActivityType::RepositorySynced,
             subject: $repository,
             properties: [
