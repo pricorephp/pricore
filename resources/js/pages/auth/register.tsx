@@ -1,6 +1,7 @@
 import { login } from '@/routes';
 import { store } from '@/routes/register';
-import { Form, Head } from '@inertiajs/react';
+import { Form, Head, usePage } from '@inertiajs/react';
+import { useEffect } from 'react';
 
 import InputError from '@/components/input-error';
 import TextLink from '@/components/text-link';
@@ -10,6 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Spinner } from '@/components/ui/spinner';
 import AuthLayout from '@/layouts/auth-layout';
+import type { SharedData } from '@/types';
 
 interface RegisterProps {
     githubEnabled?: boolean;
@@ -20,12 +22,54 @@ export default function Register({
     githubEnabled,
     gitlabEnabled,
 }: RegisterProps) {
+    const { cloud } = usePage<SharedData>().props;
+    const cloudEnabled = Boolean(cloud);
+
+    useEffect(() => {
+        const analyticsWindow = window as Window & {
+            gtag?: (...args: unknown[]) => void;
+        };
+
+        analyticsWindow.gtag?.('event', 'signup_view');
+    }, []);
+
+    const trackEvent = (event: string, method?: string) => {
+        const analyticsWindow = window as Window & {
+            gtag?: (...args: unknown[]) => void;
+        };
+
+        analyticsWindow.gtag?.('event', event, method ? { method } : undefined);
+    };
+
     return (
         <AuthLayout
-            title="Create an account"
-            description="Enter your details below to create your account"
+            title={cloudEnabled ? 'Start your free trial' : 'Create an account'}
+            description={
+                cloudEnabled
+                    ? '14 days free. No credit card required.'
+                    : 'Enter your details below to create your account'
+            }
+            homeHref={cloudEnabled ? 'https://pricore.dev/pricing/' : undefined}
         >
             <Head title="Register" />
+
+            {cloudEnabled && (
+                <div className="rounded-lg border border-orange-200 bg-orange-50 px-4 py-3 text-sm dark:border-orange-900/60 dark:bg-orange-950/30">
+                    <div className="flex items-baseline justify-between gap-3">
+                        <span className="font-medium">Pricore Cloud</span>
+                        <span className="font-semibold">$19/month</span>
+                    </div>
+                    <p className="mt-1 text-muted-foreground">
+                        Unlimited users and packages. Cancel anytime.
+                    </p>
+                    <a
+                        href="https://pricore.dev/pricing/"
+                        className="mt-2 inline-block font-medium text-orange-700 underline underline-offset-4 dark:text-orange-400"
+                    >
+                        View pricing details
+                    </a>
+                </div>
+            )}
 
             {(githubEnabled || gitlabEnabled) && (
                 <>
@@ -33,6 +77,9 @@ export default function Register({
                         {githubEnabled && (
                             <a
                                 href="/auth/github/redirect"
+                                onClick={() =>
+                                    trackEvent('signup_method_select', 'github')
+                                }
                                 className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-md border bg-background font-medium shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground"
                             >
                                 <svg
@@ -48,6 +95,9 @@ export default function Register({
                         {gitlabEnabled && (
                             <a
                                 href="/auth/gitlab/redirect"
+                                onClick={() =>
+                                    trackEvent('signup_method_select', 'gitlab')
+                                }
                                 className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-md border bg-background font-medium shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground"
                             >
                                 <svg
@@ -79,6 +129,11 @@ export default function Register({
                 action={store.url()}
                 method="post"
                 resetOnSuccess={['password', 'password_confirmation']}
+                transform={(data) => ({
+                    ...data,
+                    password_confirmation: data.password,
+                })}
+                onSuccess={() => trackEvent('sign_up', 'email')}
                 disableWhileProcessing
                 className="flex flex-col gap-6"
             >
@@ -131,28 +186,10 @@ export default function Register({
                                 <InputError message={errors.password} />
                             </div>
 
-                            <div className="grid gap-2">
-                                <Label htmlFor="password_confirmation">
-                                    Confirm password
-                                </Label>
-                                <Input
-                                    id="password_confirmation"
-                                    type="password"
-                                    required
-                                    tabIndex={4}
-                                    autoComplete="new-password"
-                                    name="password_confirmation"
-                                    placeholder="Confirm password"
-                                />
-                                <InputError
-                                    message={errors.password_confirmation}
-                                />
-                            </div>
-
                             <Button
                                 type="submit"
                                 className="mt-2 h-10 w-full"
-                                tabIndex={5}
+                                tabIndex={4}
                                 data-test="register-user-button"
                             >
                                 {processing && <Spinner />}
@@ -162,10 +199,30 @@ export default function Register({
 
                         <div className="text-center text-muted-foreground">
                             Already have an account?{' '}
-                            <TextLink href={login()} tabIndex={6}>
+                            <TextLink href={login()} tabIndex={5}>
                                 Log in
                             </TextLink>
                         </div>
+
+                        {cloudEnabled && (
+                            <p className="text-center text-xs leading-relaxed text-muted-foreground">
+                                By creating an account, you agree to our{' '}
+                                <a
+                                    href="https://pricore.dev/terms/"
+                                    className="underline underline-offset-4"
+                                >
+                                    Terms
+                                </a>{' '}
+                                and{' '}
+                                <a
+                                    href="https://pricore.dev/privacy/"
+                                    className="underline underline-offset-4"
+                                >
+                                    Privacy Policy
+                                </a>
+                                .
+                            </p>
+                        )}
                     </>
                 )}
             </Form>

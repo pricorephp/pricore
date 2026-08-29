@@ -48,4 +48,8 @@ return [
         'instance_uri' => env('GITLAB_INSTANCE_URI', 'https://gitlab.com/'),
     ],
 
+    'google_analytics' => [
+        'id' => env('GOOGLE_ANALYTICS_ID'),
+    ],
+
 ];

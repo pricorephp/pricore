@@ -76,7 +76,13 @@ class GitHubAuthController extends Controller
 
         Auth::login($user, remember: true);
 
-        return redirect()->intended(route('dashboard'));
+        $response = redirect()->intended(route('dashboard'));
+
+        if (! $existingUser) {
+            $response->with('analytics', ['event' => 'sign_up', 'method' => 'github']);
+        }
+
+        return $response;
     }
 
     private function handleConnect(
