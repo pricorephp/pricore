@@ -10,6 +10,7 @@ use App\Domains\Package\Contracts\Data\PackageData;
 use App\Domains\Repository\Actions\BulkCreateRepositoriesAction;
 use App\Domains\Repository\Actions\DeleteWebhookAction;
 use App\Domains\Repository\Actions\ExtractRepositoryNameAction;
+use App\Domains\Repository\Actions\PurgeDistArchiveFilesTask;
 use App\Domains\Repository\Actions\RegisterWebhookAction;
 use App\Domains\Repository\Contracts\Data\RepositoryData;
 use App\Domains\Repository\Contracts\Data\SyncLogData;
@@ -37,6 +38,7 @@ class RepositoryController extends Controller
         protected RegisterWebhookAction $registerWebhookAction,
         protected DeleteWebhookAction $deleteWebhookAction,
         protected RecordActivityTask $recordActivity,
+        protected PurgeDistArchiveFilesTask $purgeDistArchiveFilesTask,
     ) {}
 
     public function index(Organization $organization): Response
@@ -216,6 +218,10 @@ class RepositoryController extends Controller
         );
 
         $this->deleteWebhookAction->handle($repository);
+
+        // Packages, versions and archive rows all cascade at the database level,
+        // which fires no model events. Clear the files while the rows still exist.
+        $this->purgeDistArchiveFilesTask->handle($repository->packages()->pluck('uuid'));
 
         $repository->delete();
 

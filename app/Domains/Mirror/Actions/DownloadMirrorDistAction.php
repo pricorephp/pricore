@@ -64,8 +64,12 @@ class DownloadMirrorDistAction
                 return null;
             }
 
-            $refShort = substr($packageVersion->source_reference ?? '', 0, 12);
-            $storagePath = "{$organizationSlug}/{$package->name}/{$packageVersion->version}_{$refShort}.zip";
+            $storagePath = DistArchiveData::pathFor(
+                organizationSlug: $organizationSlug,
+                packageName: $package->name,
+                version: $packageVersion->version,
+                reference: $packageVersion->source_reference ?? '',
+            );
 
             $disk = Storage::disk(config('pricore.dist.disk'));
             $stream = fopen($tempPath, 'r');

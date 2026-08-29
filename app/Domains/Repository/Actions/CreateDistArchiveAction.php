@@ -33,8 +33,12 @@ class CreateDistArchiveAction
                 return null;
             }
 
-            $refShort = substr($version->source_reference, 0, 12);
-            $storagePath = "{$organizationSlug}/{$version->package->name}/{$version->version}_{$refShort}.zip";
+            $storagePath = DistArchiveData::pathFor(
+                organizationSlug: $organizationSlug,
+                packageName: $version->package->name,
+                version: $version->version,
+                reference: $version->source_reference,
+            );
 
             $disk = Storage::disk(config('pricore.dist.disk'));
             $stream = fopen($tempPath, 'r');
