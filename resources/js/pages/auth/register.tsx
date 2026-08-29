@@ -54,19 +54,23 @@ export default function Register({
             <Head title="Register" />
 
             {cloudEnabled && (
-                <div className="rounded-lg border border-orange-200 bg-orange-50 px-4 py-3 text-sm dark:border-orange-900/60 dark:bg-orange-950/30">
-                    <div className="flex items-baseline justify-between gap-3">
-                        <span className="font-medium">Pricore Cloud</span>
-                        <span className="font-semibold">$19/month</span>
+                <div className="rounded-lg border bg-muted/30 px-4 py-3 text-sm">
+                    <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+                        Your plan
+                    </p>
+                    <div className="mt-2 flex items-baseline justify-between gap-3">
+                        <span className="font-semibold">Pricore Cloud</span>
+                        <span className="font-medium">$19/month</span>
                     </div>
                     <p className="mt-1 text-muted-foreground">
-                        Unlimited users and packages. Cancel anytime.
+                        Unlimited users and packages. Pay after your trial and
+                        cancel anytime.
                     </p>
                     <a
                         href="https://pricore.dev/pricing/"
-                        className="mt-2 inline-block font-medium text-orange-700 underline underline-offset-4 dark:text-orange-400"
+                        className="mt-2 inline-block font-medium underline decoration-border underline-offset-4 transition-colors hover:decoration-foreground"
                     >
-                        View pricing details
+                        See pricing details
                     </a>
                 </div>
             )}
