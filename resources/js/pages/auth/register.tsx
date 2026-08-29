@@ -46,34 +46,12 @@ export default function Register({
             title={cloudEnabled ? 'Start your free trial' : 'Create an account'}
             description={
                 cloudEnabled
-                    ? '14 days free. No credit card required.'
+                    ? '14 days free. No credit card required. Then $19/month.'
                     : 'Enter your details below to create your account'
             }
             homeHref={cloudEnabled ? 'https://pricore.dev/pricing/' : undefined}
         >
             <Head title="Register" />
-
-            {cloudEnabled && (
-                <div className="rounded-lg border bg-muted/30 px-4 py-3 text-sm">
-                    <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-                        Your plan
-                    </p>
-                    <div className="mt-2 flex items-baseline justify-between gap-3">
-                        <span className="font-semibold">Pricore Cloud</span>
-                        <span className="font-medium">$19/month</span>
-                    </div>
-                    <p className="mt-1 text-muted-foreground">
-                        Unlimited users and packages. Pay after your trial and
-                        cancel anytime.
-                    </p>
-                    <a
-                        href="https://pricore.dev/pricing/"
-                        className="mt-2 inline-block font-medium underline decoration-border underline-offset-4 transition-colors hover:decoration-foreground"
-                    >
-                        See pricing details
-                    </a>
-                </div>
-            )}
 
             {(githubEnabled || gitlabEnabled) && (
                 <>
@@ -209,23 +187,33 @@ export default function Register({
                         </div>
 
                         {cloudEnabled && (
-                            <p className="text-center text-xs leading-relaxed text-muted-foreground">
-                                By creating an account, you agree to our{' '}
-                                <a
-                                    href="https://pricore.dev/terms/"
-                                    className="underline underline-offset-4"
-                                >
-                                    Terms
-                                </a>{' '}
-                                and{' '}
-                                <a
-                                    href="https://pricore.dev/privacy/"
-                                    className="underline underline-offset-4"
-                                >
-                                    Privacy Policy
-                                </a>
-                                .
-                            </p>
+                            <div className="space-y-2 text-center text-xs leading-relaxed text-muted-foreground">
+                                <p>
+                                    <a
+                                        href="https://pricore.dev/pricing/"
+                                        className="underline underline-offset-4"
+                                    >
+                                        View Cloud pricing
+                                    </a>
+                                </p>
+                                <p>
+                                    By creating an account, you agree to our{' '}
+                                    <a
+                                        href="https://pricore.dev/terms/"
+                                        className="underline underline-offset-4"
+                                    >
+                                        Terms
+                                    </a>{' '}
+                                    and{' '}
+                                    <a
+                                        href="https://pricore.dev/privacy/"
+                                        className="underline underline-offset-4"
+                                    >
+                                        Privacy Policy
+                                    </a>
+                                    .
+                                </p>
+                            </div>
                         )}
                     </>
                 )}
