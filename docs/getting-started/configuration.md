@@ -181,6 +181,24 @@ Bitbucket uses API token authentication instead of OAuth — no environment vari
 4. In Pricore, go to **Settings** > **Git Providers** > **Add Bitbucket**
 5. Enter your Atlassian account email and the API token
 
+## Registry Mirror Network Access
+
+Registry mirrors may fetch public HTTP and HTTPS endpoints by default. Requests to private, loopback, link-local, multicast, unspecified, and reserved IP addresses are blocked, including destinations reached through metadata URLs, dist URLs, or redirects.
+
+Self-hosted registries on private networks must be explicitly allowlisted:
+
+```bash
+MIRROR_ALLOWED_PRIVATE_HOSTS=satis.internal,10.20.30.40
+```
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `MIRROR_ALLOWED_PRIVATE_HOSTS` | Comma-separated exact hostnames or IP addresses that may be used as private mirror origins. Wildcards and CIDRs are not accepted. | `''` (empty) |
+
+Private access applies only to same-origin requests from the configured mirror. Cross-origin metadata, dist, and redirect targets must still resolve entirely to public addresses. Mirror authentication credentials are never forwarded across origins.
+
+Mirror requests do not use process-level HTTP proxy variables because direct connections are required to pin validated DNS results.
+
 ## Storage Configuration
 
 By default, Pricore stores package distribution files on the local filesystem. To use S3 or an S3-compatible storage provider (like MinIO, DigitalOcean Spaces, or Cloudflare R2), set the filesystem disk to `s3`:

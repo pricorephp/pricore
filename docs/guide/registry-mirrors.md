@@ -26,6 +26,24 @@ Mirrors are synced automatically every 4 hours. You can also trigger a sync manu
 
 Pricore immediately starts syncing packages from the registry.
 
+## Network Security
+
+Pricore validates every URL fetched during a mirror sync, including `packages.json`, include files, Composer v2 metadata, dist archives, and redirects. Only HTTP and HTTPS URLs that resolve entirely to public IP addresses are accepted by default. Private, loopback, link-local, multicast, unspecified, and reserved addresses are rejected.
+
+If a registry is intentionally hosted on a private network, add its exact hostname or IP address to `MIRROR_ALLOWED_PRIVATE_HOSTS`:
+
+```bash
+MIRROR_ALLOWED_PRIVATE_HOSTS=satis.internal,10.20.30.40
+```
+
+Wildcards and CIDR ranges are not supported. An allowlisted private host is permitted only when it is the configured mirror origin; an upstream registry cannot redirect or point metadata or dist downloads at a different private host. Mirror credentials are likewise sent only to the configured origin and are removed from cross-origin requests.
+
+Mirror HTTP traffic connects directly instead of using process-level HTTP proxy variables. This is required so Pricore can pin the validated DNS addresses for the connection.
+
+::: warning
+Allowlisting a hostname gives organization administrators access to all ports and paths on that host through the mirror feature. Only allowlist hosts dedicated to serving trusted Composer registries.
+:::
+
 ## Supported Registry Formats
 
 Pricore supports registries that serve a standard Composer `packages.json` file:

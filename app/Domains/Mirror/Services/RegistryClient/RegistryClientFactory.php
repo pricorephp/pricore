@@ -2,12 +2,10 @@
 
 namespace App\Domains\Mirror\Services\RegistryClient;
 
-use App\Domains\Mirror\Contracts\Enums\MirrorAuthType;
 use App\Domains\Mirror\Contracts\Interfaces\RegistryClientInterface;
 use App\Domains\Mirror\Exceptions\MirrorSyncException;
+use App\Domains\Mirror\Services\Http\SecureMirrorHttpClient;
 use App\Models\Mirror;
-use Illuminate\Http\Client\PendingRequest;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 
 class RegistryClientFactory
@@ -52,31 +50,16 @@ class RegistryClientFactory
         }
     }
 
-    public static function createHttpClient(Mirror $mirror): PendingRequest
+    public static function createHttpClient(Mirror $mirror): SecureMirrorHttpClient
     {
-        $client = Http::timeout(30)
-            ->connectTimeout(10)
-            ->withUserAgent('Pricore Mirror Sync');
-
-        $credentials = $mirror->auth_credentials;
-
-        return match ($mirror->auth_type) {
-            MirrorAuthType::Basic => $client->withBasicAuth(
-                $credentials['username'] ?? '',
-                $credentials['password'] ?? '',
-            ),
-            MirrorAuthType::Bearer => $client->withToken(
-                $credentials['token'] ?? '',
-            ),
-            MirrorAuthType::None => $client,
-        };
+        return app()->makeWith(SecureMirrorHttpClient::class, ['mirror' => $mirror]);
     }
 
     /**
      * @param  array<string, mixed>  $rootMetadata
      */
     protected static function createClient(
-        PendingRequest $httpClient,
+        SecureMirrorHttpClient $httpClient,
         array $rootMetadata,
         Mirror $mirror,
     ): RegistryClientInterface {
@@ -147,7 +130,7 @@ class RegistryClientFactory
      * @return array<string, array<string, array<string, mixed>>>
      */
     protected static function fetchIncludes(
-        PendingRequest $httpClient,
+        SecureMirrorHttpClient $httpClient,
         array $includes,
         string $baseUrl,
     ): array {

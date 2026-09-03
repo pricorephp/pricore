@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Domains\Mirror\Contracts\Interfaces\HostResolverInterface;
+use App\Domains\Mirror\Services\Http\DnsHostResolver;
 use App\Listeners\AcceptPendingInvitationListener;
 use App\Models\AccessToken;
 use App\Models\Mirror;
@@ -23,7 +25,7 @@ class AppServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
-        //
+        $this->app->bind(HostResolverInterface::class, DnsHostResolver::class);
     }
 
     public function boot(): void

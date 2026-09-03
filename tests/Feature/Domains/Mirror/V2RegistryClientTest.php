@@ -114,3 +114,19 @@ it('throws when a v2 registry does not advertise available-packages', function (
 
     RegistryClientFactory::make($this->mirror);
 })->throws(MirrorSyncException::class, 'available-packages');
+
+it('rejects a private absolute metadata URL before requesting it', function () {
+    Http::fake([
+        'registry.example.com/packages.json' => Http::response([
+            'metadata-url' => 'http://127.0.0.1/p2/%package%.json',
+            'available-packages' => ['vendor/pkg'],
+        ]),
+    ]);
+
+    $client = RegistryClientFactory::make($this->mirror);
+
+    expect(fn () => $client->getPackageVersions('vendor/pkg'))
+        ->toThrow(MirrorSyncException::class, 'private or reserved');
+
+    Http::assertSentCount(1);
+});

@@ -2,6 +2,13 @@
 
 return [
 
+    'mirrors' => [
+        'allowed_private_hosts' => array_values(array_filter(array_map(
+            static fn (string $host): string => trim($host),
+            explode(',', (string) env('MIRROR_ALLOWED_PRIVATE_HOSTS', '')),
+        ))),
+    ],
+
     'dist' => [
         'enabled' => env('DIST_ENABLED', true),
         'disk' => env('DIST_DISK', 'local'),

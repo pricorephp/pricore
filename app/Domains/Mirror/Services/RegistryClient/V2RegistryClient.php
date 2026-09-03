@@ -3,8 +3,8 @@
 namespace App\Domains\Mirror\Services\RegistryClient;
 
 use App\Domains\Mirror\Contracts\Interfaces\RegistryClientInterface;
+use App\Domains\Mirror\Services\Http\SecureMirrorHttpClient;
 use Composer\MetadataMinifier\MetadataMinifier;
-use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Str;
 
 class V2RegistryClient implements RegistryClientInterface
@@ -13,7 +13,7 @@ class V2RegistryClient implements RegistryClientInterface
      * @param  array<int, string>  $availablePackages
      */
     public function __construct(
-        protected PendingRequest $httpClient,
+        protected SecureMirrorHttpClient $httpClient,
         protected string $baseUrl,
         protected string $metadataUrlTemplate,
         protected array $availablePackages,
@@ -42,9 +42,7 @@ class V2RegistryClient implements RegistryClientInterface
 
     public function downloadDist(string $url, string $outputPath): bool
     {
-        $response = $this->httpClient->withOptions([
-            'sink' => $outputPath,
-        ])->get($url);
+        $response = $this->httpClient->get($url, ['sink' => $outputPath]);
 
         return $response->successful();
     }

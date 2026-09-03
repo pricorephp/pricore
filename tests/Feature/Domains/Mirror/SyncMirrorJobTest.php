@@ -121,6 +121,44 @@ it('marks mirror as failed when registry is unreachable', function () {
     expect($syncLog->error_message)->toContain('HTTP 404');
 });
 
+it('rejects an existing mirror that resolves to a private address at runtime', function () {
+    $this->mirror->update(['url' => 'http://127.0.0.1:8080']);
+    Http::fake();
+
+    try {
+        SyncMirrorJob::dispatchSync($this->mirror);
+    } catch (MirrorSyncException) {
+        // Expected
+    }
+
+    $this->mirror->refresh();
+    expect($this->mirror->sync_status)->toBe(RepositorySyncStatus::Failed);
+
+    $syncLog = MirrorSyncLog::where('mirror_uuid', $this->mirror->uuid)->latest()->first();
+    expect($syncLog->status)->toBe(SyncStatus::Failed)
+        ->and($syncLog->error_message)->toContain('private or reserved');
+
+    Http::assertNothingSent();
+});
+
+it('syncs an allowlisted private mirror origin', function () {
+    config()->set('pricore.mirrors.allowed_private_hosts', ['satis.internal']);
+    $this->hostResolver->set('satis.internal', ['10.0.0.10']);
+    $this->mirror->update(['url' => 'https://satis.internal']);
+
+    Http::fake([
+        'satis.internal/packages.json' => Http::response([
+            'includes' => ['include/all.json' => ['sha1' => 'abc']],
+        ]),
+        'satis.internal/include/all.json' => Http::response(['packages' => []]),
+    ]);
+
+    SyncMirrorJob::dispatchSync($this->mirror);
+
+    expect($this->mirror->refresh()->sync_status)->toBe(RepositorySyncStatus::Ok);
+    Http::assertSentCount(2);
+});
+
 it('removes stale versions during sync', function () {
     $package = Package::factory()->withoutRepository()->create([
         'organization_uuid' => $this->organization->uuid,
