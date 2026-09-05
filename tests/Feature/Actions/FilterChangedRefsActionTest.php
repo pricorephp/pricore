@@ -226,3 +226,37 @@ it('handles tags without v prefix', function () {
 
     expect($result->all->count())->toBe(0);
 });
+
+it('keeps a ref while any package of the repository sits at a stale commit', function () {
+    $organization = Organization::factory()->create();
+    $repository = Repository::factory()->for($organization, 'organization')->github()->create();
+    $billing = Package::factory()->forOrganization($organization)->forRepository($repository)->create();
+    $crm = Package::factory()->forOrganization($organization)->forRepository($repository)->create();
+
+    PackageVersion::factory()->forPackage($billing)->create(['version' => 'v1.0.0', 'source_reference' => 'abc123']);
+    PackageVersion::factory()->forPackage($crm)->create(['version' => 'v1.0.0', 'source_reference' => 'stale']);
+
+    $result = app(FilterChangedRefsAction::class)->handle(
+        makeRefs(tags: [['name' => 'v1.0.0', 'commit' => 'abc123']]),
+        $repository,
+    );
+
+    expect($result->all->count())->toBe(1);
+});
+
+it('filters a ref once every package sits at its commit', function () {
+    $organization = Organization::factory()->create();
+    $repository = Repository::factory()->for($organization, 'organization')->github()->create();
+    $billing = Package::factory()->forOrganization($organization)->forRepository($repository)->create();
+    $crm = Package::factory()->forOrganization($organization)->forRepository($repository)->create();
+
+    PackageVersion::factory()->forPackage($billing)->create(['version' => 'v1.0.0', 'source_reference' => 'abc123']);
+    PackageVersion::factory()->forPackage($crm)->create(['version' => 'v1.0.0', 'source_reference' => 'abc123']);
+
+    $result = app(FilterChangedRefsAction::class)->handle(
+        makeRefs(tags: [['name' => 'v1.0.0', 'commit' => 'abc123']]),
+        $repository,
+    );
+
+    expect($result->all->count())->toBe(0);
+});

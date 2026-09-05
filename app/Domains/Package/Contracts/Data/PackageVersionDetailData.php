@@ -128,8 +128,8 @@ class PackageVersionDetailData extends Data
         $ref = $version->source_reference ?: $version->source_tag;
 
         if ($provider !== null && $repoIdentifier !== null && $ref !== null && $ref !== '') {
-            $blobBaseUrl = $provider->blobBaseUrl($repoIdentifier, $ref, $customBaseUrl);
-            $rawFileBaseUrl = $provider->rawFileBaseUrl($repoIdentifier, $ref, $customBaseUrl);
+            $blobBaseUrl = $provider->blobBaseUrl($repoIdentifier, $ref, $customBaseUrl, $version->source_path);
+            $rawFileBaseUrl = $provider->rawFileBaseUrl($repoIdentifier, $ref, $customBaseUrl, $version->source_path);
         }
 
         return App::make(MarkdownRenderer::class)->render(

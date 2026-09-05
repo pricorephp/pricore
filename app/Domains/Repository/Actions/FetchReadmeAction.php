@@ -8,54 +8,80 @@ use Throwable;
 
 class FetchReadmeAction
 {
+    /**
+     * In order of preference, compared case-insensitively against the directory listing.
+     */
     protected const CANDIDATE_FILENAMES = [
         'README.md',
-        'readme.md',
-        'Readme.md',
         'README.markdown',
-        'readme.markdown',
         'README',
-        'readme',
     ];
 
     protected const MAX_BYTES = 512 * 1024;
 
-    public function handle(GitProviderInterface $provider, string $ref): ?string
+    public function handle(GitProviderInterface $provider, string $ref, string $path = ''): ?string
     {
-        foreach (self::CANDIDATE_FILENAMES as $filename) {
-            try {
-                $contents = $provider->getFileContent($ref, $filename);
-            } catch (Throwable $e) {
-                // A failing provider call (rate-limit, 5xx, auth blip) should not
-                // abort the surrounding sync — the README is non-essential. Bail
-                // the probe loop too: remaining candidates would hit the same
-                // failure and just waste API budget.
-                Log::warning('Failed to fetch README candidate', [
-                    'repository' => $provider->getRepositoryIdentifier(),
-                    'ref' => $ref,
-                    'filename' => $filename,
-                    'error' => $e->getMessage(),
-                ]);
+        $path = trim($path, '/');
 
+        try {
+            $filename = $this->findReadmeFilename($provider, $ref, $path);
+
+            if ($filename === null) {
                 return null;
             }
 
-            if ($contents === null) {
-                continue;
+            $contents = $provider->getFileContent($ref, $path === '' ? $filename : "{$path}/{$filename}");
+        } catch (Throwable $e) {
+            // A failing provider call (rate-limit, 5xx, auth blip) should not
+            // abort the surrounding sync — the README is non-essential.
+            Log::warning('Failed to fetch README', [
+                'repository' => $provider->getRepositoryIdentifier(),
+                'ref' => $ref,
+                'path' => $path,
+                'error' => $e->getMessage(),
+            ]);
+
+            return null;
+        }
+
+        if ($contents === null) {
+            return null;
+        }
+
+        if (strlen($contents) > self::MAX_BYTES) {
+            Log::info('Skipped README that exceeds the size cap', [
+                'repository' => $provider->getRepositoryIdentifier(),
+                'ref' => $ref,
+                'path' => $path,
+                'size_bytes' => strlen($contents),
+            ]);
+
+            return null;
+        }
+
+        return $contents;
+    }
+
+    /**
+     * One directory listing replaces probing every candidate filename, which
+     * matters once a monorepo multiplies the lookups per ref.
+     */
+    protected function findReadmeFilename(GitProviderInterface $provider, string $ref, string $path): ?string
+    {
+        $files = [];
+
+        foreach ($provider->listDirectory($ref, $path) as $entry) {
+            if ($entry['type'] === 'file') {
+                $files[strtolower($entry['name'])] ??= $entry['name'];
             }
+        }
 
-            if (strlen($contents) > self::MAX_BYTES) {
-                Log::info('Skipped README that exceeds the size cap', [
-                    'repository' => $provider->getRepositoryIdentifier(),
-                    'ref' => $ref,
-                    'filename' => $filename,
-                    'size_bytes' => strlen($contents),
-                ]);
+        foreach (self::CANDIDATE_FILENAMES as $candidate) {
+            $name = $files[strtolower($candidate)] ?? null;
 
-                return null;
+            if ($name !== null) {
+                return $name;
             }
-
-            return $contents;
         }
 
         return null;

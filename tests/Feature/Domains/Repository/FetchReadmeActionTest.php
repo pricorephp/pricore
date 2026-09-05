@@ -4,60 +4,67 @@ use App\Domains\Repository\Actions\FetchReadmeAction;
 use App\Domains\Repository\Contracts\Interfaces\GitProviderInterface;
 use App\Domains\Repository\Exceptions\GitProviderException;
 
-it('returns the contents of the first README candidate found', function () {
+/**
+ * @param  array<int, string>  $files
+ */
+function readmeProvider(array $files, string $path = ''): GitProviderInterface
+{
     $provider = Mockery::mock(GitProviderInterface::class);
-    $provider->shouldReceive('getFileContent')
-        ->with('main', 'README.md')
-        ->andReturn('# Hello');
-    $provider->shouldNotReceive('getFileContent')->with('main', 'readme.md');
+    $provider->shouldReceive('getRepositoryIdentifier')->andReturn('vendor/pkg');
+    $provider->shouldReceive('listDirectory')
+        ->with('main', $path)
+        ->andReturn(array_map(fn (string $name) => ['name' => $name, 'type' => 'file'], $files));
 
-    $result = (new FetchReadmeAction)->handle($provider, 'main');
+    return $provider;
+}
 
-    expect($result)->toBe('# Hello');
+it('returns the README found in the directory listing', function () {
+    $provider = readmeProvider(['composer.json', 'README.md']);
+    $provider->shouldReceive('getFileContent')->with('main', 'README.md')->once()->andReturn('# Hello');
+
+    expect((new FetchReadmeAction)->handle($provider, 'main'))->toBe('# Hello');
 });
 
-it('falls back to alternate filenames', function () {
-    $provider = Mockery::mock(GitProviderInterface::class);
-    $provider->shouldReceive('getFileContent')->with('main', 'README.md')->andReturn(null);
-    $provider->shouldReceive('getFileContent')->with('main', 'readme.md')->andReturn('lowercase');
-    $provider->shouldReceive('getFileContent')->byDefault()->andReturn(null);
+it('matches README filenames case-insensitively', function () {
+    $provider = readmeProvider(['readme.md']);
+    $provider->shouldReceive('getFileContent')->with('main', 'readme.md')->once()->andReturn('lowercase');
 
-    $result = (new FetchReadmeAction)->handle($provider, 'main');
-
-    expect($result)->toBe('lowercase');
+    expect((new FetchReadmeAction)->handle($provider, 'main'))->toBe('lowercase');
 });
 
-it('returns null when no candidate filename exists', function () {
-    $provider = Mockery::mock(GitProviderInterface::class);
-    $provider->shouldReceive('getFileContent')->andReturn(null);
+it('prefers README.md over the other candidates', function () {
+    $provider = readmeProvider(['README', 'README.markdown', 'README.md']);
+    $provider->shouldReceive('getFileContent')->with('main', 'README.md')->once()->andReturn('markdown');
 
-    $result = (new FetchReadmeAction)->handle($provider, 'main');
+    expect((new FetchReadmeAction)->handle($provider, 'main'))->toBe('markdown');
+});
 
-    expect($result)->toBeNull();
+it('reads the README of a subdirectory', function () {
+    $provider = readmeProvider(['README.md'], 'packages/billing');
+    $provider->shouldReceive('getFileContent')->with('main', 'packages/billing/README.md')->once()->andReturn('# Billing');
+
+    expect((new FetchReadmeAction)->handle($provider, 'main', 'packages/billing/'))->toBe('# Billing');
+});
+
+it('returns null when the directory holds no README', function () {
+    $provider = readmeProvider(['composer.json', 'src']);
+    $provider->shouldNotReceive('getFileContent');
+
+    expect((new FetchReadmeAction)->handle($provider, 'main'))->toBeNull();
 });
 
 it('rejects READMEs above the size cap', function () {
-    $oversized = str_repeat('a', 513 * 1024);
+    $provider = readmeProvider(['README.md']);
+    $provider->shouldReceive('getFileContent')->with('main', 'README.md')->andReturn(str_repeat('a', 513 * 1024));
 
-    $provider = Mockery::mock(GitProviderInterface::class);
-    $provider->shouldReceive('getRepositoryIdentifier')->andReturn('vendor/pkg');
-    $provider->shouldReceive('getFileContent')->with('main', 'README.md')->andReturn($oversized);
-
-    $result = (new FetchReadmeAction)->handle($provider, 'main');
-
-    expect($result)->toBeNull();
+    expect((new FetchReadmeAction)->handle($provider, 'main'))->toBeNull();
 });
 
-it('returns null and stops probing when the provider throws', function () {
+it('returns null when the provider throws', function () {
     $provider = Mockery::mock(GitProviderInterface::class);
     $provider->shouldReceive('getRepositoryIdentifier')->andReturn('vendor/pkg');
-    $provider->shouldReceive('getFileContent')
-        ->with('main', 'README.md')
-        ->once()
-        ->andThrow(new GitProviderException('rate limited'));
-    $provider->shouldNotReceive('getFileContent')->with('main', 'readme.md');
+    $provider->shouldReceive('listDirectory')->once()->andThrow(new GitProviderException('rate limited'));
+    $provider->shouldNotReceive('getFileContent');
 
-    $result = (new FetchReadmeAction)->handle($provider, 'main');
-
-    expect($result)->toBeNull();
+    expect((new FetchReadmeAction)->handle($provider, 'main'))->toBeNull();
 });
