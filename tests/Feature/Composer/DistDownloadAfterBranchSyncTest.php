@@ -2,6 +2,7 @@
 
 use App\Domains\Repository\Actions\SyncRefAction;
 use App\Domains\Repository\Contracts\Data\RefData;
+use App\Domains\Repository\Contracts\Data\SyncRefResultData;
 use App\Domains\Repository\Contracts\Interfaces\GitProviderInterface;
 use App\Models\AccessToken;
 use App\Models\DistArchive;
@@ -31,8 +32,9 @@ beforeEach(function () {
         ->neverExpires()
         ->create();
 
-    $this->syncBranch = function (string $commit): string {
+    $this->syncBranch = function (string $commit): SyncRefResultData {
         $provider = Mockery::mock(GitProviderInterface::class);
+        $provider->shouldReceive('listDirectory')->andReturn([]);
 
         $provider->shouldReceive('getFileContent')
             ->andReturnUsing(fn (string $ref, string $path) => $path === 'composer.json'
@@ -61,8 +63,8 @@ it('keeps a locked branch commit installable after the branch head moves', funct
     $lockedCommit = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
     $newCommit = 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
 
-    expect(($this->syncBranch)($lockedCommit))->toBe('added');
-    expect(($this->syncBranch)($newCommit))->toBe('updated');
+    expect(($this->syncBranch)($lockedCommit)->added)->toBe(1);
+    expect(($this->syncBranch)($newCommit)->updated)->toBe(1);
 
     // The branch keeps a single row, so it now points at the new head.
     $packageVersion = PackageVersion::query()->sole();

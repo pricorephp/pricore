@@ -3,6 +3,7 @@
 use App\Domains\Composer\Contracts\Data\VersionMetadataData;
 use App\Domains\Repository\Actions\SyncRefAction;
 use App\Domains\Repository\Contracts\Data\RefData;
+use App\Domains\Repository\Contracts\Data\SyncRefResultData;
 use App\Domains\Repository\Contracts\Interfaces\GitProviderInterface;
 use App\Models\Organization;
 use App\Models\PackageVersion;
@@ -18,8 +19,9 @@ beforeEach(function () {
         ->forOrganization($this->organization)
         ->create();
 
-    $this->syncBranch = function (string $commit, bool $archiveSucceeds = true): string {
+    $this->syncBranch = function (string $commit, bool $archiveSucceeds = true): SyncRefResultData {
         $provider = Mockery::mock(GitProviderInterface::class);
+        $provider->shouldReceive('listDirectory')->andReturn([]);
 
         $provider->shouldReceive('getFileContent')
             ->andReturnUsing(fn (string $ref, string $path) => $path === 'composer.json'

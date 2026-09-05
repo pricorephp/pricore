@@ -27,7 +27,9 @@ class VersionMetadataData extends Data
             version: $version->version,
             versionNormalized: $version->normalized_version,
             composerJson: $version->composer_json,
-            source: $version->source_url && $version->source_reference ? new SourceData(
+            // A subdirectory package cannot be installed from source: Composer would
+            // check out the whole repository and read its root composer.json.
+            source: $version->source_url && $version->source_reference && $version->source_path === null ? new SourceData(
                 type: 'git',
                 url: $version->source_url,
                 reference: $version->source_reference,

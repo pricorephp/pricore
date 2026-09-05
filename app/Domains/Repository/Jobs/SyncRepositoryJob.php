@@ -35,7 +35,8 @@ class SyncRepositoryJob implements ShouldBeUnique, ShouldQueue
     public int $uniqueFor = 300;
 
     public function __construct(
-        public Repository $repository
+        public Repository $repository,
+        public bool $force = false,
     ) {}
 
     public function uniqueId(): string
@@ -67,7 +68,8 @@ class SyncRepositoryJob implements ShouldBeUnique, ShouldQueue
             $refs = $collectRefsAction->handle($provider);
 
             $totalRefs = $refs->all->count();
-            $filteredRefs = $filterChangedRefsAction->handle($refs, $this->repository);
+            // A forced sync revisits every ref, e.g. after the package paths changed
+            $filteredRefs = $this->force ? $refs : $filterChangedRefsAction->handle($refs, $this->repository);
             $skippedCount = $totalRefs - $filteredRefs->all->count();
 
             $staleVersionsRemoved = $removeStaleVersionsAction->handle($this->repository, $refs);
