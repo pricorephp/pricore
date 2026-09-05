@@ -99,7 +99,8 @@ class HandleInertiaRequests extends Middleware
     {
         $organization = $request->route('organization');
 
-        if (! $organization instanceof Organization) {
+        // Shared props are also serialized on forbidden organization pages.
+        if (! $organization instanceof Organization || ! $request->user()?->can('view', $organization)) {
             return new SearchData(packages: [], repositories: []);
         }
 
