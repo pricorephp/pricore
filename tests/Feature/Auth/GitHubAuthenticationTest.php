@@ -94,7 +94,7 @@ test('callback creates new user from GitHub', function () {
 });
 
 test('callback logs in existing user matched by github_id', function () {
-    $user = User::factory()->withGitHub()->create([
+    $user = User::factory()->withoutTwoFactor()->withGitHub()->create([
         'github_id' => '12345678',
     ]);
 
@@ -111,7 +111,7 @@ test('callback logs in existing user matched by github_id', function () {
 });
 
 test('callback links GitHub account to existing user matched by email', function () {
-    $user = User::factory()->create(['email' => 'john@example.com']);
+    $user = User::factory()->withoutTwoFactor()->create(['email' => 'john@example.com']);
 
     expect($user->github_id)->toBeNull();
 
@@ -274,7 +274,7 @@ test('callback allows new GitHub user with invitation token when sign up is disa
 test('callback allows existing GitHub user login when sign up is disabled', function () {
     config()->set('fortify.sign_up_enabled', false);
 
-    $user = User::factory()->withGitHub()->create([
+    $user = User::factory()->withoutTwoFactor()->withGitHub()->create([
         'github_id' => '12345678',
     ]);
 
@@ -383,7 +383,7 @@ test('connect callback without auth redirects to login', function () {
 });
 
 test('callback without connect session performs normal login', function () {
-    $user = User::factory()->withGitHub()->create();
+    $user = User::factory()->withoutTwoFactor()->withGitHub()->create();
 
     $socialiteUser = mockSocialiteUser(['id' => $user->github_id]);
     mockSocialiteCallback($socialiteUser);

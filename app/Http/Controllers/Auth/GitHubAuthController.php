@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Auth;
 
+use App\Domains\Auth\Actions\AuthenticateOAuthUserAction;
 use App\Domains\Auth\Actions\FindOrCreateGitHubUserAction;
 use App\Domains\Auth\Actions\SyncUserGitHubCredentialAction;
 use App\Domains\Auth\Actions\UpdateUserGitHubProfileAction;
@@ -34,6 +35,7 @@ class GitHubAuthController extends Controller
         FindOrCreateGitHubUserAction $findOrCreateUser,
         UpdateUserGitHubProfileAction $updateProfile,
         SyncUserGitHubCredentialAction $syncCredential,
+        AuthenticateOAuthUserAction $authenticateUser,
     ): RedirectResponse {
         $intent = session()->pull('github_oauth_intent', GitHubOAuthIntent::Login);
 
@@ -53,11 +55,14 @@ class GitHubAuthController extends Controller
             return $this->handleConnect($githubUser, $updateProfile, $syncCredential);
         }
 
-        return $this->handleLogin($githubUser, $findOrCreateUser);
+        return $this->handleLogin($githubUser, $findOrCreateUser, $authenticateUser);
     }
 
-    private function handleLogin(SocialiteUser $githubUser, FindOrCreateGitHubUserAction $findOrCreateUser): RedirectResponse
-    {
+    private function handleLogin(
+        SocialiteUser $githubUser,
+        FindOrCreateGitHubUserAction $findOrCreateUser,
+        AuthenticateOAuthUserAction $authenticateUser,
+    ): RedirectResponse {
         if (empty($githubUser->getEmail())) {
             return redirect()->route('login')->with('error', 'We could not retrieve your email address from GitHub. Please ensure your email is public or try another sign-in method.');
         }
@@ -74,9 +79,7 @@ class GitHubAuthController extends Controller
         /** @var TwoUser $githubUser */
         $user = $findOrCreateUser->handle($githubUser, $githubUser->token);
 
-        Auth::login($user, remember: true);
-
-        $response = redirect()->intended(route('dashboard'));
+        $response = $authenticateUser->handle($user);
 
         if (! $existingUser) {
             $response->with('analytics', ['event' => 'sign_up', 'method' => 'github']);
