@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Auth;
 
+use App\Domains\Auth\Actions\AuthenticateOAuthUserAction;
 use App\Domains\Auth\Actions\FindOrCreateGitLabUserAction;
 use App\Domains\Auth\Actions\SyncUserGitLabCredentialAction;
 use App\Domains\Auth\Actions\UpdateUserGitLabProfileAction;
@@ -34,6 +35,7 @@ class GitLabAuthController extends Controller
         FindOrCreateGitLabUserAction $findOrCreateUser,
         UpdateUserGitLabProfileAction $updateProfile,
         SyncUserGitLabCredentialAction $syncCredential,
+        AuthenticateOAuthUserAction $authenticateUser,
     ): RedirectResponse {
         $intent = session()->pull('gitlab_oauth_intent', GitLabOAuthIntent::Login);
 
@@ -53,11 +55,14 @@ class GitLabAuthController extends Controller
             return $this->handleConnect($gitlabUser, $updateProfile, $syncCredential);
         }
 
-        return $this->handleLogin($gitlabUser, $findOrCreateUser);
+        return $this->handleLogin($gitlabUser, $findOrCreateUser, $authenticateUser);
     }
 
-    private function handleLogin(SocialiteUser $gitlabUser, FindOrCreateGitLabUserAction $findOrCreateUser): RedirectResponse
-    {
+    private function handleLogin(
+        SocialiteUser $gitlabUser,
+        FindOrCreateGitLabUserAction $findOrCreateUser,
+        AuthenticateOAuthUserAction $authenticateUser,
+    ): RedirectResponse {
         if (empty($gitlabUser->getEmail())) {
             return redirect()->route('login')->with('error', 'We could not retrieve your email address from GitLab. Please ensure your email is public or try another sign-in method.');
         }
@@ -74,9 +79,7 @@ class GitLabAuthController extends Controller
         /** @var TwoUser $gitlabUser */
         $user = $findOrCreateUser->handle($gitlabUser, $gitlabUser->token);
 
-        Auth::login($user, remember: true);
-
-        $response = redirect()->intended(route('dashboard'));
+        $response = $authenticateUser->handle($user);
 
         if (! $existingUser) {
             $response->with('analytics', ['event' => 'sign_up', 'method' => 'gitlab']);

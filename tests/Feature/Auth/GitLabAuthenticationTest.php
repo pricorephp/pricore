@@ -94,7 +94,7 @@ test('callback creates new user from GitLab', function () {
 });
 
 test('callback logs in existing user matched by gitlab_id', function () {
-    $user = User::factory()->withGitLab()->create([
+    $user = User::factory()->withoutTwoFactor()->withGitLab()->create([
         'gitlab_id' => '87654321',
     ]);
 
@@ -111,7 +111,7 @@ test('callback logs in existing user matched by gitlab_id', function () {
 });
 
 test('callback links GitLab account to existing user matched by email', function () {
-    $user = User::factory()->create(['email' => 'jane@example.com']);
+    $user = User::factory()->withoutTwoFactor()->create(['email' => 'jane@example.com']);
 
     expect($user->gitlab_id)->toBeNull();
 
