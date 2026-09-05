@@ -56,7 +56,7 @@ class GitHubProvider extends AbstractGitProvider
 
                     return false;
                 },
-                throw: true,
+                throw: false,
             )
             ->withResponseMiddleware(function (ResponseInterface $response) {
                 $remaining = $response->getHeaderLine('X-RateLimit-Remaining');
@@ -226,6 +226,62 @@ class GitHubProvider extends AbstractGitProvider
         }
     }
 
+    /**
+     * @return array<int, array{name: string, type: 'dir'|'file'}>
+     */
+    public function listDirectory(string $ref, string $path): array
+    {
+        try {
+            $path = trim($path, '/');
+
+            $response = $this->http->get("/repos/{$this->repositoryIdentifier}/contents/{$path}", [
+                'ref' => $ref,
+            ]);
+
+            if ($response->status() === 404) {
+                return [];
+            }
+
+            if ($response->failed()) {
+                throw new GitProviderException(
+                    "Failed to list directory on GitHub: {$response->body()}"
+                );
+            }
+
+            $data = $response->json();
+
+            // A file path yields a single object; only a directory yields a list of entries
+            if (! is_array($data) || ! array_is_list($data)) {
+                return [];
+            }
+
+            $entries = [];
+
+            foreach ($data as $entry) {
+                $entries[] = [
+                    'name' => (string) $entry['name'],
+                    'type' => ($entry['type'] ?? null) === 'dir' ? 'dir' : 'file',
+                ];
+            }
+
+            return $entries;
+        } catch (GitProviderException $e) {
+            throw $e;
+        } catch (\Exception $e) {
+            Log::error('GitHub API error listing directory', [
+                'repository' => $this->repositoryIdentifier,
+                'ref' => $ref,
+                'path' => $path,
+                'error' => $e->getMessage(),
+            ]);
+
+            throw new GitProviderException(
+                "Failed to list directory: {$e->getMessage()}",
+                previous: $e
+            );
+        }
+    }
+
     public function validateCredentials(): bool
     {
         try {
@@ -313,7 +369,7 @@ class GitHubProvider extends AbstractGitProvider
         }
     }
 
-    public function downloadArchive(string $ref, string $outputPath): bool
+    protected function downloadFullArchive(string $ref, string $outputPath): bool
     {
         try {
             /** @var Response $response */

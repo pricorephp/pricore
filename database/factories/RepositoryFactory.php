@@ -136,6 +136,18 @@ class RepositoryFactory extends Factory
     }
 
     /**
+     * Indicate that the repository is a monorepo with packages under the given paths.
+     *
+     * @param  array<int, string>  $paths
+     */
+    public function withPackagePaths(array $paths): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'package_paths' => $paths,
+        ]);
+    }
+
+    /**
      * Indicate that the repository sync has failed.
      */
     public function syncFailed(): static

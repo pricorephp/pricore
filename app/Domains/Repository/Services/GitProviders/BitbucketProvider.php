@@ -187,6 +187,68 @@ class BitbucketProvider extends AbstractGitProvider
         }
     }
 
+    /**
+     * @return array<int, array{name: string, type: 'dir'|'file'}>
+     */
+    public function listDirectory(string $ref, string $path): array
+    {
+        try {
+            $entries = [];
+            $path = trim($path, '/');
+            $url = "/repositories/{$this->repositoryIdentifier}/src/{$ref}/".($path === '' ? '' : "{$path}/");
+            $params = ['pagelen' => 100];
+
+            do {
+                $response = $params === []
+                    ? $this->http->get($url)
+                    : $this->http->get($url, $params);
+
+                if ($response->status() === 404) {
+                    return [];
+                }
+
+                if ($response->failed()) {
+                    throw new GitProviderException(
+                        "Failed to list directory on Bitbucket: {$response->body()}"
+                    );
+                }
+
+                $data = $response->json();
+
+                // A file path returns the raw file rather than a listing
+                if (! is_array($data) || ! is_array($data['values'] ?? null)) {
+                    return [];
+                }
+
+                foreach ($data['values'] as $entry) {
+                    $entries[] = [
+                        'name' => basename((string) $entry['path']),
+                        'type' => ($entry['type'] ?? null) === 'commit_directory' ? 'dir' : 'file',
+                    ];
+                }
+
+                $url = $this->extractNextPath($data['next'] ?? null);
+                $params = [];
+            } while ($url !== null);
+
+            return $entries;
+        } catch (GitProviderException $e) {
+            throw $e;
+        } catch (\Exception $e) {
+            Log::error('Bitbucket API error listing directory', [
+                'repository' => $this->repositoryIdentifier,
+                'ref' => $ref,
+                'path' => $path,
+                'error' => $e->getMessage(),
+            ]);
+
+            throw new GitProviderException(
+                "Failed to list directory: {$e->getMessage()}",
+                previous: $e
+            );
+        }
+    }
+
     public function validateCredentials(): bool
     {
         try {
@@ -275,7 +337,7 @@ class BitbucketProvider extends AbstractGitProvider
         }
     }
 
-    public function downloadArchive(string $ref, string $outputPath): bool
+    protected function downloadFullArchive(string $ref, string $outputPath): bool
     {
         try {
             $email = $this->getCredential('email', '');

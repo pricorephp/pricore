@@ -73,6 +73,16 @@ class PackageFactory extends Factory
     }
 
     /**
+     * Indicate that the package lives in a subdirectory of its repository.
+     */
+    public function atPath(string $path): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'source_path' => $path,
+        ]);
+    }
+
+    /**
      * Indicate that the package is public.
      */
     public function public(): static

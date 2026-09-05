@@ -48,3 +48,53 @@ function something()
 {
     // ..
 }
+
+/**
+ * Create a zip archive at $path. Values are file contents; null adds a directory entry.
+ *
+ * @param  array<string, string|null>  $entries
+ */
+function createTestZip(string $path, array $entries): void
+{
+    $zip = new ZipArchive;
+    $zip->open($path, ZipArchive::CREATE | ZipArchive::OVERWRITE);
+
+    foreach ($entries as $name => $contents) {
+        $contents === null ? $zip->addEmptyDir($name) : $zip->addFromString($name, $contents);
+    }
+
+    $zip->close();
+}
+
+/**
+ * Entries of a zip archive sorted by name: file contents, or null for a directory entry.
+ *
+ * @return array<string, string|null>
+ */
+function readTestZip(string $path): array
+{
+    $zip = new ZipArchive;
+    $zip->open($path);
+
+    $entries = [];
+
+    for ($index = 0; $index < $zip->numFiles; $index++) {
+        $name = (string) $zip->getNameIndex($index);
+        $entries[$name] = str_ends_with($name, '/') ? null : (string) $zip->getFromIndex($index);
+    }
+
+    $zip->close();
+    ksort($entries);
+
+    return $entries;
+}
+
+/**
+ * Sorted names of the file entries in a zip archive, ignoring directory entries.
+ *
+ * @return array<int, string>
+ */
+function testZipFileNames(string $path): array
+{
+    return array_keys(array_filter(readTestZip($path), fn (?string $contents) => $contents !== null));
+}
