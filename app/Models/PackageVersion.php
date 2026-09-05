@@ -26,6 +26,7 @@ use Illuminate\Support\Facades\Storage;
  * @property string|null $source_url
  * @property string|null $source_reference
  * @property string|null $source_tag
+ * @property string|null $source_path
  * @property string|null $dist_url
  * @property string|null $dist_shasum
  * @property string|null $dist_path

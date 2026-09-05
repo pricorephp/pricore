@@ -57,3 +57,30 @@ it('returns null when provider fails to download archive', function () {
 
     expect($result)->toBeNull();
 });
+
+it('requests the archive of the version source path', function () {
+    $organization = Organization::factory()->create(['slug' => 'acme']);
+    $package = Package::factory()
+        ->for($organization, 'organization')
+        ->atPath('packages/billing')
+        ->create(['name' => 'acme/billing']);
+    $version = PackageVersion::factory()->for($package)->atPath('packages/billing')->create([
+        'version' => '1.0.0',
+        'source_reference' => 'abc123def456789012345678901234567890abcd',
+    ]);
+
+    $provider = Mockery::mock(GitProviderInterface::class);
+    $provider->shouldReceive('downloadArchive')
+        ->once()
+        ->withArgs(fn (string $ref, string $outputPath, ?string $path) => $ref === $version->source_reference
+            && $path === 'packages/billing')
+        ->andReturnUsing(function (string $ref, string $outputPath) {
+            file_put_contents($outputPath, 'subtree-zip');
+
+            return true;
+        });
+
+    $result = (new CreateDistArchiveAction)->handle($provider, $version, 'acme');
+
+    expect($result?->path)->toBe('acme/acme/billing/1.0.0_abc123def456.zip');
+});
