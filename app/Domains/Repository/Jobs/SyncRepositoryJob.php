@@ -34,9 +34,18 @@ class SyncRepositoryJob implements ShouldBeUnique, ShouldQueue
 
     public int $uniqueFor = 300;
 
+    /**
+     * Declared with a default rather than promoted, so jobs queued before this
+     * property existed still unserialize with it set.
+     */
+    public bool $force = false;
+
     public function __construct(
-        public Repository $repository
-    ) {}
+        public Repository $repository,
+        bool $force = false,
+    ) {
+        $this->force = $force;
+    }
 
     public function uniqueId(): string
     {
@@ -67,7 +76,8 @@ class SyncRepositoryJob implements ShouldBeUnique, ShouldQueue
             $refs = $collectRefsAction->handle($provider);
 
             $totalRefs = $refs->all->count();
-            $filteredRefs = $filterChangedRefsAction->handle($refs, $this->repository);
+            // A forced sync revisits every ref, e.g. after the package paths changed
+            $filteredRefs = $this->force ? $refs : $filterChangedRefsAction->handle($refs, $this->repository);
             $skippedCount = $totalRefs - $filteredRefs->all->count();
 
             $staleVersionsRemoved = $removeStaleVersionsAction->handle($this->repository, $refs);

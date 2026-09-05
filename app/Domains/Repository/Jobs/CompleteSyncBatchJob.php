@@ -52,12 +52,14 @@ class CompleteSyncBatchJob implements ShouldQueue
         $added = 0;
         $updated = 0;
         $skipped = 0;
+        $removed = 0;
         $failed = 0;
 
         if ($batch) {
             $added = (int) Cache::pull("sync-batch:{$batch->id}:added", 0);
             $updated = (int) Cache::pull("sync-batch:{$batch->id}:updated", 0);
             $skipped = (int) Cache::pull("sync-batch:{$batch->id}:skipped", 0);
+            $removed = (int) Cache::pull("sync-batch:{$batch->id}:removed", 0);
             $failed = $batch->failedJobs;
         }
 
@@ -75,6 +77,8 @@ class CompleteSyncBatchJob implements ShouldQueue
             'versions_updated' => $updated,
             'versions_skipped' => $skipped,
             'versions_failed' => $failed,
+            // Stale tags were removed before the batch ran; refs drop versions too
+            'versions_removed' => $syncLog->versions_removed + $removed,
             'details' => array_merge($syncLog->details ?? [], [
                 'failed_jobs' => $failedJobs,
                 'total_jobs' => $totalJobs,
@@ -87,6 +91,7 @@ class CompleteSyncBatchJob implements ShouldQueue
             'versions_updated' => $updated,
             'versions_skipped' => $skipped,
             'versions_failed' => $failed,
+            'versions_removed' => $syncLog->versions_removed,
         ]);
     }
 

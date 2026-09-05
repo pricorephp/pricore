@@ -4,6 +4,7 @@ use App\Domains\Composer\Contracts\Data\VersionMetadataData;
 use App\Domains\Repository\Actions\RemoveDistArchiveTask;
 use App\Domains\Repository\Actions\SyncRefAction;
 use App\Domains\Repository\Contracts\Data\RefData;
+use App\Domains\Repository\Contracts\Data\SyncRefResultData;
 use App\Domains\Repository\Contracts\Interfaces\GitProviderInterface;
 use App\Models\Organization;
 use App\Models\PackageVersion;
@@ -19,8 +20,9 @@ beforeEach(function () {
         ->forOrganization($this->organization)
         ->create();
 
-    $this->syncBranch = function (string $commit, bool $archiveSucceeds = true): string {
+    $this->syncBranch = function (string $commit, bool $archiveSucceeds = true): SyncRefResultData {
         $provider = Mockery::mock(GitProviderInterface::class);
+        $provider->shouldReceive('listDirectory')->andReturn([]);
 
         $provider->shouldReceive('getFileContent')
             ->andReturnUsing(fn (string $ref, string $path) => $path === 'composer.json'
@@ -85,7 +87,7 @@ it('rebuilds a dist archive that failed to build when the commit is unchanged', 
     expect($packageVersion->dist_url)->toBeNull()
         ->and($packageVersion->dist_failed_at)->not->toBeNull();
 
-    expect(($this->syncBranch)($commit))->toBe('skipped');
+    expect(($this->syncBranch)($commit)->skipped)->toBe(1);
 
     $packageVersion->refresh();
 
@@ -115,7 +117,7 @@ it('does not rebuild a dist archive that was removed on purpose', function () {
     // Release retention removes archives through this task.
     app(RemoveDistArchiveTask::class)->handle(PackageVersion::query()->sole());
 
-    expect(($this->syncBranch)($commit))->toBe('skipped');
+    expect(($this->syncBranch)($commit)->skipped)->toBe(1);
 
     $packageVersion = PackageVersion::query()->sole();
 
@@ -128,6 +130,6 @@ it('skips an unchanged commit that already has a dist archive', function () {
 
     ($this->syncBranch)($commit);
 
-    expect(($this->syncBranch)($commit, archiveSucceeds: false))->toBe('skipped')
+    expect(($this->syncBranch)($commit, archiveSucceeds: false)->skipped)->toBe(1)
         ->and(PackageVersion::query()->sole()->dist_shasum)->toBe(sha1("zip-for-{$commit}"));
 });

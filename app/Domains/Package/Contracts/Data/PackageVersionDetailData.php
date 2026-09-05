@@ -136,6 +136,7 @@ class PackageVersionDetailData extends Data
             $version->readme,
             $blobBaseUrl,
             $rawFileBaseUrl,
+            (string) $version->source_path,
         );
     }
 
