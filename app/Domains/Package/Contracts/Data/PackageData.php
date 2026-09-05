@@ -24,6 +24,7 @@ class PackageData extends Data
         public ?string $repositoryName,
         public ?string $repositoryIdentifier,
         public ?string $repositoryUuid,
+        public ?string $sourcePath,
         public ?string $mirrorName,
         public ?string $mirrorUuid,
     ) {}
@@ -55,6 +56,7 @@ class PackageData extends Data
             repositoryName: $package->repository?->name,
             repositoryIdentifier: $package->repository?->repo_identifier,
             repositoryUuid: $package->repository?->uuid,
+            sourcePath: $package->source_path,
             mirrorName: $package->mirror?->name,
             mirrorUuid: $package->mirror?->uuid,
         );

@@ -22,7 +22,7 @@ class CreateDistArchiveAction
         $tempPath = sys_get_temp_dir().'/pricore-dist-'.Str::random(16).'.zip';
 
         try {
-            if (! $provider->downloadArchive($version->source_reference, $tempPath)) {
+            if (! $provider->downloadArchive($version->source_reference, $tempPath, $version->source_path)) {
                 return null;
             }
 

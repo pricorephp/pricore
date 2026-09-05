@@ -29,5 +29,16 @@ interface GitProviderInterface
 
     public function deleteWebhook(int|string $hookId): void;
 
-    public function downloadArchive(string $ref, string $outputPath): bool;
+    /**
+     * Archive the repository at $ref, or only the subdirectory $path within it.
+     * A subdirectory archive is re-rooted so the package sits at the top level.
+     */
+    public function downloadArchive(string $ref, string $outputPath, ?string $path = null): bool;
+
+    /**
+     * Immediate children of the directory $path at $ref. A missing directory yields an empty list.
+     *
+     * @return array<int, array{name: string, type: 'dir'|'file'}>
+     */
+    public function listDirectory(string $ref, string $path): array;
 }

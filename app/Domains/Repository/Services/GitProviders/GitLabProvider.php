@@ -51,7 +51,7 @@ class GitLabProvider extends AbstractGitProvider
 
                     return false;
                 },
-                throw: true,
+                throw: false,
             );
     }
 
@@ -205,6 +205,71 @@ class GitLabProvider extends AbstractGitProvider
         }
     }
 
+    /**
+     * @return array<int, array{name: string, type: 'dir'|'file'}>
+     */
+    public function listDirectory(string $ref, string $path): array
+    {
+        try {
+            $entries = [];
+            $page = 1;
+            $perPage = 100;
+            $projectPath = $this->getEncodedProjectPath();
+            $path = trim($path, '/');
+
+            do {
+                $params = ['ref' => $ref, 'per_page' => $perPage, 'page' => $page];
+
+                if ($path !== '') {
+                    $params['path'] = $path;
+                }
+
+                $response = $this->http->get("/projects/{$projectPath}/repository/tree", $params);
+
+                if ($response->status() === 404) {
+                    return [];
+                }
+
+                if ($response->failed()) {
+                    throw new GitProviderException(
+                        "Failed to list directory on GitLab: {$response->body()}"
+                    );
+                }
+
+                $pageEntries = $response->json();
+
+                if (! is_array($pageEntries)) {
+                    return [];
+                }
+
+                foreach ($pageEntries as $entry) {
+                    $entries[] = [
+                        'name' => (string) $entry['name'],
+                        'type' => ($entry['type'] ?? null) === 'tree' ? 'dir' : 'file',
+                    ];
+                }
+
+                $page++;
+            } while (count($pageEntries) === $perPage);
+
+            return $entries;
+        } catch (GitProviderException $e) {
+            throw $e;
+        } catch (\Exception $e) {
+            Log::error('GitLab API error listing directory', [
+                'repository' => $this->repositoryIdentifier,
+                'ref' => $ref,
+                'path' => $path,
+                'error' => $e->getMessage(),
+            ]);
+
+            throw new GitProviderException(
+                "Failed to list directory: {$e->getMessage()}",
+                previous: $e
+            );
+        }
+    }
+
     public function validateCredentials(): bool
     {
         try {
@@ -229,7 +294,7 @@ class GitLabProvider extends AbstractGitProvider
         return "{$baseUrl}/{$this->repositoryIdentifier}.git";
     }
 
-    public function downloadArchive(string $ref, string $outputPath): bool
+    protected function downloadFullArchive(string $ref, string $outputPath): bool
     {
         try {
             $projectPath = $this->getEncodedProjectPath();
