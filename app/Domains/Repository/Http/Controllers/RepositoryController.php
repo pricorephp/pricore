@@ -13,11 +13,14 @@ use App\Domains\Repository\Actions\ExtractRepositoryNameAction;
 use App\Domains\Repository\Actions\PurgeDistArchiveFilesTask;
 use App\Domains\Repository\Actions\RecordRepositoryViewTask;
 use App\Domains\Repository\Actions\RegisterWebhookAction;
+use App\Domains\Repository\Actions\UpdatePackagePathsAction;
 use App\Domains\Repository\Contracts\Data\RepositoryData;
 use App\Domains\Repository\Contracts\Data\SyncLogData;
+use App\Domains\Repository\Contracts\Data\UpdatePackagePathsResultData;
 use App\Domains\Repository\Contracts\Enums\GitProvider;
 use App\Domains\Repository\Http\Requests\BulkStoreRepositoryRequest;
 use App\Domains\Repository\Http\Requests\StoreRepositoryRequest;
+use App\Domains\Repository\Http\Requests\UpdateRepositoryRequest;
 use App\Domains\Repository\Jobs\SyncRepositoryJob;
 use App\Http\Controllers\Controller;
 use App\Models\Organization;
@@ -41,6 +44,7 @@ class RepositoryController extends Controller
         protected RecordActivityTask $recordActivity,
         protected PurgeDistArchiveFilesTask $purgeDistArchiveFilesTask,
         protected RecordRepositoryViewTask $recordRepositoryViewTask,
+        protected UpdatePackagePathsAction $updatePackagePathsAction,
     ) {}
 
     public function index(Organization $organization): Response
@@ -101,6 +105,7 @@ class RepositoryController extends Controller
             'repo_identifier' => $request->repo_identifier,
             'custom_base_url' => $baseUrl,
             'default_branch' => $request->default_branch,
+            'package_paths' => $request->packagePaths(),
         ]);
 
         $this->recordActivity->handle(
@@ -195,17 +200,38 @@ class RepositoryController extends Controller
         return Inertia::render('organizations/repositories/edit', [
             'organization' => OrganizationData::fromModel($organization),
             'repository' => RepositoryData::fromModel($repository),
+            'distEnabled' => (bool) config('pricore.dist.enabled'),
         ]);
     }
 
-    public function update(Organization $organization, Repository $repository): RedirectResponse
+    public function update(UpdateRepositoryRequest $request, Organization $organization, Repository $repository): RedirectResponse
     {
+        if ($repository->organization_uuid !== $organization->uuid) {
+            abort(404);
+        }
+
         $this->authorize('deleteRepository', $organization);
 
-        // Placeholder for future updates
+        // Absent means "leave as is"; an explicit empty value clears the paths
+        $result = $request->has('package_paths')
+            ? $this->updatePackagePathsAction->handle($repository, $request->packagePaths(), $request->user())
+            : new UpdatePackagePathsResultData(changed: false, packagesRemoved: 0);
+
+        $message = $result->changed
+            ? 'Package paths updated and a sync has been started.'
+            : 'Repository updated successfully.';
+
+        if ($result->packagesRemoved > 0) {
+            $message .= sprintf(
+                ' Removed %d package%s outside the configured paths.',
+                $result->packagesRemoved,
+                $result->packagesRemoved === 1 ? '' : 's',
+            );
+        }
+
         return redirect()
             ->route('organizations.repositories.edit', [$organization, $repository])
-            ->with('status', 'Repository updated successfully.');
+            ->with('status', $message);
     }
 
     public function destroy(Request $request, Organization $organization, Repository $repository): RedirectResponse

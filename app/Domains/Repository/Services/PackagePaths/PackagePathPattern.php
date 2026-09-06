@@ -106,6 +106,39 @@ final class PackagePathPattern
     }
 
     /**
+     * Turn form input (a newline- or comma-separated string, or a list) into a
+     * normalised list of patterns, or null when nothing is left. Entries that are
+     * not strings are kept so validation can reject them.
+     *
+     * @return array<int, mixed>|null
+     */
+    public static function parseInput(mixed $input): ?array
+    {
+        if ($input === null) {
+            return null;
+        }
+
+        $items = is_array($input) ? $input : preg_split('/[\r\n,]+/', (string) $input);
+        $patterns = [];
+
+        foreach ($items ?: [] as $item) {
+            if (! is_string($item)) {
+                $patterns[] = $item;
+
+                continue;
+            }
+
+            $item = self::normalize($item);
+
+            if ($item !== '') {
+                $patterns[] = $item;
+            }
+        }
+
+        return $patterns === [] ? null : array_values(array_unique($patterns, SORT_REGULAR));
+    }
+
+    /**
      * @param  array<int, string>  $patterns
      */
     public static function anyMatches(array $patterns, ?string $path): bool

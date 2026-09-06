@@ -33,6 +33,15 @@ it('identifies wildcards and their parent directory', function () {
         ->and(PackagePathPattern::wildcardParent('*'))->toBe('');
 });
 
+it('parses textarea and list input into a normalised list', function () {
+    expect(PackagePathPattern::parseInput("packages/*\r\n\n ./ ,packages/billing/"))->toBe(['packages/*', '.', 'packages/billing'])
+        ->and(PackagePathPattern::parseInput(['packages/*', 'packages/*']))->toBe(['packages/*'])
+        ->and(PackagePathPattern::parseInput(['../x']))->toBe(['../x'])
+        ->and(PackagePathPattern::parseInput(''))->toBeNull()
+        ->and(PackagePathPattern::parseInput(null))->toBeNull()
+        ->and(PackagePathPattern::parseInput([]))->toBeNull();
+});
+
 it('matches package directories against patterns', function () {
     expect(PackagePathPattern::matches('.', null))->toBeTrue()
         ->and(PackagePathPattern::matches('.', ''))->toBeTrue()

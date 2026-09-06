@@ -45,6 +45,7 @@ import {
     Copy,
     EllipsisVertical,
     ExternalLink,
+    FolderTree,
     GitBranch,
     GitCommit,
     Globe,
@@ -215,6 +216,12 @@ function PackageSource({
                                 )}
                             />
                             {pkg.repositoryIdentifier}
+                        </span>
+                    )}
+                    {pkg.sourcePath && (
+                        <span className="inline-flex items-center gap-1.5">
+                            <FolderTree className="size-4" />
+                            <code className="font-mono">{pkg.sourcePath}</code>
                         </span>
                     )}
                     {pkg.repositorySyncStatus && (

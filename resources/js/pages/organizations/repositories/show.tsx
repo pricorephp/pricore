@@ -46,6 +46,7 @@ import {
     CheckCircle2,
     EllipsisVertical,
     ExternalLink,
+    FolderTree,
     History,
     Loader2,
     Package,
@@ -169,6 +170,19 @@ export default function RepositoryShow({
                                     <span className="font-mono text-muted-foreground">
                                         {repository.repoIdentifier}
                                     </span>
+                                )}
+                                {repository.packagePaths && (
+                                    <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-muted-foreground">
+                                        <FolderTree className="size-3.5" />
+                                        {repository.packagePaths.map((path) => (
+                                            <code
+                                                key={path}
+                                                className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs"
+                                            >
+                                                {path}
+                                            </code>
+                                        ))}
+                                    </div>
                                 )}
                             </div>
                         </div>

@@ -3,12 +3,14 @@
 use App\Domains\Activity\Actions\RecordActivityTask;
 use App\Domains\Repository\Actions\CleanupGitCloneAction;
 use App\Domains\Repository\Jobs\CompleteSyncBatchJob;
+use App\Domains\Repository\Jobs\SyncRepositoryJob;
 use App\Models\Organization;
 use App\Models\Repository;
 use App\Models\RepositorySyncLog;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Queue;
 
 it('skips recording activity when the organization was deleted during a repository sync', function () {
     $organization = Organization::factory()->create();
@@ -56,3 +58,18 @@ it('adds versions removed per ref to the stale version count', function () {
         ->and($syncLog->fresh()?->versions_added)->toBe(1)
         ->and(Cache::get("sync-batch:{$batch->id}:removed"))->toBeNull();
 });
+
+it('starts a full sync that was requested while the batch ran', function (bool $requested) {
+    Queue::fake();
+
+    $repository = Repository::factory()->create(['full_sync_requested_at' => $requested ? now() : null]);
+    $syncLog = RepositorySyncLog::factory()->for($repository)->pending()->create();
+    $batch = Bus::batch([])->dispatch();
+
+    (new CompleteSyncBatchJob($syncLog->uuid, $repository->uuid, null, $batch->id))
+        ->handle(app(CleanupGitCloneAction::class), app(RecordActivityTask::class));
+
+    $requested
+        ? Queue::assertPushed(SyncRepositoryJob::class, fn (SyncRepositoryJob $job) => $job->repository->is($repository))
+        : Queue::assertNotPushed(SyncRepositoryJob::class);
+})->with(['requested' => true, 'not requested' => false]);
