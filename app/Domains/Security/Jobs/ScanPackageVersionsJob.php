@@ -6,6 +6,7 @@ use App\Domains\Activity\Actions\RecordActivityTask;
 use App\Domains\Activity\Contracts\Enums\ActivityType;
 use App\Domains\Security\Actions\MatchAdvisoriesForPackageAction;
 use App\Domains\Security\Notifications\NewVulnerabilitiesNotification;
+use App\Models\Organization;
 use App\Models\Package;
 use App\Models\SecurityAdvisoryMatch;
 use Illuminate\Bus\Batchable;
@@ -29,7 +30,7 @@ class ScanPackageVersionsJob implements ShouldQueue
         MatchAdvisoriesForPackageAction $matchAdvisoriesForPackageAction,
         RecordActivityTask $recordActivityTask,
     ): void {
-        $organization = $this->package->organization()->first();
+        $organization = $this->package->organization;
 
         if (! $organization?->security_audits_enabled) {
             return;
@@ -58,13 +59,11 @@ class ScanPackageVersionsJob implements ShouldQueue
         );
 
         // Send notification to org admins
-        $this->notifyAdmins();
+        $this->notifyAdmins($organization);
     }
 
-    protected function notifyAdmins(): void
+    protected function notifyAdmins(Organization $organization): void
     {
-        $organization = $this->package->organization;
-
         if (! $organization->security_notifications_enabled) {
             return;
         }
