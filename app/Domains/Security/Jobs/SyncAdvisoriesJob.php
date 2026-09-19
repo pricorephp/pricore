@@ -42,12 +42,13 @@ class SyncAdvisoriesJob implements ShouldBeUnique, ShouldQueue
                 'advisories_updated' => $syncResultData->advisoriesUpdated,
             ]);
 
-            // Scan all packages for new advisory matches
-            Package::chunk(100, function ($packages) {
-                $packages->each(function (Package $package) {
-                    ScanPackageVersionsJob::dispatch($package);
+            // Scan packages belonging to active organizations with auditing enabled.
+            Package::whereRelation('organization', 'security_audits_enabled', true)
+                ->chunk(100, function ($packages) {
+                    $packages->each(function (Package $package) {
+                        ScanPackageVersionsJob::dispatch($package);
+                    });
                 });
-            });
         } catch (Throwable $e) {
             Log::error('Advisory sync failed', [
                 'error' => $e->getMessage(),
