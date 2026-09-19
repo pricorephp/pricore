@@ -29,7 +29,9 @@ class ScanPackageVersionsJob implements ShouldQueue
         MatchAdvisoriesForPackageAction $matchAdvisoriesForPackageAction,
         RecordActivityTask $recordActivityTask,
     ): void {
-        if (! $this->package->organization?->security_audits_enabled) {
+        $organization = $this->package->organization()->first();
+
+        if (! $organization?->security_audits_enabled) {
             return;
         }
 
@@ -43,8 +45,6 @@ class ScanPackageVersionsJob implements ShouldQueue
             'package' => $this->package->name,
             'matches_created' => $matchesCreated,
         ]);
-
-        $organization = $this->package->organization;
 
         // Record activity
         $recordActivityTask->handle(
