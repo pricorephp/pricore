@@ -29,7 +29,7 @@ class ScanPackageVersionsJob implements ShouldQueue
         MatchAdvisoriesForPackageAction $matchAdvisoriesForPackageAction,
         RecordActivityTask $recordActivityTask,
     ): void {
-        if (! $this->package->organization->security_audits_enabled) {
+        if (! $this->package->organization?->security_audits_enabled) {
             return;
         }
 

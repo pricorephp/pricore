@@ -93,7 +93,7 @@ it('updates existing advisories on subsequent sync', function () {
     expect($advisory->severity->value)->toBe('critical');
 });
 
-it('dispatches scan jobs for organization packages after sync', function () {
+it('dispatches scans only for active organizations with auditing enabled', function () {
     Queue::fake(ScanPackageVersionsJob::class);
 
     Http::fake([
@@ -112,9 +112,17 @@ it('dispatches scan jobs for organization packages after sync', function () {
         ]),
     ]);
 
+    $deletedOrganization = Organization::factory()->create();
+    Package::factory()->withoutRepository()->forOrganization($deletedOrganization)->create();
+    $deletedOrganization->delete();
+
+    $disabledOrganization = Organization::factory()->create(['security_audits_enabled' => false]);
+    Package::factory()->withoutRepository()->forOrganization($disabledOrganization)->create();
+
     SyncAdvisoriesJob::dispatchSync();
 
-    Queue::assertPushed(ScanPackageVersionsJob::class);
+    Queue::assertPushed(ScanPackageVersionsJob::class, 1);
+    Queue::assertPushed(ScanPackageVersionsJob::class, fn ($job) => $job->package->is($this->package));
 });
 
 it('does not dispatch scan jobs when no changes', function () {
