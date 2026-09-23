@@ -21,6 +21,11 @@ fi
 # Create SQLite database file if it doesn't exist
 if [ "${DB_CONNECTION:-sqlite}" = "sqlite" ]; then
     DB_PATH="${DB_DATABASE:-/app/database/database.sqlite}"
+    if [ "$DB_PATH" = "/app/database/database.sqlite" ] && [ -s /app/database/data/database.sqlite ]; then
+        echo "[entrypoint] Found an existing database at /app/database/data/database.sqlite, but DB_DATABASE points at $DB_PATH." >&2
+        echo "[entrypoint] Set DB_DATABASE=/app/database/data/database.sqlite to keep using it." >&2
+        exit 1
+    fi
     if [ ! -f "$DB_PATH" ]; then
         mkdir -p "$(dirname "$DB_PATH")"
         touch "$DB_PATH"
