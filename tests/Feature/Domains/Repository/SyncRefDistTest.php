@@ -73,3 +73,28 @@ it('clears the dist pointer when the branch moves but the archive cannot be buil
     expect(VersionMetadataData::fromPackageVersion($packageVersion)->toArray())
         ->not->toHaveKey('dist');
 });
+
+it('rebuilds a missing dist archive when the commit is unchanged', function () {
+    $commit = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
+
+    ($this->syncBranch)($commit, archiveSucceeds: false);
+
+    expect(PackageVersion::query()->sole()->dist_url)->toBeNull();
+
+    expect(($this->syncBranch)($commit))->toBe('updated');
+
+    $packageVersion = PackageVersion::query()->sole();
+
+    expect($packageVersion->source_reference)->toBe($commit)
+        ->and($packageVersion->dist_url)->not->toBeNull()
+        ->and($packageVersion->dist_shasum)->toBe(sha1("zip-for-{$commit}"));
+});
+
+it('skips an unchanged commit that already has a dist archive', function () {
+    $commit = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
+
+    ($this->syncBranch)($commit);
+
+    expect(($this->syncBranch)($commit, archiveSucceeds: false))->toBe('skipped')
+        ->and(PackageVersion::query()->sole()->dist_shasum)->toBe(sha1("zip-for-{$commit}"));
+});

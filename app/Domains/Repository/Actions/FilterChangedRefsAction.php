@@ -8,6 +8,7 @@ use App\Domains\Repository\Contracts\Data\RefData;
 use App\Domains\Repository\Contracts\Data\RefsCollectionData;
 use App\Models\PackageVersion;
 use App\Models\Repository;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Spatie\LaravelData\DataCollection;
 
@@ -17,7 +18,8 @@ class FilterChangedRefsAction
      * Filter out refs whose commit SHA hasn't changed since last sync.
      *
      * Compares each ref's computed version string and commit SHA against
-     * existing PackageVersion records to avoid unnecessary API calls.
+     * existing PackageVersion records to avoid unnecessary API calls. Versions
+     * still missing their dist archive count as changed so it gets rebuilt.
      */
     public function handle(RefsCollectionData $refs, Repository $repository): RefsCollectionData
     {
@@ -57,6 +59,7 @@ class FilterChangedRefsAction
         return PackageVersion::query()
             ->whereIn('package_uuid', $packageUuids)
             ->whereNotNull('source_reference')
+            ->when(config('pricore.dist.enabled'), fn (Builder $query) => $query->whereNotNull('dist_url'))
             ->get(['version', 'source_reference'])
             ->map(fn (PackageVersion $pv) => new ExistingVersionData(
                 version: $pv->version,

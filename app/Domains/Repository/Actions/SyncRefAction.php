@@ -55,6 +55,14 @@ class SyncRefAction
                 ->first();
 
             if ($existingVersion) {
+                // A previous sync may have failed to build the archive, so retry it
+                // rather than leaving the version without a dist for good.
+                if (config('pricore.dist.enabled') && ! $existingVersion->dist_url) {
+                    $this->createDistForVersion($provider, $existingVersion, $package, $repository);
+
+                    return $existingVersion->dist_url ? 'updated' : 'skipped';
+                }
+
                 // Version exists with the same commit SHA - no changes needed
                 return 'skipped';
             }
