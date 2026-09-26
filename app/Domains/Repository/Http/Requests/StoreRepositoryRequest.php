@@ -3,6 +3,7 @@
 namespace App\Domains\Repository\Http\Requests;
 
 use App\Domains\Repository\Contracts\Enums\GitProvider;
+use App\Domains\Repository\Http\Requests\Concerns\HasPackagePaths;
 use App\Domains\Repository\Rules\ValidRepositoryIdentifier;
 use App\Models\Organization;
 use Illuminate\Contracts\Validation\ValidationRule;
@@ -11,6 +12,8 @@ use Illuminate\Validation\Rule;
 
 class StoreRepositoryRequest extends FormRequest
 {
+    use HasPackagePaths;
+
     /**
      * @return array<string, ValidationRule|array<mixed>|string>
      */
@@ -35,6 +38,7 @@ class StoreRepositoryRequest extends FormRequest
                 Rule::exists('organization_ssh_keys', 'uuid')
                     ->where('organization_uuid', $organization->uuid),
             ],
+            ...$this->packagePathRules(),
         ];
     }
 }

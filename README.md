@@ -37,6 +37,7 @@ Don't want to self-host? Try [Hosted Pricore](https://app.pricore.dev) — a ful
 ## Features
 
 - **Git-Based Mirroring** - Point at any GitHub, GitLab, Bitbucket, or generic Git repo. Automatic syncing via webhooks.
+- **Monorepo Support** - Serve several packages from one repository by pointing Pricore at their directories, such as `packages/*`.
 - **Registry Mirrors** - Import packages from Packagist or other Composer registries with dist mirroring.
 - **Composer v2 Native** - Full API support with lightning-fast package resolves.
 - **Security Auditing** - Vulnerability scanning via Packagist advisories with native `composer audit` support.

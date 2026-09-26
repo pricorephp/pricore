@@ -381,6 +381,10 @@ added: number,
 updated: number,
 skipped: number,
 };
+export type UpdatePackagePathsResultData = {
+changed: boolean,
+packagesRemoved: number,
+};
 }
 namespace Enums {
 export type GitProvider = 'github' | 'gitlab' | 'bitbucket' | 'git';

@@ -35,6 +35,11 @@ export default function PackageCard({
                         )}
                         {name}
                     </span>
+                    {pkg.sourcePath && (
+                        <code className="shrink-0 rounded bg-muted px-1.5 py-0.5 font-mono text-xs text-muted-foreground">
+                            {pkg.sourcePath}
+                        </code>
+                    )}
                     {pkg.visibility === 'public' && (
                         <span className="inline-flex shrink-0 items-center gap-1 text-xs text-muted-foreground">
                             <Globe className="size-3" />

@@ -16,6 +16,7 @@ use App\Domains\Repository\Exceptions\GitProviderException;
 use App\Domains\Repository\Services\GitProviders\GitProviderFactory;
 use App\Models\Repository;
 use App\Models\RepositorySyncLog;
+use Carbon\CarbonInterface;
 use Illuminate\Bus\Batch;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -75,9 +76,15 @@ class SyncRepositoryJob implements ShouldBeUnique, ShouldQueue
 
             $refs = $collectRefsAction->handle($provider);
 
+            // Read as late as possible: a request made while this job was queued
+            // could not queue a job of its own, as this one holds the unique lock
+            $fullSyncRequestedAt = $this->repository->refresh()->full_sync_requested_at;
+
             $totalRefs = $refs->all->count();
             // A forced sync revisits every ref, e.g. after the package paths changed
-            $filteredRefs = $this->force ? $refs : $filterChangedRefsAction->handle($refs, $this->repository);
+            $filteredRefs = $this->force || $fullSyncRequestedAt !== null
+                ? $refs
+                : $filterChangedRefsAction->handle($refs, $this->repository);
             $skippedCount = $totalRefs - $filteredRefs->all->count();
 
             $staleVersionsRemoved = $removeStaleVersionsAction->handle($this->repository, $refs);
@@ -105,6 +112,7 @@ class SyncRepositoryJob implements ShouldBeUnique, ShouldQueue
 
             if ($filteredRefs->all->count() === 0) {
                 $this->completeSyncLogEmpty($syncLog);
+                $this->clearFullSyncRequest($fullSyncRequestedAt);
 
                 return;
             }
@@ -137,6 +145,7 @@ class SyncRepositoryJob implements ShouldBeUnique, ShouldQueue
                 ->dispatch();
 
             $syncLog->update(['batch_id' => $batch->id]);
+            $this->clearFullSyncRequest($fullSyncRequestedAt);
 
             Log::info('Repository sync batch dispatched', [
                 'repository' => $this->repository->name,
@@ -157,6 +166,22 @@ class SyncRepositoryJob implements ShouldBeUnique, ShouldQueue
         }
 
         throw new GitProviderException('Failed to validate repository access');
+    }
+
+    /**
+     * Only the request this run acted on is cleared; a newer one made while it
+     * ran stays, and the batch completion starts another sync for it.
+     */
+    protected function clearFullSyncRequest(?CarbonInterface $requestedAt): void
+    {
+        if ($requestedAt === null) {
+            return;
+        }
+
+        Repository::query()
+            ->whereKey($this->repository->uuid)
+            ->where('full_sync_requested_at', '<=', $requestedAt)
+            ->update(['full_sync_requested_at' => null]);
     }
 
     protected function completeSyncLogEmpty(RepositorySyncLog $syncLog): void

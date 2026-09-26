@@ -19,7 +19,7 @@ Each package has:
 The recommended way to create packages is by connecting a Git repository:
 
 1. [Connect a repository](/guide/repositories) to your organization
-2. Pricore automatically discovers `composer.json` and creates the package
+2. Pricore automatically discovers `composer.json` and creates the package, or several packages for a [monorepo](/guide/repositories#monorepos)
 3. Tags become release versions, branches become dev versions
 
 ## Package Versions

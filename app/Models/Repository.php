@@ -26,6 +26,7 @@ use Illuminate\Support\Carbon;
  * @property string|null $custom_base_url
  * @property string|null $default_branch
  * @property array<int, string>|null $package_paths
+ * @property Carbon|null $full_sync_requested_at
  * @property string|null $webhook_id
  * @property string|null $webhook_secret
  * @property Carbon|null $last_synced_at
@@ -70,6 +71,7 @@ class Repository extends Model
         'last_synced_at' => 'datetime',
         'webhook_secret' => 'encrypted',
         'package_paths' => 'array',
+        'full_sync_requested_at' => 'datetime',
     ];
 
     /**

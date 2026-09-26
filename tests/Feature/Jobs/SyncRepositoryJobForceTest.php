@@ -73,3 +73,15 @@ it('unserializes a job queued before the force flag existed', function () {
 
     expect($job->force)->toBeFalse();
 });
+
+it('syncs every ref when a full sync was requested and clears the request', function () {
+    Bus::fake();
+
+    $this->repository->update(['full_sync_requested_at' => now()->subMinute()]);
+
+    ($this->runJob)(false);
+
+    Bus::assertBatched(fn ($batch) => $batch->jobs->count() === 1);
+
+    expect($this->repository->fresh()?->full_sync_requested_at)->toBeNull();
+});
