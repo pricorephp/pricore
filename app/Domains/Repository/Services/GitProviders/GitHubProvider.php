@@ -372,6 +372,7 @@ class GitHubProvider extends AbstractGitProvider
                 $owners[] = $userResponse->json('login');
             }
 
+            $organizations = [];
             $page = 1;
             do {
                 $response = $this->http->get('/user/orgs', [
@@ -385,13 +386,19 @@ class GitHubProvider extends AbstractGitProvider
 
                 $orgs = $response->json();
                 foreach ($orgs as $org) {
-                    $owners[] = $org['login'];
+                    $organizations[] = $org['login'];
                 }
 
                 $page++;
             } while (count($orgs) === 100);
 
-            return $owners;
+            // Fine-grained tokens cannot list organization memberships, so /user/orgs
+            // comes back empty for them.
+            if ($organizations === []) {
+                $organizations = $this->getOrganizationsFromRepositories();
+            }
+
+            return array_values(array_unique([...$owners, ...$organizations]));
         } catch (\Exception $e) {
             Log::error('GitHub API error fetching owners', [
                 'error' => $e->getMessage(),
@@ -402,6 +409,40 @@ class GitHubProvider extends AbstractGitProvider
                 previous: $e
             );
         }
+    }
+
+    /**
+     * Organizations that own a repository the token can reach.
+     *
+     * @return array<int, string>
+     */
+    protected function getOrganizationsFromRepositories(): array
+    {
+        $organizations = [];
+        $page = 1;
+
+        do {
+            $response = $this->http->get('/user/repos', [
+                'per_page' => 100,
+                'page' => $page,
+                'affiliation' => 'collaborator,organization_member',
+            ]);
+
+            if ($response->failed()) {
+                break;
+            }
+
+            $repos = $response->json();
+            foreach ($repos as $repo) {
+                if (($repo['owner']['type'] ?? null) === 'Organization') {
+                    $organizations[] = $repo['owner']['login'];
+                }
+            }
+
+            $page++;
+        } while (count($repos) === 100);
+
+        return $organizations;
     }
 
     /**
