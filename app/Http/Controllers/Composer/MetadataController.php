@@ -8,6 +8,7 @@ use App\Models\Organization;
 use App\Models\Package;
 use App\Models\PackageVersion;
 use Composer\MetadataMinifier\MetadataMinifier;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -66,6 +67,9 @@ class MetadataController extends Controller
         }
 
         $versions = $scopeFilter($package->versions())
+            // A subdirectory version installs from its dist only (no source block),
+            // so one without an archive yet would be offered but fail to install
+            ->where(fn (Builder $query) => $query->whereNull('source_path')->orWhereNotNull('dist_url'))
             ->orderBy('released_at', 'desc')
             ->get();
 

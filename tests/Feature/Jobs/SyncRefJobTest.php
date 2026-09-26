@@ -139,7 +139,7 @@ it('skips refs when composer.json is missing', function () {
     $syncRefAction = app(SyncRefAction::class);
     $result = $syncRefAction->handle($mockProvider, $repository, $ref);
 
-    expect($result)->toBe('skipped');
+    expect($result->skipped)->toBe(1);
     expect(Package::count())->toBe(0);
     expect(PackageVersion::count())->toBe(0);
 });

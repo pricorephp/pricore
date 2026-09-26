@@ -115,3 +115,21 @@ it('can sync all repositories with --all flag', function () {
         ->expectsOutput('Found 2 repository/repositories to sync.')
         ->assertSuccessful();
 });
+
+it('accepts the --force option', function () {
+    $user = User::factory()->create();
+    $organization = Organization::factory()->create();
+    $repository = Repository::factory()
+        ->for($organization, 'organization')
+        ->github()
+        ->create(['credential_user_uuid' => $user->uuid]);
+
+    UserGitCredential::factory()
+        ->for($user, 'user')
+        ->github()
+        ->create();
+
+    $this->artisan('sync:repository', ['repository' => $repository->uuid, '--force' => true])
+        ->expectsOutput('Found 1 repository/repositories to sync.')
+        ->assertSuccessful();
+});

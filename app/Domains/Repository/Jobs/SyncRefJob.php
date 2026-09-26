@@ -4,11 +4,11 @@ namespace App\Domains\Repository\Jobs;
 
 use App\Domains\Repository\Actions\SyncRefAction;
 use App\Domains\Repository\Contracts\Data\RefData;
+use App\Domains\Repository\Contracts\Data\SyncRefResultData;
 use App\Domains\Repository\Contracts\Enums\GitProvider;
 use App\Domains\Repository\Contracts\Interfaces\GitProviderInterface;
 use App\Domains\Repository\Services\GitProviders\CachedGitProvider;
 use App\Domains\Repository\Services\GitProviders\GitProviderFactory;
-use App\Exceptions\ComposerMetadataException;
 use App\Models\Repository;
 use Illuminate\Bus\Batchable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -45,15 +45,7 @@ class SyncRefJob implements ShouldQueue
         try {
             $result = $syncRefAction->handle($provider, $this->repository, $this->ref);
 
-            $this->incrementCounter($result);
-        } catch (ComposerMetadataException $e) {
-            Log::warning('Skipping ref due to invalid composer.json', [
-                'repository' => $this->repository->name,
-                'ref' => $this->ref->name,
-                'error' => $e->getMessage(),
-            ]);
-
-            $this->incrementCounter('skipped');
+            $this->incrementCounters($result);
         } catch (Throwable $e) {
             Log::error('Failed to sync ref', [
                 'repository' => $this->repository->name,
@@ -78,7 +70,23 @@ class SyncRefJob implements ShouldQueue
         return GitProviderFactory::make($this->repository);
     }
 
-    protected function incrementCounter(string $result): void
+    protected function incrementCounters(SyncRefResultData $result): void
+    {
+        $counters = [
+            'added' => $result->added,
+            'updated' => $result->updated,
+            'skipped' => $result->skipped,
+            'removed' => $result->removed,
+        ];
+
+        foreach ($counters as $counter => $count) {
+            if ($count > 0) {
+                $this->incrementCounter($counter, $count);
+            }
+        }
+    }
+
+    protected function incrementCounter(string $counter, int $count = 1): void
     {
         $batch = $this->batch();
 
@@ -86,7 +94,7 @@ class SyncRefJob implements ShouldQueue
             return;
         }
 
-        Cache::increment("sync-batch:{$batch->id}:{$result}");
+        Cache::increment("sync-batch:{$batch->id}:{$counter}", $count);
     }
 
     public function failed(?Throwable $exception): void

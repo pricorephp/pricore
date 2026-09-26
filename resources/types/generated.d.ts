@@ -304,6 +304,7 @@ size: number,
 export type ExistingVersionData = {
 version: string,
 sourceReference: string,
+distFailed: boolean,
 };
 export type RecentSyncData = {
 uuid: string,
@@ -367,6 +368,13 @@ versionsAdded: number,
 versionsUpdated: number,
 versionsRemoved: number,
 details: Record<string, any> | null,
+};
+export type SyncRefResultData = {
+added: number,
+updated: number,
+skipped: number,
+removed: number,
+packagesFound: number,
 };
 export type SyncResultData = {
 added: number,

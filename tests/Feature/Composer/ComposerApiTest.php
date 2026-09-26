@@ -504,3 +504,27 @@ it('does not leak packages from other organizations', function () {
 
     $response->assertNotFound();
 });
+
+it('leaves out subdirectory versions that have no dist archive', function () {
+    $package = Package::factory()
+        ->for($this->organization, 'organization')
+        ->atPath('packages/billing')
+        ->create(['name' => 'acme/billing']);
+
+    PackageVersion::factory()->for($package)->atPath('packages/billing')->create([
+        'version' => '1.0.0',
+        'normalized_version' => '1.0.0.0',
+        'dist_url' => 'https://example.com/dists/acme/billing/1.0.0/abc123.zip',
+    ]);
+    PackageVersion::factory()->for($package)->atPath('packages/billing')->create([
+        'version' => '1.1.0',
+        'normalized_version' => '1.1.0.0',
+        'dist_url' => null,
+    ]);
+
+    $response = authenticatedGet("/{$this->organization->slug}/p2/acme/billing.json", $this->plainToken);
+
+    $response->assertOk();
+
+    expect(collect($response->json('packages')['acme/billing'])->pluck('version')->all())->toBe(['1.0.0']);
+});
