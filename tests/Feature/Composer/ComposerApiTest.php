@@ -434,6 +434,46 @@ it('returns 304 when If-None-Match header matches ETag', function () {
     $response->assertStatus(304);
 });
 
+it('does not return 304 for If-Modified-Since after a version is deleted', function () {
+    $package = Package::factory()
+        ->for($this->organization, 'organization')
+        ->create([
+            'name' => 'acme/package',
+            'updated_at' => now()->subDays(30),
+        ]);
+
+    PackageVersion::factory()
+        ->for($package)
+        ->create([
+            'version' => '1.0.0',
+            'normalized_version' => '1.0.0.0',
+            'updated_at' => now()->subHours(2),
+        ]);
+
+    $newestVersion = PackageVersion::factory()
+        ->for($package)
+        ->create([
+            'version' => '1.1.0',
+            'normalized_version' => '1.1.0.0',
+            'updated_at' => now()->subHour(),
+        ]);
+
+    $response = authenticatedGet("/{$this->organization->slug}/p2/acme/package.json", $this->plainToken);
+    $response->assertOk();
+    $lastModified = $response->headers->get('Last-Modified');
+
+    $newestVersion->delete();
+
+    $response = test()->withHeaders([
+        'Authorization' => "Bearer {$this->plainToken}",
+        'If-Modified-Since' => $lastModified,
+    ])->getJson("/{$this->organization->slug}/p2/acme/package.json");
+
+    $response->assertOk()
+        ->assertJsonCount(1, 'packages.acme/package')
+        ->assertJsonPath('packages.acme/package.0.version', '1.0.0');
+});
+
 it('returns ETag header on metadata responses', function () {
     $package = Package::factory()
         ->for($this->organization, 'organization')
