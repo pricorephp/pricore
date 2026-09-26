@@ -28,6 +28,7 @@ class PackageData extends Data
         public ?string $repositoryProvider,
         public ?RepositorySyncStatus $repositorySyncStatus,
         public ?CarbonInterface $repositoryLastSyncedAt,
+        public ?string $sourcePath,
         public ?string $mirrorName,
         public ?string $mirrorUuid,
     ) {}
@@ -62,6 +63,7 @@ class PackageData extends Data
             repositoryProvider: $package->repository?->provider->value,
             repositorySyncStatus: $package->repository?->sync_status,
             repositoryLastSyncedAt: $package->repository?->last_synced_at,
+            sourcePath: $package->source_path,
             mirrorName: $package->mirror?->name,
             mirrorUuid: $package->mirror?->uuid,
         );

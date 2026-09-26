@@ -41,6 +41,64 @@ class GenericGitProvider extends AbstractGitProvider
 
     public function getFileContent(string $ref, string $path): ?string
     {
+        return $this->withShallowClone($ref, function (string $tempDir) use ($path): ?string {
+            $filePath = $tempDir.'/'.ltrim($path, '/');
+
+            if (! file_exists($filePath)) {
+                return null;
+            }
+
+            $content = file_get_contents($filePath);
+
+            return $content === false ? null : $content;
+        });
+    }
+
+    /**
+     * @return array<int, array{name: string, type: 'dir'|'file'}>
+     */
+    public function listDirectory(string $ref, string $path): array
+    {
+        $entries = $this->withShallowClone($ref, function (string $tempDir) use ($path): array {
+            $path = trim($path, '/');
+            $directory = $path === '' ? $tempDir : "{$tempDir}/{$path}";
+
+            if (! is_dir($directory)) {
+                return [];
+            }
+
+            $entries = [];
+
+            foreach (scandir($directory) ?: [] as $name) {
+                // The clone's own metadata is not part of the repository tree
+                if ($name === '.' || $name === '..' || ($path === '' && $name === '.git')) {
+                    continue;
+                }
+
+                $entries[] = [
+                    'name' => $name,
+                    'type' => is_dir("{$directory}/{$name}") ? 'dir' : 'file',
+                ];
+            }
+
+            return $entries;
+        });
+
+        return $entries ?? [];
+    }
+
+    /**
+     * Run $callback against a fresh shallow clone of $ref, removed afterwards.
+     * Returns null when the ref cannot be cloned (unknown ref, or a commit SHA
+     * not reachable by name).
+     *
+     * @template TResult
+     *
+     * @param  callable(string): TResult  $callback
+     * @return TResult|null
+     */
+    protected function withShallowClone(string $ref, callable $callback): mixed
+    {
         $tempDir = sys_get_temp_dir().'/pricore-git-'.Str::random(16);
 
         try {
@@ -48,7 +106,6 @@ class GenericGitProvider extends AbstractGitProvider
                 throw new GitProviderException('Failed to create temporary directory');
             }
 
-            // Try to shallow clone the specific ref
             // Note: --branch works for both tags and branches
             $this->runGitCommand([
                 'clone',
@@ -59,18 +116,8 @@ class GenericGitProvider extends AbstractGitProvider
                 $tempDir,
             ]);
 
-            $filePath = $tempDir.'/'.ltrim($path, '/');
-
-            if (file_exists($filePath)) {
-                $content = file_get_contents($filePath);
-
-                return $content === false ? null : $content;
-            }
-
-            return null;
+            return $callback($tempDir);
         } catch (\Exception $e) {
-            // If clone fails (e.g. ref doesn't exist or is a commit SHA not reachable by branch name)
-            // We could try to fallback to fetching by SHA if needed, but for now this covers standard use cases.
             return null;
         } finally {
             File::deleteDirectory($tempDir);
@@ -103,7 +150,7 @@ class GenericGitProvider extends AbstractGitProvider
         throw new GitProviderException('Generic Git provider does not support webhooks.');
     }
 
-    public function downloadArchive(string $ref, string $outputPath): bool
+    protected function downloadFullArchive(string $ref, string $outputPath): bool
     {
         return false;
     }
