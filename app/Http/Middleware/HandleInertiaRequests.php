@@ -120,9 +120,8 @@ class HandleInertiaRequests extends Middleware
         }
 
         $packages = $organization->packages()
-            ->with('organization:uuid,name,slug')
             ->get()
-            ->map(fn (Package $package) => SearchPackageData::fromModel($package))
+            ->map(fn (Package $package) => SearchPackageData::fromModel($package, $organization))
             ->all();
 
         $repositories = $organization->repositories()

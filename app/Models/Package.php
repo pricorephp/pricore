@@ -26,7 +26,7 @@ use Illuminate\Support\Carbon;
  * @property int $dist_keep_last_releases
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
- * @property-read Organization $organization
+ * @property-read Organization|null $organization
  * @property-read Repository|null $repository
  * @property-read Mirror|null $mirror
  * @property-read Collection<int, PackageVersion> $versions

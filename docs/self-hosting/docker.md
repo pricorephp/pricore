@@ -171,6 +171,12 @@ docker compose pull
 docker compose up -d
 ```
 
+::: warning Upgrading a compose file from before the database volume moved
+The `pricore-database` volume used to be mounted on `/app/database`, which hid the migrations shipped with each new image, so upgrades silently skipped them. The app now refuses to start with that layout. Download the current `docker-compose.yml`, or change the `pricore-database` mounts in your own file to `/app/database/data`. Your existing database moves along with the volume. If you set `DB_DATABASE` yourself, change it to `/app/database/data/database.sqlite`.
+
+The volume still holds the `migrations`, `factories` and `seeders` directories copied from the old image. They are no longer used and can be removed; keep the `database.sqlite` files.
+:::
+
 ## Maintenance
 
 ### Viewing Logs
@@ -191,7 +197,7 @@ docker compose logs -f horizon
 docker compose exec app php artisan tinker
 
 # Database backup (SQLite)
-docker compose exec app cp /app/database/database.sqlite /app/database/backup.sqlite
+docker compose exec app cp /app/database/data/database.sqlite /app/database/data/backup.sqlite
 ```
 
 ### Cache Operations
