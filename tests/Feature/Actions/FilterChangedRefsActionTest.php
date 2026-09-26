@@ -227,7 +227,7 @@ it('handles tags without v prefix', function () {
     expect($result->all->count())->toBe(0);
 });
 
-it('keeps unchanged refs whose version is missing its dist archive', function () {
+it('keeps unchanged refs whose dist archive failed to build', function () {
     $organization = Organization::factory()->create();
     $repository = Repository::factory()
         ->for($organization, 'organization')
@@ -245,6 +245,7 @@ it('keeps unchanged refs whose version is missing its dist archive', function ()
             'version' => 'v1.0.0',
             'source_reference' => 'abc123',
             'dist_url' => null,
+            'dist_failed_at' => now(),
         ]);
 
     $refs = makeRefs(tags: [['name' => 'v1.0.0', 'commit' => 'abc123']]);
@@ -254,7 +255,35 @@ it('keeps unchanged refs whose version is missing its dist archive', function ()
     expect($result->tags->count())->toBe(1);
 });
 
-it('filters unchanged refs without a dist archive when dists are disabled', function () {
+it('filters unchanged refs whose dist archive was removed on purpose', function () {
+    $organization = Organization::factory()->create();
+    $repository = Repository::factory()
+        ->for($organization, 'organization')
+        ->github()
+        ->create();
+
+    $package = Package::factory()
+        ->forOrganization($organization)
+        ->forRepository($repository)
+        ->create();
+
+    PackageVersion::factory()
+        ->forPackage($package)
+        ->create([
+            'version' => 'v1.0.0',
+            'source_reference' => 'abc123',
+            'dist_url' => null,
+            'dist_failed_at' => null,
+        ]);
+
+    $refs = makeRefs(tags: [['name' => 'v1.0.0', 'commit' => 'abc123']]);
+
+    $result = app(FilterChangedRefsAction::class)->handle($refs, $repository);
+
+    expect($result->tags->count())->toBe(0);
+});
+
+it('filters unchanged refs whose dist archive failed when dists are disabled', function () {
     config(['pricore.dist.enabled' => false]);
 
     $organization = Organization::factory()->create();
@@ -274,6 +303,7 @@ it('filters unchanged refs without a dist archive when dists are disabled', func
             'version' => 'v1.0.0',
             'source_reference' => 'abc123',
             'dist_url' => null,
+            'dist_failed_at' => now(),
         ]);
 
     $refs = makeRefs(tags: [['name' => 'v1.0.0', 'commit' => 'abc123']]);

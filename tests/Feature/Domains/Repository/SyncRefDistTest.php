@@ -1,6 +1,7 @@
 <?php
 
 use App\Domains\Composer\Contracts\Data\VersionMetadataData;
+use App\Domains\Repository\Actions\RemoveDistArchiveTask;
 use App\Domains\Repository\Actions\SyncRefAction;
 use App\Domains\Repository\Contracts\Data\RefData;
 use App\Domains\Repository\Contracts\Interfaces\GitProviderInterface;
@@ -74,20 +75,52 @@ it('clears the dist pointer when the branch moves but the archive cannot be buil
         ->not->toHaveKey('dist');
 });
 
-it('rebuilds a missing dist archive when the commit is unchanged', function () {
+it('rebuilds a dist archive that failed to build when the commit is unchanged', function () {
     $commit = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
 
     ($this->syncBranch)($commit, archiveSucceeds: false);
 
-    expect(PackageVersion::query()->sole()->dist_url)->toBeNull();
-
-    expect(($this->syncBranch)($commit))->toBe('updated');
-
     $packageVersion = PackageVersion::query()->sole();
+
+    expect($packageVersion->dist_url)->toBeNull()
+        ->and($packageVersion->dist_failed_at)->not->toBeNull();
+
+    expect(($this->syncBranch)($commit))->toBe('skipped');
+
+    $packageVersion->refresh();
 
     expect($packageVersion->source_reference)->toBe($commit)
         ->and($packageVersion->dist_url)->not->toBeNull()
-        ->and($packageVersion->dist_shasum)->toBe(sha1("zip-for-{$commit}"));
+        ->and($packageVersion->dist_shasum)->toBe(sha1("zip-for-{$commit}"))
+        ->and($packageVersion->dist_failed_at)->toBeNull();
+});
+
+it('keeps retrying a dist archive that fails again', function () {
+    $commit = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
+
+    ($this->syncBranch)($commit, archiveSucceeds: false);
+    ($this->syncBranch)($commit, archiveSucceeds: false);
+
+    $packageVersion = PackageVersion::query()->sole();
+
+    expect($packageVersion->dist_url)->toBeNull()
+        ->and($packageVersion->dist_failed_at)->not->toBeNull();
+});
+
+it('does not rebuild a dist archive that was removed on purpose', function () {
+    $commit = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
+
+    ($this->syncBranch)($commit);
+
+    // Release retention removes archives through this task.
+    app(RemoveDistArchiveTask::class)->handle(PackageVersion::query()->sole());
+
+    expect(($this->syncBranch)($commit))->toBe('skipped');
+
+    $packageVersion = PackageVersion::query()->sole();
+
+    expect($packageVersion->dist_url)->toBeNull()
+        ->and($packageVersion->dist_failed_at)->toBeNull();
 });
 
 it('skips an unchanged commit that already has a dist archive', function () {

@@ -71,6 +71,7 @@ class RecordDistArchiveAction
                 'dist_path' => $archive->path,
                 'dist_shasum' => $archive->shasum,
                 'dist_size' => $archive->size,
+                'dist_failed_at' => null,
             ]);
 
             return $distArchive;

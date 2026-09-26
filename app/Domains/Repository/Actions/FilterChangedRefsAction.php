@@ -19,7 +19,7 @@ class FilterChangedRefsAction
      *
      * Compares each ref's computed version string and commit SHA against
      * existing PackageVersion records to avoid unnecessary API calls. Versions
-     * still missing their dist archive count as changed so it gets rebuilt.
+     * whose dist archive failed to build count as changed so it gets retried.
      */
     public function handle(RefsCollectionData $refs, Repository $repository): RefsCollectionData
     {
@@ -59,7 +59,7 @@ class FilterChangedRefsAction
         return PackageVersion::query()
             ->whereIn('package_uuid', $packageUuids)
             ->whereNotNull('source_reference')
-            ->when(config('pricore.dist.enabled'), fn (Builder $query) => $query->whereNotNull('dist_url'))
+            ->when(config('pricore.dist.enabled'), fn (Builder $query) => $query->whereNull('dist_failed_at'))
             ->get(['version', 'source_reference'])
             ->map(fn (PackageVersion $pv) => new ExistingVersionData(
                 version: $pv->version,
