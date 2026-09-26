@@ -34,6 +34,18 @@ it('sorts failing repositories first', function () {
     expect($names)->toBe(['b-failing', 'a-healthy']);
 });
 
+it('orders repositories with the same status by most recent sync', function () {
+    $organization = Organization::factory()->create();
+    Repository::factory()->for($organization)->create(['name' => 'a-stale', 'sync_status' => RepositorySyncStatus::Ok, 'last_synced_at' => now()->subMonth()]);
+    Repository::factory()->for($organization)->create(['name' => 'b-never', 'sync_status' => RepositorySyncStatus::Ok, 'last_synced_at' => null]);
+    Repository::factory()->for($organization)->create(['name' => 'c-recent', 'sync_status' => RepositorySyncStatus::Ok, 'last_synced_at' => now()->subHour()]);
+    Repository::factory()->for($organization)->create(['name' => 'd-failing', 'sync_status' => RepositorySyncStatus::Failed, 'last_synced_at' => now()->subYear()]);
+
+    $names = app(BuildRepositoryHealthAction::class)->handle($organization)->pluck('name')->all();
+
+    expect($names)->toBe(['d-failing', 'c-recent', 'a-stale', 'b-never']);
+});
+
 it('only includes repositories from the given organization', function () {
     $organization = Organization::factory()->create();
     Repository::factory()->for($organization)->create();
