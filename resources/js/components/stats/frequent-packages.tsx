@@ -52,9 +52,7 @@ export function FrequentPackages({
                                     {pkg.name}
                                 </p>
                                 <p className="text-sm text-muted-foreground">
-                                    {pkg.latestVersion
-                                        ? `v${pkg.latestVersion}`
-                                        : '—'}
+                                    {pkg.latestVersion ?? '—'}
                                 </p>
                             </div>
                         </Link>
