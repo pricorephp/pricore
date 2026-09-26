@@ -77,7 +77,9 @@ class MetadataController extends Controller
 
         $minified = MetadataMinifier::minify($versionsMetadata);
 
-        $lastModified = $versions->max('updated_at') ?? $package->updated_at;
+        // The package is touched when a version is deleted, which the remaining
+        // versions' timestamps would not reflect.
+        $lastModified = $versions->pluck('updated_at')->push($package->updated_at)->max();
 
         $response = response()
             ->json([

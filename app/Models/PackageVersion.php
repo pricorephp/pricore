@@ -91,6 +91,12 @@ class PackageVersion extends Model
                 $disk->delete($version->dist_path);
             }
         });
+
+        // Removing a version leaves the remaining versions' timestamps as they
+        // were, so bump the package to move the metadata's Last-Modified.
+        static::deleted(function (PackageVersion $version) {
+            Package::query()->whereKey($version->package_uuid)->touch();
+        });
     }
 
     /**
