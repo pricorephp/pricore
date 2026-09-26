@@ -129,8 +129,12 @@ RUN chown -R www-data:www-data /app \
     && chmod -R 755 /app/storage \
     && chmod -R 755 /app/bootstrap/cache
 
-# Create SQLite database directory
-RUN mkdir -p /app/database && touch /app/database/database.sqlite \
+# Create SQLite database directory. docker-compose.yml mounts its volume on
+# /app/database/data so the volume never hides the image's migrations. The
+# newest migration is recorded so the entrypoint can detect a volume that does.
+RUN mkdir -p /app/database/data \
+    && touch /app/database/data/database.sqlite \
+    && ls /app/database/migrations | sort | tail -n 1 > /app/.latest-migration \
     && chown -R www-data:www-data /app/database
 
 # PHP production configuration
