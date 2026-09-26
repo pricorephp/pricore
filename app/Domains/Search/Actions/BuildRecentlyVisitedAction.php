@@ -21,10 +21,9 @@ class BuildRecentlyVisitedAction
             ->where('package_views.user_uuid', $user->uuid)
             ->orderByDesc('package_views.last_viewed_at')
             ->select('packages.*')
-            ->with('organization:uuid,name,slug')
             ->limit(static::LIMIT)
             ->get()
-            ->map(fn (Package $package) => SearchPackageData::fromModel($package))
+            ->map(fn (Package $package) => SearchPackageData::fromModel($package, $organization))
             ->all();
 
         $repositories = $organization->repositories()
