@@ -13,6 +13,7 @@ class SharedData extends Data
         public ?string $version,
         public AuthData $auth,
         public ?SearchData $search,
+        public ?RecentlyVisitedData $recentlyVisited,
         public bool $sidebarOpen,
         public ?FlashData $flash,
     ) {}
