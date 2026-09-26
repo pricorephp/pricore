@@ -192,6 +192,9 @@ updatedAt: string,
 repositoryName: string | null,
 repositoryIdentifier: string | null,
 repositoryUuid: string | null,
+repositoryProvider: string | null,
+repositorySyncStatus: App.Domains.Repository.Contracts.Enums.RepositorySyncStatus | null,
+repositoryLastSyncedAt: string | null,
 mirrorName: string | null,
 mirrorUuid: string | null,
 };
@@ -299,6 +302,12 @@ export type ExistingVersionData = {
 version: string,
 sourceReference: string,
 };
+export type RecentSyncData = {
+uuid: string,
+status: App.Domains.Repository.Contracts.Enums.SyncStatus,
+statusLabel: string,
+startedAt: string,
+};
 export type RefData = {
 name: string,
 commit: string,
@@ -324,6 +333,17 @@ supportsAutomaticWebhooks: boolean,
 webhookActive: boolean,
 webhookUrl: string | null,
 webhookSecret: string | null,
+};
+export type RepositoryHealthData = {
+uuid: string,
+name: string,
+provider: string,
+repoIdentifier: string,
+syncStatus: App.Domains.Repository.Contracts.Enums.RepositorySyncStatus | null,
+syncStatusLabel: string | null,
+lastSyncedAt: string | null,
+packagesCount: number,
+recentSyncs: App.Domains.Repository.Contracts.Data.RecentSyncData[],
 };
 export type RepositorySuggestionData = {
 name: string,
@@ -427,6 +447,14 @@ advisory: App.Domains.Security.Contracts.Data.SecurityAdvisoryData,
 matchType: App.Domains.Security.Contracts.Enums.AdvisoryMatchType,
 dependencyName: string | null,
 };
+export type SecurityStatsData = {
+affectedPackages: number,
+totalVulnerabilities: number,
+criticalCount: number,
+highCount: number,
+mediumCount: number,
+lowCount: number,
+};
 }
 namespace Enums {
 export type AdvisoryMatchType = 'direct' | 'dependency';
@@ -464,6 +492,10 @@ export type FlashData = {
 status: string | null,
 error: string | null,
 };
+export type RecentlyVisitedData = {
+packages: App.Domains.Search.Contracts.Data.SearchPackageData[],
+repositories: App.Domains.Search.Contracts.Data.SearchRepositoryData[],
+};
 export type SearchData = {
 packages: App.Domains.Search.Contracts.Data.SearchPackageData[],
 repositories: App.Domains.Search.Contracts.Data.SearchRepositoryData[],
@@ -473,6 +505,7 @@ name: string,
 version: string | null,
 auth: App.Http.Data.AuthData,
 search: App.Http.Data.SearchData | null,
+recentlyVisited: App.Http.Data.RecentlyVisitedData | null,
 sidebarOpen: boolean,
 flash: App.Http.Data.FlashData | null,
 };

@@ -11,6 +11,7 @@ use App\Domains\Repository\Actions\BulkCreateRepositoriesAction;
 use App\Domains\Repository\Actions\DeleteWebhookAction;
 use App\Domains\Repository\Actions\ExtractRepositoryNameAction;
 use App\Domains\Repository\Actions\PurgeDistArchiveFilesTask;
+use App\Domains\Repository\Actions\RecordRepositoryViewTask;
 use App\Domains\Repository\Actions\RegisterWebhookAction;
 use App\Domains\Repository\Contracts\Data\RepositoryData;
 use App\Domains\Repository\Contracts\Data\SyncLogData;
@@ -39,6 +40,7 @@ class RepositoryController extends Controller
         protected DeleteWebhookAction $deleteWebhookAction,
         protected RecordActivityTask $recordActivity,
         protected PurgeDistArchiveFilesTask $purgeDistArchiveFilesTask,
+        protected RecordRepositoryViewTask $recordRepositoryViewTask,
     ) {}
 
     public function index(Organization $organization): Response
@@ -148,6 +150,13 @@ class RepositoryController extends Controller
     public function show(Organization $organization, Repository $repository): Response
     {
         $this->authorize('view', $organization);
+
+        /** @var User|null $user */
+        $user = auth()->user();
+
+        if ($user) {
+            $this->recordRepositoryViewTask->handle($user, $repository);
+        }
 
         $repository->load('organization');
         $repository->loadCount('packages');

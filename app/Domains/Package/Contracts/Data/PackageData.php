@@ -2,6 +2,7 @@
 
 namespace App\Domains\Package\Contracts\Data;
 
+use App\Domains\Repository\Contracts\Enums\RepositorySyncStatus;
 use App\Models\Package;
 use App\Models\PackageVersion;
 use Carbon\CarbonInterface;
@@ -24,6 +25,9 @@ class PackageData extends Data
         public ?string $repositoryName,
         public ?string $repositoryIdentifier,
         public ?string $repositoryUuid,
+        public ?string $repositoryProvider,
+        public ?RepositorySyncStatus $repositorySyncStatus,
+        public ?CarbonInterface $repositoryLastSyncedAt,
         public ?string $mirrorName,
         public ?string $mirrorUuid,
     ) {}
@@ -55,6 +59,9 @@ class PackageData extends Data
             repositoryName: $package->repository?->name,
             repositoryIdentifier: $package->repository?->repo_identifier,
             repositoryUuid: $package->repository?->uuid,
+            repositoryProvider: $package->repository?->provider->value,
+            repositorySyncStatus: $package->repository?->sync_status,
+            repositoryLastSyncedAt: $package->repository?->last_synced_at,
             mirrorName: $package->mirror?->name,
             mirrorUuid: $package->mirror?->uuid,
         );

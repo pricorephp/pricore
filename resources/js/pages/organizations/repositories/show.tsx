@@ -3,11 +3,18 @@ import { edit } from '@/actions/App/Domains/Repository/Http/Controllers/Reposito
 import SyncRepository from '@/actions/App/Domains/Repository/Http/Controllers/SyncRepositoryController';
 import SyncWebhook from '@/actions/App/Domains/Repository/Http/Controllers/SyncWebhookController';
 import { CopyButton } from '@/components/copy-button';
-import GitProviderIcon from '@/components/git-provider-icon';
+import { EmptyState } from '@/components/empty-state';
+import GitProviderIcon, {
+    getProviderColor,
+} from '@/components/git-provider-icon';
 import HeadingSmall from '@/components/heading-small';
 import PackageCard from '@/components/package-card';
 import { RelativeTime } from '@/components/relative-time';
-import { Badge } from '@/components/ui/badge';
+import {
+    StatusDot,
+    statusTone,
+    SyncHealthStrip,
+} from '@/components/sync-status';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardList } from '@/components/ui/card';
 import {
@@ -38,6 +45,8 @@ import {
     AlertCircle,
     CheckCircle2,
     EllipsisVertical,
+    ExternalLink,
+    History,
     Loader2,
     Package,
     PackageCheck,
@@ -64,28 +73,21 @@ interface RepositoryShowProps {
     canManageRepository: boolean;
 }
 
-function getProviderBadgeColor(provider: string): string {
-    const colors: Record<string, string> = {
-        github: 'bg-gray-800 text-white hover:bg-gray-800',
-        gitlab: 'bg-orange-600 text-white hover:bg-orange-600',
-        bitbucket: 'bg-blue-600 text-white hover:bg-blue-600',
-        git: 'bg-gray-600 text-white hover:bg-gray-600',
-    };
-
-    return colors[provider] || colors.git;
-}
-
-type RepositorySyncStatus =
-    App.Domains.Repository.Contracts.Enums.RepositorySyncStatus;
-type SyncStatus = App.Domains.Repository.Contracts.Enums.SyncStatus;
-
-function getSyncStatusVariant(
-    status: RepositorySyncStatus | SyncStatus | null,
-): 'default' | 'secondary' | 'destructive' | 'success' | 'outline' {
-    if (!status) return 'secondary';
-    if (status === 'ok' || status === 'success') return 'success';
-    if (status === 'failed') return 'destructive';
-    return 'secondary';
+function Vital({
+    label,
+    children,
+}: {
+    label: string;
+    children: React.ReactNode;
+}) {
+    return (
+        <div className="px-6 py-4">
+            <dt className="text-xs text-muted-foreground">{label}</dt>
+            <dd className="mt-1 flex items-center gap-2 font-medium">
+                {children}
+            </dd>
+        </div>
+    );
 }
 
 function formatDuration(startedAt: string, completedAt: string | null): string {
@@ -117,6 +119,9 @@ export default function RepositoryShow({
 
     const [selectedLog, setSelectedLog] = useState<SyncLogData | null>(null);
 
+    const syncNow = () =>
+        router.post(SyncRepository.url([organization.slug, repository.uuid]));
+
     const breadcrumbs = [
         createOrganizationBreadcrumb(organization, auth.organizations),
         {
@@ -134,147 +139,129 @@ export default function RepositoryShow({
             <Head title={`${repository.name} - ${organization.name}`} />
 
             <div className="mx-auto w-7xl space-y-6 p-6">
-                <div className="flex items-center justify-between">
-                    <div className="space-y-1">
-                        <HeadingSmall
-                            title={repository.name}
-                            description={repository.repoIdentifier}
-                        />
-                        <div className="flex items-center gap-2">
-                            {repository.url ? (
-                                <a
-                                    href={repository.url}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="inline-block"
-                                >
-                                    <Badge
-                                        className={cn(
-                                            getProviderBadgeColor(
-                                                repository.provider,
-                                            ),
-                                            'border-transparent',
-                                        )}
-                                    >
-                                        <GitProviderIcon
-                                            provider={repository.provider}
-                                            className="mr-0.5 size-3"
-                                        />
-                                        {repository.providerLabel}
-                                    </Badge>
-                                </a>
-                            ) : (
-                                <Badge
+                <Card className="gap-0 py-0">
+                    <div className="flex items-start justify-between gap-4 p-6">
+                        <div className="flex min-w-0 items-center gap-4">
+                            <div className="flex size-12 shrink-0 items-center justify-center rounded-lg border bg-surface-inset">
+                                <GitProviderIcon
+                                    provider={repository.provider}
                                     className={cn(
-                                        getProviderBadgeColor(
-                                            repository.provider,
-                                        ),
-                                        'border-transparent',
+                                        'size-6',
+                                        getProviderColor(repository.provider),
                                     )}
-                                >
-                                    <GitProviderIcon
-                                        provider={repository.provider}
-                                        className="mr-0.5 size-3"
-                                    />
-                                    {repository.providerLabel}
-                                </Badge>
-                            )}
-                            {repository.syncStatus && (
-                                <Badge
-                                    variant={getSyncStatusVariant(
-                                        repository.syncStatus,
-                                    )}
-                                >
-                                    {repository.syncStatusLabel ?? 'Pending'}
-                                </Badge>
-                            )}
-                            {repository.supportsWebhooks && (
-                                <Badge
-                                    variant={
-                                        repository.webhookActive
-                                            ? 'success'
-                                            : 'outline'
-                                    }
-                                >
-                                    <Webhook className="mr-0.5 size-3" />
-                                    {repository.webhookActive
-                                        ? 'Webhook Active'
-                                        : repository.supportsAutomaticWebhooks
-                                          ? 'No Webhook'
-                                          : 'Webhook Available'}
-                                </Badge>
-                            )}
+                                />
+                            </div>
+                            <div className="min-w-0">
+                                <h1 className="truncate text-xl font-semibold tracking-tight">
+                                    {repository.name}
+                                </h1>
+                                {repository.url ? (
+                                    <a
+                                        href={repository.url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="inline-flex items-center gap-1.5 font-mono text-muted-foreground transition-colors hover:text-foreground"
+                                    >
+                                        {repository.repoIdentifier}
+                                        <ExternalLink className="size-3.5" />
+                                    </a>
+                                ) : (
+                                    <span className="font-mono text-muted-foreground">
+                                        {repository.repoIdentifier}
+                                    </span>
+                                )}
+                            </div>
                         </div>
-                        {repository.lastSyncedAt && (
-                            <p className="text-muted-foreground">
-                                Last synced{' '}
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="secondary">
+                                    Actions
+                                    <EllipsisVertical className="size-4" />
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                                <DropdownMenuItem onSelect={syncNow}>
+                                    <RefreshCw />
+                                    Sync Now
+                                </DropdownMenuItem>
+                                {repository.supportsWebhooks && (
+                                    <DropdownMenuItem
+                                        onSelect={() =>
+                                            router.post(
+                                                SyncWebhook.url([
+                                                    organization.slug,
+                                                    repository.uuid,
+                                                ]),
+                                            )
+                                        }
+                                    >
+                                        <Webhook />
+                                        {repository.supportsAutomaticWebhooks
+                                            ? repository.webhookActive
+                                                ? 'Re-register Webhook'
+                                                : 'Register Webhook'
+                                            : repository.webhookActive
+                                              ? 'Reset Webhook Secret'
+                                              : 'Activate Webhook'}
+                                    </DropdownMenuItem>
+                                )}
+                                {canManageRepository && (
+                                    <>
+                                        <DropdownMenuSeparator />
+                                        <DropdownMenuItem asChild>
+                                            <Link
+                                                href={edit.url({
+                                                    organization:
+                                                        organization.slug,
+                                                    repository: repository.uuid,
+                                                })}
+                                            >
+                                                <Settings />
+                                                Edit
+                                            </Link>
+                                        </DropdownMenuItem>
+                                    </>
+                                )}
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    </div>
+                    <dl className="grid grid-cols-2 border-t md:grid-cols-4 md:divide-x">
+                        <Vital label="Status">
+                            <StatusDot
+                                tone={statusTone(repository.syncStatus)}
+                            />
+                            {repository.syncStatusLabel ?? 'Pending'}
+                        </Vital>
+                        <Vital label="Last synced">
+                            {repository.lastSyncedAt ? (
                                 <RelativeTime
                                     datetime={repository.lastSyncedAt}
                                 />
-                            </p>
-                        )}
-                    </div>
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button variant="secondary">
-                                Actions
-                                <EllipsisVertical className="size-4" />
-                            </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                            <DropdownMenuItem
-                                onSelect={() =>
-                                    router.post(
-                                        SyncRepository.url([
-                                            organization.slug,
-                                            repository.uuid,
-                                        ]),
-                                    )
+                            ) : (
+                                'Never'
+                            )}
+                        </Vital>
+                        <Vital label="Packages">
+                            <span className="tabular-nums">
+                                {packages.length}
+                            </span>
+                        </Vital>
+                        <Vital label="Webhook">
+                            <StatusDot
+                                tone={
+                                    repository.webhookActive
+                                        ? 'success'
+                                        : 'neutral'
                                 }
-                            >
-                                <RefreshCw />
-                                Sync Now
-                            </DropdownMenuItem>
-                            {repository.supportsWebhooks && (
-                                <DropdownMenuItem
-                                    onSelect={() =>
-                                        router.post(
-                                            SyncWebhook.url([
-                                                organization.slug,
-                                                repository.uuid,
-                                            ]),
-                                        )
-                                    }
-                                >
-                                    <Webhook />
-                                    {repository.supportsAutomaticWebhooks
-                                        ? repository.webhookActive
-                                            ? 'Re-register Webhook'
-                                            : 'Register Webhook'
-                                        : repository.webhookActive
-                                          ? 'Reset Webhook Secret'
-                                          : 'Activate Webhook'}
-                                </DropdownMenuItem>
-                            )}
-                            {canManageRepository && (
-                                <>
-                                    <DropdownMenuSeparator />
-                                    <DropdownMenuItem asChild>
-                                        <Link
-                                            href={edit.url({
-                                                organization: organization.slug,
-                                                repository: repository.uuid,
-                                            })}
-                                        >
-                                            <Settings />
-                                            Edit
-                                        </Link>
-                                    </DropdownMenuItem>
-                                </>
-                            )}
-                        </DropdownMenuContent>
-                    </DropdownMenu>
-                </div>
+                            />
+                            {!repository.supportsWebhooks
+                                ? 'Not supported'
+                                : repository.webhookActive
+                                  ? 'Active'
+                                  : 'Not registered'}
+                        </Vital>
+                    </dl>
+                </Card>
 
                 {!repository.supportsAutomaticWebhooks &&
                     repository.supportsWebhooks && (
@@ -299,7 +286,7 @@ export default function RepositoryShow({
                                         organization.slug,
                                         pkg.uuid,
                                     ])}
-                                    className="group flex items-center justify-between px-4 py-3 transition-colors hover:bg-accent/50"
+                                    className="group flex items-center gap-6 px-4 py-3 transition-colors hover:bg-accent/50"
                                 >
                                     <PackageCard package={pkg} hideRepository />
                                 </Link>
@@ -321,17 +308,30 @@ export default function RepositoryShow({
                 </div>
 
                 <div className="space-y-4">
-                    <HeadingSmall
-                        title="Sync History"
-                        description="Recent synchronization attempts and their results"
-                    />
+                    <div className="flex items-end justify-between gap-4">
+                        <HeadingSmall
+                            title="Sync History"
+                            description="Recent synchronization attempts and their results"
+                        />
+                        {syncLogs.length > 0 && (
+                            <SyncHealthStrip
+                                syncs={syncLogs}
+                                className="items-end"
+                            />
+                        )}
+                    </div>
                     {syncLogs.length === 0 ? (
-                        <Card>
-                            <CardContent className="py-8 text-center text-muted-foreground">
-                                No sync history yet. Click "Sync Now" to perform
-                                the first synchronization.
-                            </CardContent>
-                        </Card>
+                        <EmptyState
+                            icon={History}
+                            title="No syncs yet"
+                            description="Run a first sync to discover packages and versions from this repository."
+                            className="py-12"
+                        >
+                            <Button variant="secondary" onClick={syncNow}>
+                                <RefreshCw />
+                                Sync Now
+                            </Button>
+                        </EmptyState>
                     ) : (
                         <CardList>
                             {syncLogs.map((log) => (
