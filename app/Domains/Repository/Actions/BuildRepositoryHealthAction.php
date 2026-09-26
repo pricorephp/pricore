@@ -21,6 +21,8 @@ class BuildRepositoryHealthAction
     {
         $repositories = $organization->repositories()
             ->withCount('packages')
+            ->orderByRaw('last_synced_at IS NULL')
+            ->orderByDesc('last_synced_at')
             ->orderBy('name')
             ->get();
 
