@@ -30,6 +30,7 @@ use Illuminate\Support\Facades\Storage;
  * @property string|null $dist_shasum
  * @property string|null $dist_path
  * @property int|null $dist_size
+ * @property Carbon|null $dist_failed_at
  * @property Carbon|null $released_at
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
@@ -72,6 +73,7 @@ class PackageVersion extends Model
     protected $casts = [
         'composer_json' => 'array',
         'released_at' => 'datetime',
+        'dist_failed_at' => 'datetime',
     ];
 
     protected static function booted(): void

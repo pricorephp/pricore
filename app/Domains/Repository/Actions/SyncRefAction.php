@@ -55,7 +55,13 @@ class SyncRefAction
                 ->first();
 
             if ($existingVersion) {
-                // Version exists with the same commit SHA - no changes needed
+                // Retry an archive that failed to build. One removed on purpose,
+                // such as by release retention, is not marked and stays removed.
+                if (config('pricore.dist.enabled') && $existingVersion->dist_failed_at) {
+                    $this->createDistForVersion($provider, $existingVersion, $package, $repository);
+                }
+
+                // Version exists with the same commit SHA - no metadata changes
                 return 'skipped';
             }
         }
@@ -126,11 +132,11 @@ class SyncRefAction
 
             $dist = $this->createDistArchive->handle($provider, $version, $organizationSlug);
 
-            if (! $dist) {
+            if ($dist) {
+                $this->recordDistArchiveAction->handle($version, $dist, $organizationSlug);
+
                 return;
             }
-
-            $this->recordDistArchiveAction->handle($version, $dist, $organizationSlug);
         } catch (\Throwable $e) {
             Log::warning('Failed to create dist archive', [
                 'package' => $package->name,
@@ -138,5 +144,8 @@ class SyncRefAction
                 'error' => $e->getMessage(),
             ]);
         }
+
+        // Marks the version for a retry on the next sync.
+        $version->update(['dist_failed_at' => now()]);
     }
 }
