@@ -47,9 +47,14 @@ return Application::configure(basePath: dirname(__DIR__))
             AddLinkHeadersForPreloadedAssets::class,
         ]);
 
+        // A group rather than an alias so installed packages can append their
+        // own checks to every publishing endpoint.
+        $middleware->group('composer.publish', [
+            EnsureTokenCanPublish::class,
+        ]);
+
         $middleware->alias([
             'composer.token' => ComposerTokenAuth::class,
-            'composer.publish' => EnsureTokenCanPublish::class,
             'json' => ForceJsonResponse::class,
             'organization.member' => EnsureOrganizationMembership::class,
             'track.organization' => TrackOrganizationAccess::class,

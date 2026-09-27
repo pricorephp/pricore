@@ -6,10 +6,13 @@ use App\Models\AccessToken;
 use App\Models\Organization;
 use App\Models\Package;
 use App\Models\User;
+use Illuminate\Contracts\Http\Kernel;
+use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Symfony\Component\HttpFoundation\Response;
 
 beforeEach(function () {
     Storage::fake('local');
@@ -184,4 +187,22 @@ it('rate limits uploads per token', function () {
     ($this->upload)($plainToken, [])->assertUnprocessable();
     ($this->upload)($plainToken, [])->assertUnprocessable();
     ($this->upload)($plainToken, [])->assertTooManyRequests();
+});
+
+it('runs middleware appended to the composer.publish group', function () {
+    app()->instance('test.reject-publishing', new class
+    {
+        public function handle(Request $request, Closure $next): Response
+        {
+            return response()->json(['message' => 'Blocked by an extension.'], 402);
+        }
+    });
+
+    app(Kernel::class)->appendMiddlewareToGroup('composer.publish', 'test.reject-publishing');
+
+    ($this->upload)(($this->makeToken)(), ['archive' => ($this->makeUpload)()])
+        ->assertStatus(402)
+        ->assertJsonPath('message', 'Blocked by an extension.');
+
+    expect($this->package->versions()->count())->toBe(0);
 });
