@@ -49,7 +49,8 @@ class TokenController extends Controller
             organization: $organization,
             user: null,
             name: $request->validated('name'),
-            expiresAt: $request->validated('expires_at') ? now()->parse($request->validated('expires_at')) : null
+            expiresAt: $request->validated('expires_at') ? now()->parse($request->validated('expires_at')) : null,
+            canPublish: $request->boolean('can_publish'),
         );
 
         $tokens = AccessToken::query()

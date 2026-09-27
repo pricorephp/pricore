@@ -75,11 +75,25 @@ class ComposerMetadataData extends Data
             throw new ComposerMetadataException('composer.json is missing required field: name');
         }
 
-        if (! is_string($data['name']) || ! str_contains($data['name'], '/')) {
+        if (! is_string($data['name']) || ! self::isPathSafeName($data['name'])) {
             throw new ComposerMetadataException(
                 'composer.json name must be in format "vendor/package"'
             );
         }
+    }
+
+    /**
+     * Package names become directories on the dist disk, so a name must be
+     * exactly two plain segments. Looser than Composer's own rule, which
+     * existing packages with uppercase names would fail.
+     */
+    public static function isPathSafeName(string $name): bool
+    {
+        if (preg_match('{^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$}', $name) !== 1) {
+            return false;
+        }
+
+        return array_intersect(explode('/', $name), ['.', '..']) === [];
     }
 
     /**

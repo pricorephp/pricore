@@ -15,6 +15,7 @@ class StoreAccessTokenRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'max:255'],
             'expires_at' => ['nullable', 'string'],
+            'can_publish' => ['sometimes', 'boolean'],
         ];
     }
 

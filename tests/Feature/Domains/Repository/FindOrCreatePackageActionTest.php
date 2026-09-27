@@ -125,3 +125,17 @@ it('adopts a package that has no source yet', function () {
         ->and($orphan->fresh()?->repository_uuid)->toBe($repository->uuid)
         ->and($orphan->fresh()?->source_path)->toBe('packages/billing');
 });
+
+it('does not take over a package published from uploaded archives', function () {
+    $organization = Organization::factory()->create();
+    $repository = Repository::factory()->forOrganization($organization)->create();
+    $uploaded = Package::factory()
+        ->forOrganization($organization)
+        ->artifact()
+        ->create(['name' => 'vendor/uploaded']);
+
+    $package = app(FindOrCreatePackageAction::class)->handle($repository, 'vendor/uploaded');
+
+    expect($package)->toBeNull()
+        ->and($uploaded->refresh()->repository_uuid)->toBeNull();
+});

@@ -39,6 +39,7 @@ class PackageFactory extends Factory
             'type' => fake()->randomElement(['library', 'framework', 'bundle', 'plugin', 'component', 'tool']),
             'visibility' => 'private',
             'is_proxy' => false,
+            'is_artifact' => false,
         ];
     }
 
@@ -69,6 +70,18 @@ class PackageFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'repository_uuid' => null,
+        ]);
+    }
+
+    /**
+     * Indicate that the package is published from uploaded archives.
+     */
+    public function artifact(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'repository_uuid' => null,
+            'mirror_uuid' => null,
+            'is_artifact' => true,
         ]);
     }
 

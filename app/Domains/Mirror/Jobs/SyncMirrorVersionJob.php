@@ -58,6 +58,12 @@ class SyncMirrorVersionJob implements ShouldQueue
 
         $package = $findOrCreateMirrorPackageAction->handle($this->mirror, $this->packageName);
 
+        if (! $package) {
+            $this->incrementCounter(SyncVersionResult::Skipped);
+
+            return;
+        }
+
         $result = $syncMirrorPackageVersionAction->handle(
             $package,
             $this->version,

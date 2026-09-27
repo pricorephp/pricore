@@ -41,3 +41,13 @@ it('returns existing package when it already exists', function () {
     expect($package->uuid)->toBe($existing->uuid);
     expect(Package::where('name', 'vendor/existing-package')->count())->toBe(1);
 });
+
+it('does not mirror into a package published from uploaded archives', function () {
+    $uploaded = Package::factory()
+        ->forOrganization($this->organization)
+        ->artifact()
+        ->create(['name' => 'vendor/uploaded']);
+
+    expect($this->findOrCreateMirrorPackageAction->handle($this->mirror, 'vendor/uploaded'))->toBeNull()
+        ->and($uploaded->refresh()->mirror_uuid)->toBeNull();
+});

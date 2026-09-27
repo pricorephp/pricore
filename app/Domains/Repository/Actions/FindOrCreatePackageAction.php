@@ -16,8 +16,8 @@ class FindOrCreatePackageAction
 
     /**
      * Returns null when the name already belongs to a package of another
-     * repository or a mirror: attaching this repository's versions to it would
-     * silently mix two sources under one name.
+     * repository, a mirror or uploaded archives: attaching this repository's
+     * versions to it would silently mix two sources under one name.
      */
     public function handle(Repository $repository, string $packageName, string $sourcePath = ''): ?Package
     {
@@ -39,7 +39,8 @@ class FindOrCreatePackageAction
             return $package;
         }
 
-        $ownedElsewhere = $package->mirror_uuid !== null
+        $ownedElsewhere = $package->is_artifact
+            || $package->mirror_uuid !== null
             || ($package->repository_uuid !== null && $package->repository_uuid !== $repository->uuid);
 
         if ($ownedElsewhere) {
@@ -48,6 +49,7 @@ class FindOrCreatePackageAction
                 'package' => $packageName,
                 'owner_repository_uuid' => $package->repository_uuid,
                 'owner_mirror_uuid' => $package->mirror_uuid,
+                'is_artifact' => $package->is_artifact,
             ]);
 
             return null;

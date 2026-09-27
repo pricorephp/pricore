@@ -31,6 +31,11 @@ export default function TokenList({ tokens, onRevoke }: TokenListProps) {
                         <div className="flex-1 space-y-0.5">
                             <div className="flex items-center gap-2">
                                 <h3 className="font-medium">{token.name}</h3>
+                                {token.canPublish && (
+                                    <Badge variant="secondary">
+                                        Can publish
+                                    </Badge>
+                                )}
                                 {isTokenExpired(token.expiresAt) && (
                                     <Badge variant="destructive">Expired</Badge>
                                 )}

@@ -8,6 +8,7 @@ use App\Domains\Organization\Http\Controllers\MemberController;
 use App\Domains\Organization\Http\Controllers\OrganizationController;
 use App\Domains\Organization\Http\Controllers\SettingsController;
 use App\Domains\Organization\Http\Controllers\SshKeyController;
+use App\Domains\Package\Http\Controllers\ArtifactController;
 use App\Domains\Package\Http\Controllers\PackageController;
 use App\Domains\Package\Http\Controllers\PackageVersionController;
 use App\Domains\Release\Http\Controllers\ReleaseController;
@@ -54,8 +55,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::delete('organizations/{organization:slug}', [OrganizationController::class, 'destroy'])->name('organizations.destroy');
         Route::post('organizations/{organization:slug}/dismiss-onboarding', DismissOnboardingController::class)->name('organizations.dismiss-onboarding');
         Route::get('organizations/{organization:slug}/packages', [PackageController::class, 'index'])->name('organizations.packages.index');
+        Route::post('organizations/{organization:slug}/packages/upload', [ArtifactController::class, 'store'])->name('organizations.packages.upload');
         Route::get('organizations/{organization:slug}/packages/{package:uuid}', [PackageController::class, 'show'])->name('organizations.packages.show');
         Route::delete('organizations/{organization:slug}/packages/{package:uuid}', [PackageController::class, 'destroy'])->name('organizations.packages.destroy');
+        Route::post('organizations/{organization:slug}/packages/{package:uuid}/versions', [ArtifactController::class, 'storeVersion'])->name('organizations.packages.versions.store');
         Route::delete('organizations/{organization:slug}/packages/{package:uuid}/versions/{version:uuid}', [PackageVersionController::class, 'destroy'])->name('organizations.packages.versions.destroy');
         Route::get('organizations/{organization:slug}/security', [SecurityOverviewController::class, 'index'])->name('organizations.security.index');
         Route::post('organizations/{organization:slug}/security/scan', ScanSecurityController::class)->name('organizations.security.scan');

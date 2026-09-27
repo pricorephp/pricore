@@ -1,3 +1,4 @@
+import { storeVersion } from '@/actions/App/Domains/Package/Http/Controllers/ArtifactController';
 import { show } from '@/actions/App/Domains/Repository/Http/Controllers/RepositoryController';
 import { CopyButton } from '@/components/copy-button';
 import { EmptyState } from '@/components/empty-state';
@@ -30,6 +31,7 @@ import {
     TooltipContent,
     TooltipTrigger,
 } from '@/components/ui/tooltip';
+import UploadPackageDialog from '@/components/upload-package-dialog';
 import { useDebounce } from '@/hooks/use-debounce';
 import AppLayout from '@/layouts/app-layout';
 import { createOrganizationBreadcrumb } from '@/lib/breadcrumbs';
@@ -60,6 +62,7 @@ import {
     Trash2,
     TrendingDown,
     TrendingUp,
+    Upload,
     Users,
     X,
 } from 'lucide-react';
@@ -121,6 +124,8 @@ interface PackageShowProps {
     };
     canManageVersions: boolean;
     canDeletePackage: boolean;
+    canUploadVersions: boolean;
+    maxUploadSize: number;
     activeVersion: PackageVersionDetailData | null;
     primaryVersion: PackageVersionDetailData | null;
 }
@@ -249,6 +254,12 @@ function PackageSource({
                         </span>
                     )}
                 </>
+            )}
+            {pkg.isArtifact && (
+                <span className="inline-flex items-center gap-1.5">
+                    <Upload className="size-3.5" />
+                    Uploaded archives
+                </span>
             )}
             {pkg.mirrorName && (
                 <Link
@@ -613,6 +624,7 @@ interface VersionsTabContentProps {
     onPageChange: (page: number) => void;
     packageName: string;
     latestVersion: string | null;
+    isArtifact: boolean;
 }
 
 function isBranchVersion(version: string): boolean {
@@ -773,6 +785,7 @@ function VersionsTabContent({
     onPageChange,
     packageName,
     latestVersion,
+    isArtifact,
 }: VersionsTabContentProps) {
     return (
         <div className="space-y-4">
@@ -832,7 +845,9 @@ function VersionsTabContent({
                     description={
                         hasActiveFilters
                             ? 'Try a different version, commit hash or type.'
-                            : 'Versions appear here once the repository has been synced.'
+                            : isArtifact
+                              ? 'Versions appear here once an archive has been uploaded.'
+                              : 'Versions appear here once the repository has been synced.'
                     }
                     className="py-12"
                 />
@@ -847,7 +862,9 @@ function VersionsTabContent({
                             <span className="hidden w-16 text-right md:block">
                                 Size
                             </span>
-                            <span className="hidden w-20 lg:block">Commit</span>
+                            <span className="hidden w-20 lg:block">
+                                {isArtifact ? 'Checksum' : 'Commit'}
+                            </span>
                             <span className="hidden w-28 text-right sm:block">
                                 Released
                             </span>
@@ -946,6 +963,8 @@ export default function PackageShow({
     filters,
     canManageVersions,
     canDeletePackage,
+    canUploadVersions,
+    maxUploadSize,
     activeVersion,
     primaryVersion,
 }: PackageShowProps) {
@@ -961,6 +980,8 @@ export default function PackageShow({
             ? 'overview'
             : parseTabFromUrl(window.location.search),
     );
+
+    const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
 
     const debouncedQuery = useDebounce(queryFilter, 300);
 
@@ -1117,6 +1138,15 @@ export default function PackageShow({
                         </div>
                     </div>
                     <div className="flex shrink-0 items-start gap-2">
+                        {canUploadVersions && (
+                            <Button
+                                variant="secondary"
+                                onClick={() => setIsUploadDialogOpen(true)}
+                            >
+                                <Upload className="size-4" />
+                                Upload Version
+                            </Button>
+                        )}
                         <button
                             type="button"
                             onClick={() => setActiveTab('stats')}
@@ -1238,7 +1268,11 @@ export default function PackageShow({
                                         <EmptyState
                                             icon={BookOpen}
                                             title="No README"
-                                            description="Add a README.md to the repository and it will show up here after the next sync."
+                                            description={
+                                                pkg.isArtifact
+                                                    ? 'Include a README.md next to composer.json in the archive and it will show up here for that version.'
+                                                    : 'Add a README.md to the repository and it will show up here after the next sync.'
+                                            }
                                         />
                                     )}
                                 </div>
@@ -1269,6 +1303,7 @@ export default function PackageShow({
                                 onPageChange={setPage}
                                 packageName={pkg.name}
                                 latestVersion={pkg.latestVersion}
+                                isArtifact={pkg.isArtifact}
                             />
                         )}
                     </div>
@@ -1333,7 +1368,9 @@ export default function PackageShow({
                                         <div>
                                             <div className="mb-1.5 flex items-center gap-1.5 text-sm font-medium text-muted-foreground">
                                                 <GitCommit className="h-4 w-4" />
-                                                Commit
+                                                {pkg.isArtifact
+                                                    ? 'Checksum'
+                                                    : 'Commit'}
                                             </div>
                                             {activeVersion.commitUrl ? (
                                                 <a
@@ -1692,6 +1729,17 @@ export default function PackageShow({
                     )}
                 </DialogContent>
             </Dialog>
+
+            {canUploadVersions && (
+                <UploadPackageDialog
+                    action={storeVersion.url([organization.slug, pkg.uuid])}
+                    title="Upload Version"
+                    description={`Publish a new version of ${pkg.name} from a zip archive. Its composer.json must be for ${pkg.name}.`}
+                    maxUploadSize={maxUploadSize}
+                    isOpen={isUploadDialogOpen}
+                    onClose={() => setIsUploadDialogOpen(false)}
+                />
+            )}
         </AppLayout>
     );
 }

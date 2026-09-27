@@ -23,6 +23,7 @@ use Illuminate\Support\Carbon;
  * @property string|null $type
  * @property string $visibility
  * @property bool $is_proxy
+ * @property bool $is_artifact
  * @property int $dist_keep_last_releases
  * @property string|null $source_path
  * @property Carbon|null $created_at
@@ -65,6 +66,7 @@ class Package extends Model
 
     protected $casts = [
         'is_proxy' => 'boolean',
+        'is_artifact' => 'boolean',
     ];
 
     /**

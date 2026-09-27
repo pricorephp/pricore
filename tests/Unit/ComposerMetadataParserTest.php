@@ -74,6 +74,23 @@ it('throws exception for invalid name format', function () {
     ComposerMetadataData::fromComposerJson($composerJson, 'v1.0.0');
 })->throws(ComposerMetadataException::class);
 
+it('rejects names that are not two plain path segments', function (string $name) {
+    ComposerMetadataData::fromComposerJson(json_encode(['name' => $name]), 'v1.0.0');
+})->with([
+    '../other-org/package',
+    'vendor/..',
+    './package',
+    'vendor/package/extra',
+    '/vendor/package',
+    'vendor\\package',
+])->throws(ComposerMetadataException::class);
+
+it('keeps accepting names Composer itself would flag, such as uppercase', function () {
+    $result = ComposerMetadataData::fromComposerJson(json_encode(['name' => 'Vendor/My.Package_name']), 'v1.0.0');
+
+    expect($result->name)->toBe('Vendor/My.Package_name');
+});
+
 it('extracts package name from composer.json data', function () {
     $composerJson = [
         'name' => 'vendor/package',

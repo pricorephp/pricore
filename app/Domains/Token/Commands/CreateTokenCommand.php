@@ -21,7 +21,8 @@ class CreateTokenCommand extends Command
                             {--organization= : Organization UUID or slug}
                             {--user= : User UUID (for user-scoped token)}
                             {--name= : Token name}
-                            {--expires= : Expiration period (never, 30d, 90d, 1y, custom)}';
+                            {--expires= : Expiration period (never, 30d, 90d, 1y, custom)}
+                            {--publish : Allow the token to upload package versions}';
 
     protected $description = 'Create a new access token for Composer authentication';
 
@@ -71,7 +72,8 @@ class CreateTokenCommand extends Command
             organization: $organization,
             user: $user,
             name: $name,
-            expiresAt: $expiresAt
+            expiresAt: $expiresAt,
+            canPublish: (bool) $this->option('publish'),
         );
 
         $this->newLine();
@@ -86,6 +88,10 @@ class CreateTokenCommand extends Command
         $this->components->twoColumnDetail(
             'Type',
             $result->organizationUuid ? 'Organization-scoped' : 'User-scoped'
+        );
+        $this->components->twoColumnDetail(
+            'Access',
+            $this->option('publish') ? 'Read and publish' : 'Read only'
         );
         $this->components->twoColumnDetail(
             'Expires',

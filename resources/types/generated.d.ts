@@ -18,7 +18,7 @@ createdAt: string | null,
 };
 }
 namespace Enums {
-export type ActivityType = 'repository.added' | 'repository.removed' | 'repository.synced' | 'repository.sync_failed' | 'package.created' | 'package.removed' | 'member.added' | 'member.removed' | 'member.role_changed' | 'invitation.sent' | 'token.created' | 'token.revoked' | 'ssh_key.generated' | 'ssh_key.deleted' | 'mirror.added' | 'mirror.removed' | 'mirror.synced' | 'mirror.sync_failed' | 'security.vulnerabilities_detected';
+export type ActivityType = 'repository.added' | 'repository.removed' | 'repository.synced' | 'repository.sync_failed' | 'package.created' | 'package.removed' | 'package.version_uploaded' | 'member.added' | 'member.removed' | 'member.role_changed' | 'invitation.sent' | 'token.created' | 'token.revoked' | 'ssh_key.generated' | 'ssh_key.deleted' | 'mirror.added' | 'mirror.removed' | 'mirror.synced' | 'mirror.sync_failed' | 'security.vulnerabilities_detected';
 }
 }
 }
@@ -174,6 +174,10 @@ export type OrganizationRole = 'owner' | 'admin' | 'member';
 namespace Package {
 namespace Contracts {
 namespace Data {
+export type ArtifactContentsData = {
+composerJson: Record<string, any>,
+readme: string | null,
+};
 export type FrequentPackageData = {
 uuid: string,
 name: string,
@@ -186,6 +190,7 @@ description: string | null,
 type: string | null,
 visibility: string,
 isProxy: boolean,
+isArtifact: boolean,
 versionsCount: number,
 latestVersion: string | null,
 updatedAt: string,
@@ -257,6 +262,9 @@ export type VersionDailyDownloadData = {
 version: string,
 dailyDownloads: App.Domains.Organization.Contracts.Data.DailyDownloadData[],
 };
+}
+namespace Enums {
+export type ArtifactPublishResult = 'added' | 'replaced' | 'unchanged';
 }
 }
 }
@@ -484,6 +492,7 @@ namespace Data {
 export type AccessTokenData = {
 uuid: string,
 name: string,
+canPublish: boolean,
 lastUsedAt: string | null,
 expiresAt: string | null,
 createdAt: string,
@@ -494,6 +503,9 @@ name: string,
 expiresAt: string | null,
 organizationUuid: string | null,
 };
+}
+namespace Enums {
+export type TokenScope = 'read' | 'write';
 }
 }
 }

@@ -79,8 +79,10 @@ class CleanupDistArchivesAction
         $packagesProcessed = 0;
         $archivesRemoved = 0;
 
+        // Uploaded archives are the only copy and can't be rebuilt from a source
         Package::query()
             ->where('dist_keep_last_releases', '>', 0)
+            ->where('is_artifact', false)
             ->lazyById(100, 'uuid')
             ->each(function (Package $package) use (&$packagesProcessed, &$archivesRemoved) {
                 $keepCount = $package->dist_keep_last_releases;

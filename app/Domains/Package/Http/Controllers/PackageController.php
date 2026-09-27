@@ -44,6 +44,8 @@ class PackageController extends Controller
         return Inertia::render('organizations/packages', [
             'organization' => OrganizationData::fromModel($organization),
             'packages' => $packages,
+            'canUploadPackages' => request()->user()?->can('managePackages', $organization) ?? false,
+            'maxUploadSize' => config('pricore.uploads.max_size'),
         ]);
     }
 
@@ -151,6 +153,8 @@ class PackageController extends Controller
             'downloadStats' => $this->downloadStats->handle($package),
             'canManageVersions' => request()->user()?->can('deleteRepository', $organization) ?? false,
             'canDeletePackage' => request()->user()?->can('deleteRepository', $organization) ?? false,
+            'canUploadVersions' => $package->is_artifact && (request()->user()?->can('managePackages', $organization) ?? false),
+            'maxUploadSize' => config('pricore.uploads.max_size'),
             'activeVersion' => $activeVersion,
             'primaryVersion' => $primaryVersion,
         ]);

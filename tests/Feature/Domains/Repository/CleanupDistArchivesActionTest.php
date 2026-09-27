@@ -155,3 +155,27 @@ it('still prunes stable releases beyond the per-package keep count', function ()
     Storage::disk('local')->assertMissing('acme/1.0.0.zip');
     expect(DistArchive::query()->count())->toBe(1);
 });
+
+it('never prunes releases of uploaded packages, whose archives are the only copy', function () {
+    config(['pricore.dist.keep_detached_days' => null]);
+
+    $this->package->update(['dist_keep_last_releases' => 1, 'repository_uuid' => null, 'is_artifact' => true]);
+
+    foreach ([['1.0.0', '1.0.0.0'], ['2.0.0', '2.0.0.0']] as [$version, $normalized]) {
+        $packageVersion = PackageVersion::factory()->for($this->package)->create([
+            'version' => $version,
+            'normalized_version' => $normalized,
+            'source_reference' => "ref-{$version}",
+            'dist_path' => "acme/{$version}.zip",
+        ]);
+
+        ($this->archiveFor)($packageVersion, "acme/{$version}.zip");
+    }
+
+    $result = ($this->cleanup)();
+
+    expect($result['archives_removed'])->toBe(0);
+
+    Storage::disk('local')->assertExists('acme/1.0.0.zip');
+    Storage::disk('local')->assertExists('acme/2.0.0.zip');
+});

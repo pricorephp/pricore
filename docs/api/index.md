@@ -179,6 +179,56 @@ POST /{organization}/api/security-advisories
 
 Packages with advisories are included in the response with their advisory list. Packages without advisories are omitted. If no requested packages have advisories, `advisories` is an empty object.
 
+### Upload a Package Version
+
+Publishes a zip archive as a version of an existing [uploaded package](/guide/packages#from-an-archive-upload). Requires a token with publishing allowed; personal tokens also require their owner to be an owner or admin of the organization.
+
+```
+POST /{organization}/api/packages/upload
+```
+
+**Request** (`multipart/form-data`):
+
+| Field | Description |
+|-------|-------------|
+| `archive` | The `.zip` to publish, with `composer.json` at its root or in a single top-level directory. |
+| `version` | Optional. The version to publish; defaults to `version` in `composer.json`. |
+
+```bash
+curl -H "Authorization: Bearer YOUR_TOKEN" \
+  -F archive=@package.zip \
+  -F version=1.4.0 \
+  https://pricore.yourcompany.com/{organization}/api/packages/upload
+```
+
+**Response** (`201 Created`, or `200 OK` when the identical archive was already published as this version):
+
+```json
+{
+    "result": "added",
+    "package": "acme/moodle-plugin",
+    "version": "1.4.0",
+    "version_normalized": "1.4.0.0",
+    "dist": {
+        "url": "https://pricore.yourcompany.com/acme/dists/acme/moodle-plugin/1.4.0/3f7a...e1.zip",
+        "shasum": "3f7a...e1",
+        "size": 48213
+    }
+}
+```
+
+`result` is `added`, `replaced` (a dev version was overwritten) or `unchanged`.
+
+**Errors** are returned as JSON with a `message`:
+
+| Status | Reason |
+|--------|--------|
+| `403` | The token can't publish |
+| `404` | The package doesn't exist yet; create it by uploading its first version in the web app |
+| `409` | The package is synced from a repository or mirror, or the release already exists with a different archive |
+| `422` | The archive is invalid: not a zip, no or invalid `composer.json`, unsafe paths, a missing or invalid version, or too large |
+| `429` | Too many uploads with this token; the default limit is 30 per minute |
+
 ## Webhooks
 
 ### GitHub Webhook

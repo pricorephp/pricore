@@ -60,6 +60,8 @@ function guardedOrgRequests(TestCase $test): array
         'organizations.dismiss-onboarding' => ['POST', "/organizations/{$slug}/dismiss-onboarding", []],
         'organizations.packages.index' => ['GET', "/organizations/{$slug}/packages", []],
         'organizations.packages.show' => ['GET', "/organizations/{$slug}/packages/{$package->uuid}", []],
+        'organizations.packages.upload' => ['POST', "/organizations/{$slug}/packages/upload", []],
+        'organizations.packages.versions.store' => ['POST', "/organizations/{$slug}/packages/{$package->uuid}/versions", []],
         'organizations.repositories.index' => ['GET', "/organizations/{$slug}/repositories", []],
         'organizations.repositories.suggest' => ['GET', "/organizations/{$slug}/repositories/suggest?provider=github", []],
         'organizations.repositories.owners' => ['GET', "/organizations/{$slug}/repositories/owners?provider=github", []],

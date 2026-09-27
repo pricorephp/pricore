@@ -9,6 +9,14 @@ return [
         ))),
     ],
 
+    'uploads' => [
+        // Megabytes. PHP's upload_max_filesize and post_max_size, and any proxy
+        // body limit in front of Pricore, must allow at least this much.
+        'max_size' => (int) env('ARTIFACT_MAX_SIZE', 64),
+
+        'rate_limit_per_minute' => (int) env('ARTIFACT_UPLOAD_RATE_LIMIT', 30),
+    ],
+
     'dist' => [
         'enabled' => env('DIST_ENABLED', true),
         'disk' => env('DIST_DISK', 'local'),

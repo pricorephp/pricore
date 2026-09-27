@@ -13,6 +13,7 @@ enum ActivityType: string
     case RepositorySyncFailed = 'repository.sync_failed';
     case PackageCreated = 'package.created';
     case PackageRemoved = 'package.removed';
+    case PackageVersionUploaded = 'package.version_uploaded';
     case MemberAdded = 'member.added';
     case MemberRemoved = 'member.removed';
     case MemberRoleChanged = 'member.role_changed';
@@ -36,6 +37,7 @@ enum ActivityType: string
             self::RepositorySyncFailed => 'Sync failed',
             self::PackageCreated => 'Package created',
             self::PackageRemoved => 'Package removed',
+            self::PackageVersionUploaded => 'Version uploaded',
             self::MemberAdded => 'Member joined',
             self::MemberRemoved => 'Member removed',
             self::MemberRoleChanged => 'Role changed',
@@ -61,6 +63,7 @@ enum ActivityType: string
             self::RepositorySyncFailed => 'alert-circle',
             self::PackageCreated => 'package-plus',
             self::PackageRemoved => 'package-minus',
+            self::PackageVersionUploaded => 'upload',
             self::MemberAdded => 'user-plus',
             self::MemberRemoved => 'user-minus',
             self::MemberRoleChanged => 'shield',
@@ -81,7 +84,7 @@ enum ActivityType: string
     {
         return match ($this) {
             self::RepositoryAdded, self::RepositoryRemoved, self::RepositorySynced, self::RepositorySyncFailed => 'repository',
-            self::PackageCreated, self::PackageRemoved => 'package',
+            self::PackageCreated, self::PackageRemoved, self::PackageVersionUploaded => 'package',
             self::MemberAdded, self::MemberRemoved, self::MemberRoleChanged, self::InvitationSent => 'member',
             self::TokenCreated, self::TokenRevoked => 'token',
             self::SshKeyGenerated, self::SshKeyDeleted => 'settings',

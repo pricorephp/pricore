@@ -1,5 +1,6 @@
 <?php
 
+use App\Domains\Package\Http\Controllers\Api\ArtifactUploadController;
 use App\Http\Controllers\Composer\DistController;
 use App\Http\Controllers\Composer\MetadataController;
 use App\Http\Controllers\Composer\NotifyBatchController;
@@ -32,6 +33,11 @@ Route::prefix('{organization:slug}')
         // Download notification endpoint
         Route::post('notify-batch', NotifyBatchController::class)
             ->name('composer.notify-batch');
+
+        // Publish a version of an uploaded package (requires a token that can publish)
+        Route::post('api/packages/upload', ArtifactUploadController::class)
+            ->middleware(['json', 'composer.publish', 'throttle:artifact-uploads'])
+            ->name('composer.packages.upload');
 
         // Security advisories endpoint (Composer audit support)
         Route::post('api/security-advisories', [SecurityAdvisoryApiController::class, 'index'])

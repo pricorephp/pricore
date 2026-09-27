@@ -1,4 +1,5 @@
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
     Dialog,
     DialogContent,
@@ -89,6 +90,33 @@ export default function CreateTokenDialog({
                                         {errors.expires_at}
                                     </p>
                                 )}
+                            </div>
+
+                            <div className="flex items-start gap-2">
+                                <input
+                                    type="hidden"
+                                    name="can_publish"
+                                    value="0"
+                                />
+                                <Checkbox
+                                    id="can_publish"
+                                    name="can_publish"
+                                    value="1"
+                                    className="mt-0.5"
+                                />
+                                <div className="grid gap-0.5">
+                                    <Label
+                                        htmlFor="can_publish"
+                                        className="font-normal"
+                                    >
+                                        Allow publishing packages
+                                    </Label>
+                                    <p className="text-sm text-muted-foreground">
+                                        Lets this token upload new versions of
+                                        uploaded packages, for example from CI.
+                                        Only enable it where it's needed.
+                                    </p>
+                                </div>
                             </div>
 
                             <DialogFooter>

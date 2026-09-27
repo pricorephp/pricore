@@ -8,7 +8,7 @@ Pricore supports two types of tokens:
 
 ### Organization Tokens
 
-- Created by organization members
+- Created by organization owners and admins
 - Grant access only to packages within that organization
 - Ideal for CI/CD pipelines and shared access
 - Managed in **Organization Settings** > **Composer Tokens**
@@ -28,8 +28,9 @@ Pricore supports two types of tokens:
 2. Click **Create Token**
 3. Enter a descriptive name (e.g., "CI Pipeline", "Production Deploy")
 4. Select an expiration period (never, 30 days, 90 days, or 1 year)
-5. Click **Create**
-6. **Copy the token immediately** — it won't be shown again
+5. Enable **Allow publishing packages** only if the token needs to [upload package versions](/guide/packages#publishing-from-ci)
+6. Click **Create**
+7. **Copy the token immediately** — it won't be shown again
 
 ### Personal Token
 
@@ -42,13 +43,20 @@ Pricore supports two types of tokens:
 
 After creation, a dialog shows the plain token along with a pre-filled Composer command you can copy directly.
 
-## Token Scopes
+## Token Permissions
 
-| Scope | Permission |
-|-------|------------|
-| `read` | Read-only access to packages |
-| `write` | Upload and modify packages |
-| `admin` | Administrative access |
+Every token can install all packages of the organizations it has access to. Tokens can additionally be allowed to publish:
+
+| Permission | Allows |
+|------------|--------|
+| Read (always) | Installing packages with Composer |
+| Publish | Uploading versions of [uploaded packages](/guide/packages#from-an-archive-upload) through the API |
+
+Tokens are read-only unless **Allow publishing packages** was enabled when they were created, and the permission can't be added later: create a new token instead. A personal token can only publish while its owner is an owner or admin of the organization.
+
+::: warning
+Anyone holding a publishing token can publish new versions of your uploaded packages. Use a dedicated organization token per pipeline, store it as a CI secret, and revoke it if it may have leaked. Uploads made with a token show up in the organization's activity feed with the token's name.
+:::
 
 ## Using Tokens with Composer
 
@@ -114,8 +122,9 @@ Or in your CI configuration:
 1. **Use descriptive names** — Know what each token is used for
 2. **Set expiration dates** — Rotate tokens regularly
 3. **Use organization tokens for CI/CD** — Limit access to a single organization
-4. **Use personal tokens for development** — Convenient access across all your organizations
-5. **Never commit tokens** — Use environment variables or secrets management
+4. **Only allow publishing where needed** — Keep install tokens read-only
+5. **Use personal tokens for development** — Convenient access across all your organizations
+6. **Never commit tokens** — Use environment variables or secrets management
 
 ### Revoking Tokens
 

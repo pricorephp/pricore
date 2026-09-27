@@ -120,6 +120,9 @@ server {
     ssl_certificate /etc/nginx/ssl/cert.pem;
     ssl_certificate_key /etc/nginx/ssl/key.pem;
 
+    # Allow package archive uploads up to ARTIFACT_MAX_SIZE
+    client_max_body_size 64M;
+
     location / {
         proxy_pass http://localhost:8000;
         proxy_set_header Host $host;

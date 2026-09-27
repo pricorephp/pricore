@@ -199,6 +199,17 @@ Private access applies only to same-origin requests from the configured mirror. 
 
 Mirror requests do not use process-level HTTP proxy variables because direct connections are required to pin validated DNS results.
 
+## Package Uploads
+
+Packages can also be [published by uploading zip archives](/guide/packages#from-an-archive-upload). Uploads are stored on the same disk as dist archives.
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `ARTIFACT_MAX_SIZE` | Maximum archive size in megabytes | `64` |
+| `ARTIFACT_UPLOAD_RATE_LIMIT` | Uploads per minute allowed for each token | `30` |
+
+PHP's `upload_max_filesize` and `post_max_size`, and the body size limit of any reverse proxy in front of Pricore (such as nginx's `client_max_body_size`), must be at least `ARTIFACT_MAX_SIZE`. The Docker image allows 64 MB.
+
 ## Storage Configuration
 
 By default, Pricore stores package distribution files on the local filesystem. To use S3 or an S3-compatible storage provider (like MinIO, DigitalOcean Spaces, or Cloudflare R2), set the filesystem disk to `s3`:

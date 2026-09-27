@@ -38,6 +38,7 @@ class ComposerTokenAuth
         $accessToken->markAsUsed();
 
         $request->merge(['accessToken' => $accessToken]);
+        $request->attributes->set('accessToken', $accessToken);
 
         return $next($request);
     }

@@ -2,6 +2,8 @@
 
 use App\Http\Middleware\ComposerTokenAuth;
 use App\Http\Middleware\EnsureOrganizationMembership;
+use App\Http\Middleware\EnsureTokenCanPublish;
+use App\Http\Middleware\ForceJsonResponse;
 use App\Http\Middleware\HandleAppearance;
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\TrackOrganizationAccess;
@@ -47,6 +49,8 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->alias([
             'composer.token' => ComposerTokenAuth::class,
+            'composer.publish' => EnsureTokenCanPublish::class,
+            'json' => ForceJsonResponse::class,
             'organization.member' => EnsureOrganizationMembership::class,
             'track.organization' => TrackOrganizationAccess::class,
         ]);

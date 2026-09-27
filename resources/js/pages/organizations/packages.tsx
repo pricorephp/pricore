@@ -1,3 +1,4 @@
+import { store as uploadPackage } from '@/actions/App/Domains/Package/Http/Controllers/ArtifactController';
 import { show } from '@/actions/App/Domains/Package/Http/Controllers/PackageController';
 import { EmptyState } from '@/components/empty-state';
 import HeadingSmall from '@/components/heading-small';
@@ -5,10 +6,11 @@ import PackageCard, { splitPackageName } from '@/components/package-card';
 import { Button } from '@/components/ui/button';
 import { CardList } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import UploadPackageDialog from '@/components/upload-package-dialog';
 import AppLayout from '@/layouts/app-layout';
 import { createOrganizationBreadcrumb } from '@/lib/breadcrumbs';
 import { Head, Link, usePage } from '@inertiajs/react';
-import { GitBranch, Package, Search } from 'lucide-react';
+import { GitBranch, Package, Search, Upload } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
 type OrganizationData =
@@ -18,17 +20,22 @@ type PackageData = App.Domains.Package.Contracts.Data.PackageData;
 interface PackagesPageProps {
     organization: OrganizationData;
     packages: PackageData[];
+    canUploadPackages: boolean;
+    maxUploadSize: number;
 }
 
 export default function Packages({
     organization,
     packages,
+    canUploadPackages,
+    maxUploadSize,
 }: PackagesPageProps) {
     const { auth } = usePage<{
         auth: { organizations: OrganizationData[] };
     }>().props;
 
     const [query, setQuery] = useState('');
+    const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
 
     const vendors = useMemo(() => {
         const needle = query.trim().toLowerCase();
@@ -75,21 +82,36 @@ export default function Packages({
                                 : 'Composer packages in this organization'
                         }
                     />
-                    <Button asChild>
-                        <Link
-                            href={`/organizations/${organization.slug}/repositories`}
-                        >
-                            <GitBranch className="h-4 w-4" />
-                            Manage Repositories
-                        </Link>
-                    </Button>
+                    <div className="flex items-center gap-2">
+                        {canUploadPackages && (
+                            <Button
+                                variant="secondary"
+                                onClick={() => setIsUploadDialogOpen(true)}
+                            >
+                                <Upload className="h-4 w-4" />
+                                Upload Package
+                            </Button>
+                        )}
+                        <Button asChild>
+                            <Link
+                                href={`/organizations/${organization.slug}/repositories`}
+                            >
+                                <GitBranch className="h-4 w-4" />
+                                Manage Repositories
+                            </Link>
+                        </Button>
+                    </div>
                 </div>
 
                 {packages.length === 0 ? (
                     <EmptyState
                         icon={Package}
                         title="No packages yet"
-                        description="Connect a Git repository to automatically discover and sync Composer packages."
+                        description={
+                            canUploadPackages
+                                ? 'Connect a Git repository to automatically discover and sync Composer packages, or upload a package archive.'
+                                : 'Connect a Git repository to automatically discover and sync Composer packages.'
+                        }
                         action={{
                             label: 'Connect Your First Repository',
                             href: `/organizations/${organization.slug}/repositories`,
@@ -145,6 +167,17 @@ export default function Packages({
                     </>
                 )}
             </div>
+
+            {canUploadPackages && (
+                <UploadPackageDialog
+                    action={uploadPackage.url(organization.slug)}
+                    title="Upload Package"
+                    description="Publish a package from a zip archive, without a Git repository. The package name comes from its composer.json. Once it exists, CI can publish new versions with a token that can publish."
+                    maxUploadSize={maxUploadSize}
+                    isOpen={isUploadDialogOpen}
+                    onClose={() => setIsUploadDialogOpen(false)}
+                />
+            )}
         </AppLayout>
     );
 }
