@@ -19,17 +19,20 @@ class FilterChangedRefsAction
      * Compares each ref's computed version string and commit SHA against
      * existing PackageVersion records to avoid unnecessary API calls. Versions
      * whose dist archive failed to build count as changed so it gets retried.
+     * A ref without versions is unchanged when it held no composer.json at the
+     * same commit last time.
      */
     public function handle(RefsCollectionData $refs, Repository $repository): RefsCollectionData
     {
         $existingVersions = $this->getExistingVersionLookup($repository);
+        $emptyRefs = $repository->emptyRefs()->pluck('commit', 'name');
 
-        // If no packages exist yet, all refs are new
-        if ($existingVersions->isEmpty()) {
+        // Nothing synced yet, so every ref is new
+        if ($existingVersions->isEmpty() && $emptyRefs->isEmpty()) {
             return $refs;
         }
 
-        $filterChanged = fn (RefData $ref): bool => $this->hasChanged($ref, $existingVersions);
+        $filterChanged = fn (RefData $ref): bool => $this->hasChanged($ref, $existingVersions, $emptyRefs);
 
         $filteredTags = collect($refs->tags->toCollection())->filter($filterChanged)->values();
         $filteredBranches = collect($refs->branches->toCollection())->filter($filterChanged)->values();
@@ -77,14 +80,15 @@ class FilterChangedRefsAction
      * ref in the sync.
      *
      * @param  Collection<string, Collection<int, ExistingVersionData>>  $existingVersions
+     * @param  Collection<string, string>  $emptyRefs
      */
-    protected function hasChanged(RefData $ref, Collection $existingVersions): bool
+    protected function hasChanged(RefData $ref, Collection $existingVersions, Collection $emptyRefs): bool
     {
         $version = ComposerMetadataData::extractVersion($ref->name);
         $existing = $existingVersions->get($version);
 
         if ($existing === null || $existing->isEmpty()) {
-            return true;
+            return $emptyRefs->get($ref->name) !== $ref->commit;
         }
 
         return $existing->contains(

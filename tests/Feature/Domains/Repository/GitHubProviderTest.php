@@ -1,6 +1,7 @@
 <?php
 
 use App\Domains\Repository\Exceptions\GitProviderException;
+use App\Domains\Repository\Exceptions\GitProviderRateLimitedException;
 use App\Domains\Repository\Services\GitProviders\GitHubProvider;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\File;
@@ -201,4 +202,47 @@ it('keeps the cached zipball intact when other requests follow the download', fu
         ->and($provider->getFileContent($ref, 'packages/crm/composer.json'))->toBe('{"name":"acme/crm"}')
         ->and($provider->downloadArchive($ref, $this->directory.'/crm.zip', 'packages/crm'))->toBeTrue()
         ->and(testZipFileNames($this->directory.'/crm.zip'))->toBe(['crm-abc123def456/composer.json']);
+});
+
+it('throws instead of waiting out an exhausted rate limit', function () {
+    $this->freezeSecond();
+
+    Http::fake([
+        'api.github.com/repos/*' => Http::response(['message' => 'API rate limit exceeded'], 403, [
+            'X-RateLimit-Remaining' => '0',
+            'X-RateLimit-Reset' => (string) (now()->getTimestamp() + 1800),
+        ]),
+    ]);
+
+    try {
+        githubProvider()->getFileContent('v1.0.0', 'composer.json');
+
+        test()->fail('Expected the rate limit to be thrown');
+    } catch (GitProviderException $e) {
+        expect(GitProviderRateLimitedException::find($e)?->retryAfter)->toBe(1800);
+    }
+
+    Http::assertSentCount(1);
+});
+
+it('throws a secondary rate limit with its retry delay', function () {
+    Http::fake([
+        'api.github.com/repos/*' => Http::response(['message' => 'secondary rate limit'], 403, [
+            'X-RateLimit-Remaining' => '4000',
+            'Retry-After' => '45',
+        ]),
+    ]);
+
+    expect(fn () => githubProvider()->validateCredentials())
+        ->toThrow(fn (GitProviderRateLimitedException $e) => expect($e->retryAfter)->toBe(45));
+});
+
+it('treats a forbidden response without rate limit headers as a plain failure', function () {
+    Http::fake([
+        'api.github.com/repos/*' => Http::response(['message' => 'Forbidden'], 403, [
+            'X-RateLimit-Remaining' => '4000',
+        ]),
+    ]);
+
+    expect(githubProvider()->validateCredentials())->toBeFalse();
 });

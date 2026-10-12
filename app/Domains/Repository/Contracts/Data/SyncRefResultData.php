@@ -12,5 +12,7 @@ class SyncRefResultData extends Data
         public int $skipped = 0,
         public int $removed = 0,
         public int $packagesFound = 0,
+        /** No package path held a composer.json at the ref */
+        public bool $empty = false,
     ) {}
 }

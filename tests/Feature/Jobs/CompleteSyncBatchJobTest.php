@@ -59,17 +59,21 @@ it('adds versions removed per ref to the stale version count', function () {
         ->and(Cache::get("sync-batch:{$batch->id}:removed"))->toBeNull();
 });
 
-it('starts a full sync that was requested while the batch ran', function (bool $requested) {
+it('starts a sync that was requested while the batch ran', function (?string $request) {
     Queue::fake();
 
-    $repository = Repository::factory()->create(['full_sync_requested_at' => $requested ? now() : null]);
+    $repository = Repository::factory()->create($request ? [$request => now()] : []);
     $syncLog = RepositorySyncLog::factory()->for($repository)->pending()->create();
     $batch = Bus::batch([])->dispatch();
 
     (new CompleteSyncBatchJob($syncLog->uuid, $repository->uuid, null, $batch->id))
         ->handle(app(CleanupGitCloneAction::class), app(RecordActivityTask::class));
 
-    $requested
+    $request
         ? Queue::assertPushed(SyncRepositoryJob::class, fn (SyncRepositoryJob $job) => $job->repository->is($repository))
         : Queue::assertNotPushed(SyncRepositoryJob::class);
-})->with(['requested' => true, 'not requested' => false]);
+})->with([
+    'full sync requested' => 'full_sync_requested_at',
+    'sync requested' => 'sync_requested_at',
+    'not requested' => null,
+]);
