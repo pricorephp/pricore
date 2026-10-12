@@ -1,0 +1,82 @@
+app/Domains/Repository/Services/GitProviders/AbstractGitProvider.php
+  s_806cf35ecb6be8::t_1d8265de0c002c 6,9-11
+  s_806cf35ecb6be8::t_fa2892774af0f4 51-99
+app/Models/Repository.php
+  s_806cf35ecb6be8::t_6a1c63f3ebb121 30,44,77,119-125
+  s_806cf35ecb6be8::t_60b43a506618ec 126
+tests/Feature/Domains/Repository/EmptyRefsTest.php
+  s_806cf35ecb6be8::t_c1d649900e67a3 56,60,119,125-126,129,153,160
+  s_806cf35ecb6be8::t_c2003ef5ff1355 1-37,39,41-55,57-59,61-80,106-118,120-124,127-128,130-152,154-159,161-195
+  s_806cf35ecb6be8::t_7b9c7ad6a73f8f 81-105
+  s_806cf35ecb6be8::t_89435066c3925a 38,40
+app/Domains/Repository/Exceptions/GitProviderRateLimitedException.php
+  s_806cf35ecb6be8::t_274a95c9bdf310 1-30
+tests/Feature/Jobs/ReleaseWhenRateLimitedTest.php
+  s_806cf35ecb6be8::t_4335ea93e9b6dd 1-5,7-9,16-54
+  s_806cf35ecb6be8::t_eda3fe4ecc4c95 6,10-15
+app/Domains/Repository/Services/GitProviders/GitLabProvider.php
+  s_806cf35ecb6be8::t_184385c2eb8e76 7,247-248
+  s_806cf35ecb6be8::t_fba8d9b351aeea 20,22
+app/Domains/Repository/Actions/SyncRefAction.php
+  s_806cf35ecb6be8::t_2fe73749f636ba 13,38,49-50,102-104,257-272
+  s_806cf35ecb6be8::t_24c69e0a39ec55 273-274
+tests/Feature/Domains/Repository/GitHubProviderTest.php
+  s_806cf35ecb6be8::t_7d41634fc80743 4,206-248
+tests/Feature/Domains/Repository/GitLabProviderTest.php
+  s_806cf35ecb6be8::t_2780a7ab5ad9c5 4,89-103
+  s_806cf35ecb6be8::t_61f332cf23ba84 104
+app/Models/RepositoryEmptyRef.php
+  s_806cf35ecb6be8::t_6a1c63f3ebb121 1-51
+database/migrations/2026_10_12_000002_add_sync_requested_at_to_repositories_table.php
+  s_806cf35ecb6be8::t_d5839839246c60 1-22
+app/Domains/Repository/Services/GitProviders/BitbucketProvider.php
+  s_806cf35ecb6be8::t_184385c2eb8e76 7,226-227
+  s_806cf35ecb6be8::t_fba8d9b351aeea 20,25
+app/Domains/Repository/Actions/PruneEmptyRefsAction.php
+  s_806cf35ecb6be8::t_42dd606ea09d19 1-11,13-15,21-32
+  s_806cf35ecb6be8::t_59f9cf1d957181 12,16-20
+app/Domains/Repository/Jobs/SyncRepositoryJob.php
+  s_806cf35ecb6be8::t_4e0b351f0d3bd1 22,233
+  s_806cf35ecb6be8::t_970577ae449902 9,40-45,70,72-75,94-96,106,131,164,188-191,193,195-216,220-230,234-258
+  s_806cf35ecb6be8::t_eda3fe4ecc4c95 217-219
+app/Domains/Repository/Actions/FilterChangedRefsAction.php
+  s_806cf35ecb6be8::t_80cc96760fcb08 22-23,28,30-31,35,83,85,91
+app/Domains/Repository/Services/GitProviders/GitHubProvider.php
+  s_806cf35ecb6be8::t_c5fdcc3336306f 43-45,47,49-51,53-61
+  s_806cf35ecb6be8::t_184385c2eb8e76 7,262-263
+  s_806cf35ecb6be8::t_fba8d9b351aeea 20,26
+database/migrations/2026_10_12_000001_create_repository_empty_refs_table.php
+  s_806cf35ecb6be8::t_d5839839246c60 1-26
+app/Domains/Repository/Contracts/Data/SyncRefResultData.php
+  s_806cf35ecb6be8::t_2fe73749f636ba 15-16
+app/Domains/Repository/Jobs/Middleware/ReleaseWhenRateLimited.php
+  s_806cf35ecb6be8::t_274a95c9bdf310 1-5,7-21,23-47
+  s_806cf35ecb6be8::t_eda3fe4ecc4c95 6,22
+app/Domains/Repository/Jobs/CompleteSyncBatchJob.php
+  s_806cf35ecb6be8::t_970577ae449902 43,47-48,50,52
+tests/Feature/Jobs/CompleteSyncBatchJobTest.php
+  s_806cf35ecb6be8::t_c2003ef5ff1355 62,65,72,75-79
+app/Domains/Repository/Jobs/SyncRefJob.php
+  s_806cf35ecb6be8::t_05253b06dc810a 10-11,18,27-31,44-56,70-74
+tests/Feature/Jobs/SyncRepositoryJobForceTest.php
+  s_806cf35ecb6be8::t_c2003ef5ff1355 7,49
+tests/Feature/Jobs/SyncRepositoryJobDeferTest.php
+  s_806cf35ecb6be8::t_4335ea93e9b6dd 1-40,42-104
+  s_806cf35ecb6be8::t_8fd085b1028899 41
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "67c2fd8306f0e2a6ad055d93d83564c99c2a6f18",
+  "prompts": {},
+  "sessions": {
+    "s_806cf35ecb6be8": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "7e3a3d7f-b191-46c5-b7d4-c795c9920ca2",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Maarten Bode <mail@maartenbode.com>"
+    }
+  }
+}
