@@ -4,8 +4,8 @@ namespace App\Domains\Repository\Services\GitProviders;
 
 use App\Domains\Repository\Contracts\Data\RepositorySuggestionData;
 use App\Domains\Repository\Exceptions\GitProviderException;
+use App\Domains\Repository\Exceptions\GitProviderRateLimitedException;
 use Illuminate\Http\Client\PendingRequest;
-use Illuminate\Http\Client\RequestException;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -17,42 +17,9 @@ class GitLabProvider extends AbstractGitProvider
         $token = $this->getCredential('token');
         $baseUrl = rtrim($this->getBaseUrl(), '/').'/api/v4';
 
-        return Http::baseUrl($baseUrl)
+        return $this->withRetries(Http::baseUrl($baseUrl)
             ->withToken($token ?? '')
-            ->timeout(30)
-            ->retry(
-                times: 3,
-                sleepMilliseconds: function (int $attempt, \Throwable $exception) {
-                    $response = $exception instanceof RequestException ? $exception->response : null;
-
-                    if ($response && $response->status() === 429) {
-                        $retryAfter = (int) ($response->header('Retry-After') ?: '60');
-
-                        Log::warning('GitLab API rate limit hit, retrying after delay', [
-                            'repository' => $this->repositoryIdentifier,
-                            'retry_after' => $retryAfter,
-                        ]);
-
-                        return min($retryAfter, 60) * 1000;
-                    }
-
-                    return (int) (1000 * pow(5, $attempt - 1));
-                },
-                when: function (\Throwable $exception): bool {
-                    $response = $exception instanceof RequestException ? $exception->response : null;
-
-                    if ($response && $response->status() === 429) {
-                        return true;
-                    }
-
-                    if ($response) {
-                        return $response->serverError();
-                    }
-
-                    return false;
-                },
-                throw: false,
-            );
+            ->timeout(30));
     }
 
     public function getBaseUrl(): string
@@ -277,6 +244,8 @@ class GitLabProvider extends AbstractGitProvider
             $response = $this->http->get("/projects/{$projectPath}");
 
             return $response->successful();
+        } catch (GitProviderRateLimitedException $e) {
+            throw $e;
         } catch (\Exception $e) {
             Log::error('GitLab API error validating credentials', [
                 'repository' => $this->repositoryIdentifier,

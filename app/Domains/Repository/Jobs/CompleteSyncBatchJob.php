@@ -40,16 +40,16 @@ class CompleteSyncBatchJob implements ShouldQueue
         $this->updateRepositoryStatus($repository, $batch);
         $this->recordActivity($repository, $syncLog, $recordActivityTask);
         $this->scanForVulnerabilities($repository, $syncLog);
-        $this->startRequestedFullSync($repository);
+        $this->startRequestedSync($repository);
     }
 
     /**
-     * A full sync requested while this one ran (the package paths changed) could
-     * not be queued then, so start it now.
+     * Syncs requested while this one ran (a push, or the package paths changed)
+     * were deferred until now, so start one for all of them.
      */
-    protected function startRequestedFullSync(Repository $repository): void
+    protected function startRequestedSync(Repository $repository): void
     {
-        if ($repository->full_sync_requested_at !== null) {
+        if ($repository->full_sync_requested_at !== null || $repository->sync_requested_at !== null) {
             SyncRepositoryJob::dispatch($repository);
         }
     }

@@ -4,8 +4,8 @@ namespace App\Domains\Repository\Services\GitProviders;
 
 use App\Domains\Repository\Contracts\Data\RepositorySuggestionData;
 use App\Domains\Repository\Exceptions\GitProviderException;
+use App\Domains\Repository\Exceptions\GitProviderRateLimitedException;
 use Illuminate\Http\Client\PendingRequest;
-use Illuminate\Http\Client\RequestException;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -17,47 +17,13 @@ class GitHubProvider extends AbstractGitProvider
     {
         $token = $this->getCredential('token');
 
-        return Http::baseUrl('https://api.github.com')
+        return $this->withRetries(Http::baseUrl('https://api.github.com')
             ->withHeaders([
                 'Accept' => 'application/vnd.github+json',
                 'X-GitHub-Api-Version' => '2022-11-28',
             ])
             ->when($token, fn (PendingRequest $http) => $http->withToken($token))
-            ->timeout(30)
-            ->retry(
-                times: 3,
-                sleepMilliseconds: function (int $attempt, \Throwable $exception) {
-                    $response = $exception instanceof RequestException ? $exception->response : null;
-
-                    if ($response && $this->isRateLimited($response)) {
-                        return $this->calculateRateLimitDelay($response);
-                    }
-
-                    // Exponential backoff: 1s, 5s, 15s
-                    return (int) (1000 * pow(5, $attempt - 1));
-                },
-                when: function (\Throwable $exception): bool {
-                    $response = $exception instanceof RequestException ? $exception->response : null;
-
-                    if ($response && $this->isRateLimited($response)) {
-                        Log::warning('GitHub API rate limit hit, retrying after delay', [
-                            'repository' => $this->repositoryIdentifier,
-                            'remaining' => $response->header('X-RateLimit-Remaining'),
-                            'reset' => $response->header('X-RateLimit-Reset'),
-                        ]);
-
-                        return true;
-                    }
-
-                    // Retry on server errors
-                    if ($response) {
-                        return $response->serverError();
-                    }
-
-                    return false;
-                },
-                throw: false,
-            )
+            ->timeout(30))
             ->withResponseMiddleware(function (ResponseInterface $response) {
                 $remaining = $response->getHeaderLine('X-RateLimit-Remaining');
 
@@ -73,21 +39,26 @@ class GitHubProvider extends AbstractGitProvider
             });
     }
 
-    protected function isRateLimited(Response $response): bool
-    {
-        return in_array($response->status(), [403, 429])
-            && $response->header('X-RateLimit-Remaining') === '0';
-    }
-
     /**
-     * Calculate delay in milliseconds until the rate limit resets (capped at 60s).
+     * GitHub signals the primary limit with an exhausted quota and its reset
+     * time, and a secondary limit with a Retry-After header. Both may come as
+     * a 403 instead of a 429.
      */
-    protected function calculateRateLimitDelay(Response $response): int
+    protected function rateLimitRetryAfter(Response $response): ?int
     {
-        $resetTimestamp = (int) $response->header('X-RateLimit-Reset');
-        $delaySeconds = max(0, $resetTimestamp - time());
+        if (! in_array($response->status(), [403, 429], true)) {
+            return null;
+        }
 
-        return min($delaySeconds, 60) * 1000;
+        if ($response->header('Retry-After') !== '') {
+            return max(1, (int) $response->header('Retry-After'));
+        }
+
+        if ($response->header('X-RateLimit-Remaining') === '0') {
+            return max(1, (int) $response->header('X-RateLimit-Reset') - time());
+        }
+
+        return null;
     }
 
     /**
@@ -288,6 +259,8 @@ class GitHubProvider extends AbstractGitProvider
             $response = $this->http->get("/repos/{$this->repositoryIdentifier}");
 
             return $response->successful();
+        } catch (GitProviderRateLimitedException $e) {
+            throw $e;
         } catch (\Exception $e) {
             Log::error('GitHub API error validating credentials', [
                 'repository' => $this->repositoryIdentifier,

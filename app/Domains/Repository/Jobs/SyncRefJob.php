@@ -7,12 +7,15 @@ use App\Domains\Repository\Contracts\Data\RefData;
 use App\Domains\Repository\Contracts\Data\SyncRefResultData;
 use App\Domains\Repository\Contracts\Enums\GitProvider;
 use App\Domains\Repository\Contracts\Interfaces\GitProviderInterface;
+use App\Domains\Repository\Exceptions\GitProviderRateLimitedException;
+use App\Domains\Repository\Jobs\Middleware\ReleaseWhenRateLimited;
 use App\Domains\Repository\Services\GitProviders\CachedGitProvider;
 use App\Domains\Repository\Services\GitProviders\GitProviderFactory;
 use App\Models\Repository;
 use Illuminate\Bus\Batchable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Throwable;
@@ -21,7 +24,11 @@ class SyncRefJob implements ShouldQueue
 {
     use Batchable, Queueable;
 
-    public int $tries = 3;
+    /**
+     * Failures that count against the job. Waiting out a rate limit releases
+     * the job without one, bounded by retryUntil() instead of a number of tries.
+     */
+    public int $maxExceptions = 3;
 
     /**
      * @var array<int, int>
@@ -33,6 +40,19 @@ class SyncRefJob implements ShouldQueue
         public RefData $ref,
         public ?string $clonePath = null,
     ) {}
+
+    /**
+     * @return array<int, object>
+     */
+    public function middleware(): array
+    {
+        return [new ReleaseWhenRateLimited($this->repository->uuid)];
+    }
+
+    public function retryUntil(): Carbon
+    {
+        return now()->addHours(6);
+    }
 
     public function handle(SyncRefAction $syncRefAction): void
     {
@@ -47,6 +67,11 @@ class SyncRefJob implements ShouldQueue
 
             $this->incrementCounters($result);
         } catch (Throwable $e) {
+            // Released by the middleware until the limit resets, not a failure
+            if (GitProviderRateLimitedException::find($e) !== null) {
+                throw $e;
+            }
+
             Log::error('Failed to sync ref', [
                 'repository' => $this->repository->name,
                 'ref' => $this->ref->name,

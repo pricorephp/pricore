@@ -3,8 +3,12 @@
 namespace App\Domains\Repository\Services\GitProviders;
 
 use App\Domains\Repository\Contracts\Interfaces\GitProviderInterface;
+use App\Domains\Repository\Exceptions\GitProviderRateLimitedException;
 use App\Domains\Repository\Services\Archive\ZipSubtreeExtractor;
 use Illuminate\Http\Client\PendingRequest;
+use Illuminate\Http\Client\RequestException;
+use Illuminate\Http\Client\Response;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 abstract class AbstractGitProvider implements GitProviderInterface
@@ -43,6 +47,55 @@ abstract class AbstractGitProvider implements GitProviderInterface
      * Configure the HTTP client with authentication and base URL.
      */
     abstract protected function configureHttpClient(): PendingRequest;
+
+    /**
+     * Retry server errors with backoff. A rate limit is not waited out here: it
+     * can last far longer than a worker may run, so it is thrown for the job to
+     * be released until the limit resets.
+     */
+    protected function withRetries(PendingRequest $http): PendingRequest
+    {
+        return $http->retry(
+            times: 3,
+            // Exponential backoff: 1s, 5s
+            sleepMilliseconds: fn (int $attempt) => (int) (1000 * pow(5, $attempt - 1)),
+            when: function (\Throwable $exception): bool {
+                $response = $exception instanceof RequestException ? $exception->response : null;
+
+                if (! $response) {
+                    return false;
+                }
+
+                $retryAfter = $this->rateLimitRetryAfter($response);
+
+                if ($retryAfter !== null) {
+                    Log::warning('Git provider rate limit hit', [
+                        'provider' => class_basename($this),
+                        'repository' => $this->repositoryIdentifier,
+                        'retry_after' => $retryAfter,
+                    ]);
+
+                    throw new GitProviderRateLimitedException($retryAfter);
+                }
+
+                return $response->serverError();
+            },
+            throw: false,
+        );
+    }
+
+    /**
+     * Seconds until the provider accepts requests again, or null when the
+     * response is not a rate limit.
+     */
+    protected function rateLimitRetryAfter(Response $response): ?int
+    {
+        if ($response->status() !== 429) {
+            return null;
+        }
+
+        return max(1, (int) ($response->header('Retry-After') ?: 60));
+    }
 
     /**
      * Download the whole repository at $ref. Provider archive endpoints have no

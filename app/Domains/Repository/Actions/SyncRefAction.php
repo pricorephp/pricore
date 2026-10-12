@@ -10,6 +10,7 @@ use App\Exceptions\ComposerMetadataException;
 use App\Models\Package;
 use App\Models\PackageVersion;
 use App\Models\Repository;
+use App\Models\RepositoryEmptyRef;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -34,6 +35,7 @@ class SyncRefAction
         $syncedPackageUuids = [];
         $unreadablePaths = [];
         $pathsByName = [];
+        $composerJsonFound = false;
 
         foreach ($this->resolvePackagePathsAction->handle($provider, $repository, $ref->name) as $path) {
             $composerJson = $provider->getFileContent($ref->name, self::join($path, 'composer.json'));
@@ -43,6 +45,8 @@ class SyncRefAction
 
                 continue;
             }
+
+            $composerJsonFound = true;
 
             try {
                 $metadata = ComposerMetadataData::fromComposerJson($composerJson, $ref->name);
@@ -95,6 +99,9 @@ class SyncRefAction
 
         $result->packagesFound = count($syncedPackageUuids);
         $result->removed = $this->removeVanishedVersions($repository, $ref, $syncedPackageUuids, $unreadablePaths);
+        $result->empty = ! $composerJsonFound;
+
+        $this->rememberWhetherEmpty($repository, $ref, $result->empty);
 
         return $result;
     }
@@ -245,6 +252,24 @@ class SyncRefAction
         }
 
         return $removed;
+    }
+
+    /**
+     * A ref without any composer.json leaves no package version behind, so
+     * without this record every sync would fetch it again.
+     */
+    protected function rememberWhetherEmpty(Repository $repository, RefData $ref, bool $empty): void
+    {
+        if (! $empty) {
+            $repository->emptyRefs()->where('name', $ref->name)->delete();
+
+            return;
+        }
+
+        RepositoryEmptyRef::query()->updateOrCreate(
+            ['repository_uuid' => $repository->uuid, 'name' => $ref->name],
+            ['commit' => $ref->commit, 'checked_at' => now()],
+        );
     }
 
     protected static function join(string $path, string $file): string

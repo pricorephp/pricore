@@ -6,6 +6,7 @@ use App\Domains\Repository\Actions\CollectRefsAction;
 use App\Domains\Repository\Actions\CreateGitCloneAction;
 use App\Domains\Repository\Actions\CreateSyncLogAction;
 use App\Domains\Repository\Actions\FilterChangedRefsAction;
+use App\Domains\Repository\Actions\PruneEmptyRefsAction;
 use App\Domains\Repository\Actions\RemoveStaleVersionsAction;
 use App\Domains\Repository\Contracts\Data\RefData;
 use App\Domains\Repository\Contracts\Enums\RepositorySyncStatus;
@@ -18,6 +19,7 @@ use App\Models\Repository;
 use App\Models\RepositorySyncLog;
 use Carbon\CarbonInterface;
 use Illuminate\Bus\Batch;
+use Illuminate\Bus\BatchRepository;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
@@ -34,6 +36,12 @@ class SyncRepositoryJob implements ShouldBeUnique, ShouldQueue
     public int $tries = 1;
 
     public int $uniqueFor = 300;
+
+    /**
+     * How long a batch counts as running. Its jobs give up after as long, so a
+     * batch still unfinished by then was lost and must not block syncs forever.
+     */
+    public const RUNNING_BATCH_HOURS = 6;
 
     /**
      * Declared with a default rather than promoted, so jobs queued before this
@@ -59,7 +67,12 @@ class SyncRepositoryJob implements ShouldBeUnique, ShouldQueue
         CreateGitCloneAction $createGitCloneAction,
         FilterChangedRefsAction $filterChangedRefsAction,
         RemoveStaleVersionsAction $removeStaleVersionsAction,
+        PruneEmptyRefsAction $pruneEmptyRefsAction,
     ): void {
+        if ($this->deferWhileBatchRuns()) {
+            return;
+        }
+
         $syncLog = $createSyncLogAction->handle($this->repository);
 
         event(new RepositorySyncStatusUpdated(
@@ -78,7 +91,9 @@ class SyncRepositoryJob implements ShouldBeUnique, ShouldQueue
 
             // Read as late as possible: a request made while this job was queued
             // could not queue a job of its own, as this one holds the unique lock
-            $fullSyncRequestedAt = $this->repository->refresh()->full_sync_requested_at;
+            $this->repository->refresh();
+            $fullSyncRequestedAt = $this->repository->full_sync_requested_at;
+            $syncRequestedAt = $this->repository->sync_requested_at;
 
             $totalRefs = $refs->all->count();
             // A forced sync revisits every ref, e.g. after the package paths changed
@@ -88,6 +103,7 @@ class SyncRepositoryJob implements ShouldBeUnique, ShouldQueue
             $skippedCount = $totalRefs - $filteredRefs->all->count();
 
             $staleVersionsRemoved = $removeStaleVersionsAction->handle($this->repository, $refs);
+            $pruneEmptyRefsAction->handle($this->repository, $refs);
 
             $syncLog->update([
                 'versions_removed' => $staleVersionsRemoved,
@@ -112,7 +128,7 @@ class SyncRepositoryJob implements ShouldBeUnique, ShouldQueue
 
             if ($filteredRefs->all->count() === 0) {
                 $this->completeSyncLogEmpty($syncLog);
-                $this->clearFullSyncRequest($fullSyncRequestedAt);
+                $this->clearSyncRequests($fullSyncRequestedAt, $syncRequestedAt);
 
                 return;
             }
@@ -145,7 +161,7 @@ class SyncRepositoryJob implements ShouldBeUnique, ShouldQueue
                 ->dispatch();
 
             $syncLog->update(['batch_id' => $batch->id]);
-            $this->clearFullSyncRequest($fullSyncRequestedAt);
+            $this->clearSyncRequests($fullSyncRequestedAt, $syncRequestedAt);
 
             Log::info('Repository sync batch dispatched', [
                 'repository' => $this->repository->name,
@@ -169,19 +185,77 @@ class SyncRepositoryJob implements ShouldBeUnique, ShouldQueue
     }
 
     /**
-     * Only the request this run acted on is cleared; a newer one made while it
-     * ran stays, and the batch completion starts another sync for it.
+     * The unique lock is released once the batch is dispatched, while its jobs
+     * may run for a long time after. A sync started meanwhile would queue every
+     * ref the batch has not reached yet a second time, so it is recorded as a
+     * request instead, and the batch completion starts one sync for all of them.
      */
-    protected function clearFullSyncRequest(?CarbonInterface $requestedAt): void
+    protected function deferWhileBatchRuns(): bool
     {
-        if ($requestedAt === null) {
-            return;
+        if (! $this->hasRunningBatch()) {
+            return false;
         }
 
-        Repository::query()
-            ->whereKey($this->repository->uuid)
-            ->where('full_sync_requested_at', '<=', $requestedAt)
-            ->update(['full_sync_requested_at' => null]);
+        $this->repository->update([
+            $this->force ? 'full_sync_requested_at' : 'sync_requested_at' => now(),
+        ]);
+
+        // The batch may have completed before the request was recorded, too
+        // late to see it; then this sync runs after all
+        if (! $this->hasRunningBatch()) {
+            return false;
+        }
+
+        Log::info('Repository sync deferred until the running batch completes', [
+            'repository' => $this->repository->name,
+            'force' => $this->force,
+        ]);
+
+        return true;
+    }
+
+    /**
+     * @phpstan-impure
+     */
+    protected function hasRunningBatch(): bool
+    {
+        $batchId = $this->repository->syncLogs()
+            ->where('status', SyncStatus::Pending)
+            ->whereNotNull('batch_id')
+            ->where('started_at', '>=', now()->subHours(self::RUNNING_BATCH_HOURS))
+            ->latest('started_at')
+            ->value('batch_id');
+
+        if (! is_string($batchId)) {
+            return false;
+        }
+
+        $batch = app(BatchRepository::class)->find($batchId);
+
+        return $batch !== null && ! $batch->finished() && ! $batch->cancelled();
+    }
+
+    /**
+     * Only the requests this run acted on are cleared; a newer one made while
+     * it ran stays, and the batch completion starts another sync for it.
+     */
+    protected function clearSyncRequests(?CarbonInterface $fullSyncRequestedAt, ?CarbonInterface $syncRequestedAt): void
+    {
+        $requests = [
+            'full_sync_requested_at' => $fullSyncRequestedAt,
+            'sync_requested_at' => $syncRequestedAt,
+        ];
+
+        foreach ($requests as $column => $requestedAt) {
+            if ($requestedAt === null) {
+                continue;
+            }
+
+            Repository::query()
+                ->whereKey($this->repository->uuid)
+                ->where($column, '<=', $requestedAt)
+                ->update([$column => null]);
+        }
     }
 
     protected function completeSyncLogEmpty(RepositorySyncLog $syncLog): void

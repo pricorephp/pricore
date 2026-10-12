@@ -4,6 +4,7 @@ use App\Domains\Repository\Actions\CollectRefsAction;
 use App\Domains\Repository\Actions\CreateGitCloneAction;
 use App\Domains\Repository\Actions\CreateSyncLogAction;
 use App\Domains\Repository\Actions\FilterChangedRefsAction;
+use App\Domains\Repository\Actions\PruneEmptyRefsAction;
 use App\Domains\Repository\Actions\RemoveStaleVersionsAction;
 use App\Domains\Repository\Jobs\SyncRepositoryJob;
 use App\Models\Organization;
@@ -45,6 +46,7 @@ beforeEach(function () {
         app(CreateGitCloneAction::class),
         app(FilterChangedRefsAction::class),
         app(RemoveStaleVersionsAction::class),
+        app(PruneEmptyRefsAction::class),
     );
 });
 

@@ -1,6 +1,7 @@
 <?php
 
 use App\Domains\Repository\Exceptions\GitProviderException;
+use App\Domains\Repository\Exceptions\GitProviderRateLimitedException;
 use App\Domains\Repository\Services\GitProviders\GitLabProvider;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\File;
@@ -84,4 +85,20 @@ it('cuts a subdirectory archive from the full archive download', function () {
         ->and(testZipFileNames($output))->toBe(['billing-abc123def456/composer.json']);
 
     Http::assertSent(fn (Request $request) => str_contains($request->url(), 'sha=abc123def4567890'));
+});
+
+it('throws a rate limit with its retry delay instead of waiting it out', function () {
+    Http::fake([
+        '*' => Http::response(['message' => 'Too Many Requests'], 429, ['Retry-After' => '30']),
+    ]);
+
+    try {
+        gitlabProvider()->getTags();
+
+        test()->fail('Expected the rate limit to be thrown');
+    } catch (GitProviderException $e) {
+        expect(GitProviderRateLimitedException::find($e)?->retryAfter)->toBe(30);
+    }
+
+    Http::assertSentCount(1);
 });
