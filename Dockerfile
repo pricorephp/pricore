@@ -159,7 +159,8 @@ RUN echo "opcache.enable=1" > /usr/local/etc/php/conf.d/99-production.ini && \
     echo "post_max_size=64M" >> /usr/local/etc/php/conf.d/99-production.ini && \
     echo "upload_max_filesize=64M" >> /usr/local/etc/php/conf.d/99-production.ini && \
     echo "realpath_cache_size=4096K" >> /usr/local/etc/php/conf.d/99-production.ini && \
-    echo "realpath_cache_ttl=600" >> /usr/local/etc/php/conf.d/99-production.ini
+    echo "realpath_cache_ttl=600" >> /usr/local/etc/php/conf.d/99-production.ini && \
+    echo "session.upload_progress.enabled=Off" >> /usr/local/etc/php/conf.d/99-production.ini
 
 # Create Caddyfile for FrankenPHP
 RUN echo ':8000 {' > /etc/caddy/Caddyfile && \
