@@ -145,7 +145,6 @@ RUN echo "opcache.enable=1" > /usr/local/etc/php/conf.d/99-production.ini && \
     echo "opcache.revalidate_freq=0" >> /usr/local/etc/php/conf.d/99-production.ini && \
     echo "opcache.validate_timestamps=0" >> /usr/local/etc/php/conf.d/99-production.ini && \
     echo "opcache.save_comments=1" >> /usr/local/etc/php/conf.d/99-production.ini && \
-    echo "opcache.fast_shutdown=1" >> /usr/local/etc/php/conf.d/99-production.ini && \
     echo "opcache.jit=1255" >> /usr/local/etc/php/conf.d/99-production.ini && \
     echo "opcache.jit_buffer_size=128M" >> /usr/local/etc/php/conf.d/99-production.ini && \
     echo "" >> /usr/local/etc/php/conf.d/99-production.ini && \
@@ -166,6 +165,11 @@ RUN echo "opcache.enable=1" > /usr/local/etc/php/conf.d/99-production.ini && \
 RUN echo ':8000 {' > /etc/caddy/Caddyfile && \
     echo '    root * /app/public' >> /etc/caddy/Caddyfile && \
     echo '    encode zstd gzip' >> /etc/caddy/Caddyfile && \
+    echo '' >> /etc/caddy/Caddyfile && \
+    echo '    # Reject oversized bodies before PHP parses them. Matches post_max_size.' >> /etc/caddy/Caddyfile && \
+    echo '    request_body {' >> /etc/caddy/Caddyfile && \
+    echo '        max_size 64MiB' >> /etc/caddy/Caddyfile && \
+    echo '    }' >> /etc/caddy/Caddyfile && \
     echo '' >> /etc/caddy/Caddyfile && \
     echo '    # Health check endpoint' >> /etc/caddy/Caddyfile && \
     echo '    respond /health 200' >> /etc/caddy/Caddyfile && \
