@@ -123,6 +123,7 @@ class PackageVersionData extends Data
         $cleanUrl = preg_replace('/^git@/', '', $sourceUrl) ?? '';
         $cleanUrl = preg_replace('/\.git$/', '', $cleanUrl) ?? '';
         $cleanUrl = str_replace(':', '/', $cleanUrl);
+        $cleanUrl = preg_replace('#^ssh\.bitbucket\.org/#', 'bitbucket.org/', $cleanUrl) ?? '';
 
         if (str_starts_with($cleanUrl, 'github.com/')) {
             return "https://{$cleanUrl}/tree/{$commitSha}";
@@ -183,6 +184,7 @@ class PackageVersionData extends Data
         $cleanUrl = preg_replace('/^git@/', '', $sourceUrl) ?? '';
         $cleanUrl = preg_replace('/\.git$/', '', $cleanUrl) ?? '';
         $cleanUrl = str_replace(':', '/', $cleanUrl);
+        $cleanUrl = preg_replace('#^ssh\.bitbucket\.org/#', 'bitbucket.org/', $cleanUrl) ?? '';
 
         if (str_starts_with($cleanUrl, 'github.com/')) {
             return "https://{$cleanUrl}/releases/tag/{$sourceTag}";
