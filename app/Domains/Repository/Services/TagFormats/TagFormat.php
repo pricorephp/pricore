@@ -29,8 +29,9 @@ class TagFormat
 
     public const PACKAGE_PLACEHOLDERS = [self::NAME, self::PACKAGE, self::PATH];
 
-    // Versions need at least major.minor, like shared tags, plus Composer's stability suffixes
-    protected const VERSION_PATTERN = 'v?\d+(?:\.\d+){1,3}(?:[._-]?(?:stable|beta|b|RC|rc|alpha|a|patch|pl|p)(?:[.-]?\d+)*)?(?:\+[0-9A-Za-z.-]+)?';
+    // Versions need at least major.minor, like shared tags, plus Composer's stability
+    // and -dev suffixes, as in 1.2.0-beta1-dev
+    protected const VERSION_PATTERN = 'v?\d+(?:\.\d+){1,3}(?:[._-]?(?:stable|beta|b|RC|rc|alpha|a|patch|pl|p)(?:[.-]?\d+)*)?(?:[.-]?dev)?(?:\+[0-9A-Za-z.-]+)?';
 
     // Lazy, so the package part ends at the first separator the version can follow
     protected const KEY_PATTERNS = [

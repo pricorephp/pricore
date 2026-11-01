@@ -66,8 +66,8 @@ beforeEach(function () {
         ],
     ];
 
-    $this->sync = fn (GitProviderInterface $provider, string $tag, string $commit = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', bool $isTag = true) => app(SyncRefAction::class)
-        ->handle($provider, $this->repository, new RefData(name: $tag, commit: $commit, isTag: $isTag));
+    $this->sync = fn (GitProviderInterface $provider, string $tag, string $commit = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', bool $isTag = true, array $claimed = []) => app(SyncRefAction::class)
+        ->handle($provider, $this->repository, new RefData(name: $tag, commit: $commit, isTag: $isTag, claimedPackageKeys: $claimed));
 
     $this->versionsOf = fn (string $package) => PackageVersion::query()
         ->whereHas('package', fn ($query) => $query->where('name', $package))
@@ -133,7 +133,7 @@ it('lets a package tag outrank a shared tag of the same version', function () {
     $sharedCommit = str_repeat('b', 40);
 
     ($this->sync)(tagFormatProvider($this->files, $this->directories), 'billing@1.0.0', $packageCommit);
-    ($this->sync)(tagFormatProvider($this->files, $this->directories), '1.0.0', $sharedCommit);
+    ($this->sync)(tagFormatProvider($this->files, $this->directories), '1.0.0', $sharedCommit, claimed: ['billing']);
 
     expect(($this->versionsOf)('acme/billing'))->toBe(['1.0.0' => $packageCommit])
         ->and(($this->versionsOf)('acme/crm'))->toBe(['1.0.0' => $sharedCommit]);
@@ -161,4 +161,41 @@ it('releases nothing for tags outside the format', function () {
     expect($result->added)->toBe(0)
         ->and($result->packagesFound)->toBe(0)
         ->and(PackageVersion::query()->count())->toBe(0);
+});
+
+it('releases a shared tag again for a package whose own tag is gone', function () {
+    $sharedCommit = str_repeat('b', 40);
+
+    ($this->sync)(tagFormatProvider($this->files, $this->directories), 'billing@1.0.0', str_repeat('a', 40));
+    ($this->sync)(tagFormatProvider($this->files, $this->directories), '1.0.0', $sharedCommit);
+
+    expect(($this->versionsOf)('acme/billing'))->toBe(['1.0.0' => $sharedCommit])
+        ->and(PackageVersion::query()->whereHas('package', fn ($query) => $query->where('name', 'acme/billing'))->sole()->source_tag)->toBe('1.0.0');
+});
+
+it('takes a version over from a shared tag at the same commit', function () {
+    ($this->sync)(tagFormatProvider($this->files, $this->directories), '1.0.0');
+    $result = ($this->sync)(tagFormatProvider($this->files, $this->directories), 'billing@1.0.0');
+
+    expect($result->added + $result->updated)->toBe(0)
+        ->and(PackageVersion::query()->whereHas('package', fn ($query) => $query->where('name', 'acme/billing'))->sole()->source_tag)->toBe('billing@1.0.0')
+        ->and(PackageVersion::query()->whereHas('package', fn ($query) => $query->where('name', 'acme/crm'))->sole()->source_tag)->toBe('1.0.0');
+});
+
+it('finds a package that lived in another directory at an older tag', function () {
+    ($this->sync)(tagFormatProvider([
+        'packages/payments/composer.json' => tagFormatComposerJson('acme/billing'),
+        'packages/crm/composer.json' => tagFormatComposerJson('acme/crm'),
+    ], ['packages' => [['name' => 'payments', 'type' => 'dir'], ['name' => 'crm', 'type' => 'dir']]]), 'main', isTag: false);
+
+    expect(Package::query()->where('name', 'acme/billing')->sole()->source_path)->toBe('packages/payments');
+
+    $result = ($this->sync)(tagFormatProvider($this->files, $this->directories), 'billing@1.0.0');
+
+    $version = PackageVersion::query()->where('version', '1.0.0')->sole();
+
+    expect($result->added)->toBe(1)
+        ->and($result->empty)->toBeFalse()
+        ->and($version->package->name)->toBe('acme/billing')
+        ->and($version->source_path)->toBe('packages/billing');
 });

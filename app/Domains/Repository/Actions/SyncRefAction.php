@@ -49,71 +49,84 @@ class SyncRefAction
         $pathsByName = [];
         $composerJsonFound = false;
 
-        foreach ($this->pathsFor($provider, $repository, $ref, $format, $target) as $path) {
-            $composerJson = $provider->getFileContent($ref->name, self::join($path, 'composer.json'));
+        [$paths, $narrowed] = $this->pathsFor($provider, $repository, $ref, $format, $target);
+        $checkedPaths = [];
 
-            if ($composerJson === null) {
-                $result->skipped++;
+        while ($paths !== []) {
+            foreach ($paths as $path) {
+                $checkedPaths[] = $path;
+                $composerJson = $provider->getFileContent($ref->name, self::join($path, 'composer.json'));
 
-                continue;
+                if ($composerJson === null) {
+                    $result->skipped++;
+
+                    continue;
+                }
+
+                $composerJsonFound = $composerJsonFound || $target->isShared();
+
+                try {
+                    $metadata = ComposerMetadataData::fromComposerJson($composerJson, $ref->name, $target->version);
+                } catch (ComposerMetadataException $e) {
+                    Log::warning('Skipping package with invalid composer.json', [
+                        'repository' => $repository->name,
+                        'ref' => $ref->name,
+                        'path' => $path,
+                        'error' => $e->getMessage(),
+                    ]);
+
+                    $unreadablePaths[] = $path;
+                    $result->skipped++;
+
+                    continue;
+                }
+
+                // Another package of the monorepo, which this tag does not release
+                if (! $target->isShared() && $format?->keyFor($path, $metadata->name) !== $target->packageKey) {
+                    continue;
+                }
+
+                $composerJsonFound = true;
+
+                if (isset($pathsByName[$metadata->name])) {
+                    Log::warning('Skipping duplicate package name within ref', [
+                        'repository' => $repository->name,
+                        'ref' => $ref->name,
+                        'package' => $metadata->name,
+                        'path' => $path,
+                        'first_path' => $pathsByName[$metadata->name],
+                    ]);
+
+                    $result->skipped++;
+
+                    continue;
+                }
+
+                $pathsByName[$metadata->name] = $path;
+
+                $package = $this->findOrCreatePackageAction->handle($repository, $metadata->name, $path);
+
+                if ($package === null) {
+                    $result->skipped++;
+
+                    continue;
+                }
+
+                $syncedPackageUuids[] = $package->uuid;
+
+                match ($this->syncVersion($provider, $repository, $ref, $package, $metadata, $path, $format, $target)) {
+                    'added' => $result->added++,
+                    'updated' => $result->updated++,
+                    default => $result->skipped++,
+                };
             }
 
-            $composerJsonFound = $composerJsonFound || $target->isShared();
-
-            try {
-                $metadata = ComposerMetadataData::fromComposerJson($composerJson, $ref->name, $target->version);
-            } catch (ComposerMetadataException $e) {
-                Log::warning('Skipping package with invalid composer.json', [
-                    'repository' => $repository->name,
-                    'ref' => $ref->name,
-                    'path' => $path,
-                    'error' => $e->getMessage(),
-                ]);
-
-                $unreadablePaths[] = $path;
-                $result->skipped++;
-
-                continue;
-            }
-
-            // Another package of the monorepo, which this tag does not release
-            if (! $target->isShared() && $format?->keyFor($path, $metadata->name) !== $target->packageKey) {
-                continue;
-            }
-
-            $composerJsonFound = true;
-
-            if (isset($pathsByName[$metadata->name])) {
-                Log::warning('Skipping duplicate package name within ref', [
-                    'repository' => $repository->name,
-                    'ref' => $ref->name,
-                    'package' => $metadata->name,
-                    'path' => $path,
-                    'first_path' => $pathsByName[$metadata->name],
-                ]);
-
-                $result->skipped++;
-
-                continue;
-            }
-
-            $pathsByName[$metadata->name] = $path;
-
-            $package = $this->findOrCreatePackageAction->handle($repository, $metadata->name, $path);
-
-            if ($package === null) {
-                $result->skipped++;
-
-                continue;
-            }
-
-            $syncedPackageUuids[] = $package->uuid;
-
-            match ($this->syncVersion($provider, $repository, $ref, $package, $metadata, $path, $format, $target)) {
-                'added' => $result->added++,
-                'updated' => $result->updated++,
-                default => $result->skipped++,
-            };
+            // The directory saved from an earlier sync is stale when the package
+            // moved between tags, so look for it everywhere else
+            $paths = $narrowed && ! $composerJsonFound
+                ? array_values(array_diff($this->resolvePackagePathsAction->handle($provider, $repository, $ref->name), $checkedPaths))
+                : [];
+            $narrowed = false;
         }
 
         $result->packagesFound = count($syncedPackageUuids);
@@ -129,8 +142,9 @@ class SyncRefAction
      * A tag of a single package only needs that package's directory: named by the
      * tag under {path}, or known from an earlier sync under {name} and {package}.
      * Only a package not synced before needs every configured path checked.
+     * Also returns whether the paths were narrowed down to a saved directory.
      *
-     * @return array<int, string>
+     * @return array{0: array<int, string>, 1: bool}
      */
     protected function pathsFor(
         GitProviderInterface $provider,
@@ -140,13 +154,13 @@ class SyncRefAction
         RefTargetData $target,
     ): array {
         if ($format === null || $target->isShared()) {
-            return $this->resolvePackagePathsAction->handle($provider, $repository, $ref->name);
+            return [$this->resolvePackagePathsAction->handle($provider, $repository, $ref->name), false];
         }
 
         $selected = $repository->package_paths ?: [PackagePathPattern::ROOT];
 
         if ($format->placeholder === TagFormat::PATH) {
-            return PackagePathPattern::anyMatches($selected, $target->packageKey) ? [(string) $target->packageKey] : [];
+            return [PackagePathPattern::anyMatches($selected, $target->packageKey) ? [(string) $target->packageKey] : [], false];
         }
 
         $known = $repository->packages()
@@ -154,10 +168,10 @@ class SyncRefAction
             ->first(fn (Package $package) => $format->keyFor($package->source_path, $package->name) === $target->packageKey);
 
         if ($known !== null && PackagePathPattern::anyMatches($selected, $known->source_path)) {
-            return [(string) $known->source_path];
+            return [[(string) $known->source_path], true];
         }
 
-        return $this->resolvePackagePathsAction->handle($provider, $repository, $ref->name);
+        return [$this->resolvePackagePathsAction->handle($provider, $repository, $ref->name), false];
     }
 
     /**
@@ -181,18 +195,22 @@ class SyncRefAction
             ->first();
 
         // A tag of this package alone outranks a shared tag of the same version
-        if ($format !== null && $target->isShared() && $existingVersion?->source_tag !== null) {
-            $ownTag = $format->match($existingVersion->source_tag);
-
-            if ($ownTag !== null && $ownTag->packageKey === $format->keyFor($path, $package->name)) {
-                return 'skipped';
-            }
+        if ($format !== null
+            && $target->isShared()
+            && in_array($format->keyFor($path, $package->name), $ref->claimedPackageKeys, true)) {
+            return 'skipped';
         }
 
         // Same commit at the same location: nothing changed, skip the expensive work
         if ($existingVersion
             && $existingVersion->source_reference === $ref->commit
             && $existingVersion->source_path === $sourcePath) {
+            // A package tag at the commit a shared tag already released takes the
+            // version over, so a later move of the shared tag leaves it alone
+            if ($existingVersion->source_tag !== $ref->name && ! $target->isShared()) {
+                $existingVersion->update(['source_tag' => $ref->name]);
+            }
+
             // Retry an archive that failed to build. One removed on purpose,
             // such as by release retention, is not marked and stays removed.
             if (config('pricore.dist.enabled') && $existingVersion->dist_failed_at) {

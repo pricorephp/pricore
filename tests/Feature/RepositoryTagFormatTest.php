@@ -1,6 +1,7 @@
 <?php
 
 use App\Domains\Organization\Contracts\Enums\OrganizationRole;
+use App\Domains\Repository\Actions\ClaimSharedVersionsAction;
 use App\Domains\Repository\Actions\FilterChangedRefsAction;
 use App\Domains\Repository\Actions\RemoveStaleVersionsAction;
 use App\Domains\Repository\Contracts\Data\RefData;
@@ -75,6 +76,43 @@ it('skips tags that release nothing and compares each tag with its own versions'
     );
 
     expect(collect($filtered->all->toCollection())->pluck('name')->all())->toBe(['crm@1.0.0']);
+});
+
+it('marks shared tags with the packages that have their own tag of that version', function () {
+    $refs = app(ClaimSharedVersionsAction::class)->handle(
+        $this->repository,
+        tagFormatRefs(['billing@1.0.0', '1.0.0', '2.0.0', 'nightly'], ['main']),
+    );
+
+    $claimed = collect($refs->all->toCollection())->mapWithKeys(fn (RefData $ref) => [$ref->name => $ref->claimedPackageKeys])->all();
+
+    expect($claimed)->toBe([
+        'billing@1.0.0' => [],
+        '1.0.0' => ['billing'],
+        '2.0.0' => [],
+        'nightly' => [],
+        'main' => [],
+    ]);
+});
+
+it('resyncs a shared tag when a package tag of its version was deleted', function () {
+    tagFormatVersion($this->billing, '1.0.0', 'billing@1.0.0');
+    tagFormatVersion($this->crm, '1.0.0', '1.0.0');
+
+    $filtered = app(FilterChangedRefsAction::class)->handle(tagFormatRefs(['1.0.0']), $this->repository);
+
+    expect(collect($filtered->all->toCollection())->pluck('name')->all())->toBe(['1.0.0']);
+});
+
+it('removes a version whose package tag was deleted, even when a shared tag has that version', function () {
+    tagFormatVersion($this->billing, '1.0.0', 'billing@1.0.0');
+    tagFormatVersion($this->crm, '1.0.0', '1.0.0');
+
+    $removed = app(RemoveStaleVersionsAction::class)->handle($this->repository, tagFormatRefs(['1.0.0']));
+
+    expect($removed)->toBe(1)
+        ->and($this->billing->versions()->count())->toBe(0)
+        ->and($this->crm->versions()->pluck('version')->all())->toBe(['1.0.0']);
 });
 
 it('keeps the shared versions and those of each package\'s own tags', function () {

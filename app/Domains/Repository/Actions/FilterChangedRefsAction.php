@@ -25,17 +25,21 @@ class FilterChangedRefsAction
      *
      * With a tag format, tags that release nothing are dropped, and each ref is
      * compared with the versions it created itself: several packages can share
-     * a version string, each from a tag of its own.
+     * a version string, each from a tag of its own. A shared tag also counts as
+     * changed when a package's own tag of its version was deleted, so the shared
+     * tag releases that package again.
      */
     public function handle(RefsCollectionData $refs, Repository $repository): RefsCollectionData
     {
         $format = TagFormat::forRepository($repository);
+        $refNames = collect($refs->all->toCollection())->pluck('name')->all();
 
         if ($format !== null) {
             $refs = $this->withoutIgnoredTags($refs, $format);
         }
 
-        $existingVersions = $this->getExistingVersionLookup($repository, groupBySourceTag: $format !== null);
+        $existing = $this->getExistingVersions($repository);
+        $existingVersions = $existing->groupBy($format !== null ? 'sourceTag' : 'version');
         $emptyRefs = $repository->emptyRefs()->pluck('commit', 'name');
 
         // Nothing synced yet, so every ref is new
@@ -43,7 +47,14 @@ class FilterChangedRefsAction
             return $refs;
         }
 
-        $filterChanged = fn (RefData $ref): bool => $this->hasChanged($ref, $existingVersions, $emptyRefs, $format !== null);
+        $orphanedVersions = $format === null ? [] : $existing
+            ->filter(fn (ExistingVersionData $version) => $version->sourceTag !== null && ! in_array($version->sourceTag, $refNames, true))
+            ->pluck('version')
+            ->unique()
+            ->all();
+
+        $filterChanged = fn (RefData $ref): bool => $this->hasChanged($ref, $existingVersions, $emptyRefs, $format)
+            || $this->releasesOrphanedVersion($ref, $format, $orphanedVersions);
 
         $filteredTags = collect($refs->tags->toCollection())->filter($filterChanged)->values();
         $filteredBranches = collect($refs->branches->toCollection())->filter($filterChanged)->values();
@@ -71,13 +82,26 @@ class FilterChangedRefsAction
     }
 
     /**
-     * Existing package versions grouped by version string, or by the ref that
-     * created them. A monorepo yields one row per package for the same tag, so
-     * the lookup keeps all of them.
-     *
-     * @return Collection<string, Collection<int, ExistingVersionData>>
+     * @param  array<int, string>  $orphanedVersions
      */
-    protected function getExistingVersionLookup(Repository $repository, bool $groupBySourceTag = false): Collection
+    protected function releasesOrphanedVersion(RefData $ref, ?TagFormat $format, array $orphanedVersions): bool
+    {
+        if ($format === null || $orphanedVersions === []) {
+            return false;
+        }
+
+        $target = TagFormat::target($format, $ref);
+
+        return $target !== null && $target->isShared() && in_array($target->version, $orphanedVersions, true);
+    }
+
+    /**
+     * Existing package versions. A monorepo yields one row per package for the
+     * same tag, so all of them are kept.
+     *
+     * @return Collection<int, ExistingVersionData>
+     */
+    protected function getExistingVersions(Repository $repository): Collection
     {
         $packageUuids = $repository->packages()->pluck('uuid');
 
@@ -96,8 +120,7 @@ class FilterChangedRefsAction
                 sourceReference: (string) $pv->source_reference,
                 distFailed: $retryFailedDists && $pv->dist_failed_at !== null,
                 sourceTag: $pv->source_tag,
-            ))
-            ->groupBy($groupBySourceTag ? 'sourceTag' : 'version');
+            ));
     }
 
     /**
@@ -109,9 +132,9 @@ class FilterChangedRefsAction
      * @param  Collection<string, Collection<int, ExistingVersionData>>  $existingVersions
      * @param  Collection<string, string>  $emptyRefs
      */
-    protected function hasChanged(RefData $ref, Collection $existingVersions, Collection $emptyRefs, bool $groupedBySourceTag): bool
+    protected function hasChanged(RefData $ref, Collection $existingVersions, Collection $emptyRefs, ?TagFormat $format): bool
     {
-        $existing = $existingVersions->get($groupedBySourceTag ? $ref->name : ComposerMetadataData::extractVersion($ref->name));
+        $existing = $existingVersions->get($format !== null ? $ref->name : ComposerMetadataData::extractVersion($ref->name));
 
         if ($existing === null || $existing->isEmpty()) {
             return $emptyRefs->get($ref->name) !== $ref->commit;

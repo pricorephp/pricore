@@ -41,6 +41,8 @@ it('splits tags into the package and its version', function (string $template, s
     'version first' => ['{version}-{package}', '1.0.0-billing', ['billing', '1.0.0']],
     'plain version stays shared' => ['{package}-{version}', 'v1.0.0', [null, 'v1.0.0']],
     'loose version stays shared' => ['{package}@{version}', 'v1.0.0-hotfix', [null, 'v1.0.0-hotfix']],
+    'dev version' => ['{package}@{version}', 'billing@1.2.0-dev', ['billing', '1.2.0-dev']],
+    'pre-release dev version' => ['{package}@{version}', 'billing@1.2.0-beta1-dev', ['billing', '1.2.0-beta1-dev']],
     'other tags release nothing' => ['{package}@{version}', 'nightly', null],
 ]);
 

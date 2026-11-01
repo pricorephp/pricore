@@ -2,6 +2,7 @@
 
 namespace App\Domains\Repository\Jobs;
 
+use App\Domains\Repository\Actions\ClaimSharedVersionsAction;
 use App\Domains\Repository\Actions\CollectRefsAction;
 use App\Domains\Repository\Actions\CreateGitCloneAction;
 use App\Domains\Repository\Actions\CreateSyncLogAction;
@@ -64,6 +65,7 @@ class SyncRepositoryJob implements ShouldBeUnique, ShouldQueue
     public function handle(
         CreateSyncLogAction $createSyncLogAction,
         CollectRefsAction $collectRefsAction,
+        ClaimSharedVersionsAction $claimSharedVersionsAction,
         CreateGitCloneAction $createGitCloneAction,
         FilterChangedRefsAction $filterChangedRefsAction,
         RemoveStaleVersionsAction $removeStaleVersionsAction,
@@ -87,7 +89,7 @@ class SyncRepositoryJob implements ShouldBeUnique, ShouldQueue
 
             $this->validateProvider($provider);
 
-            $refs = $collectRefsAction->handle($provider);
+            $refs = $claimSharedVersionsAction->handle($this->repository, $collectRefsAction->handle($provider));
 
             // Read as late as possible: a request made while this job was queued
             // could not queue a job of its own, as this one holds the unique lock
