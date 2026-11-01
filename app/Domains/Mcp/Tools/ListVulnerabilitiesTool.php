@@ -25,6 +25,8 @@ class ListVulnerabilitiesTool extends Tool
 {
     use InteractsWithOrganization;
 
+    protected const LIMIT = 200;
+
     public function __construct(
         protected CollectRelevantVersionUuidsAction $collectRelevantVersionUuidsAction,
     ) {}
@@ -38,23 +40,35 @@ class ListVulnerabilitiesTool extends Tool
             'severity' => ['nullable', Rule::enum(AdvisorySeverity::class)],
         ]);
 
+        // Sort before limiting so the most severe advisories are never the ones cut off
         $matches = SecurityAdvisoryMatch::query()
+            ->select('security_advisory_matches.*')
+            ->join('security_advisories', 'security_advisories.uuid', '=', 'security_advisory_matches.security_advisory_uuid')
             ->with(['advisory', 'packageVersion.package'])
-            ->whereIn('package_version_uuid', $this->collectRelevantVersionUuidsAction->handle($organization))
+            ->whereIn('security_advisory_matches.package_version_uuid', $this->collectRelevantVersionUuidsAction->handle($organization))
             ->when($validated['package'] ?? null, fn (Builder $query, string $package) => $query
                 ->whereHas('packageVersion.package', fn (Builder $query) => $query->where('name', $package)))
             ->when($validated['severity'] ?? null, fn (Builder $query, string $severity) => $query
-                ->whereHas('advisory', fn (Builder $query) => $query->where('severity', $severity)))
-            ->limit(200)
-            ->get()
-            ->sortByDesc(fn (SecurityAdvisoryMatch $match): int => $match->advisory->severity->weight());
+                ->where('security_advisories.severity', $severity))
+            ->tap(function (Builder $query) {
+                $severities = collect(AdvisorySeverity::cases())->sortByDesc(fn (AdvisorySeverity $severity) => $severity->weight());
+
+                foreach ($severities as $severity) {
+                    $query->orderByRaw('security_advisories.severity = ? DESC', [$severity->value]);
+                }
+            })
+            ->orderBy('security_advisory_matches.uuid')
+            ->limit(self::LIMIT + 1)
+            ->get();
 
         if ($matches->isEmpty()) {
             return Response::text('No known vulnerabilities affect these packages.');
         }
 
-        return Response::structured([
-            'vulnerabilities' => $matches->map(fn (SecurityAdvisoryMatch $match): array => [
+        $truncated = $matches->count() > self::LIMIT;
+
+        return Response::structured(array_filter([
+            'vulnerabilities' => $matches->take(self::LIMIT)->map(fn (SecurityAdvisoryMatch $match): array => [
                 'package' => $match->packageVersion->package->name,
                 'version' => $match->packageVersion->version,
                 'match_type' => $match->match_type->value,
@@ -66,7 +80,11 @@ class ListVulnerabilitiesTool extends Tool
                 'cve' => $match->advisory->cve,
                 'link' => $match->advisory->link,
             ])->values()->all(),
-        ]);
+            'truncated' => $truncated,
+            'note' => $truncated
+                ? 'Only the '.self::LIMIT.' most severe matches are shown. Filter by package or severity to see the rest.'
+                : null,
+        ], fn (mixed $value): bool => $value !== null));
     }
 
     /**

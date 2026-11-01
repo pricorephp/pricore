@@ -73,3 +73,13 @@ it('does not revoke apps authorized by other users', function () {
 
     expect($otherToken->fresh()->revoked)->toBeFalse();
 });
+
+it('is not available when MCP is disabled', function () {
+    config(['pricore.mcp.enabled' => false]);
+    $token = issueMcpToken($this->user, $this->client);
+
+    actingAs($this->user)->get(route('settings.connected-apps.index'))->assertNotFound();
+    actingAs($this->user)->delete(route('settings.connected-apps.destroy', $this->client->getKey()))->assertNotFound();
+
+    expect($token->fresh()->revoked)->toBeFalse();
+});

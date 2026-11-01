@@ -18,6 +18,8 @@ class ConnectedAppController extends Controller
 {
     public function index(Request $request): Response
     {
+        abort_unless(config('pricore.mcp.enabled'), 404);
+
         /** @var User $user */
         $user = $request->user();
 
@@ -47,6 +49,8 @@ class ConnectedAppController extends Controller
 
     public function destroy(Request $request, string $client): RedirectResponse
     {
+        abort_unless(config('pricore.mcp.enabled'), 404);
+
         /** @var User $user */
         $user = $request->user();
 

@@ -1,6 +1,8 @@
 <?php
 
 use App\Models\User;
+use App\Providers\McpServiceProvider;
+use Illuminate\Routing\RouteCollection;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
@@ -128,7 +130,9 @@ it('completes the authorization code flow and accepts the issued token', functio
             $page->component('auth/authorize-mcp')
                 ->where('client.id', $clientId)
                 ->where('client.name', 'Claude Code')
-                ->where('redirectHost', 'localhost:33418');
+                ->where('redirectHost', 'localhost:33418')
+                ->where('approveUrl', url('/oauth/authorize'))
+                ->where('denyUrl', url('/oauth/authorize'));
 
             $authToken = $page->toArray()['props']['authToken'];
         });
@@ -185,15 +189,17 @@ it('returns to the client with an error when the user denies access', function (
 });
 
 it('serves neither MCP nor OAuth routes when disabled', function () {
-    $_ENV['MCP_ENABLED'] = $_SERVER['MCP_ENABLED'] = 'false';
-    $this->refreshApplication();
+    config(['pricore.mcp.enabled' => false]);
+    Route::setRoutes(new RouteCollection);
 
     try {
-        expect(Route::has('mcp'))->toBeFalse()
-            ->and(Route::has('mcp.oauth.register'))->toBeFalse()
-            ->and(Route::has('passport.authorizations.authorize'))->toBeFalse();
+        (new McpServiceProvider(app()))->register();
+        require base_path('routes/ai.php');
+
+        expect(Passport::$registersRoutes)->toBeFalse()
+            ->and(Route::has('mcp'))->toBeFalse()
+            ->and(Route::has('mcp.oauth.register'))->toBeFalse();
     } finally {
-        unset($_ENV['MCP_ENABLED'], $_SERVER['MCP_ENABLED']);
         Passport::$registersRoutes = true;
     }
 });

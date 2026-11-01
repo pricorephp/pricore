@@ -60,6 +60,9 @@ class McpServiceProvider extends ServiceProvider
             'redirectHost' => is_string($redirectUri) ? $this->redirectHost($redirectUri) : null,
             'authToken' => $authToken,
             'csrfToken' => csrf_token(),
+            // Passport's routes are absent when MCP is disabled, so Wayfinder cannot generate helpers for them
+            'approveUrl' => route('passport.authorizations.approve'),
+            'denyUrl' => route('passport.authorizations.deny'),
         ])->toResponse(request());
     }
 

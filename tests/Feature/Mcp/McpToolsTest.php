@@ -151,6 +151,28 @@ it('lists vulnerabilities of the latest stable versions, filtered by severity', 
             ->etc());
 });
 
+it('keeps the most severe vulnerabilities when results are truncated', function () {
+    $user = mcpMemberOf($this->organization);
+    $latest = PackageVersion::factory()->forPackage($this->package)->create(['version' => '2.0.0', 'normalized_version' => '2.0.0.0']);
+
+    SecurityAdvisory::factory()->count(200)->severity(AdvisorySeverity::Low)->create()
+        ->each(fn (SecurityAdvisory $advisory) => SecurityAdvisoryMatch::factory()
+            ->for($advisory, 'advisory')
+            ->create(['package_version_uuid' => $latest->uuid]));
+    SecurityAdvisoryMatch::factory()
+        ->for(SecurityAdvisory::factory()->severity(AdvisorySeverity::Critical)->create(['title' => 'Remote code execution']), 'advisory')
+        ->create(['package_version_uuid' => $latest->uuid]);
+
+    PricoreServer::actingAs($user)
+        ->tool(ListVulnerabilitiesTool::class, ['organization' => 'acme'])
+        ->assertOk()
+        ->assertStructuredContent(fn (AssertableJson $json) => $json
+            ->has('vulnerabilities', 200)
+            ->where('vulnerabilities.0.title', 'Remote code execution')
+            ->where('truncated', true)
+            ->has('note'));
+});
+
 it('lists repositories with their packages', function () {
     $user = mcpMemberOf($this->organization);
 

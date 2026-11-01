@@ -1,6 +1,5 @@
 import { Button } from '@/components/ui/button';
 import AuthLayout from '@/layouts/auth-layout';
-import { approve, deny } from '@/routes/passport/authorizations';
 import { type SharedData } from '@/types';
 import { Head, usePage } from '@inertiajs/react';
 import { Check } from 'lucide-react';
@@ -13,6 +12,8 @@ interface AuthorizeMcpProps {
     redirectHost: string | null;
     authToken: string;
     csrfToken: string;
+    approveUrl: string;
+    denyUrl: string;
 }
 
 const permissions = [
@@ -57,6 +58,8 @@ export default function AuthorizeMcp({
     redirectHost,
     authToken,
     csrfToken,
+    approveUrl,
+    denyUrl,
 }: AuthorizeMcpProps) {
     const { auth } = usePage<SharedData>().props;
 
@@ -107,7 +110,7 @@ export default function AuthorizeMcp({
 
                 <div className="flex gap-3">
                     <AuthorizationForm
-                        action={deny.url()}
+                        action={denyUrl}
                         method="delete"
                         clientId={client.id}
                         authToken={authToken}
@@ -124,7 +127,7 @@ export default function AuthorizeMcp({
                     </AuthorizationForm>
 
                     <AuthorizationForm
-                        action={approve.url()}
+                        action={approveUrl}
                         method="post"
                         clientId={client.id}
                         authToken={authToken}
