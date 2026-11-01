@@ -1895,7 +1895,8 @@
             },
             "patch": {
                 "operationId": "v1.repositories.update",
-                "summary": "Update a repository's monorepo package paths. Omit `package_paths` to leave them\nas they are, or send `null` to read the package from the repository root. Packages\noutside the new paths are removed and a full sync is started",
+                "description": "`tag_format` describes tags that release a single package, such as `{package}@{version}`\nor `{path}/{version}`. Send `null` to treat every tag as a release of all packages.",
+                "summary": "Update a repository's monorepo package paths and tag format. Omit `package_paths` to\nleave them as they are, or send `null` to read the package from the repository root.\nPackages outside the new paths are removed and a full sync is started",
                 "tags": [
                     "Repository"
                 ],
@@ -3422,6 +3423,12 @@
                             "type": "string"
                         }
                     },
+                    "tagFormat": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
                     "supportsWebhooks": {
                         "type": "boolean"
                     },
@@ -3456,6 +3463,7 @@
                     "lastSyncedAt",
                     "packagesCount",
                     "packagePaths",
+                    "tagFormat",
                     "supportsWebhooks",
                     "supportsAutomaticWebhooks",
                     "webhookActive",
@@ -3734,6 +3742,13 @@
                             "maxLength": 255
                         },
                         "maxItems": 50
+                    },
+                    "tag_format": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 255
                     }
                 },
                 "title": "UpdateRepositoryRequest"

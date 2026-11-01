@@ -16,6 +16,7 @@ use App\Domains\Repository\Http\Controllers\Api\RepositorySuggestionController;
 use App\Domains\Repository\Http\Controllers\RepositoryController;
 use App\Domains\Repository\Http\Controllers\SyncRepositoryController;
 use App\Domains\Repository\Http\Controllers\SyncWebhookController;
+use App\Domains\Repository\Http\Controllers\TagFormatPreviewController;
 use App\Domains\Security\Http\Controllers\ScanSecurityController;
 use App\Domains\Security\Http\Controllers\SecurityOverviewController;
 use App\Domains\Security\Http\Controllers\SecuritySettingsController;
@@ -69,6 +70,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('organizations/{organization:slug}/repositories/owners', [RepositorySuggestionController::class, 'owners'])->name('organizations.repositories.owners');
         Route::get('organizations/{organization:slug}/repositories/{repository:uuid}', [RepositoryController::class, 'show'])->name('organizations.repositories.show');
         Route::get('organizations/{organization:slug}/repositories/{repository:uuid}/edit', [RepositoryController::class, 'edit'])->name('organizations.repositories.edit');
+        Route::get('organizations/{organization:slug}/repositories/{repository:uuid}/tag-format-preview', TagFormatPreviewController::class)->name('organizations.repositories.tag-format-preview');
         Route::patch('organizations/{organization:slug}/repositories/{repository:uuid}', [RepositoryController::class, 'update'])->name('organizations.repositories.update');
         Route::delete('organizations/{organization:slug}/repositories/{repository:uuid}', [RepositoryController::class, 'destroy'])->name('organizations.repositories.destroy');
         Route::post('organizations/{organization:slug}/repositories/{repository:uuid}/sync', SyncRepositoryController::class)->name('organizations.repositories.sync');

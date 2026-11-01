@@ -10,6 +10,7 @@ use App\Domains\Repository\Actions\DeleteWebhookAction;
 use App\Domains\Repository\Actions\PurgeDistArchiveFilesTask;
 use App\Domains\Repository\Actions\RequestRepositorySyncAction;
 use App\Domains\Repository\Actions\UpdatePackagePathsAction;
+use App\Domains\Repository\Actions\UpdateTagFormatAction;
 use App\Domains\Repository\Contracts\Data\BulkImportResultData;
 use App\Domains\Repository\Contracts\Data\RepositoryData;
 use App\Domains\Repository\Contracts\Enums\GitProvider;
@@ -113,17 +114,24 @@ class RepositoryController extends ApiController
     }
 
     /**
-     * Update a repository's monorepo package paths. Omit `package_paths` to leave them
-     * as they are, or send `null` to read the package from the repository root. Packages
-     * outside the new paths are removed and a full sync is started.
+     * Update a repository's monorepo package paths and tag format. Omit `package_paths` to
+     * leave them as they are, or send `null` to read the package from the repository root.
+     * Packages outside the new paths are removed and a full sync is started.
+     *
+     * `tag_format` describes tags that release a single package, such as `{package}@{version}`
+     * or `{path}/{version}`. Send `null` to treat every tag as a release of all packages.
      */
-    public function update(UpdateRepositoryRequest $request, Organization $organization, Repository $repository, UpdatePackagePathsAction $updatePackagePathsAction): RepositoryData
+    public function update(UpdateRepositoryRequest $request, Organization $organization, Repository $repository, UpdatePackagePathsAction $updatePackagePathsAction, UpdateTagFormatAction $updateTagFormatAction): RepositoryData
     {
         $this->authorize('deleteRepository', $organization);
         $this->ensureBelongsToOrganization($organization, $repository);
 
         if ($request->has('package_paths')) {
             $updatePackagePathsAction->handle($repository, $request->packagePaths(), $request->user());
+        }
+
+        if ($request->has('tag_format')) {
+            $updateTagFormatAction->handle($repository, $request->validated('tag_format'));
         }
 
         return RepositoryData::fromModel($repository->refresh()->loadCount('packages'), includeWebhookSecret: true);

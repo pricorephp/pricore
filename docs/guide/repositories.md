@@ -70,14 +70,38 @@ When package paths are configured, the root `composer.json` is only synced if `.
 
 How monorepo packages behave:
 
-- Every tag and branch is read once per package, so tag `v1.2.0` produces version `v1.2.0` for each package present at that tag. A package that does not exist yet at an older tag has no version there.
+- Every branch, and every version tag such as `v1.2.0`, is read once per package and produces that version for each package present at it. A package that does not exist yet at an older tag has no version there.
 - A package that disappears from a branch loses that branch's version; its other versions are kept. A `composer.json` that fails to parse leaves the existing version untouched.
 - Packages read from a subdirectory are installed from Pricore's dist archives only, because Composer cannot check out a subdirectory from Git. A version is offered to Composer once its archive is built, so keep [dist archives](/guide/dist-mirroring) enabled for these packages.
 - Saving different package paths starts a full sync, or queues one if a sync is already running. Packages with no versions left under the selected paths are removed from Pricore together with their versions and archives. A package that moved directories keeps the versions that are still selected.
 
-::: tip
-Per-package tag prefixes such as `billing/v1.2.0` are not supported. Tag the monorepo once per release.
-:::
+### Releasing Packages Separately
+
+To version packages independently, set a **tag format** on the repository's **Edit** page. A tag in that format releases only the package it names, at the version that follows:
+
+| Format | Tag | Releases |
+|--------|-----|----------|
+| `{package}@{version}` | `billing@1.2.0` | `acme/billing` at `1.2.0` |
+| `{path}/{version}` | `packages/billing/v1.2.0` | the package in `packages/billing` at `v1.2.0` |
+| `{package}-{version}` | `billing-v1.2.0` | `acme/billing` at `v1.2.0` |
+| `release/{name}/{version}` | `release/acme/billing/1.2.0` | `acme/billing` at `1.2.0` |
+
+A format holds `{version}` and one of these placeholders, with at least one character between them:
+
+| Placeholder | Stands for |
+|-------------|------------|
+| `{package}` | The Composer name without the vendor, such as `billing` |
+| `{name}` | The full Composer name, such as `acme/billing` |
+| `{path}` | The package directory, such as `packages/billing` |
+
+These conventions match common release tools: `{package}@{version}` is what Changesets, Lerna and Nx create, `{package}-{version}` matches release-please, and `{path}/{version}` is the Go modules style.
+
+- Plain version tags such as `v2.0.0` keep releasing every package, so lockstep and independent releases can be combined. When a package gets the same version from both, its own tag wins.
+- Branches stay shared: `main` produces `dev-main` for every package.
+- Tags that are neither a version nor in the format are ignored.
+- The edit page previews which package and version the repository's recent tags release before you save.
+- Saving a different format starts a full sync. Versions created from tags that no longer fit are removed.
+- The format can also be set through the [REST API](/api/) with the `tag_format` field when updating a repository.
 
 ## Webhook Configuration
 

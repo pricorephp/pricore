@@ -26,6 +26,7 @@ use Illuminate\Support\Carbon;
  * @property string|null $custom_base_url
  * @property string|null $default_branch
  * @property array<int, string>|null $package_paths
+ * @property string|null $tag_format
  * @property Carbon|null $full_sync_requested_at
  * @property Carbon|null $sync_requested_at
  * @property string|null $webhook_id

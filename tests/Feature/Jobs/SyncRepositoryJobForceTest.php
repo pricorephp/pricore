@@ -1,5 +1,6 @@
 <?php
 
+use App\Domains\Repository\Actions\ClaimSharedVersionsAction;
 use App\Domains\Repository\Actions\CollectRefsAction;
 use App\Domains\Repository\Actions\CreateGitCloneAction;
 use App\Domains\Repository\Actions\CreateSyncLogAction;
@@ -43,6 +44,7 @@ beforeEach(function () {
     $this->runJob = fn (bool $force) => (new SyncRepositoryJob($this->repository, force: $force))->handle(
         app(CreateSyncLogAction::class),
         app(CollectRefsAction::class),
+        app(ClaimSharedVersionsAction::class),
         app(CreateGitCloneAction::class),
         app(FilterChangedRefsAction::class),
         app(RemoveStaleVersionsAction::class),

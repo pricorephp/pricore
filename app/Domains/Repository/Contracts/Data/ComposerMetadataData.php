@@ -23,12 +23,16 @@ class ComposerMetadataData extends Data
     /**
      * Create instance from composer.json content.
      */
-    public static function fromComposerJson(string $composerJsonContent, string $ref): self
+    /**
+     * The version comes from the ref name, unless the caller already derived it,
+     * such as from a tag that releases a single package of a monorepo.
+     */
+    public static function fromComposerJson(string $composerJsonContent, string $ref, ?string $version = null): self
     {
         $data = self::decodeJson($composerJsonContent);
         self::validateRequiredFields($data);
 
-        $version = self::extractVersion($ref);
+        $version ??= self::extractVersion($ref);
         $normalizedVersion = self::normalizeVersion($version);
 
         return new self(
