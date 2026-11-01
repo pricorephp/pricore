@@ -29,8 +29,9 @@ Pricore supports two types of tokens:
 3. Enter a descriptive name (e.g., "CI Pipeline", "Production Deploy")
 4. Select an expiration period (never, 30 days, 90 days, or 1 year)
 5. Enable **Allow publishing packages** only if the token needs to [upload package versions](/guide/packages#publishing-from-ci)
-6. Click **Create**
-7. **Copy the token immediately** — it won't be shown again
+6. Optionally pick [REST API](/api/) permissions under **API access**
+7. Click **Create**
+8. **Copy the token immediately** — it won't be shown again
 
 ### Personal Token
 
@@ -38,21 +39,23 @@ Pricore supports two types of tokens:
 2. Click **Create Token**
 3. Enter a name for the token
 4. Select an expiration period
-5. Click **Create**
-6. Copy and store the token securely
+5. Optionally enable **Allow publishing packages**, or pick [REST API](/api/) permissions under **API access**
+6. Click **Create**
+7. Copy and store the token securely
 
 After creation, a dialog shows the plain token along with a pre-filled Composer command you can copy directly.
 
 ## Token Permissions
 
-Every token can install all packages of the organizations it has access to. Tokens can additionally be allowed to publish:
+Every token can install all packages of the organizations it has access to. Tokens can additionally be allowed to publish, or to use the [REST API](/api/#scopes):
 
-| Permission | Allows |
-|------------|--------|
-| Read (always) | Installing packages with Composer |
-| Publish | Uploading versions of [uploaded packages](/guide/packages#from-an-archive-upload) through the API |
+| Permission | Scope | Allows |
+|------------|-------|--------|
+| Install (always) | `composer` | Installing packages with Composer |
+| Publish | `write:packages` | Uploading versions of [uploaded packages](/guide/packages#from-an-archive-upload) |
+| API access | `read:*`, `write:*`, `delete:*` | Managing Pricore through the [REST API](/api/) |
 
-Tokens are read-only unless **Allow publishing packages** was enabled when they were created, and the permission can't be added later: create a new token instead. A personal token can only publish while its owner is an owner or admin of the organization.
+Tokens can only install packages unless more was enabled. You can change a token's name and permissions later with the edit button in the token list; the token value stays the same. A personal token can only publish while its owner is an owner or admin of the organization.
 
 ::: warning
 Anyone holding a publishing token can publish new versions of your uploaded packages. Use a dedicated organization token per pipeline, store it as a CI secret, and revoke it if it may have leaked. Uploads made with a token show up in the organization's activity feed with the token's name.

@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Domains\Organization\Contracts\Enums\OrganizationRole;
+use App\Domains\Token\Contracts\Enums\TokenScope;
 use App\Models\AccessToken;
 use App\Models\Organization;
 use App\Models\OrganizationUser;
@@ -247,36 +248,36 @@ class DatabaseSeeder extends Seeder
         // Organization tokens
         AccessToken::factory()
             ->forOrganization($org1)
-            ->withScopes(['read', 'write'])
+            ->withScopes([TokenScope::Composer, TokenScope::WritePackages])
             ->recentlyUsed()
             ->create(['name' => 'CI/CD Token']);
 
         AccessToken::factory()
             ->forOrganization($org1)
-            ->withScopes(['read'])
+            ->withScopes([TokenScope::Composer])
             ->create(['name' => 'Read-only Token']);
 
         AccessToken::factory()
             ->forOrganization($org2)
-            ->withScopes(['read', 'write', 'admin'])
+            ->withScopes(TokenScope::cases())
             ->create(['name' => 'Admin Token']);
 
         AccessToken::factory()
             ->forOrganization($org3)
-            ->withScopes(['read'])
+            ->withScopes([TokenScope::Composer])
             ->neverExpires()
             ->create(['name' => 'Production Token']);
 
         // User tokens
         AccessToken::factory()
             ->forUser($testUser)
-            ->withScopes(['read', 'write'])
+            ->withScopes([TokenScope::Composer, TokenScope::WritePackages])
             ->recentlyUsed()
             ->create(['name' => 'Personal Token']);
 
         AccessToken::factory()
             ->forUser($users[0])
-            ->withScopes(['read'])
+            ->withScopes([TokenScope::Composer])
             ->create(['name' => 'Dev Token']);
     }
 }

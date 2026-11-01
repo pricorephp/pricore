@@ -1,11 +1,13 @@
 <?php
 
+use App\Http\Middleware\ApiTokenAuth;
 use App\Http\Middleware\ComposerTokenAuth;
 use App\Http\Middleware\EnsureOrganizationMembership;
 use App\Http\Middleware\EnsureTokenCanPublish;
 use App\Http\Middleware\ForceJsonResponse;
 use App\Http\Middleware\HandleAppearance;
 use App\Http\Middleware\HandleInertiaRequests;
+use App\Http\Middleware\RequireTokenScope;
 use App\Http\Middleware\TrackOrganizationAccess;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -23,6 +25,11 @@ return Application::configure(basePath: dirname(__DIR__))
         channels: __DIR__.'/../routes/channels.php',
         health: '/up',
         then: function () {
+            Route::middleware('api')
+                ->prefix('api/v1')
+                ->name('api.v1.')
+                ->group(base_path('routes/api.php'));
+
             Route::middleware('api')
                 ->group(base_path('routes/composer.php'));
 
@@ -55,6 +62,8 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->alias([
             'composer.token' => ComposerTokenAuth::class,
+            'api.token' => ApiTokenAuth::class,
+            'scope' => RequireTokenScope::class,
             'json' => ForceJsonResponse::class,
             'organization.member' => EnsureOrganizationMembership::class,
             'track.organization' => TrackOrganizationAccess::class,

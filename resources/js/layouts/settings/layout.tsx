@@ -47,7 +47,7 @@ const sidebarNavItems: NavItem[] = [
         icon: GitBranch,
     },
     {
-        title: 'Tokens',
+        title: 'Access Tokens',
         href: tokensIndex(),
         icon: Key,
     },

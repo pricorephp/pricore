@@ -18,7 +18,7 @@ createdAt: string | null,
 };
 }
 namespace Enums {
-export type ActivityType = 'repository.added' | 'repository.removed' | 'repository.synced' | 'repository.sync_failed' | 'package.created' | 'package.removed' | 'package.version_uploaded' | 'member.added' | 'member.removed' | 'member.role_changed' | 'invitation.sent' | 'token.created' | 'token.revoked' | 'ssh_key.generated' | 'ssh_key.deleted' | 'mirror.added' | 'mirror.removed' | 'mirror.synced' | 'mirror.sync_failed' | 'security.vulnerabilities_detected';
+export type ActivityType = 'repository.added' | 'repository.removed' | 'repository.synced' | 'repository.sync_failed' | 'package.created' | 'package.removed' | 'package.version_uploaded' | 'member.added' | 'member.removed' | 'member.role_changed' | 'invitation.sent' | 'token.created' | 'token.updated' | 'token.revoked' | 'ssh_key.generated' | 'ssh_key.deleted' | 'mirror.added' | 'mirror.removed' | 'mirror.synced' | 'mirror.sync_failed' | 'security.vulnerabilities_detected';
 }
 }
 }
@@ -383,6 +383,7 @@ updated: number,
 skipped: number,
 removed: number,
 packagesFound: number,
+empty: boolean,
 };
 export type SyncResultData = {
 added: number,
@@ -496,16 +497,18 @@ canPublish: boolean,
 lastUsedAt: string | null,
 expiresAt: string | null,
 createdAt: string,
+scopes: string[],
 };
 export type TokenCreatedData = {
 plainToken: string,
 name: string,
 expiresAt: string | null,
 organizationUuid: string | null,
+scopes: string[],
 };
 }
 namespace Enums {
-export type TokenScope = 'read' | 'write';
+export type TokenScope = 'composer' | 'read:organizations' | 'write:organizations' | 'delete:organizations' | 'read:repositories' | 'write:repositories' | 'delete:repositories' | 'read:packages' | 'write:packages' | 'delete:packages' | 'read:members' | 'write:members' | 'read:mirrors' | 'write:mirrors' | 'delete:mirrors' | 'read:tokens' | 'write:tokens';
 }
 }
 }

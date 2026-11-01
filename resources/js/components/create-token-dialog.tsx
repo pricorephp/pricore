@@ -1,5 +1,5 @@
+import TokenScopeFields from '@/components/token-scope-fields';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
 import {
     Dialog,
     DialogContent,
@@ -22,6 +22,7 @@ import { Form } from '@inertiajs/react';
 interface CreateTokenDialogProps {
     storeUrl: string;
     description: string;
+    isOrganizationToken: boolean;
     isOpen: boolean;
     onClose: () => void;
 }
@@ -29,18 +30,19 @@ interface CreateTokenDialogProps {
 export default function CreateTokenDialog({
     storeUrl,
     description,
+    isOrganizationToken,
     isOpen,
     onClose,
 }: CreateTokenDialogProps) {
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent>
+            <DialogContent className="max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                     <DialogTitle>Create Access Token</DialogTitle>
                     <DialogDescription>{description}</DialogDescription>
                 </DialogHeader>
 
-                <Form action={storeUrl} method="post" className="space-y-4">
+                <Form action={storeUrl} method="post" className="space-y-5">
                     {({ processing, errors }) => (
                         <>
                             <div className="grid space-y-2">
@@ -52,7 +54,7 @@ export default function CreateTokenDialog({
                                     id="name"
                                     name="name"
                                     required
-                                    placeholder="My API Token"
+                                    placeholder="e.g. Production server"
                                     autoFocus
                                 />
                                 {errors.name && (
@@ -92,32 +94,11 @@ export default function CreateTokenDialog({
                                 )}
                             </div>
 
-                            <div className="flex items-start gap-2">
-                                <input
-                                    type="hidden"
-                                    name="can_publish"
-                                    value="0"
-                                />
-                                <Checkbox
-                                    id="can_publish"
-                                    name="can_publish"
-                                    value="1"
-                                    className="mt-0.5"
-                                />
-                                <div className="grid gap-0.5">
-                                    <Label
-                                        htmlFor="can_publish"
-                                        className="font-normal"
-                                    >
-                                        Allow publishing packages
-                                    </Label>
-                                    <p className="text-sm text-muted-foreground">
-                                        Lets this token upload new versions of
-                                        uploaded packages, for example from CI.
-                                        Only enable it where it's needed.
-                                    </p>
-                                </div>
-                            </div>
+                            <TokenScopeFields
+                                idPrefix="scope"
+                                isOrganizationToken={isOrganizationToken}
+                                error={errors.scopes}
+                            />
 
                             <DialogFooter>
                                 <Button

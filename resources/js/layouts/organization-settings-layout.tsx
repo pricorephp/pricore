@@ -56,7 +56,7 @@ function SettingsContent({ children }: PropsWithChildren) {
                 label: 'Registry',
                 items: [
                     {
-                        title: 'Composer Tokens',
+                        title: 'Access Tokens',
                         href: `${base}/tokens`,
                         icon: Key,
                     },
@@ -177,7 +177,7 @@ function SettingsContent({ children }: PropsWithChildren) {
 const settingsPageTitles: Record<string, string> = {
     general: 'General',
     members: 'Members',
-    tokens: 'Composer Tokens',
+    tokens: 'Access Tokens',
     'ssh-keys': 'SSH Keys',
     mirrors: 'Registry Mirrors',
     security: 'Security',

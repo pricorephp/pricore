@@ -94,15 +94,27 @@ class AccessToken extends Model
     }
 
     /**
-     * Tokens created before scopes were enforced have none stored and can only read.
+     * Tokens created before scopes were enforced have none stored and can only install packages.
      */
     public function hasScope(TokenScope $scope): bool
     {
-        if ($scope === TokenScope::Read) {
-            return true;
+        return in_array($scope->value, $this->scopes ?? [TokenScope::Composer->value], true);
+    }
+
+    public function hasApiAccess(): bool
+    {
+        return $this->hasAnyScope(...array_filter(TokenScope::cases(), fn (TokenScope $scope) => $scope->isApiScope()));
+    }
+
+    public function hasAnyScope(TokenScope ...$scopes): bool
+    {
+        foreach ($scopes as $scope) {
+            if ($this->hasScope($scope)) {
+                return true;
+            }
         }
 
-        return in_array($scope->value, $this->scopes ?? [], true);
+        return false;
     }
 
     public function markAsUsed(): void

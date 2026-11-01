@@ -1,6 +1,12 @@
 <?php
 
+use App\Domains\Organization\Contracts\Enums\OrganizationRole;
+use App\Domains\Token\Contracts\Enums\TokenScope;
+use App\Models\AccessToken;
+use App\Models\Organization;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Str;
 use Tests\TestCase;
 
 /*
@@ -47,6 +53,55 @@ expect()->extend('toBeOne', function () {
 function something()
 {
     // ..
+}
+
+/**
+ * Attach a user to an organization with the given role.
+ */
+function joinOrganization(Organization $organization, User $user, OrganizationRole $role = OrganizationRole::Member): void
+{
+    $organization->members()->attach($user->uuid, [
+        'uuid' => (string) Str::uuid(),
+        'role' => $role->value,
+    ]);
+}
+
+/**
+ * Create a personal access token for a user and return its plaintext value.
+ *
+ * @param  array<int, TokenScope>|null  $scopes  Null grants every scope.
+ */
+function personalAccessToken(User $user, ?array $scopes = null): string
+{
+    $plain = 'pat-'.Str::random(48);
+
+    AccessToken::factory()
+        ->forUser($user)
+        ->withPlainToken($plain)
+        ->neverExpires()
+        ->withScopes($scopes ?? TokenScope::cases())
+        ->create();
+
+    return $plain;
+}
+
+/**
+ * Create an organization-scoped access token and return its plaintext value.
+ *
+ * @param  array<int, TokenScope>|null  $scopes  Null grants every scope.
+ */
+function organizationAccessToken(Organization $organization, ?array $scopes = null): string
+{
+    $plain = 'org-'.Str::random(48);
+
+    AccessToken::factory()
+        ->forOrganization($organization)
+        ->withPlainToken($plain)
+        ->neverExpires()
+        ->withScopes($scopes ?? TokenScope::cases())
+        ->create();
+
+    return $plain;
 }
 
 /**

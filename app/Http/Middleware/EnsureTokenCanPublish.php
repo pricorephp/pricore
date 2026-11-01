@@ -29,7 +29,7 @@ class EnsureTokenCanPublish
             return $this->forbidden('This token cannot publish packages.');
         }
 
-        if (! $accessToken->hasScope(TokenScope::Write)) {
+        if (! $accessToken->hasScope(TokenScope::WritePackages)) {
             return $this->forbidden('This token cannot publish packages. Create a token with publishing enabled.');
         }
 

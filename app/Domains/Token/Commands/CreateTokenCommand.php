@@ -3,6 +3,7 @@
 namespace App\Domains\Token\Commands;
 
 use App\Domains\Token\Actions\CreateAccessTokenAction;
+use App\Domains\Token\Contracts\Enums\TokenScope;
 use App\Models\Organization;
 use App\Models\User;
 use Carbon\Carbon;
@@ -73,7 +74,7 @@ class CreateTokenCommand extends Command
             user: $user,
             name: $name,
             expiresAt: $expiresAt,
-            canPublish: (bool) $this->option('publish'),
+            scopes: $this->option('publish') ? [TokenScope::Composer, TokenScope::WritePackages] : [TokenScope::Composer],
         );
 
         $this->newLine();

@@ -11,6 +11,9 @@ use Spatie\TypeScriptTransformer\Attributes\TypeScript;
 #[TypeScript]
 class AccessTokenData extends Data
 {
+    /**
+     * @param  array<int, string>  $scopes
+     */
     public function __construct(
         public string $uuid,
         public string $name,
@@ -18,6 +21,7 @@ class AccessTokenData extends Data
         public ?CarbonInterface $lastUsedAt,
         public ?CarbonInterface $expiresAt,
         public CarbonInterface $createdAt,
+        public array $scopes = [],
     ) {}
 
     public static function fromModel(AccessToken $token): self
@@ -31,10 +35,11 @@ class AccessTokenData extends Data
         return new self(
             uuid: $token->uuid,
             name: $token->name ?? '',
-            canPublish: $token->hasScope(TokenScope::Write),
+            canPublish: $token->hasScope(TokenScope::WritePackages),
             lastUsedAt: $token->last_used_at,
             expiresAt: $token->expires_at,
             createdAt: $createdAt,
+            scopes: $token->scopes ?? [TokenScope::Composer->value],
         );
     }
 }

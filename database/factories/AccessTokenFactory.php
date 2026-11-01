@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Domains\Token\Contracts\Enums\TokenScope;
 use App\Models\AccessToken;
 use App\Models\Organization;
 use App\Models\User;
@@ -84,13 +85,24 @@ class AccessTokenFactory extends Factory
     /**
      * Indicate that the token has specific scopes.
      *
-     * @param  array<string>  $scopes
+     * @param  array<int, TokenScope|string>  $scopes
      */
     public function withScopes(array $scopes): static
     {
         return $this->state(fn (array $attributes) => [
-            'scopes' => $scopes,
+            'scopes' => array_map(
+                fn (TokenScope|string $scope) => $scope instanceof TokenScope ? $scope->value : $scope,
+                $scopes,
+            ),
         ]);
+    }
+
+    /**
+     * Indicate that the token is limited to Composer registry access.
+     */
+    public function composerOnly(): static
+    {
+        return $this->withScopes([TokenScope::Composer]);
     }
 
     /**

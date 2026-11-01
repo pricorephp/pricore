@@ -8,11 +8,10 @@ use App\Domains\Organization\Contracts\Data\OrganizationData;
 use App\Domains\Organization\Contracts\Data\OrganizationSshKeyData;
 use App\Domains\Package\Contracts\Data\PackageData;
 use App\Domains\Repository\Actions\BulkCreateRepositoriesAction;
+use App\Domains\Repository\Actions\CreateRepositoryAction;
 use App\Domains\Repository\Actions\DeleteWebhookAction;
-use App\Domains\Repository\Actions\ExtractRepositoryNameAction;
 use App\Domains\Repository\Actions\PurgeDistArchiveFilesTask;
 use App\Domains\Repository\Actions\RecordRepositoryViewTask;
-use App\Domains\Repository\Actions\RegisterWebhookAction;
 use App\Domains\Repository\Actions\UpdatePackagePathsAction;
 use App\Domains\Repository\Contracts\Data\RepositoryData;
 use App\Domains\Repository\Contracts\Data\SyncLogData;
@@ -21,12 +20,10 @@ use App\Domains\Repository\Contracts\Enums\GitProvider;
 use App\Domains\Repository\Http\Requests\BulkStoreRepositoryRequest;
 use App\Domains\Repository\Http\Requests\StoreRepositoryRequest;
 use App\Domains\Repository\Http\Requests\UpdateRepositoryRequest;
-use App\Domains\Repository\Jobs\SyncRepositoryJob;
 use App\Http\Controllers\Controller;
 use App\Models\Organization;
 use App\Models\Repository;
 use App\Models\User;
-use App\Models\UserGitCredential;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -38,8 +35,6 @@ class RepositoryController extends Controller
     use AuthorizesRequests;
 
     public function __construct(
-        protected ExtractRepositoryNameAction $extractRepositoryNameAction,
-        protected RegisterWebhookAction $registerWebhookAction,
         protected DeleteWebhookAction $deleteWebhookAction,
         protected RecordActivityTask $recordActivity,
         protected PurgeDistArchiveFilesTask $purgeDistArchiveFilesTask,
@@ -78,50 +73,26 @@ class RepositoryController extends Controller
         ]);
     }
 
-    public function store(StoreRepositoryRequest $request, Organization $organization): RedirectResponse
+    public function store(StoreRepositoryRequest $request, Organization $organization, CreateRepositoryAction $createRepository): RedirectResponse
     {
         $this->authorize('deleteRepository', $organization);
-
-        $name = $request->name ?? $this->extractRepositoryNameAction->handle(
-            $request->repo_identifier,
-            GitProvider::from($request->provider)
-        );
-
-        $provider = GitProvider::from($request->provider);
 
         /** @var User $user */
         $user = auth()->user();
 
-        $baseUrl = $this->resolveBaseUrl($provider, $user->uuid);
-
-        $isGenericGit = $provider === GitProvider::Git;
-
-        $repository = Repository::create([
-            'organization_uuid' => $organization->uuid,
-            'credential_user_uuid' => $isGenericGit ? null : $user->uuid,
-            'ssh_key_uuid' => $isGenericGit ? $request->ssh_key_uuid : null,
-            'name' => $name,
-            'provider' => $provider,
-            'repo_identifier' => $request->repo_identifier,
-            'custom_base_url' => $baseUrl,
-            'default_branch' => $request->default_branch,
-            'package_paths' => $request->packagePaths(),
-        ]);
-
-        $this->recordActivity->handle(
+        $repository = $createRepository->handle(
             organization: $organization,
-            type: ActivityType::RepositoryAdded,
-            subject: $repository,
-            actor: $request->user(),
-            properties: ['name' => $repository->name, 'provider' => $repository->provider->value],
+            provider: GitProvider::from($request->provider),
+            repoIdentifier: $request->repo_identifier,
+            user: $user,
+            name: $request->name,
+            defaultBranch: $request->default_branch,
+            sshKeyUuid: $request->ssh_key_uuid,
+            packagePaths: $request->packagePaths(),
         );
 
-        SyncRepositoryJob::dispatch($repository);
-
-        $webhookRegistered = $this->registerWebhookAction->handle($repository);
-
         $message = 'Repository added successfully.';
-        if (! $webhookRegistered && $repository->provider->supportsAutomaticWebhooks()) {
+        if ($repository->webhook_id === null && $repository->provider->supportsAutomaticWebhooks()) {
             $message .= ' Webhook registration failed — you can retry from the repository page.';
         }
 
@@ -265,19 +236,5 @@ class RepositoryController extends Controller
         return redirect()
             ->route('organizations.repositories.index', $organization)
             ->with('status', 'Repository deleted successfully.');
-    }
-
-    private function resolveBaseUrl(GitProvider $provider, string $userUuid): ?string
-    {
-        if (! $provider->supportsSelfHosted()) {
-            return null;
-        }
-
-        $credential = UserGitCredential::query()
-            ->where('user_uuid', $userUuid)
-            ->where('provider', $provider)
-            ->first();
-
-        return $credential?->credentials['url'] ?? null;
     }
 }

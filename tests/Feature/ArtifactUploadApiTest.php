@@ -22,7 +22,7 @@ beforeEach(function () {
     $this->organization = Organization::factory()->create(['slug' => 'acme', 'owner_uuid' => $this->owner->uuid]);
     $this->package = Package::factory()->forOrganization($this->organization)->artifact()->create(['name' => 'acme/moodle-plugin']);
 
-    $this->makeToken = function (?array $scopes = [TokenScope::Read->value, TokenScope::Write->value], ?User $user = null): string {
+    $this->makeToken = function (?array $scopes = [TokenScope::Composer->value, TokenScope::WritePackages->value], ?User $user = null): string {
         $plainToken = Str::random(64);
         $factory = AccessToken::factory()->withPlainToken($plainToken)->neverExpires()->state(['scopes' => $scopes]);
 
@@ -107,7 +107,7 @@ it('rejects tokens that cannot publish', function (?array $scopes) {
     expect($this->package->versions()->count())->toBe(0);
 })->with([
     'tokens from before scopes were enforced' => [null],
-    'read-only tokens' => [[TokenScope::Read->value]],
+    'read-only tokens' => [[TokenScope::Composer->value]],
 ]);
 
 it('requires a token', function () {
@@ -118,7 +118,7 @@ it('rejects tokens of another organization', function () {
     $otherOrganization = Organization::factory()->create();
     $plainToken = Str::random(64);
     AccessToken::factory()->forOrganization($otherOrganization)->withPlainToken($plainToken)->neverExpires()
-        ->withScopes([TokenScope::Read->value, TokenScope::Write->value])->create();
+        ->withScopes([TokenScope::Composer->value, TokenScope::WritePackages->value])->create();
 
     ($this->upload)($plainToken, ['archive' => ($this->makeUpload)()])->assertUnauthorized();
 });
