@@ -31,7 +31,7 @@ class RepositoryData extends Data
         public ?string $webhookSecret,
     ) {}
 
-    public static function fromModel(Repository $repository): self
+    public static function fromModel(Repository $repository, bool $includeWebhookSecret = false): self
     {
         $webhookActive = $repository->webhook_id !== null;
 
@@ -53,7 +53,7 @@ class RepositoryData extends Data
             webhookUrl: $webhookActive && $repository->provider->supportsWebhooks()
                 ? route($repository->provider->webhookRouteName(), $repository->uuid)
                 : null,
-            webhookSecret: $webhookActive && ! $repository->provider->supportsAutomaticWebhooks()
+            webhookSecret: $includeWebhookSecret && $webhookActive && ! $repository->provider->supportsAutomaticWebhooks()
                 ? $repository->webhook_secret
                 : null,
         );

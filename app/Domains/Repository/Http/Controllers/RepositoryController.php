@@ -134,6 +134,8 @@ class RepositoryController extends Controller
             $this->recordRepositoryViewTask->handle($user, $repository);
         }
 
+        $canManageRepository = $user?->can('deleteRepository', $organization) ?? false;
+
         $repository->load('organization');
         $repository->loadCount('packages');
 
@@ -152,10 +154,10 @@ class RepositoryController extends Controller
 
         return Inertia::render('organizations/repositories/show', [
             'organization' => OrganizationData::fromModel($organization),
-            'repository' => RepositoryData::fromModel($repository),
+            'repository' => RepositoryData::fromModel($repository, includeWebhookSecret: $canManageRepository),
             'packages' => $packages,
             'syncLogs' => $syncLogs,
-            'canManageRepository' => auth()->user()?->can('deleteRepository', $organization) ?? false,
+            'canManageRepository' => $canManageRepository,
         ]);
     }
 
