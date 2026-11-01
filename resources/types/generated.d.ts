@@ -325,6 +325,7 @@ export type ExistingVersionData = {
 version: string,
 sourceReference: string,
 distFailed: boolean,
+sourceTag: string | null,
 };
 export type RecentSyncData = {
 uuid: string,
@@ -335,6 +336,11 @@ startedAt: string,
 export type RefData = {
 name: string,
 commit: string,
+isTag: boolean,
+};
+export type RefTargetData = {
+version: string,
+packageKey: string | null,
 };
 export type RefsCollectionData = {
 tags: App.Domains.Repository.Contracts.Data.RefData[],
@@ -353,6 +359,7 @@ syncStatusLabel: string | null,
 lastSyncedAt: string | null,
 packagesCount: number,
 packagePaths: string[] | null,
+tagFormat: string | null,
 supportsWebhooks: boolean,
 supportsAutomaticWebhooks: boolean,
 webhookActive: boolean,
@@ -402,6 +409,13 @@ added: number,
 updated: number,
 skipped: number,
 };
+export type TagFormatPreviewData = {
+tag: string,
+release: App.Domains.Repository.Contracts.Enums.TagRelease,
+version: string | null,
+package: string | null,
+packageKnown: boolean,
+};
 export type UpdatePackagePathsResultData = {
 changed: boolean,
 packagesRemoved: number,
@@ -411,6 +425,7 @@ namespace Enums {
 export type GitProvider = 'github' | 'gitlab' | 'bitbucket' | 'git';
 export type RepositorySyncStatus = 'ok' | 'failed' | 'pending';
 export type SyncStatus = 'pending' | 'success' | 'failed';
+export type TagRelease = 'package' | 'shared' | 'ignored';
 }
 }
 }

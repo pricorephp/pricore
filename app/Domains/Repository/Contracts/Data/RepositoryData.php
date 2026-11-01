@@ -24,6 +24,7 @@ class RepositoryData extends Data
         public int $packagesCount,
         /** @var array<int, string>|null */
         public ?array $packagePaths,
+        public ?string $tagFormat,
         public bool $supportsWebhooks,
         public bool $supportsAutomaticWebhooks,
         public bool $webhookActive,
@@ -47,6 +48,7 @@ class RepositoryData extends Data
             lastSyncedAt: $repository->last_synced_at,
             packagesCount: $repository->packages_count ?? 0,
             packagePaths: $repository->package_paths,
+            tagFormat: $repository->tag_format,
             supportsWebhooks: $repository->provider->supportsWebhooks(),
             supportsAutomaticWebhooks: $repository->provider->supportsAutomaticWebhooks(),
             webhookActive: $webhookActive,

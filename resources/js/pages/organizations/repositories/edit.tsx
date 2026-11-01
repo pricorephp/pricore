@@ -3,6 +3,7 @@ import {
     update,
 } from '@/actions/App/Domains/Repository/Http/Controllers/RepositoryController';
 import HeadingSmall from '@/components/heading-small';
+import TagFormatCard from '@/components/tag-format-card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import {
@@ -194,6 +195,12 @@ export default function RepositoryEdit({
                         </Form>
                     </CardContent>
                 </Card>
+
+                <TagFormatCard
+                    organizationSlug={organization.slug}
+                    repositoryUuid={repository.uuid}
+                    tagFormat={repository.tagFormat}
+                />
 
                 <Card className="border-destructive/50 bg-destructive/2.5">
                     <CardHeader>

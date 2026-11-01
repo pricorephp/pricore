@@ -13,6 +13,7 @@ use App\Domains\Repository\Actions\DeleteWebhookAction;
 use App\Domains\Repository\Actions\PurgeDistArchiveFilesTask;
 use App\Domains\Repository\Actions\RecordRepositoryViewTask;
 use App\Domains\Repository\Actions\UpdatePackagePathsAction;
+use App\Domains\Repository\Actions\UpdateTagFormatAction;
 use App\Domains\Repository\Contracts\Data\RepositoryData;
 use App\Domains\Repository\Contracts\Data\SyncLogData;
 use App\Domains\Repository\Contracts\Data\UpdatePackagePathsResultData;
@@ -177,7 +178,7 @@ class RepositoryController extends Controller
         ]);
     }
 
-    public function update(UpdateRepositoryRequest $request, Organization $organization, Repository $repository): RedirectResponse
+    public function update(UpdateRepositoryRequest $request, Organization $organization, Repository $repository, UpdateTagFormatAction $updateTagFormatAction): RedirectResponse
     {
         if ($repository->organization_uuid !== $organization->uuid) {
             abort(404);
@@ -190,9 +191,15 @@ class RepositoryController extends Controller
             ? $this->updatePackagePathsAction->handle($repository, $request->packagePaths(), $request->user())
             : new UpdatePackagePathsResultData(changed: false, packagesRemoved: 0);
 
-        $message = $result->changed
-            ? 'Package paths updated and a sync has been started.'
-            : 'Repository updated successfully.';
+        $tagFormatChanged = $request->has('tag_format')
+            && $updateTagFormatAction->handle($repository, $request->validated('tag_format'));
+
+        $message = match (true) {
+            $result->changed && $tagFormatChanged => 'Package paths and tag format updated and a sync has been started.',
+            $result->changed => 'Package paths updated and a sync has been started.',
+            $tagFormatChanged => 'Tag format updated and a sync has been started.',
+            default => 'Repository updated successfully.',
+        };
 
         if ($result->packagesRemoved > 0) {
             $message .= sprintf(

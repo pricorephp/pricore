@@ -4,8 +4,11 @@ namespace App\Domains\Repository\Actions;
 
 use App\Domains\Repository\Contracts\Data\ComposerMetadataData;
 use App\Domains\Repository\Contracts\Data\RefData;
+use App\Domains\Repository\Contracts\Data\RefTargetData;
 use App\Domains\Repository\Contracts\Data\SyncRefResultData;
 use App\Domains\Repository\Contracts\Interfaces\GitProviderInterface;
+use App\Domains\Repository\Services\PackagePaths\PackagePathPattern;
+use App\Domains\Repository\Services\TagFormats\TagFormat;
 use App\Exceptions\ComposerMetadataException;
 use App\Models\Package;
 use App\Models\PackageVersion;
@@ -28,16 +31,25 @@ class SyncRefAction
     /**
      * Sync every package present at a ref (tag or branch), then drop the ref's
      * version from packages of this repository that are no longer found at it.
+     * A tag in the repository's tag format syncs only the package it names.
      */
     public function handle(GitProviderInterface $provider, Repository $repository, RefData $ref): SyncRefResultData
     {
         $result = new SyncRefResultData;
+        $format = TagFormat::forRepository($repository);
+        $target = TagFormat::target($format, $ref);
+
+        // A tag that is neither a version nor in the tag format releases nothing
+        if ($target === null) {
+            return $result;
+        }
+
         $syncedPackageUuids = [];
         $unreadablePaths = [];
         $pathsByName = [];
         $composerJsonFound = false;
 
-        foreach ($this->resolvePackagePathsAction->handle($provider, $repository, $ref->name) as $path) {
+        foreach ($this->pathsFor($provider, $repository, $ref, $format, $target) as $path) {
             $composerJson = $provider->getFileContent($ref->name, self::join($path, 'composer.json'));
 
             if ($composerJson === null) {
@@ -46,10 +58,10 @@ class SyncRefAction
                 continue;
             }
 
-            $composerJsonFound = true;
+            $composerJsonFound = $composerJsonFound || $target->isShared();
 
             try {
-                $metadata = ComposerMetadataData::fromComposerJson($composerJson, $ref->name);
+                $metadata = ComposerMetadataData::fromComposerJson($composerJson, $ref->name, $target->version);
             } catch (ComposerMetadataException $e) {
                 Log::warning('Skipping package with invalid composer.json', [
                     'repository' => $repository->name,
@@ -63,6 +75,13 @@ class SyncRefAction
 
                 continue;
             }
+
+            // Another package of the monorepo, which this tag does not release
+            if (! $target->isShared() && $format?->keyFor($path, $metadata->name) !== $target->packageKey) {
+                continue;
+            }
+
+            $composerJsonFound = true;
 
             if (isset($pathsByName[$metadata->name])) {
                 Log::warning('Skipping duplicate package name within ref', [
@@ -90,7 +109,7 @@ class SyncRefAction
 
             $syncedPackageUuids[] = $package->uuid;
 
-            match ($this->syncVersion($provider, $repository, $ref, $package, $metadata, $path)) {
+            match ($this->syncVersion($provider, $repository, $ref, $package, $metadata, $path, $format, $target)) {
                 'added' => $result->added++,
                 'updated' => $result->updated++,
                 default => $result->skipped++,
@@ -98,12 +117,47 @@ class SyncRefAction
         }
 
         $result->packagesFound = count($syncedPackageUuids);
-        $result->removed = $this->removeVanishedVersions($repository, $ref, $syncedPackageUuids, $unreadablePaths);
+        $result->removed = $this->removeVanishedVersions($repository, $ref, $target, $format !== null, $syncedPackageUuids, $unreadablePaths);
         $result->empty = ! $composerJsonFound;
 
         $this->rememberWhetherEmpty($repository, $ref, $result->empty);
 
         return $result;
+    }
+
+    /**
+     * A tag of a single package only needs that package's directory: named by the
+     * tag under {path}, or known from an earlier sync under {name} and {package}.
+     * Only a package not synced before needs every configured path checked.
+     *
+     * @return array<int, string>
+     */
+    protected function pathsFor(
+        GitProviderInterface $provider,
+        Repository $repository,
+        RefData $ref,
+        ?TagFormat $format,
+        RefTargetData $target,
+    ): array {
+        if ($format === null || $target->isShared()) {
+            return $this->resolvePackagePathsAction->handle($provider, $repository, $ref->name);
+        }
+
+        $selected = $repository->package_paths ?: [PackagePathPattern::ROOT];
+
+        if ($format->placeholder === TagFormat::PATH) {
+            return PackagePathPattern::anyMatches($selected, $target->packageKey) ? [(string) $target->packageKey] : [];
+        }
+
+        $known = $repository->packages()
+            ->get(['name', 'source_path'])
+            ->first(fn (Package $package) => $format->keyFor($package->source_path, $package->name) === $target->packageKey);
+
+        if ($known !== null && PackagePathPattern::anyMatches($selected, $known->source_path)) {
+            return [(string) $known->source_path];
+        }
+
+        return $this->resolvePackagePathsAction->handle($provider, $repository, $ref->name);
     }
 
     /**
@@ -116,6 +170,8 @@ class SyncRefAction
         Package $package,
         ComposerMetadataData $metadata,
         string $path,
+        ?TagFormat $format,
+        RefTargetData $target,
     ): string {
         $sourcePath = $path === '' ? null : $path;
 
@@ -123,6 +179,15 @@ class SyncRefAction
             ->where('package_uuid', $package->uuid)
             ->where('version', $metadata->version)
             ->first();
+
+        // A tag of this package alone outranks a shared tag of the same version
+        if ($format !== null && $target->isShared() && $existingVersion?->source_tag !== null) {
+            $ownTag = $format->match($existingVersion->source_tag);
+
+            if ($ownTag !== null && $ownTag->packageKey === $format->keyFor($path, $package->name)) {
+                return 'skipped';
+            }
+        }
 
         // Same commit at the same location: nothing changed, skip the expensive work
         if ($existingVersion
@@ -220,6 +285,8 @@ class SyncRefAction
      * A package without a composer.json at this ref (directory removed, package
      * renamed) must stop advertising the ref's version. Paths whose composer.json
      * could not be parsed are left alone: that package is still there, just broken.
+     * With a tag format, a ref only removes versions it created itself, since other
+     * packages can hold the same version from tags of their own.
      *
      * @param  array<int, string>  $syncedPackageUuids
      * @param  array<int, string>  $unreadablePaths
@@ -227,6 +294,8 @@ class SyncRefAction
     protected function removeVanishedVersions(
         Repository $repository,
         RefData $ref,
+        RefTargetData $target,
+        bool $usesTagFormat,
         array $syncedPackageUuids,
         array $unreadablePaths,
     ): int {
@@ -235,7 +304,8 @@ class SyncRefAction
         PackageVersion::query()
             ->whereIn('package_uuid', $repository->packages()->select('uuid'))
             ->whereNotIn('package_uuid', $syncedPackageUuids)
-            ->where('version', ComposerMetadataData::extractVersion($ref->name))
+            ->where('version', $target->version)
+            ->when($usesTagFormat, fn ($query) => $query->where('source_tag', $ref->name))
             ->get()
             ->reject(fn (PackageVersion $version) => in_array((string) $version->source_path, $unreadablePaths, true))
             ->each(function (PackageVersion $version) use (&$removed) {

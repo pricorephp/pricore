@@ -9,5 +9,6 @@ class RefData extends Data
     public function __construct(
         public string $name,
         public string $commit,
+        public bool $isTag = false,
     ) {}
 }
