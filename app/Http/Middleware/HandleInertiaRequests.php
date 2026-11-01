@@ -72,6 +72,7 @@ class HandleInertiaRequests extends Middleware
             'recentlyVisited' => fn () => $this->recentlyVisitedData($request),
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
             'cloud' => class_exists(PricoreCloudServiceProvider::class),
+            'mcpEnabled' => (bool) config('pricore.mcp.enabled'),
             'analytics' => $request->session()->get('analytics'),
             'flash' => new FlashData(
                 status: $request->session()->get('status') ?? $request->session()->get('success'),

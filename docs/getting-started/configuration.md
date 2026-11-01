@@ -210,6 +210,22 @@ Packages can also be [published by uploading zip archives](/guide/packages#from-
 
 PHP's `upload_max_filesize` and `post_max_size`, and the body size limit of any reverse proxy in front of Pricore (such as nginx's `client_max_body_size`), must be at least `ARTIFACT_MAX_SIZE`. The Docker image allows 64 MB.
 
+## MCP Server
+
+Pricore serves an [MCP server](/guide/mcp) at `/mcp` for AI assistants. Clients register themselves and sign in through OAuth 2.1, with Pricore acting as the authorization server.
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `MCP_ENABLED` | Serve `/mcp` and the OAuth endpoints (`/oauth/*`, `/.well-known/oauth-*`) | `true` |
+| `MCP_REDIRECT_DOMAINS` | Comma-separated prefixes (scheme and host, e.g. `https://claude.ai`) that registered clients may redirect to. `*` allows any; every client still needs the user's approval. Include `http://localhost` when restricting it, so CLI clients such as Claude Code keep working. The `claude://`, `cursor://` and `vscode://` schemes are always allowed. | `*` |
+| `MCP_RATE_LIMIT` | MCP requests per minute allowed for each user | `120` |
+| `PASSPORT_PRIVATE_KEY` | PEM private key used to sign OAuth tokens | Read from `storage/oauth-private.key` |
+| `PASSPORT_PUBLIC_KEY` | PEM public key used to verify OAuth tokens | Read from `storage/oauth-public.key` |
+
+Generate the key files with `php artisan passport:keys`. The Docker image does this on first boot. Every instance behind a load balancer must use the same keys.
+
+`APP_URL` must be the public URL of Pricore, and `TRUSTED_PROXIES` must be set when it runs behind a proxy. Clients find the OAuth endpoints through metadata built from these values.
+
 ## Storage Configuration
 
 By default, Pricore stores package distribution files on the local filesystem. To use S3 or an S3-compatible storage provider (like MinIO, DigitalOcean Spaces, or Cloudflare R2), set the filesystem disk to `s3`:

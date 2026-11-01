@@ -48,6 +48,12 @@ if echo "$1" | grep -q "frankenphp"; then
     echo "[entrypoint] Running database migrations..."
     php artisan migrate --force --no-interaction
 
+    # OAuth signing keys for MCP clients, persisted on the storage volume like APP_KEY
+    if [ -z "$PASSPORT_PRIVATE_KEY" ] && [ ! -f /app/storage/oauth-private.key ]; then
+        php artisan passport:keys --no-interaction
+        echo "[entrypoint] Generated OAuth keys in /app/storage"
+    fi
+
     echo "[entrypoint] Caching configuration..."
     php artisan config:cache
     php artisan route:cache

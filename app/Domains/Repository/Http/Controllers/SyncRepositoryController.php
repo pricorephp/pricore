@@ -2,8 +2,7 @@
 
 namespace App\Domains\Repository\Http\Controllers;
 
-use App\Domains\Repository\Contracts\Enums\RepositorySyncStatus;
-use App\Domains\Repository\Jobs\SyncRepositoryJob;
+use App\Domains\Repository\Actions\RequestRepositorySyncAction;
 use App\Http\Controllers\Controller;
 use App\Models\Organization;
 use App\Models\Repository;
@@ -14,13 +13,11 @@ class SyncRepositoryController extends Controller
 {
     use AuthorizesRequests;
 
-    public function __invoke(Organization $organization, Repository $repository): RedirectResponse
+    public function __invoke(Organization $organization, Repository $repository, RequestRepositorySyncAction $requestRepositorySyncAction): RedirectResponse
     {
         $this->authorize('deleteRepository', $organization);
 
-        $repository->update(['sync_status' => RepositorySyncStatus::Pending]);
-
-        SyncRepositoryJob::dispatch($repository);
+        $requestRepositorySyncAction->handle($repository);
 
         return redirect()
             ->back()

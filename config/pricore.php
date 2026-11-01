@@ -28,4 +28,10 @@ return [
         'keep_detached_days' => env('DIST_KEEP_DETACHED_DAYS'),
     ],
 
+    'mcp' => [
+        'enabled' => env('MCP_ENABLED', true),
+
+        'rate_limit_per_minute' => (int) env('MCP_RATE_LIMIT', 120),
+    ],
+
 ];

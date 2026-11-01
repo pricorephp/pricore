@@ -27,6 +27,7 @@ class CreateAccessTokenAction
         string $name,
         ?Carbon $expiresAt = null,
         array $scopes = [TokenScope::Composer],
+        ?User $actor = null,
     ): TokenCreatedData {
         $scopes = TokenScope::normalize($scopes);
         $plainToken = Str::random(64);
@@ -46,7 +47,7 @@ class CreateAccessTokenAction
                 organization: $organization,
                 type: ActivityType::TokenCreated,
                 subject: $accessToken,
-                actor: $user ?? auth()->user(),
+                actor: $actor ?? $user ?? auth()->user(),
                 properties: array_filter([
                     'name' => $name,
                     'can_publish' => in_array(TokenScope::WritePackages->value, $scopes, true),

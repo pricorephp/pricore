@@ -1,5 +1,6 @@
 <?php
 
+use App\Domains\Mcp\Http\Controllers\ConnectedAppController;
 use App\Domains\Token\Http\Controllers\UserTokenController;
 use App\Http\Controllers\Settings\ConnectGitHubController;
 use App\Http\Controllers\Settings\ConnectGitLabController;
@@ -47,4 +48,7 @@ Route::middleware('auth')->group(function () {
     Route::post('settings/tokens', [UserTokenController::class, 'store'])->name('settings.tokens.store');
     Route::patch('settings/tokens/{token}', [UserTokenController::class, 'update'])->name('settings.tokens.update');
     Route::delete('settings/tokens/{token}', [UserTokenController::class, 'destroy'])->name('settings.tokens.destroy');
+
+    Route::get('settings/connected-apps', [ConnectedAppController::class, 'index'])->name('settings.connected-apps.index');
+    Route::delete('settings/connected-apps/{client}', [ConnectedAppController::class, 'destroy'])->name('settings.connected-apps.destroy');
 });
