@@ -24,6 +24,15 @@ export type ActivityType = 'repository.added' | 'repository.removed' | 'reposito
 }
 namespace Auth {
 namespace Contracts {
+namespace Data {
+export type PasskeyData = {
+id: number,
+name: string,
+authenticator: string | null,
+createdAt: string | null,
+lastUsedAt: string | null,
+};
+}
 namespace Enums {
 export type GitHubOAuthIntent = 'login' | 'connect';
 export type GitLabOAuthIntent = 'login' | 'connect';
@@ -337,6 +346,7 @@ export type RefData = {
 name: string,
 commit: string,
 isTag: boolean,
+packageTags: Record<string, string>,
 };
 export type RefTargetData = {
 version: string,

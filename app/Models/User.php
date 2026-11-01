@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -17,7 +18,10 @@ use Illuminate\Notifications\DatabaseNotification;
 use Illuminate\Notifications\DatabaseNotificationCollection;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Carbon;
+use Laravel\Fortify\Contracts\PasskeyUser;
+use Laravel\Fortify\PasskeyAuthenticatable;
 use Laravel\Fortify\TwoFactorAuthenticatable;
+use Laravel\Passkeys\Passkey;
 use Laravel\Passport\Contracts\OAuthenticatable;
 use Laravel\Passport\HasApiTokens;
 
@@ -52,6 +56,8 @@ use Laravel\Passport\HasApiTokens;
  * @property-read int|null $git_credentials_count
  * @property-read Collection<int, Organization> $ownedOrganizations
  * @property-read int|null $owned_organizations_count
+ * @property-read Collection<int, Passkey> $passkeys
+ * @property-read int|null $passkeys_count
  *
  * @method static UserFactory factory($count = null, $state = [])
  * @method static Builder<static>|User newModelQuery()
@@ -71,7 +77,7 @@ use Laravel\Passport\HasApiTokens;
  *
  * @mixin \Eloquent
  */
-class User extends Authenticatable implements MustVerifyEmail, OAuthenticatable
+class User extends Authenticatable implements MustVerifyEmail, OAuthenticatable, PasskeyUser
 {
     use HasApiTokens;
 
@@ -80,6 +86,7 @@ class User extends Authenticatable implements MustVerifyEmail, OAuthenticatable
 
     use HasUuids;
     use Notifiable;
+    use PasskeyAuthenticatable;
     use TwoFactorAuthenticatable;
 
     protected $guarded = ['uuid'];
@@ -154,6 +161,17 @@ class User extends Authenticatable implements MustVerifyEmail, OAuthenticatable
     public function gitCredentials(): HasMany
     {
         return $this->hasMany(UserGitCredential::class, 'user_uuid', 'uuid');
+    }
+
+    /**
+     * The passkeys table follows the package's `user_id` column, like Passport's tables.
+     *
+     * @return HasMany<Passkey, Model>
+     */
+    public function passkeys(): HasMany
+    {
+        // The PasskeyUser contract declares the parent as Model, which a concrete $this can't satisfy (invariant template)
+        return $this->hasMany(Passkey::class, 'user_id', 'uuid'); // @phpstan-ignore return.type
     }
 
     public function hasGitHubConnected(): bool
