@@ -568,17 +568,22 @@ function WebhookSetupCard({ repository }: { repository: RepositoryData }) {
                     </div>
                     <div className="space-y-1.5">
                         <label className="text-sm font-medium">Secret</label>
-                        <div className="flex items-center gap-2">
-                            <code className="flex-1 rounded-md bg-muted px-3 py-2 text-sm break-all">
-                                {repository.webhookSecret}
-                            </code>
-                            {repository.webhookSecret && (
+                        {repository.webhookSecret ? (
+                            <div className="flex items-center gap-2">
+                                <code className="flex-1 rounded-md bg-muted px-3 py-2 text-sm break-all">
+                                    {repository.webhookSecret}
+                                </code>
                                 <CopyButton
                                     text={repository.webhookSecret}
                                     variant="outline"
                                 />
-                            )}
-                        </div>
+                            </div>
+                        ) : (
+                            <p className="text-sm text-muted-foreground">
+                                Only organization owners and admins can view the
+                                secret.
+                            </p>
+                        )}
                     </div>
                 </div>
             </CardContent>
