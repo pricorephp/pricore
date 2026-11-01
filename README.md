@@ -37,15 +37,12 @@ Don't want to self-host? Try [Hosted Pricore](https://app.pricore.dev) — a ful
 ## Features
 
 - **Git-Based Mirroring** - Point at any GitHub, GitLab, Bitbucket, or generic Git repo. Automatic syncing via webhooks.
+- **Monorepo Support** - Serve several packages from one repository by pointing Pricore at their directories, such as `packages/*`.
 - **Registry Mirrors** - Import packages from Packagist or other Composer registries with dist mirroring.
 - **Composer v2 Native** - Full API support with lightning-fast package resolves.
 - **Security Auditing** - Vulnerability scanning via Packagist advisories with native `composer audit` support.
 - **Web Dashboard** - Browse packages, manage tokens, and view download stats in realtime.
 - **Built on Laravel** - Familiar stack, easy to extend. Open source under Apache 2.0.
-
-<p align="center">
-  <a href="https://www.star-history.com/?repos=pricorephp%2Fpricore&type=date&legend=top-left"><img src="https://api.star-history.com/image?repos=pricorephp/pricore&type=date&legend=top-left" alt="Star History Chart" width="500" /></a>
-</p>
 
 ## Quick Start with Docker
 

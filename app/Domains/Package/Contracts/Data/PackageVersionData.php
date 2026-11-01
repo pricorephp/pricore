@@ -20,6 +20,7 @@ class PackageVersionData extends Data
         public ?string $sourceUrl,
         public ?string $sourceReference,
         public ?string $sourceTag,
+        public ?string $sourcePath,
         public ?string $commitUrl,
         public ?string $tagUrl,
         public ?int $distSize,
@@ -81,6 +82,7 @@ class PackageVersionData extends Data
             sourceUrl: $version->source_url,
             sourceReference: $version->source_reference,
             sourceTag: $version->source_tag,
+            sourcePath: $version->source_path,
             commitUrl: $commitUrl,
             tagUrl: $tagUrl,
             distSize: $version->dist_size,
@@ -199,7 +201,7 @@ class PackageVersionData extends Data
 
     public function isStable(): bool
     {
-        return ! str_contains($this->version, 'dev') && preg_match('/^\d+\.\d+/', $this->version);
+        return ! str_contains($this->version, 'dev') && preg_match('/^v?\d+\.\d+/', $this->version);
     }
 
     public function isDev(): bool

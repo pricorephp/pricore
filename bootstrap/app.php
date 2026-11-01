@@ -3,6 +3,8 @@
 use App\Http\Middleware\ApiTokenAuth;
 use App\Http\Middleware\ComposerTokenAuth;
 use App\Http\Middleware\EnsureOrganizationMembership;
+use App\Http\Middleware\EnsureTokenCanPublish;
+use App\Http\Middleware\ForceJsonResponse;
 use App\Http\Middleware\HandleAppearance;
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\RequireTokenScope;
@@ -52,10 +54,17 @@ return Application::configure(basePath: dirname(__DIR__))
             AddLinkHeadersForPreloadedAssets::class,
         ]);
 
+        // A group rather than an alias so installed packages can append their
+        // own checks to every publishing endpoint.
+        $middleware->group('composer.publish', [
+            EnsureTokenCanPublish::class,
+        ]);
+
         $middleware->alias([
             'composer.token' => ComposerTokenAuth::class,
             'api.token' => ApiTokenAuth::class,
             'scope' => RequireTokenScope::class,
+            'json' => ForceJsonResponse::class,
             'organization.member' => EnsureOrganizationMembership::class,
             'track.organization' => TrackOrganizationAccess::class,
         ]);

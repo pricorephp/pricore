@@ -4,6 +4,7 @@ use App\Domains\Organization\Contracts\Enums\OrganizationRole;
 use App\Models\AccessToken;
 use App\Models\Organization;
 use App\Models\User;
+use Illuminate\Support\Str;
 
 beforeEach(function () {
     $this->user = User::factory()->create();
@@ -44,13 +45,13 @@ it('rejects an expired token', function () {
         ->assertUnauthorized();
 });
 
-it('treats a null-scope (legacy) token as having full access', function () {
-    $token = personalAccessToken($this->user, scopes: null);
+it('treats a token without stored scopes as Composer-only', function () {
+    $plain = 'legacy-'.Str::random(48);
+    AccessToken::factory()->forUser($this->user)->withPlainToken($plain)->neverExpires()->create(['scopes' => null]);
 
-    // read:repositories is required, but a legacy token implicitly carries every scope.
-    $this->withToken($token)
+    $this->withToken($plain)
         ->getJson("/api/v1/organizations/{$this->organization->slug}/repositories")
-        ->assertOk();
+        ->assertForbidden();
 });
 
 it('records last_used_at when a token authenticates', function () {
@@ -60,4 +61,9 @@ it('records last_used_at when a token authenticates', function () {
 
     expect(AccessToken::query()->where('token_hash', hash('sha256', $token))->first()->last_used_at)
         ->not->toBeNull();
+});
+
+it('rejects unauthenticated requests before resolving the organization', function () {
+    $this->getJson("/api/v1/organizations/{$this->organization->slug}/repositories")->assertUnauthorized();
+    $this->getJson('/api/v1/organizations/does-not-exist/repositories')->assertUnauthorized();
 });

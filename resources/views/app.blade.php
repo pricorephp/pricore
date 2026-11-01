@@ -47,6 +47,18 @@
 
     <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
 
+    @if ($googleAnalyticsId = config('services.google_analytics.id'))
+        <script async src="https://www.googletagmanager.com/gtag/js?id={{ $googleAnalyticsId }}"></script>
+        <script>
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', @json($googleAnalyticsId), {
+                linker: { domains: ['pricore.dev', 'app.pricore.dev'] }
+            });
+        </script>
+    @endif
+
     @if (config('cashier.client_side_token'))
         <script src="https://cdn.paddle.com/paddle/v2/paddle.js"></script>
         @if (config('cashier.sandbox'))

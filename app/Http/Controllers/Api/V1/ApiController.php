@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Domains\Token\Contracts\Enums\TokenScope;
 use App\Http\Controllers\Controller;
 use App\Models\AccessToken;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
@@ -16,7 +17,7 @@ abstract class ApiController extends Controller
      */
     protected function accessToken(Request $request): AccessToken
     {
-        $accessToken = $request->get('accessToken');
+        $accessToken = $request->attributes->get('accessToken');
 
         abort_unless($accessToken instanceof AccessToken, 401);
 
@@ -42,5 +43,21 @@ abstract class ApiController extends Controller
     protected function perPage(Request $request): int
     {
         return min(max($request->integer('per_page', 25), 1), 100);
+    }
+
+    /**
+     * A token may only grant scopes it itself holds.
+     *
+     * @param  array<int, string>  $scopeValues
+     */
+    protected function assertCanGrantScopes(Request $request, array $scopeValues): void
+    {
+        $accessToken = $this->accessToken($request);
+
+        foreach ($scopeValues as $value) {
+            if (! $accessToken->hasScope(TokenScope::from($value))) {
+                abort(403, "Token cannot grant the '{$value}' scope it does not itself hold.");
+            }
+        }
     }
 }

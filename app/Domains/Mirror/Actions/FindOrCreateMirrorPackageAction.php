@@ -7,9 +7,13 @@ use App\Models\Package;
 
 class FindOrCreateMirrorPackageAction
 {
-    public function handle(Mirror $mirror, string $packageName): Package
+    /**
+     * Returns null when the name belongs to a package published from uploaded
+     * archives: mirroring into it would mix upstream releases with the uploads.
+     */
+    public function handle(Mirror $mirror, string $packageName): ?Package
     {
-        return Package::query()
+        $package = Package::query()
             ->firstOrCreate([
                 'organization_uuid' => $mirror->organization_uuid,
                 'name' => $packageName,
@@ -18,5 +22,7 @@ class FindOrCreateMirrorPackageAction
                 'type' => 'library',
                 'visibility' => 'private',
             ]);
+
+        return $package->is_artifact ? null : $package;
     }
 }

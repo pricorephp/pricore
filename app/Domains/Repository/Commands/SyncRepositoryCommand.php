@@ -20,7 +20,8 @@ class SyncRepositoryCommand extends Command
     protected $signature = 'sync:repository
                             {repository? : The UUID of the repository to sync}
                             {--organization= : Sync all repositories for this organization (UUID or slug)}
-                            {--all : Sync all repositories}';
+                            {--all : Sync all repositories}
+                            {--force : Sync every ref, even those whose commit has not changed}';
 
     /**
      * The console command description.
@@ -46,8 +47,10 @@ class SyncRepositoryCommand extends Command
 
         spin(
             callback: function () use ($repositories) {
+                $force = (bool) $this->option('force');
+
                 foreach ($repositories as $repository) {
-                    SyncRepositoryJob::dispatchSync($repository);
+                    SyncRepositoryJob::dispatchSync($repository, $force);
                 }
             },
             message: 'Dispatching sync jobs...',

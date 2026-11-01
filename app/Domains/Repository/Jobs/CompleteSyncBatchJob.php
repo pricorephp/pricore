@@ -40,6 +40,18 @@ class CompleteSyncBatchJob implements ShouldQueue
         $this->updateRepositoryStatus($repository, $batch);
         $this->recordActivity($repository, $syncLog, $recordActivityTask);
         $this->scanForVulnerabilities($repository, $syncLog);
+        $this->startRequestedSync($repository);
+    }
+
+    /**
+     * Syncs requested while this one ran (a push, or the package paths changed)
+     * were deferred until now, so start one for all of them.
+     */
+    protected function startRequestedSync(Repository $repository): void
+    {
+        if ($repository->full_sync_requested_at !== null || $repository->sync_requested_at !== null) {
+            SyncRepositoryJob::dispatch($repository);
+        }
     }
 
     protected function getBatch(): ?Batch
@@ -52,12 +64,14 @@ class CompleteSyncBatchJob implements ShouldQueue
         $added = 0;
         $updated = 0;
         $skipped = 0;
+        $removed = 0;
         $failed = 0;
 
         if ($batch) {
             $added = (int) Cache::pull("sync-batch:{$batch->id}:added", 0);
             $updated = (int) Cache::pull("sync-batch:{$batch->id}:updated", 0);
             $skipped = (int) Cache::pull("sync-batch:{$batch->id}:skipped", 0);
+            $removed = (int) Cache::pull("sync-batch:{$batch->id}:removed", 0);
             $failed = $batch->failedJobs;
         }
 
@@ -75,6 +89,8 @@ class CompleteSyncBatchJob implements ShouldQueue
             'versions_updated' => $updated,
             'versions_skipped' => $skipped,
             'versions_failed' => $failed,
+            // Stale tags were removed before the batch ran; refs drop versions too
+            'versions_removed' => $syncLog->versions_removed + $removed,
             'details' => array_merge($syncLog->details ?? [], [
                 'failed_jobs' => $failedJobs,
                 'total_jobs' => $totalJobs,
@@ -87,6 +103,7 @@ class CompleteSyncBatchJob implements ShouldQueue
             'versions_updated' => $updated,
             'versions_skipped' => $skipped,
             'versions_failed' => $failed,
+            'versions_removed' => $syncLog->versions_removed,
         ]);
     }
 
@@ -119,9 +136,25 @@ class CompleteSyncBatchJob implements ShouldQueue
             || $syncLog->versions_updated > 0
             || $syncLog->versions_removed > 0;
 
+        if (! $syncLog->status->isFailed() && ! $hasChanges) {
+            return;
+        }
+
+        $organization = $repository->organization()->first();
+
+        if (! $organization) {
+            Log::info('Skipping repository sync activity because organization is unavailable', [
+                'repository_uuid' => $repository->uuid,
+                'organization_uuid' => $repository->organization_uuid,
+                'sync_log_uuid' => $syncLog->uuid,
+            ]);
+
+            return;
+        }
+
         if ($syncLog->status->isFailed()) {
             $recordActivityTask->handle(
-                organization: $repository->organization,
+                organization: $organization,
                 type: ActivityType::RepositorySyncFailed,
                 subject: $repository,
                 properties: [
@@ -134,12 +167,8 @@ class CompleteSyncBatchJob implements ShouldQueue
             return;
         }
 
-        if (! $hasChanges) {
-            return;
-        }
-
         $recordActivityTask->handle(
-            organization: $repository->organization,
+            organization: $organization,
             type: ActivityType::RepositorySynced,
             subject: $repository,
             properties: [

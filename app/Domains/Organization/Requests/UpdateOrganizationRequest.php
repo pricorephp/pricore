@@ -35,6 +35,7 @@ class UpdateOrganizationRequest extends FormRequest
 
         if ($isOwner) {
             $rules['slug'] = [
+                'sometimes',
                 'required',
                 'string',
                 'max:255',

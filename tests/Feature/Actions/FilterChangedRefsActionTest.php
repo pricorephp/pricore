@@ -66,7 +66,7 @@ it('filters out refs with unchanged commit SHAs', function () {
     PackageVersion::factory()
         ->forPackage($package)
         ->create([
-            'version' => '1.0.0',
+            'version' => 'v1.0.0',
             'source_reference' => 'abc123',
         ]);
 
@@ -100,7 +100,7 @@ it('keeps refs with changed commit SHAs', function () {
     PackageVersion::factory()
         ->forPackage($package)
         ->create([
-            'version' => '1.0.0',
+            'version' => 'v1.0.0',
             'source_reference' => 'old-sha',
         ]);
 
@@ -166,7 +166,7 @@ it('filters tags and branches independently', function () {
     PackageVersion::factory()
         ->forPackage($package)
         ->create([
-            'version' => '1.0.0',
+            'version' => 'v1.0.0',
             'source_reference' => 'tag-sha',
         ]);
 
@@ -225,4 +225,146 @@ it('handles tags without v prefix', function () {
     $result = $action->handle($refs, $repository);
 
     expect($result->all->count())->toBe(0);
+});
+
+it('keeps unchanged refs whose dist archive failed to build', function () {
+    $organization = Organization::factory()->create();
+    $repository = Repository::factory()
+        ->for($organization, 'organization')
+        ->github()
+        ->create();
+
+    $package = Package::factory()
+        ->forOrganization($organization)
+        ->forRepository($repository)
+        ->create();
+
+    PackageVersion::factory()
+        ->forPackage($package)
+        ->create([
+            'version' => 'v1.0.0',
+            'source_reference' => 'abc123',
+            'dist_url' => null,
+            'dist_failed_at' => now(),
+        ]);
+
+    $refs = makeRefs(tags: [['name' => 'v1.0.0', 'commit' => 'abc123']]);
+
+    $result = app(FilterChangedRefsAction::class)->handle($refs, $repository);
+
+    expect($result->tags->count())->toBe(1);
+});
+
+it('filters unchanged refs whose dist archive was removed on purpose', function () {
+    $organization = Organization::factory()->create();
+    $repository = Repository::factory()
+        ->for($organization, 'organization')
+        ->github()
+        ->create();
+
+    $package = Package::factory()
+        ->forOrganization($organization)
+        ->forRepository($repository)
+        ->create();
+
+    PackageVersion::factory()
+        ->forPackage($package)
+        ->create([
+            'version' => 'v1.0.0',
+            'source_reference' => 'abc123',
+            'dist_url' => null,
+            'dist_failed_at' => null,
+        ]);
+
+    $refs = makeRefs(tags: [['name' => 'v1.0.0', 'commit' => 'abc123']]);
+
+    $result = app(FilterChangedRefsAction::class)->handle($refs, $repository);
+
+    expect($result->tags->count())->toBe(0);
+});
+
+it('filters unchanged refs whose dist archive failed when dists are disabled', function () {
+    config(['pricore.dist.enabled' => false]);
+
+    $organization = Organization::factory()->create();
+    $repository = Repository::factory()
+        ->for($organization, 'organization')
+        ->github()
+        ->create();
+
+    $package = Package::factory()
+        ->forOrganization($organization)
+        ->forRepository($repository)
+        ->create();
+
+    PackageVersion::factory()
+        ->forPackage($package)
+        ->create([
+            'version' => 'v1.0.0',
+            'source_reference' => 'abc123',
+            'dist_url' => null,
+            'dist_failed_at' => now(),
+        ]);
+
+    $refs = makeRefs(tags: [['name' => 'v1.0.0', 'commit' => 'abc123']]);
+
+    $result = app(FilterChangedRefsAction::class)->handle($refs, $repository);
+
+    expect($result->tags->count())->toBe(0);
+});
+
+it('keeps a ref while any package of the repository sits at a stale commit', function () {
+    $organization = Organization::factory()->create();
+    $repository = Repository::factory()->for($organization, 'organization')->github()->create();
+    $billing = Package::factory()->forOrganization($organization)->forRepository($repository)->create();
+    $crm = Package::factory()->forOrganization($organization)->forRepository($repository)->create();
+
+    PackageVersion::factory()->forPackage($billing)->create(['version' => 'v1.0.0', 'source_reference' => 'abc123']);
+    PackageVersion::factory()->forPackage($crm)->create(['version' => 'v1.0.0', 'source_reference' => 'stale']);
+
+    $result = app(FilterChangedRefsAction::class)->handle(
+        makeRefs(tags: [['name' => 'v1.0.0', 'commit' => 'abc123']]),
+        $repository,
+    );
+
+    expect($result->all->count())->toBe(1);
+});
+
+it('filters a ref once every package sits at its commit', function () {
+    $organization = Organization::factory()->create();
+    $repository = Repository::factory()->for($organization, 'organization')->github()->create();
+    $billing = Package::factory()->forOrganization($organization)->forRepository($repository)->create();
+    $crm = Package::factory()->forOrganization($organization)->forRepository($repository)->create();
+
+    PackageVersion::factory()->forPackage($billing)->create(['version' => 'v1.0.0', 'source_reference' => 'abc123']);
+    PackageVersion::factory()->forPackage($crm)->create(['version' => 'v1.0.0', 'source_reference' => 'abc123']);
+
+    $result = app(FilterChangedRefsAction::class)->handle(
+        makeRefs(tags: [['name' => 'v1.0.0', 'commit' => 'abc123']]),
+        $repository,
+    );
+
+    expect($result->all->count())->toBe(0);
+});
+
+it('keeps a ref while any package of the repository has a failed dist archive', function () {
+    $organization = Organization::factory()->create();
+    $repository = Repository::factory()->for($organization, 'organization')->github()->create();
+    $billing = Package::factory()->forOrganization($organization)->forRepository($repository)->create();
+    $crm = Package::factory()->forOrganization($organization)->forRepository($repository)->create();
+
+    PackageVersion::factory()->forPackage($billing)->create(['version' => 'v1.0.0', 'source_reference' => 'abc123']);
+    PackageVersion::factory()->forPackage($crm)->create([
+        'version' => 'v1.0.0',
+        'source_reference' => 'abc123',
+        'dist_url' => null,
+        'dist_failed_at' => now(),
+    ]);
+
+    $result = app(FilterChangedRefsAction::class)->handle(
+        makeRefs(tags: [['name' => 'v1.0.0', 'commit' => 'abc123']]),
+        $repository,
+    );
+
+    expect($result->all->count())->toBe(1);
 });

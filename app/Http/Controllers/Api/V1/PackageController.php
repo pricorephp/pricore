@@ -7,6 +7,7 @@ use App\Domains\Activity\Contracts\Enums\ActivityType;
 use App\Domains\Package\Contracts\Data\PackageData;
 use App\Models\Organization;
 use App\Models\Package;
+use App\Models\PackageVersion;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Spatie\LaravelData\PaginatedDataCollection;
@@ -53,8 +54,12 @@ class PackageController extends ApiController
             properties: ['name' => $package->name],
         );
 
-        // Delete versions through Eloquent so dist files are cleaned up.
-        $package->versions()->each(fn ($version) => $version->delete());
+        // Deleted through Eloquent to trigger dist file cleanup, and keyed by id
+        // rather than offset: each() pages with OFFSET, so deleting as it goes
+        // would skip versions and leave their archives behind.
+        $package->versions()
+            ->lazyById(100, 'uuid')
+            ->each(fn (PackageVersion $version) => $version->delete());
 
         $package->delete();
 

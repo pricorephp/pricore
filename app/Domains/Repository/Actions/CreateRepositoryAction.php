@@ -19,6 +19,9 @@ class CreateRepositoryAction
         protected RecordActivityTask $recordActivity,
     ) {}
 
+    /**
+     * @param  array<int, string>|null  $packagePaths
+     */
     public function handle(
         Organization $organization,
         GitProvider $provider,
@@ -27,6 +30,7 @@ class CreateRepositoryAction
         ?string $name = null,
         ?string $defaultBranch = null,
         ?string $sshKeyUuid = null,
+        ?array $packagePaths = null,
     ): Repository {
         $name ??= $this->extractRepositoryName->handle($repoIdentifier, $provider);
 
@@ -41,6 +45,7 @@ class CreateRepositoryAction
             'repo_identifier' => $repoIdentifier,
             'custom_base_url' => $this->resolveBaseUrl($provider, $user->uuid),
             'default_branch' => $defaultBranch,
+            'package_paths' => $packagePaths,
         ]);
 
         $this->recordActivity->handle(

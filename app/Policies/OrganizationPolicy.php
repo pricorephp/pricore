@@ -51,6 +51,11 @@ class OrganizationPolicy
         return $organization->owner_uuid === $user->uuid;
     }
 
+    public function managePackages(User $user, Organization $organization): bool
+    {
+        return $this->viewSettings($user, $organization);
+    }
+
     public function deleteRepository(User $user, Organization $organization): bool
     {
         /** @var User|null $member */

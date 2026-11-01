@@ -19,6 +19,16 @@ class CleanupDistArchivesCommand extends Command
             "Cleaned up {$result['archives_removed']} archives across {$result['packages']} packages."
         );
 
+        if ($result['detached_marked'] > 0) {
+            $this->components->info(
+                "Marked {$result['detached_marked']} archives detached from a moved reference."
+            );
+        }
+
+        $this->components->info(
+            "Removed {$result['detached_removed']} detached archives past the retention window."
+        );
+
         return self::SUCCESS;
     }
 }

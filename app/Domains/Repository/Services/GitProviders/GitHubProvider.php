@@ -4,8 +4,8 @@ namespace App\Domains\Repository\Services\GitProviders;
 
 use App\Domains\Repository\Contracts\Data\RepositorySuggestionData;
 use App\Domains\Repository\Exceptions\GitProviderException;
+use App\Domains\Repository\Exceptions\GitProviderRateLimitedException;
 use Illuminate\Http\Client\PendingRequest;
-use Illuminate\Http\Client\RequestException;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -17,47 +17,13 @@ class GitHubProvider extends AbstractGitProvider
     {
         $token = $this->getCredential('token');
 
-        return Http::baseUrl('https://api.github.com')
+        return $this->withRetries(Http::baseUrl('https://api.github.com')
             ->withHeaders([
                 'Accept' => 'application/vnd.github+json',
                 'X-GitHub-Api-Version' => '2022-11-28',
             ])
             ->when($token, fn (PendingRequest $http) => $http->withToken($token))
-            ->timeout(30)
-            ->retry(
-                times: 3,
-                sleepMilliseconds: function (int $attempt, \Throwable $exception) {
-                    $response = $exception instanceof RequestException ? $exception->response : null;
-
-                    if ($response && $this->isRateLimited($response)) {
-                        return $this->calculateRateLimitDelay($response);
-                    }
-
-                    // Exponential backoff: 1s, 5s, 15s
-                    return (int) (1000 * pow(5, $attempt - 1));
-                },
-                when: function (\Throwable $exception): bool {
-                    $response = $exception instanceof RequestException ? $exception->response : null;
-
-                    if ($response && $this->isRateLimited($response)) {
-                        Log::warning('GitHub API rate limit hit, retrying after delay', [
-                            'repository' => $this->repositoryIdentifier,
-                            'remaining' => $response->header('X-RateLimit-Remaining'),
-                            'reset' => $response->header('X-RateLimit-Reset'),
-                        ]);
-
-                        return true;
-                    }
-
-                    // Retry on server errors
-                    if ($response) {
-                        return $response->serverError();
-                    }
-
-                    return false;
-                },
-                throw: true,
-            )
+            ->timeout(30))
             ->withResponseMiddleware(function (ResponseInterface $response) {
                 $remaining = $response->getHeaderLine('X-RateLimit-Remaining');
 
@@ -73,21 +39,26 @@ class GitHubProvider extends AbstractGitProvider
             });
     }
 
-    protected function isRateLimited(Response $response): bool
-    {
-        return in_array($response->status(), [403, 429])
-            && $response->header('X-RateLimit-Remaining') === '0';
-    }
-
     /**
-     * Calculate delay in milliseconds until the rate limit resets (capped at 60s).
+     * GitHub signals the primary limit with an exhausted quota and its reset
+     * time, and a secondary limit with a Retry-After header. Both may come as
+     * a 403 instead of a 429.
      */
-    protected function calculateRateLimitDelay(Response $response): int
+    protected function rateLimitRetryAfter(Response $response): ?int
     {
-        $resetTimestamp = (int) $response->header('X-RateLimit-Reset');
-        $delaySeconds = max(0, $resetTimestamp - time());
+        if (! in_array($response->status(), [403, 429], true)) {
+            return null;
+        }
 
-        return min($delaySeconds, 60) * 1000;
+        if ($response->header('Retry-After') !== '') {
+            return max(1, (int) $response->header('Retry-After'));
+        }
+
+        if ($response->header('X-RateLimit-Remaining') === '0') {
+            return max(1, (int) $response->header('X-RateLimit-Reset') - time());
+        }
+
+        return null;
     }
 
     /**
@@ -226,12 +197,70 @@ class GitHubProvider extends AbstractGitProvider
         }
     }
 
+    /**
+     * @return array<int, array{name: string, type: 'dir'|'file'}>
+     */
+    public function listDirectory(string $ref, string $path): array
+    {
+        try {
+            $path = trim($path, '/');
+
+            $response = $this->http->get("/repos/{$this->repositoryIdentifier}/contents/{$path}", [
+                'ref' => $ref,
+            ]);
+
+            if ($response->status() === 404) {
+                return [];
+            }
+
+            if ($response->failed()) {
+                throw new GitProviderException(
+                    "Failed to list directory on GitHub: {$response->body()}"
+                );
+            }
+
+            $data = $response->json();
+
+            // A file path yields a single object; only a directory yields a list of entries
+            if (! is_array($data) || ! array_is_list($data)) {
+                return [];
+            }
+
+            $entries = [];
+
+            foreach ($data as $entry) {
+                $entries[] = [
+                    'name' => (string) $entry['name'],
+                    'type' => ($entry['type'] ?? null) === 'dir' ? 'dir' : 'file',
+                ];
+            }
+
+            return $entries;
+        } catch (GitProviderException $e) {
+            throw $e;
+        } catch (\Exception $e) {
+            Log::error('GitHub API error listing directory', [
+                'repository' => $this->repositoryIdentifier,
+                'ref' => $ref,
+                'path' => $path,
+                'error' => $e->getMessage(),
+            ]);
+
+            throw new GitProviderException(
+                "Failed to list directory: {$e->getMessage()}",
+                previous: $e
+            );
+        }
+    }
+
     public function validateCredentials(): bool
     {
         try {
             $response = $this->http->get("/repos/{$this->repositoryIdentifier}");
 
             return $response->successful();
+        } catch (GitProviderRateLimitedException $e) {
+            throw $e;
         } catch (\Exception $e) {
             Log::error('GitHub API error validating credentials', [
                 'repository' => $this->repositoryIdentifier,
@@ -313,11 +342,12 @@ class GitHubProvider extends AbstractGitProvider
         }
     }
 
-    public function downloadArchive(string $ref, string $outputPath): bool
+    protected function downloadFullArchive(string $ref, string $outputPath): bool
     {
         try {
             /** @var Response $response */
-            $response = $this->http
+            // withOptions() changes the client in place; the sink must not outlive this request
+            $response = (clone $this->http)
                 ->withOptions(['sink' => $outputPath])
                 ->get("/repos/{$this->repositoryIdentifier}/zipball/{$ref}");
 
@@ -372,6 +402,7 @@ class GitHubProvider extends AbstractGitProvider
                 $owners[] = $userResponse->json('login');
             }
 
+            $organizations = [];
             $page = 1;
             do {
                 $response = $this->http->get('/user/orgs', [
@@ -385,13 +416,19 @@ class GitHubProvider extends AbstractGitProvider
 
                 $orgs = $response->json();
                 foreach ($orgs as $org) {
-                    $owners[] = $org['login'];
+                    $organizations[] = $org['login'];
                 }
 
                 $page++;
             } while (count($orgs) === 100);
 
-            return $owners;
+            // Fine-grained tokens cannot list organization memberships, so /user/orgs
+            // comes back empty for them.
+            if ($organizations === []) {
+                $organizations = $this->getOrganizationsFromRepositories();
+            }
+
+            return array_values(array_unique([...$owners, ...$organizations]));
         } catch (\Exception $e) {
             Log::error('GitHub API error fetching owners', [
                 'error' => $e->getMessage(),
@@ -402,6 +439,40 @@ class GitHubProvider extends AbstractGitProvider
                 previous: $e
             );
         }
+    }
+
+    /**
+     * Organizations that own a repository the token can reach.
+     *
+     * @return array<int, string>
+     */
+    protected function getOrganizationsFromRepositories(): array
+    {
+        $organizations = [];
+        $page = 1;
+
+        do {
+            $response = $this->http->get('/user/repos', [
+                'per_page' => 100,
+                'page' => $page,
+                'affiliation' => 'collaborator,organization_member',
+            ]);
+
+            if ($response->failed()) {
+                break;
+            }
+
+            $repos = $response->json();
+            foreach ($repos as $repo) {
+                if (($repo['owner']['type'] ?? null) === 'Organization') {
+                    $organizations[] = $repo['owner']['login'];
+                }
+            }
+
+            $page++;
+        } while (count($repos) === 100);
+
+        return $organizations;
     }
 
     /**

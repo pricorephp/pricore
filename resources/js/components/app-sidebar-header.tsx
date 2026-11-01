@@ -31,7 +31,7 @@ export function AppSidebarHeader({
                 >
                     <SearchIcon className="size-4" />
                     <span className="mr-1 hidden lg:inline">Search...</span>
-                    <kbd className="pointer-events-none hidden rounded border bg-muted px-1.5 font-mono text-[10px] font-medium select-none lg:inline">
+                    <kbd className="pointer-events-none hidden rounded border bg-muted px-1.5 font-mono text-[11px] font-medium select-none lg:inline">
                         {isMac ? '⌘K' : 'Ctrl+K'}
                     </kbd>
                 </button>

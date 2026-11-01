@@ -3,7 +3,6 @@
 namespace App\Http\Middleware;
 
 use App\Domains\Token\Contracts\Enums\TokenScope;
-use App\Domains\Token\Services\TokenScopeChecker;
 use App\Models\AccessToken;
 use Closure;
 use Illuminate\Http\Request;
@@ -11,17 +10,13 @@ use Symfony\Component\HttpFoundation\Response;
 
 class RequireTokenScope
 {
-    public function __construct(
-        protected TokenScopeChecker $scopeChecker,
-    ) {}
-
     /**
      * Usage: ->middleware('scope:write:repositories'). Multiple comma-separated
      * scopes are treated as "any of"; chain two scope middlewares for "all of".
      */
     public function handle(Request $request, Closure $next, string ...$scopes): Response
     {
-        $accessToken = $request->get('accessToken');
+        $accessToken = $request->attributes->get('accessToken');
 
         if (! $accessToken instanceof AccessToken) {
             return $this->unauthorized();
@@ -32,7 +27,7 @@ class RequireTokenScope
             $scopes,
         );
 
-        if (! $this->scopeChecker->hasAny($accessToken, ...$required)) {
+        if (! $accessToken->hasAnyScope(...$required)) {
             return response()->json([
                 'message' => 'Insufficient token scope.',
                 'required_scope' => $scopes[0] ?? null,

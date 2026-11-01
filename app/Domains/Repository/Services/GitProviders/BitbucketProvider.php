@@ -4,8 +4,8 @@ namespace App\Domains\Repository\Services\GitProviders;
 
 use App\Domains\Repository\Contracts\Data\RepositorySuggestionData;
 use App\Domains\Repository\Exceptions\GitProviderException;
+use App\Domains\Repository\Exceptions\GitProviderRateLimitedException;
 use Illuminate\Http\Client\PendingRequest;
-use Illuminate\Http\Client\RequestException;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -17,45 +17,12 @@ class BitbucketProvider extends AbstractGitProvider
         $email = $this->getCredential('email', '');
         $apiToken = $this->getCredential('api_token', '');
 
-        return Http::baseUrl('https://api.bitbucket.org/2.0')
+        return $this->withRetries(Http::baseUrl('https://api.bitbucket.org/2.0')
             ->withBasicAuth($email, $apiToken)
             ->withHeaders([
                 'Accept' => 'application/json',
             ])
-            ->timeout(30)
-            ->retry(
-                times: 3,
-                sleepMilliseconds: function (int $attempt, \Throwable $exception) {
-                    $response = $exception instanceof RequestException ? $exception->response : null;
-
-                    if ($response && $response->status() === 429) {
-                        $retryAfter = (int) ($response->header('Retry-After') ?: '60');
-
-                        Log::warning('Bitbucket API rate limit hit, retrying after delay', [
-                            'repository' => $this->repositoryIdentifier,
-                            'retry_after' => $retryAfter,
-                        ]);
-
-                        return min($retryAfter, 60) * 1000;
-                    }
-
-                    return (int) (1000 * pow(5, $attempt - 1));
-                },
-                when: function (\Throwable $exception): bool {
-                    $response = $exception instanceof RequestException ? $exception->response : null;
-
-                    if ($response && $response->status() === 429) {
-                        return true;
-                    }
-
-                    if ($response) {
-                        return $response->serverError();
-                    }
-
-                    return false;
-                },
-                throw: false,
-            );
+            ->timeout(30));
     }
 
     /**
@@ -157,7 +124,8 @@ class BitbucketProvider extends AbstractGitProvider
     public function getFileContent(string $ref, string $path): ?string
     {
         try {
-            $response = $this->http
+            // accept() changes the client in place; later JSON calls must keep their header
+            $response = (clone $this->http)
                 ->accept('application/octet-stream')
                 ->get("/repositories/{$this->repositoryIdentifier}/src/{$ref}/{$path}");
 
@@ -187,12 +155,76 @@ class BitbucketProvider extends AbstractGitProvider
         }
     }
 
+    /**
+     * @return array<int, array{name: string, type: 'dir'|'file'}>
+     */
+    public function listDirectory(string $ref, string $path): array
+    {
+        try {
+            $entries = [];
+            $path = trim($path, '/');
+            $url = "/repositories/{$this->repositoryIdentifier}/src/{$ref}/".($path === '' ? '' : "{$path}/");
+            $params = ['pagelen' => 100];
+
+            do {
+                $response = $params === []
+                    ? $this->http->get($url)
+                    : $this->http->get($url, $params);
+
+                if ($response->status() === 404) {
+                    return [];
+                }
+
+                if ($response->failed()) {
+                    throw new GitProviderException(
+                        "Failed to list directory on Bitbucket: {$response->body()}"
+                    );
+                }
+
+                $data = $response->json();
+
+                // A file path returns the raw file rather than a listing
+                if (! is_array($data) || ! is_array($data['values'] ?? null)) {
+                    return [];
+                }
+
+                foreach ($data['values'] as $entry) {
+                    $entries[] = [
+                        'name' => basename((string) $entry['path']),
+                        'type' => ($entry['type'] ?? null) === 'commit_directory' ? 'dir' : 'file',
+                    ];
+                }
+
+                $url = $this->extractNextPath($data['next'] ?? null);
+                $params = [];
+            } while ($url !== null);
+
+            return $entries;
+        } catch (GitProviderException $e) {
+            throw $e;
+        } catch (\Exception $e) {
+            Log::error('Bitbucket API error listing directory', [
+                'repository' => $this->repositoryIdentifier,
+                'ref' => $ref,
+                'path' => $path,
+                'error' => $e->getMessage(),
+            ]);
+
+            throw new GitProviderException(
+                "Failed to list directory: {$e->getMessage()}",
+                previous: $e
+            );
+        }
+    }
+
     public function validateCredentials(): bool
     {
         try {
             $response = $this->http->get("/repositories/{$this->repositoryIdentifier}");
 
             return $response->successful();
+        } catch (GitProviderRateLimitedException $e) {
+            throw $e;
         } catch (\Exception $e) {
             Log::error('Bitbucket API error validating credentials', [
                 'repository' => $this->repositoryIdentifier,
@@ -275,7 +307,7 @@ class BitbucketProvider extends AbstractGitProvider
         }
     }
 
-    public function downloadArchive(string $ref, string $outputPath): bool
+    protected function downloadFullArchive(string $ref, string $outputPath): bool
     {
         try {
             $email = $this->getCredential('email', '');

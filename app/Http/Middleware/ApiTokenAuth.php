@@ -6,11 +6,17 @@ use App\Domains\Token\Services\AccessTokenResolver;
 use App\Models\AccessToken;
 use App\Models\Organization;
 use Closure;
+use Illuminate\Contracts\Auth\Middleware\AuthenticatesRequests;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Symfony\Component\HttpFoundation\Response;
 
-class ApiTokenAuth
+/**
+ * Marked as authenticating so the router runs it before throttling (which keys
+ * on the token) and before route model binding (so unknown slugs aren't
+ * distinguishable from existing ones without a valid token).
+ */
+class ApiTokenAuth implements AuthenticatesRequests
 {
     public function __construct(
         protected AccessTokenResolver $accessTokenResolver,
@@ -45,7 +51,7 @@ class ApiTokenAuth
 
         $accessToken->markAsUsed();
 
-        $request->merge(['accessToken' => $accessToken]);
+        $request->attributes->set('accessToken', $accessToken);
 
         return $next($request);
     }

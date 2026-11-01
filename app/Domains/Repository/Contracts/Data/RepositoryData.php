@@ -22,6 +22,8 @@ class RepositoryData extends Data
         public ?string $syncStatusLabel,
         public ?CarbonInterface $lastSyncedAt,
         public int $packagesCount,
+        /** @var array<int, string>|null */
+        public ?array $packagePaths,
         public bool $supportsWebhooks,
         public bool $supportsAutomaticWebhooks,
         public bool $webhookActive,
@@ -44,6 +46,7 @@ class RepositoryData extends Data
             syncStatusLabel: $repository->sync_status?->label(),
             lastSyncedAt: $repository->last_synced_at,
             packagesCount: $repository->packages_count ?? 0,
+            packagePaths: $repository->package_paths,
             supportsWebhooks: $repository->provider->supportsWebhooks(),
             supportsAutomaticWebhooks: $repository->provider->supportsAutomaticWebhooks(),
             webhookActive: $webhookActive,

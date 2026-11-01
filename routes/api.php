@@ -75,9 +75,9 @@ Route::middleware(['api.token', 'throttle:api'])->group(function () {
                 ->middleware('scope:read:members')->name('members.index');
             Route::post('members', [MemberController::class, 'store'])
                 ->middleware('scope:write:members')->name('members.store');
-            Route::patch('members/{member:uuid}', [MemberController::class, 'update'])
+            Route::patch('members/{member}', [MemberController::class, 'update'])
                 ->middleware('scope:write:members')->name('members.update');
-            Route::delete('members/{member:uuid}', [MemberController::class, 'destroy'])
+            Route::delete('members/{member}', [MemberController::class, 'destroy'])
                 ->middleware('scope:write:members')->name('members.destroy');
 
             // Invitations

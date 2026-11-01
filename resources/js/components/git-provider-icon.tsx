@@ -19,6 +19,17 @@ const iconMap: Record<
     git: GitIcon,
 };
 
+const providerColors: Record<string, string> = {
+    github: 'text-gray-800 dark:text-gray-300',
+    gitlab: 'text-orange-600',
+    bitbucket: 'text-blue-600',
+    git: 'text-gray-600',
+};
+
+export function getProviderColor(provider: string): string {
+    return providerColors[provider.toLowerCase()] ?? providerColors.git;
+}
+
 export default function GitProviderIcon({
     provider,
     className,

@@ -28,18 +28,18 @@ curl -H "Authorization: Bearer YOUR_TOKEN" \
 Two kinds of token work:
 
 - **Personal access tokens** act as your user and can reach every organization you belong to. Create them under **Settings → Access Tokens**, or via `POST /api/v1/user/tokens`.
-- **Organization tokens** are scoped to a single organization. Create them under the organization's token settings, or via `POST /api/v1/organizations/{organization}/tokens`.
+- **Organization tokens** are scoped to a single organization and act with admin rights there. Create them under the organization's token settings, or via `POST /api/v1/organizations/{organization}/tokens`. Deleting the organization, changing its slug and adding repositories from a Git provider (which uses your own Git credentials) need a personal access token.
 
 ### Scopes
 
-Every token carries a set of scopes that limit what it can do. Requests are checked against both the token's scopes **and** your role in the organization, so a token can never exceed its owner's permissions. Tokens created before scopes existed retain full access.
+Every token carries a set of scopes that limit what it can do. Requests are checked against both the token's scopes **and** your role in the organization, so a personal token can never exceed its owner's permissions. A token can only grant scopes it holds itself. Tokens created before scopes existed can only install packages (`composer`).
 
 | Scope | Grants |
 |-------|--------|
 | `composer` | Composer registry access (package resolution & downloads) |
 | `read:organizations` / `write:organizations` / `delete:organizations` | View / create & update / delete organizations |
 | `read:repositories` / `write:repositories` / `delete:repositories` | View / add & sync / delete repositories |
-| `read:packages` / `write:packages` / `delete:packages` | View / manage / delete packages & versions |
+| `read:packages` / `write:packages` / `delete:packages` | View / [publish uploaded versions](#upload-a-package-version) / delete packages & versions |
 | `read:members` / `write:members` | View / manage members & invitations |
 | `read:mirrors` / `write:mirrors` / `delete:mirrors` | View / add & sync / delete mirrors |
 | `read:tokens` / `write:tokens` | View / create & revoke access tokens |
@@ -73,7 +73,7 @@ See the [OpenAPI specification](/openapi.json) for request/response schemas of e
 
 ## Composer API Authentication
 
-The Composer API requires authentication via an access token that carries the `composer` scope (tokens created before scopes existed retain access). Two methods are supported:
+The Composer API requires authentication via an access token that carries the `composer` scope. Two methods are supported:
 
 ### HTTP Basic Auth
 
@@ -247,6 +247,56 @@ POST /{organization}/api/security-advisories
 | `severity` | One of `critical`, `high`, `medium`, `low`, or `unknown` |
 
 Packages with advisories are included in the response with their advisory list. Packages without advisories are omitted. If no requested packages have advisories, `advisories` is an empty object.
+
+### Upload a Package Version
+
+Publishes a zip archive as a version of an existing [uploaded package](/guide/packages#from-an-archive-upload). Requires a token with the `composer` and `write:packages` scopes (**Allow publishing packages**); personal tokens also require their owner to be an owner or admin of the organization.
+
+```
+POST /{organization}/api/packages/upload
+```
+
+**Request** (`multipart/form-data`):
+
+| Field | Description |
+|-------|-------------|
+| `archive` | The `.zip` to publish, with `composer.json` at its root or in a single top-level directory. |
+| `version` | Optional. The version to publish; defaults to `version` in `composer.json`. |
+
+```bash
+curl -H "Authorization: Bearer YOUR_TOKEN" \
+  -F archive=@package.zip \
+  -F version=1.4.0 \
+  https://pricore.yourcompany.com/{organization}/api/packages/upload
+```
+
+**Response** (`201 Created`, or `200 OK` when the identical archive was already published as this version):
+
+```json
+{
+    "result": "added",
+    "package": "acme/moodle-plugin",
+    "version": "1.4.0",
+    "version_normalized": "1.4.0.0",
+    "dist": {
+        "url": "https://pricore.yourcompany.com/acme/dists/acme/moodle-plugin/1.4.0/3f7a...e1.zip",
+        "shasum": "3f7a...e1",
+        "size": 48213
+    }
+}
+```
+
+`result` is `added`, `replaced` (a dev version was overwritten) or `unchanged`.
+
+**Errors** are returned as JSON with a `message`:
+
+| Status | Reason |
+|--------|--------|
+| `403` | The token can't publish |
+| `404` | The package doesn't exist yet; create it by uploading its first version in the web app |
+| `409` | The package is synced from a repository or mirror, or the release already exists with a different archive |
+| `422` | The archive is invalid: not a zip, no or invalid `composer.json`, unsafe paths, a missing or invalid version, or too large |
+| `429` | Too many uploads with this token; the default limit is 30 per minute |
 
 ## Webhooks
 

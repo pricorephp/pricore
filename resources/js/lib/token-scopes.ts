@@ -5,9 +5,9 @@ export interface ScopeGroup {
     scopes: { value: TokenScope; label: string }[];
 }
 
-// Composer access is granted to every token implicitly; these are the
-// additional, opt-in permissions for the management API.
-export const API_SCOPE_GROUPS: ScopeGroup[] = [
+// Composer access is granted to every token implicitly and publishing has its
+// own checkbox; these are the additional, opt-in permissions for the REST API.
+const API_SCOPE_GROUPS: ScopeGroup[] = [
     {
         label: 'Organizations',
         scopes: [
@@ -28,7 +28,6 @@ export const API_SCOPE_GROUPS: ScopeGroup[] = [
         label: 'Packages',
         scopes: [
             { value: 'read:packages', label: 'Read' },
-            { value: 'write:packages', label: 'Write' },
             { value: 'delete:packages', label: 'Delete' },
         ],
     },
@@ -55,3 +54,19 @@ export const API_SCOPE_GROUPS: ScopeGroup[] = [
         ],
     },
 ];
+
+// Only the owner can delete an organization, which an organization token can't stand in for.
+const OWNER_ONLY_SCOPES: TokenScope[] = ['delete:organizations'];
+
+export function apiScopeGroups(isOrganizationToken: boolean): ScopeGroup[] {
+    if (!isOrganizationToken) {
+        return API_SCOPE_GROUPS;
+    }
+
+    return API_SCOPE_GROUPS.map((group) => ({
+        ...group,
+        scopes: group.scopes.filter(
+            (scope) => !OWNER_ONLY_SCOPES.includes(scope.value),
+        ),
+    }));
+}

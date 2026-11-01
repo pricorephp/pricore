@@ -49,7 +49,7 @@ class UserTokenController extends Controller
             user: $user,
             name: $request->validated('name'),
             expiresAt: $request->validated('expires_at') ? now()->parse($request->validated('expires_at')) : null,
-            scopes: $request->validated('scopes') ?? [TokenScope::Composer->value],
+            scopes: $request->validated('scopes') ?? [TokenScope::Composer],
         );
 
         $tokens = AccessToken::query()

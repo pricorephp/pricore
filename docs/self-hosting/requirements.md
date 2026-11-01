@@ -6,7 +6,9 @@ Requirements for running Pricore without Docker.
 
 ### PHP 8.4+
 
-Pricore requires PHP 8.4 or higher with the following extensions:
+Pricore requires PHP 8.4 or higher. Run at least PHP 8.4.27 (or 8.5.12): earlier releases are affected by critical remote code execution vulnerabilities, see the [PHP security advisory](https://www.php.net/archive/2026.php#2026-10-21-5).
+
+The following extensions are required:
 
 | Extension | Purpose |
 |-----------|---------|

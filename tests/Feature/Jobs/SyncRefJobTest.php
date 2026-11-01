@@ -56,7 +56,7 @@ it('syncs a single ref and creates a package version', function () {
     expect(PackageVersion::count())->toBe(1);
 
     $version = PackageVersion::first();
-    expect($version->version)->toBe('1.0.0');
+    expect($version->version)->toBe('v1.0.0');
     expect($version->source_reference)->toBe('abc123');
 });
 
@@ -139,7 +139,7 @@ it('skips refs when composer.json is missing', function () {
     $syncRefAction = app(SyncRefAction::class);
     $result = $syncRefAction->handle($mockProvider, $repository, $ref);
 
-    expect($result)->toBe('skipped');
+    expect($result->skipped)->toBe(1);
     expect(Package::count())->toBe(0);
     expect(PackageVersion::count())->toBe(0);
 });

@@ -3,6 +3,7 @@
 namespace App\Domains\Token\Commands;
 
 use App\Domains\Token\Actions\CreateAccessTokenAction;
+use App\Domains\Token\Contracts\Enums\TokenScope;
 use App\Models\Organization;
 use App\Models\User;
 use Carbon\Carbon;
@@ -21,7 +22,8 @@ class CreateTokenCommand extends Command
                             {--organization= : Organization UUID or slug}
                             {--user= : User UUID (for user-scoped token)}
                             {--name= : Token name}
-                            {--expires= : Expiration period (never, 30d, 90d, 1y, custom)}';
+                            {--expires= : Expiration period (never, 30d, 90d, 1y, custom)}
+                            {--publish : Allow the token to upload package versions}';
 
     protected $description = 'Create a new access token for Composer authentication';
 
@@ -71,7 +73,8 @@ class CreateTokenCommand extends Command
             organization: $organization,
             user: $user,
             name: $name,
-            expiresAt: $expiresAt
+            expiresAt: $expiresAt,
+            scopes: $this->option('publish') ? [TokenScope::Composer, TokenScope::WritePackages] : [TokenScope::Composer],
         );
 
         $this->newLine();
@@ -86,6 +89,10 @@ class CreateTokenCommand extends Command
         $this->components->twoColumnDetail(
             'Type',
             $result->organizationUuid ? 'Organization-scoped' : 'User-scoped'
+        );
+        $this->components->twoColumnDetail(
+            'Access',
+            $this->option('publish') ? 'Read and publish' : 'Read only'
         );
         $this->components->twoColumnDetail(
             'Expires',

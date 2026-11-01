@@ -4,7 +4,6 @@ namespace App\Http\Middleware;
 
 use App\Domains\Token\Contracts\Enums\TokenScope;
 use App\Domains\Token\Services\AccessTokenResolver;
-use App\Domains\Token\Services\TokenScopeChecker;
 use App\Models\AccessToken;
 use App\Models\Organization;
 use Closure;
@@ -15,7 +14,6 @@ class ComposerTokenAuth
 {
     public function __construct(
         protected AccessTokenResolver $accessTokenResolver,
-        protected TokenScopeChecker $scopeChecker,
     ) {}
 
     public function handle(Request $request, Closure $next): Response
@@ -26,7 +24,7 @@ class ComposerTokenAuth
             return $this->unauthorized();
         }
 
-        if (! $this->scopeChecker->hasScope($accessToken, TokenScope::Composer)) {
+        if (! $accessToken->hasScope(TokenScope::Composer)) {
             return $this->forbidden();
         }
 
@@ -44,6 +42,7 @@ class ComposerTokenAuth
         $accessToken->markAsUsed();
 
         $request->merge(['accessToken' => $accessToken]);
+        $request->attributes->set('accessToken', $accessToken);
 
         return $next($request);
     }

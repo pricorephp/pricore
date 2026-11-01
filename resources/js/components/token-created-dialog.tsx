@@ -62,11 +62,11 @@ export default function TokenCreatedDialog({
 
     const domain = window.location.host;
 
-    // A legacy token with no recorded scopes can do everything.
-    const grantsEverything = scopes.length === 0;
-    const hasComposer = grantsEverything || scopes.includes('composer');
-    const hasApi =
-        grantsEverything || scopes.some((scope) => scope !== 'composer');
+    const hasComposer = scopes.includes('composer');
+    // Publishing goes through the Composer registry, not the REST API.
+    const hasApi = scopes.some(
+        (scope) => scope !== 'composer' && scope !== 'write:packages',
+    );
 
     const composerCommand = `composer config --global --auth http-basic.${domain} token ${token}`;
     const apiCommand = `curl -H "Authorization: Bearer ${token}" \\\n     -H "Accept: application/json" \\\n     https://${domain}/api/v1/user`;

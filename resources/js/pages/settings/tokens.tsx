@@ -122,6 +122,7 @@ export default function Tokens({ tokens, tokenCreated }: TokensPageProps) {
                     <CreateTokenDialog
                         storeUrl={store.url()}
                         description="Acts as you across every organization you belong to."
+                        isOrganizationToken={false}
                         isOpen={createDialogOpen}
                         onClose={() => setCreateDialogOpen(false)}
                     />
@@ -130,6 +131,7 @@ export default function Tokens({ tokens, tokenCreated }: TokensPageProps) {
                         <EditTokenDialog
                             updateUrl={update.url(editingToken.uuid)}
                             token={editingToken}
+                            isOrganizationToken={false}
                             isOpen={editDialogOpen}
                             onClose={() => {
                                 setEditDialogOpen(false);

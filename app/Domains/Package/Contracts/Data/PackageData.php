@@ -2,6 +2,7 @@
 
 namespace App\Domains\Package\Contracts\Data;
 
+use App\Domains\Repository\Contracts\Enums\RepositorySyncStatus;
 use App\Models\Package;
 use App\Models\PackageVersion;
 use Carbon\CarbonInterface;
@@ -18,12 +19,17 @@ class PackageData extends Data
         public ?string $type,
         public string $visibility,
         public bool $isProxy,
+        public bool $isArtifact,
         public int $versionsCount,
         public ?string $latestVersion,
         public CarbonInterface $updatedAt,
         public ?string $repositoryName,
         public ?string $repositoryIdentifier,
         public ?string $repositoryUuid,
+        public ?string $repositoryProvider,
+        public ?RepositorySyncStatus $repositorySyncStatus,
+        public ?CarbonInterface $repositoryLastSyncedAt,
+        public ?string $sourcePath,
         public ?string $mirrorName,
         public ?string $mirrorUuid,
     ) {}
@@ -49,12 +55,17 @@ class PackageData extends Data
             type: $package->type,
             visibility: $package->visibility,
             isProxy: $package->is_proxy,
+            isArtifact: $package->is_artifact,
             versionsCount: $package->versions_count ?? 0,
             latestVersion: $latestVersion?->version,
             updatedAt: $updatedAt,
             repositoryName: $package->repository?->name,
             repositoryIdentifier: $package->repository?->repo_identifier,
             repositoryUuid: $package->repository?->uuid,
+            repositoryProvider: $package->repository?->provider->value,
+            repositorySyncStatus: $package->repository?->sync_status,
+            repositoryLastSyncedAt: $package->repository?->last_synced_at,
+            sourcePath: $package->source_path,
             mirrorName: $package->mirror?->name,
             mirrorUuid: $package->mirror?->uuid,
         );

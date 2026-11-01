@@ -36,6 +36,11 @@ export default function TokenList({
                         <div className="flex-1 space-y-0.5">
                             <div className="flex items-center gap-2">
                                 <h3 className="font-medium">{token.name}</h3>
+                                {token.canPublish && (
+                                    <Badge variant="secondary">
+                                        Can publish
+                                    </Badge>
+                                )}
                                 {isTokenExpired(token.expiresAt) && (
                                     <Badge variant="destructive">Expired</Badge>
                                 )}
@@ -96,20 +101,12 @@ function isTokenExpired(expiresAt: string | null): boolean {
     return new Date(expiresAt) < new Date();
 }
 
-// Composer access is the baseline for every token, so only surface the
-// additional API permissions (if any) to keep the list uncluttered.
+// Composer access is the baseline for every token and publishing has its own
+// badge, so only surface the API permissions to keep the list uncluttered.
 function ScopeBadges({ scopes }: { scopes: string[] }) {
-    if (scopes.length === 0) {
-        return (
-            <div className="flex flex-wrap gap-1 pt-0.5">
-                <Badge variant="outline" className="text-xs font-normal">
-                    Full access
-                </Badge>
-            </div>
-        );
-    }
-
-    const apiScopes = scopes.filter((scope) => scope !== 'composer');
+    const apiScopes = scopes.filter(
+        (scope) => scope !== 'composer' && scope !== 'write:packages',
+    );
 
     if (apiScopes.length === 0) {
         return null;

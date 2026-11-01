@@ -9,7 +9,6 @@ use App\Domains\Token\Contracts\Data\TokenCreatedData;
 use App\Domains\Token\Contracts\Enums\TokenScope;
 use App\Domains\Token\Requests\StoreAccessTokenRequest;
 use App\Domains\Token\Requests\UpdateAccessTokenRequest;
-use App\Domains\Token\Services\TokenScopeChecker;
 use App\Models\AccessToken;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -21,7 +20,6 @@ class UserTokenController extends ApiController
     public function __construct(
         protected CreateAccessTokenAction $createAccessToken,
         protected UpdateAccessTokenAction $updateAccessToken,
-        protected TokenScopeChecker $scopeChecker,
     ) {}
 
     /**
@@ -97,21 +95,5 @@ class UserTokenController extends ApiController
         $token->delete();
 
         return response()->noContent();
-    }
-
-    /**
-     * A token may only grant scopes it itself holds (legacy null-scope tokens may grant any).
-     *
-     * @param  array<int, string>  $scopeValues
-     */
-    private function assertCanGrantScopes(Request $request, array $scopeValues): void
-    {
-        $accessToken = $this->accessToken($request);
-
-        foreach ($scopeValues as $value) {
-            if (! $this->scopeChecker->hasScope($accessToken, TokenScope::from($value))) {
-                abort(403, "Token cannot grant the '{$value}' scope it does not itself hold.");
-            }
-        }
     }
 }

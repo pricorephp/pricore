@@ -129,6 +129,7 @@ export default function Tokens({
             <CreateTokenDialog
                 storeUrl={store.url(organization.slug)}
                 description={`A shared token for the ${organization.name} organization.`}
+                isOrganizationToken
                 isOpen={createDialogOpen}
                 onClose={() => setCreateDialogOpen(false)}
             />
@@ -140,6 +141,7 @@ export default function Tokens({
                         editingToken.uuid,
                     ])}
                     token={editingToken}
+                    isOrganizationToken
                     isOpen={editDialogOpen}
                     onClose={() => {
                         setEditDialogOpen(false);

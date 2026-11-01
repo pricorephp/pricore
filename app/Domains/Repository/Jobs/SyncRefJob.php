@@ -4,15 +4,18 @@ namespace App\Domains\Repository\Jobs;
 
 use App\Domains\Repository\Actions\SyncRefAction;
 use App\Domains\Repository\Contracts\Data\RefData;
+use App\Domains\Repository\Contracts\Data\SyncRefResultData;
 use App\Domains\Repository\Contracts\Enums\GitProvider;
 use App\Domains\Repository\Contracts\Interfaces\GitProviderInterface;
+use App\Domains\Repository\Exceptions\GitProviderRateLimitedException;
+use App\Domains\Repository\Jobs\Middleware\ReleaseWhenRateLimited;
 use App\Domains\Repository\Services\GitProviders\CachedGitProvider;
 use App\Domains\Repository\Services\GitProviders\GitProviderFactory;
-use App\Exceptions\ComposerMetadataException;
 use App\Models\Repository;
 use Illuminate\Bus\Batchable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Throwable;
@@ -21,7 +24,11 @@ class SyncRefJob implements ShouldQueue
 {
     use Batchable, Queueable;
 
-    public int $tries = 3;
+    /**
+     * Failures that count against the job. Waiting out a rate limit releases
+     * the job without one, bounded by retryUntil() instead of a number of tries.
+     */
+    public int $maxExceptions = 3;
 
     /**
      * @var array<int, int>
@@ -34,6 +41,19 @@ class SyncRefJob implements ShouldQueue
         public ?string $clonePath = null,
     ) {}
 
+    /**
+     * @return array<int, object>
+     */
+    public function middleware(): array
+    {
+        return [new ReleaseWhenRateLimited($this->repository->uuid)];
+    }
+
+    public function retryUntil(): Carbon
+    {
+        return now()->addHours(6);
+    }
+
     public function handle(SyncRefAction $syncRefAction): void
     {
         if ($this->batch()?->cancelled()) {
@@ -45,16 +65,13 @@ class SyncRefJob implements ShouldQueue
         try {
             $result = $syncRefAction->handle($provider, $this->repository, $this->ref);
 
-            $this->incrementCounter($result);
-        } catch (ComposerMetadataException $e) {
-            Log::warning('Skipping ref due to invalid composer.json', [
-                'repository' => $this->repository->name,
-                'ref' => $this->ref->name,
-                'error' => $e->getMessage(),
-            ]);
-
-            $this->incrementCounter('skipped');
+            $this->incrementCounters($result);
         } catch (Throwable $e) {
+            // Released by the middleware until the limit resets, not a failure
+            if (GitProviderRateLimitedException::find($e) !== null) {
+                throw $e;
+            }
+
             Log::error('Failed to sync ref', [
                 'repository' => $this->repository->name,
                 'ref' => $this->ref->name,
@@ -78,7 +95,23 @@ class SyncRefJob implements ShouldQueue
         return GitProviderFactory::make($this->repository);
     }
 
-    protected function incrementCounter(string $result): void
+    protected function incrementCounters(SyncRefResultData $result): void
+    {
+        $counters = [
+            'added' => $result->added,
+            'updated' => $result->updated,
+            'skipped' => $result->skipped,
+            'removed' => $result->removed,
+        ];
+
+        foreach ($counters as $counter => $count) {
+            if ($count > 0) {
+                $this->incrementCounter($counter, $count);
+            }
+        }
+    }
+
+    protected function incrementCounter(string $counter, int $count = 1): void
     {
         $batch = $this->batch();
 
@@ -86,7 +119,7 @@ class SyncRefJob implements ShouldQueue
             return;
         }
 
-        Cache::increment("sync-batch:{$batch->id}:{$result}");
+        Cache::increment("sync-batch:{$batch->id}:{$counter}", $count);
     }
 
     public function failed(?Throwable $exception): void

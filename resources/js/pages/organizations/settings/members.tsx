@@ -100,7 +100,7 @@ export default function Members({ members, invitations, roleOptions }: Props) {
         });
 
         const sorted = [...filtered].sort((a, b) => {
-            let comparison = 0;
+            let comparison: number;
 
             if (sortKey === 'name') {
                 comparison = a.name.localeCompare(b.name);

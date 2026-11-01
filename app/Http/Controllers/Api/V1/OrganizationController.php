@@ -65,8 +65,12 @@ class OrganizationController extends ApiController
 
     public function update(UpdateOrganizationRequest $request, Organization $organization): OrganizationData
     {
+        // Only the owner may change the slug, so an organization token (which
+        // acts as the owner) must not: an admin could otherwise create one.
         $user = $request->user();
-        $isOwner = $user !== null && $organization->owner_uuid === $user->uuid;
+        $isOwner = $user !== null
+            && $organization->owner_uuid === $user->uuid
+            && $this->accessToken($request)->organization_uuid === null;
 
         $attributes = ['name' => $request->validated('name')];
 
@@ -81,6 +85,8 @@ class OrganizationController extends ApiController
 
     public function destroy(Request $request, Organization $organization): Response
     {
+        // Deleting is reserved for the owner, which an organization token only stands in for.
+        $this->requirePersonalAccessToken($request);
         $this->authorize('delete', $organization);
 
         $organization->delete();

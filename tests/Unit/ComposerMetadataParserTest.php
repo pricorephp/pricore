@@ -17,7 +17,7 @@ it('parses valid composer.json with tag version', function () {
 
     expect($result)->toBeInstanceOf(ComposerMetadataData::class)
         ->and($result->name)->toBe('vendor/package')
-        ->and($result->version)->toBe('1.0.0')
+        ->and($result->version)->toBe('v1.0.0')
         ->and($result->normalizedVersion)->toBe('1.0.0.0')
         ->and($result->type)->toBe('library')
         ->and($result->description)->toBe('Test package')
@@ -50,7 +50,7 @@ it('adds dev- prefix to non-semver branch names', function (string $ref, string 
     'simple branch' => ['develop', 'dev-develop'],
     'branch with slash' => ['feature/my-feature', 'dev-feature/my-feature'],
     'release branch' => ['carconnect-release', 'dev-carconnect-release'],
-    'tag version' => ['v1.0.0', '1.0.0'],
+    'tag version' => ['v1.0.0', 'v1.0.0'],
     'tag without v' => ['1.2.3', '1.2.3'],
 ]);
 
@@ -73,6 +73,23 @@ it('throws exception for invalid name format', function () {
 
     ComposerMetadataData::fromComposerJson($composerJson, 'v1.0.0');
 })->throws(ComposerMetadataException::class);
+
+it('rejects names that are not two plain path segments', function (string $name) {
+    ComposerMetadataData::fromComposerJson(json_encode(['name' => $name]), 'v1.0.0');
+})->with([
+    '../other-org/package',
+    'vendor/..',
+    './package',
+    'vendor/package/extra',
+    '/vendor/package',
+    'vendor\\package',
+])->throws(ComposerMetadataException::class);
+
+it('keeps accepting names Composer itself would flag, such as uppercase', function () {
+    $result = ComposerMetadataData::fromComposerJson(json_encode(['name' => 'Vendor/My.Package_name']), 'v1.0.0');
+
+    expect($result->name)->toBe('Vendor/My.Package_name');
+});
 
 it('extracts package name from composer.json data', function () {
     $composerJson = [

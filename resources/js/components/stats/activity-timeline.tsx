@@ -17,6 +17,7 @@ import {
     RefreshCw,
     Shield,
     ShieldAlert,
+    Upload,
     UserMinus,
     UserPlus,
 } from 'lucide-react';
@@ -38,6 +39,7 @@ const iconMap: Record<string, LucideIcon> = {
     'key-round': KeyRound,
     'shield-alert': ShieldAlert,
     copy: Copy,
+    upload: Upload,
 };
 
 const categoryStyles: Record<string, { badge: string; standalone: string }> = {
@@ -207,6 +209,19 @@ function formatDescription(
                 action: (
                     <>
                         {verb('added')} package {subject(props.name)}
+                    </>
+                ),
+            };
+        case 'package.version_uploaded':
+            return {
+                actor,
+                action: (
+                    <>
+                        {verb(props.replaced ? 'replaced' : 'uploaded')}{' '}
+                        {bold(props.version)} of {subject(props.name)}
+                        {props.token_name && (
+                            <> using token {bold(props.token_name)}</>
+                        )}
                     </>
                 ),
             };

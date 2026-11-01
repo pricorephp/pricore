@@ -77,6 +77,37 @@ it('returns package metadata in composer v2 format', function () {
         ->assertJsonPath('packages.acme/awesome-package.0.source.reference', 'abc123');
 });
 
+it('preserves the v prefix in the version field while normalizing separately', function () {
+    $package = Package::factory()
+        ->for($this->organization, 'organization')
+        ->create(['name' => 'acme/awesome-package']);
+
+    PackageVersion::factory()
+        ->for($package)
+        ->create([
+            'version' => 'v1.2.0',
+            'normalized_version' => '1.2.0.0',
+            'composer_json' => [
+                'name' => 'acme/awesome-package',
+                'type' => 'library',
+            ],
+            'source_url' => 'https://github.com/acme/awesome-package.git',
+            'source_reference' => 'abc123',
+        ]);
+
+    $response = authenticatedGet("/{$this->organization->slug}/p2/acme/awesome-package.json", $this->plainToken);
+
+    $response->assertOk();
+
+    $versions = $response->json('packages.acme/awesome-package');
+
+    // The pretty version keeps the original tag (so {$version} placeholders and
+    // installed pretty versions match), while the normalized form drives comparison.
+    expect($versions)->toHaveCount(1)
+        ->and($versions[0]['version'])->toBe('v1.2.0')
+        ->and($versions[0]['version_normalized'])->toBe('1.2.0.0');
+});
+
 it('returns multiple versions ordered by release date', function () {
     $package = Package::factory()
         ->for($this->organization, 'organization')
@@ -403,6 +434,46 @@ it('returns 304 when If-None-Match header matches ETag', function () {
     $response->assertStatus(304);
 });
 
+it('does not return 304 for If-Modified-Since after a version is deleted', function () {
+    $package = Package::factory()
+        ->for($this->organization, 'organization')
+        ->create([
+            'name' => 'acme/package',
+            'updated_at' => now()->subDays(30),
+        ]);
+
+    PackageVersion::factory()
+        ->for($package)
+        ->create([
+            'version' => '1.0.0',
+            'normalized_version' => '1.0.0.0',
+            'updated_at' => now()->subHours(2),
+        ]);
+
+    $newestVersion = PackageVersion::factory()
+        ->for($package)
+        ->create([
+            'version' => '1.1.0',
+            'normalized_version' => '1.1.0.0',
+            'updated_at' => now()->subHour(),
+        ]);
+
+    $response = authenticatedGet("/{$this->organization->slug}/p2/acme/package.json", $this->plainToken);
+    $response->assertOk();
+    $lastModified = $response->headers->get('Last-Modified');
+
+    $newestVersion->delete();
+
+    $response = test()->withHeaders([
+        'Authorization' => "Bearer {$this->plainToken}",
+        'If-Modified-Since' => $lastModified,
+    ])->getJson("/{$this->organization->slug}/p2/acme/package.json");
+
+    $response->assertOk()
+        ->assertJsonCount(1, 'packages.acme/package')
+        ->assertJsonPath('packages.acme/package.0.version', '1.0.0');
+});
+
 it('returns ETag header on metadata responses', function () {
     $package = Package::factory()
         ->for($this->organization, 'organization')
@@ -432,4 +503,28 @@ it('does not leak packages from other organizations', function () {
     $response = authenticatedGet("/{$this->organization->slug}/p2/other/package.json", $this->plainToken);
 
     $response->assertNotFound();
+});
+
+it('leaves out subdirectory versions that have no dist archive', function () {
+    $package = Package::factory()
+        ->for($this->organization, 'organization')
+        ->atPath('packages/billing')
+        ->create(['name' => 'acme/billing']);
+
+    PackageVersion::factory()->for($package)->atPath('packages/billing')->create([
+        'version' => '1.0.0',
+        'normalized_version' => '1.0.0.0',
+        'dist_url' => 'https://example.com/dists/acme/billing/1.0.0/abc123.zip',
+    ]);
+    PackageVersion::factory()->for($package)->atPath('packages/billing')->create([
+        'version' => '1.1.0',
+        'normalized_version' => '1.1.0.0',
+        'dist_url' => null,
+    ]);
+
+    $response = authenticatedGet("/{$this->organization->slug}/p2/acme/billing.json", $this->plainToken);
+
+    $response->assertOk();
+
+    expect(collect($response->json('packages')['acme/billing'])->pluck('version')->all())->toBe(['1.0.0']);
 });

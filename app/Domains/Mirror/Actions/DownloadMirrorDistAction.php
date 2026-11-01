@@ -3,6 +3,7 @@
 namespace App\Domains\Mirror\Actions;
 
 use App\Domains\Mirror\Exceptions\MirrorDistDownloadException;
+use App\Domains\Mirror\Exceptions\UnsafeMirrorUrlException;
 use App\Domains\Mirror\Services\RegistryClient\RegistryClientFactory;
 use App\Domains\Repository\Contracts\Data\DistArchiveData;
 use App\Models\Mirror;
@@ -31,9 +32,14 @@ class DownloadMirrorDistAction
         try {
             $httpClient = RegistryClientFactory::createHttpClient($mirror);
 
-            $response = $httpClient
-                ->withOptions(['sink' => $tempPath])
-                ->get($distUrl);
+            try {
+                $response = $httpClient->get($distUrl, ['sink' => $tempPath]);
+            } catch (UnsafeMirrorUrlException $exception) {
+                throw new MirrorDistDownloadException(
+                    "Dist download rejected for {$package->name} {$packageVersion->version}: unsafe URL",
+                    previous: $exception,
+                );
+            }
 
             if (! $response->successful()) {
                 $status = $response->status();
@@ -64,8 +70,12 @@ class DownloadMirrorDistAction
                 return null;
             }
 
-            $refShort = substr($packageVersion->source_reference ?? '', 0, 12);
-            $storagePath = "{$organizationSlug}/{$package->name}/{$packageVersion->version}_{$refShort}.zip";
+            $storagePath = DistArchiveData::pathFor(
+                organizationSlug: $organizationSlug,
+                packageName: $package->name,
+                version: $packageVersion->version,
+                reference: $packageVersion->source_reference ?? '',
+            );
 
             $disk = Storage::disk(config('pricore.dist.disk'));
             $stream = fopen($tempPath, 'r');

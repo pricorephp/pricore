@@ -2,7 +2,9 @@
 
 namespace App\Domains\Repository\Services\GitProviders;
 
+use App\Domains\Repository\Contracts\Enums\GitProvider;
 use App\Domains\Repository\Exceptions\GitProviderException;
+use App\Domains\Repository\Rules\ValidRepositoryIdentifier;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Http;
@@ -22,7 +24,7 @@ class GenericGitProvider extends AbstractGitProvider
      */
     public function getTags(): array
     {
-        $output = $this->runGitCommand(['ls-remote', '--tags', '--refs', $this->getAuthenticatedUrl()]);
+        $output = $this->runGitCommand(['ls-remote', '--tags', '--refs', '--', $this->getAuthenticatedUrl()]);
 
         return $this->parseLsRemoteOutput($output, 'refs/tags/');
     }
@@ -32,12 +34,70 @@ class GenericGitProvider extends AbstractGitProvider
      */
     public function getBranches(): array
     {
-        $output = $this->runGitCommand(['ls-remote', '--heads', $this->getAuthenticatedUrl()]);
+        $output = $this->runGitCommand(['ls-remote', '--heads', '--', $this->getAuthenticatedUrl()]);
 
         return $this->parseLsRemoteOutput($output, 'refs/heads/');
     }
 
     public function getFileContent(string $ref, string $path): ?string
+    {
+        return $this->withShallowClone($ref, function (string $tempDir) use ($path): ?string {
+            $filePath = $tempDir.'/'.ltrim($path, '/');
+
+            if (! file_exists($filePath)) {
+                return null;
+            }
+
+            $content = file_get_contents($filePath);
+
+            return $content === false ? null : $content;
+        });
+    }
+
+    /**
+     * @return array<int, array{name: string, type: 'dir'|'file'}>
+     */
+    public function listDirectory(string $ref, string $path): array
+    {
+        $entries = $this->withShallowClone($ref, function (string $tempDir) use ($path): array {
+            $path = trim($path, '/');
+            $directory = $path === '' ? $tempDir : "{$tempDir}/{$path}";
+
+            if (! is_dir($directory)) {
+                return [];
+            }
+
+            $entries = [];
+
+            foreach (scandir($directory) ?: [] as $name) {
+                // The clone's own metadata is not part of the repository tree
+                if ($name === '.' || $name === '..' || ($path === '' && $name === '.git')) {
+                    continue;
+                }
+
+                $entries[] = [
+                    'name' => $name,
+                    'type' => is_dir("{$directory}/{$name}") ? 'dir' : 'file',
+                ];
+            }
+
+            return $entries;
+        });
+
+        return $entries ?? [];
+    }
+
+    /**
+     * Run $callback against a fresh shallow clone of $ref, removed afterwards.
+     * Returns null when the ref cannot be cloned (unknown ref, or a commit SHA
+     * not reachable by name).
+     *
+     * @template TResult
+     *
+     * @param  callable(string): TResult  $callback
+     * @return TResult|null
+     */
+    protected function withShallowClone(string $ref, callable $callback): mixed
     {
         $tempDir = sys_get_temp_dir().'/pricore-git-'.Str::random(16);
 
@@ -46,28 +106,18 @@ class GenericGitProvider extends AbstractGitProvider
                 throw new GitProviderException('Failed to create temporary directory');
             }
 
-            // Try to shallow clone the specific ref
             // Note: --branch works for both tags and branches
             $this->runGitCommand([
                 'clone',
                 '--depth', '1',
                 '--branch', $ref,
+                '--',
                 $this->getAuthenticatedUrl(),
                 $tempDir,
             ]);
 
-            $filePath = $tempDir.'/'.ltrim($path, '/');
-
-            if (file_exists($filePath)) {
-                $content = file_get_contents($filePath);
-
-                return $content === false ? null : $content;
-            }
-
-            return null;
+            return $callback($tempDir);
         } catch (\Exception $e) {
-            // If clone fails (e.g. ref doesn't exist or is a commit SHA not reachable by branch name)
-            // We could try to fallback to fetching by SHA if needed, but for now this covers standard use cases.
             return null;
         } finally {
             File::deleteDirectory($tempDir);
@@ -77,7 +127,7 @@ class GenericGitProvider extends AbstractGitProvider
     public function validateCredentials(): bool
     {
         try {
-            $this->runGitCommand(['ls-remote', $this->getAuthenticatedUrl(), 'HEAD']);
+            $this->runGitCommand(['ls-remote', '--', $this->getAuthenticatedUrl(), 'HEAD']);
 
             return true;
         } catch (\Exception $e) {
@@ -100,7 +150,7 @@ class GenericGitProvider extends AbstractGitProvider
         throw new GitProviderException('Generic Git provider does not support webhooks.');
     }
 
-    public function downloadArchive(string $ref, string $outputPath): bool
+    protected function downloadFullArchive(string $ref, string $outputPath): bool
     {
         return false;
     }
@@ -109,13 +159,20 @@ class GenericGitProvider extends AbstractGitProvider
     {
         $url = $this->repositoryIdentifier;
 
+        // Never hand git an address it could read as a transport helper, a local path,
+        // or an option. Request validation covers new repositories; this covers rows
+        // stored before that validation existed, or written by any other path.
+        if (! ValidRepositoryIdentifier::passes($url, GitProvider::Git)) {
+            throw new GitProviderException('Refusing to use an unsupported repository URL.');
+        }
+
         // SSH URLs are passed through unchanged — auth is handled via GIT_SSH_COMMAND
         if ($this->hasCredential('ssh_key') || ! Str::startsWith($url, ['http://', 'https://'])) {
             return $url;
         }
 
-        // Basic check if URL is http(s) and we have credentials
-        if (Str::startsWith($url, ['http://', 'https://']) && $this->hasCredential('username') && $this->hasCredential('password')) {
+        // The URL is guaranteed http(s) here, so only credentials remain to check
+        if ($this->hasCredential('username') && $this->hasCredential('password')) {
             $username = urlencode($this->getCredential('username'));
             $password = urlencode($this->getCredential('password'));
 

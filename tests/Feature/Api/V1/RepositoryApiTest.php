@@ -76,3 +76,42 @@ it('forbids a member from creating repositories', function () {
         ])
         ->assertForbidden();
 });
+
+it('stores monorepo package paths', function () {
+    Queue::fake();
+
+    $token = personalAccessToken($this->user, [TokenScope::WriteRepositories]);
+
+    $this->withToken($token)
+        ->postJson("/api/v1/organizations/{$this->organization->slug}/repositories", [
+            'provider' => 'git',
+            'repo_identifier' => 'https://example.com/acme/monorepo.git',
+            'package_paths' => ['packages/*'],
+        ])
+        ->assertCreated();
+
+    expect(Repository::query()->where('repo_identifier', 'https://example.com/acme/monorepo.git')->firstOrFail()->package_paths)
+        ->toBe(['packages/*']);
+});
+
+it('does not let an organization token add repositories with Git provider credentials', function () {
+    Queue::fake();
+
+    $token = organizationAccessToken($this->organization, [TokenScope::WriteRepositories]);
+
+    $this->withToken($token)
+        ->postJson("/api/v1/organizations/{$this->organization->slug}/repositories", [
+            'provider' => 'github',
+            'repo_identifier' => 'acme/widgets',
+        ])
+        ->assertForbidden();
+
+    $this->withToken($token)
+        ->postJson("/api/v1/organizations/{$this->organization->slug}/repositories/bulk", [
+            'provider' => 'github',
+            'repositories' => [['repo_identifier' => 'acme/widgets']],
+        ])
+        ->assertForbidden();
+
+    assertDatabaseMissing('repositories', ['repo_identifier' => 'acme/widgets']);
+});

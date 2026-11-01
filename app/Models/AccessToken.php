@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Domains\Token\Contracts\Enums\TokenScope;
 use App\Models\Concerns\HasUuids;
 use Database\Factories\AccessTokenFactory;
 use Eloquent;
@@ -90,6 +91,25 @@ class AccessToken extends Model
     public function isValid(): bool
     {
         return ! $this->isExpired();
+    }
+
+    /**
+     * Tokens created before scopes were enforced have none stored and can only install packages.
+     */
+    public function hasScope(TokenScope $scope): bool
+    {
+        return in_array($scope->value, $this->scopes ?? [TokenScope::Composer->value], true);
+    }
+
+    public function hasAnyScope(TokenScope ...$scopes): bool
+    {
+        foreach ($scopes as $scope) {
+            if ($this->hasScope($scope)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public function markAsUsed(): void

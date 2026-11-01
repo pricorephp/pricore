@@ -215,7 +215,7 @@ export default function MirrorShow({
                                         organization.slug,
                                         pkg.uuid,
                                     ])}
-                                    className="group flex items-center justify-between px-4 py-3 transition-colors hover:bg-accent/50"
+                                    className="group flex items-center gap-6 px-4 py-3 transition-colors hover:bg-accent/50"
                                 >
                                     <PackageCard package={pkg} hideRepository />
                                 </Link>

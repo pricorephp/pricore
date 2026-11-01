@@ -4,10 +4,12 @@ namespace App\Http\Middleware;
 
 use App\Domains\Organization\Contracts\Data\OrganizationData;
 use App\Domains\Organization\Contracts\Data\OrganizationPermissionsData;
+use App\Domains\Search\Actions\BuildRecentlyVisitedAction;
 use App\Domains\Search\Contracts\Data\SearchPackageData;
 use App\Domains\Search\Contracts\Data\SearchRepositoryData;
 use App\Http\Data\AuthData;
 use App\Http\Data\FlashData;
+use App\Http\Data\RecentlyVisitedData;
 use App\Http\Data\SearchData;
 use App\Http\Data\UserData;
 use App\Models\Organization;
@@ -67,8 +69,10 @@ class HandleInertiaRequests extends Middleware
                     : [],
             ),
             'search' => $user ? fn () => $this->searchData($request) : new SearchData(packages: [], repositories: []),
+            'recentlyVisited' => fn () => $this->recentlyVisitedData($request),
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
             'cloud' => class_exists(PricoreCloudServiceProvider::class),
+            'analytics' => $request->session()->get('analytics'),
             'flash' => new FlashData(
                 status: $request->session()->get('status') ?? $request->session()->get('success'),
                 error: $request->session()->get('error'),
@@ -94,18 +98,30 @@ class HandleInertiaRequests extends Middleware
         return $organization->isTrialExpired();
     }
 
+    private function recentlyVisitedData(Request $request): RecentlyVisitedData
+    {
+        $organization = $request->route('organization');
+        $user = $request->user();
+
+        if (! $user || ! $organization instanceof Organization || ! $user->can('view', $organization)) {
+            return new RecentlyVisitedData(packages: [], repositories: []);
+        }
+
+        return app(BuildRecentlyVisitedAction::class)->handle($user, $organization);
+    }
+
     private function searchData(Request $request): SearchData
     {
         $organization = $request->route('organization');
 
-        if (! $organization instanceof Organization) {
+        // Shared props are also serialized on forbidden organization pages.
+        if (! $organization instanceof Organization || ! $request->user()?->can('view', $organization)) {
             return new SearchData(packages: [], repositories: []);
         }
 
         $packages = $organization->packages()
-            ->with('organization:uuid,name,slug')
             ->get()
-            ->map(fn (Package $package) => SearchPackageData::fromModel($package))
+            ->map(fn (Package $package) => SearchPackageData::fromModel($package, $organization))
             ->all();
 
         $repositories = $organization->repositories()

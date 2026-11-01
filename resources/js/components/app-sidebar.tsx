@@ -60,11 +60,13 @@ export function AppSidebar() {
                 title: 'Repos',
                 href: `/organizations/${currentOrgSlug}/repositories`,
                 icon: GitBranch,
+                quickMenu: 'repositories',
             },
             {
                 title: 'Packages',
                 href: `/organizations/${currentOrgSlug}/packages`,
                 icon: Package,
+                quickMenu: 'packages',
             },
             {
                 title: 'Security',

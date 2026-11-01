@@ -3,13 +3,19 @@
 namespace App\Domains\Mirror\Actions;
 
 use App\Domains\Mirror\Contracts\Enums\SyncVersionResult;
+use App\Domains\Repository\Actions\DetachDistArchivesTask;
 use App\Models\Package;
 use App\Models\PackageVersion;
 use Composer\Semver\VersionParser;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class SyncMirrorPackageVersionAction
 {
+    public function __construct(
+        protected DetachDistArchivesTask $detachDistArchivesTask,
+    ) {}
+
     /**
      * @param  array<string, mixed>  $composerJson
      */
@@ -31,13 +37,19 @@ class SyncMirrorPackageVersionAction
                 return SyncVersionResult::Skipped;
             }
 
-            $existingVersion->update([
-                'normalized_version' => $normalizedVersion,
-                'composer_json' => $composerJson,
-                'source_url' => $composerJson['source']['url'] ?? null,
-                'source_reference' => $sourceReference,
-                'released_at' => isset($composerJson['time']) ? $composerJson['time'] : null,
-            ]);
+            DB::transaction(function () use ($existingVersion, $normalizedVersion, $composerJson, $sourceReference) {
+                // Release the archive built for the old reference before moving,
+                // so the stale dist is never advertised under the new one.
+                $this->detachDistArchivesTask->handle($existingVersion);
+
+                $existingVersion->update([
+                    'normalized_version' => $normalizedVersion,
+                    'composer_json' => $composerJson,
+                    'source_url' => $composerJson['source']['url'] ?? null,
+                    'source_reference' => $sourceReference,
+                    'released_at' => isset($composerJson['time']) ? $composerJson['time'] : null,
+                ]);
+            });
 
             return SyncVersionResult::Updated;
         }

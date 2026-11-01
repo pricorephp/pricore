@@ -1,3 +1,4 @@
+import { type QuickMenuKind } from '@/components/nav-quick-menu';
 import { InertiaLinkProps } from '@inertiajs/react';
 import { LucideIcon } from 'lucide-react';
 
@@ -34,6 +35,7 @@ export interface NavItem {
     href: NonNullable<InertiaLinkProps['href']>;
     icon?: LucideIcon | null;
     isActive?: boolean;
+    quickMenu?: QuickMenuKind;
 }
 
 export type SharedData = App.Http.Data.SharedData & {

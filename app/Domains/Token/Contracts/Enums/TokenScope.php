@@ -7,7 +7,7 @@ use Spatie\TypeScriptTransformer\Attributes\TypeScript;
 #[TypeScript]
 enum TokenScope: string
 {
-    // Composer registry access (what legacy and org tokens do today).
+    // Installing packages through the Composer registry.
     case Composer = 'composer';
 
     case ReadOrganizations = 'read:organizations';
@@ -19,6 +19,7 @@ enum TokenScope: string
     case DeleteRepositories = 'delete:repositories';
 
     case ReadPackages = 'read:packages';
+    // Uploading versions of artifact packages through the Composer registry.
     case WritePackages = 'write:packages';
     case DeletePackages = 'delete:packages';
 
@@ -35,7 +36,7 @@ enum TokenScope: string
     public function label(): string
     {
         return match ($this) {
-            self::Composer => 'Composer registry access',
+            self::Composer => 'Install packages',
             self::ReadOrganizations => 'Read organizations',
             self::WriteOrganizations => 'Create & update organizations',
             self::DeleteOrganizations => 'Delete organizations',
@@ -43,7 +44,7 @@ enum TokenScope: string
             self::WriteRepositories => 'Add & sync repositories',
             self::DeleteRepositories => 'Delete repositories',
             self::ReadPackages => 'Read packages',
-            self::WritePackages => 'Manage packages',
+            self::WritePackages => 'Publish packages',
             self::DeletePackages => 'Delete packages & versions',
             self::ReadMembers => 'Read members & invitations',
             self::WriteMembers => 'Manage members & invitations',
@@ -52,22 +53,6 @@ enum TokenScope: string
             self::DeleteMirrors => 'Delete mirrors',
             self::ReadTokens => 'Read access tokens',
             self::WriteTokens => 'Create & revoke access tokens',
-        };
-    }
-
-    /**
-     * The resource group this scope belongs to (used to group scopes in the UI).
-     */
-    public function resource(): string
-    {
-        return match ($this) {
-            self::Composer => 'composer',
-            self::ReadOrganizations, self::WriteOrganizations, self::DeleteOrganizations => 'organizations',
-            self::ReadRepositories, self::WriteRepositories, self::DeleteRepositories => 'repositories',
-            self::ReadPackages, self::WritePackages, self::DeletePackages => 'packages',
-            self::ReadMembers, self::WriteMembers => 'members',
-            self::ReadMirrors, self::WriteMirrors, self::DeleteMirrors => 'mirrors',
-            self::ReadTokens, self::WriteTokens => 'tokens',
         };
     }
 
@@ -83,32 +68,6 @@ enum TokenScope: string
         }
 
         return $options;
-    }
-
-    /**
-     * Scopes grouped by resource for grouped UI rendering.
-     *
-     * @return array<string, array<string, string>>
-     */
-    public static function grouped(): array
-    {
-        $grouped = [];
-
-        foreach (self::cases() as $scope) {
-            $grouped[$scope->resource()][$scope->value] = $scope->label();
-        }
-
-        return $grouped;
-    }
-
-    /**
-     * Default scopes for a token used purely for Composer registry access.
-     *
-     * @return array<int, self>
-     */
-    public static function composerDefault(): array
-    {
-        return [self::Composer];
     }
 
     /**

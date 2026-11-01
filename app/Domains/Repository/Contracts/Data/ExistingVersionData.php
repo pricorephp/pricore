@@ -9,6 +9,7 @@ class ExistingVersionData extends Data
     public function __construct(
         public string $version,
         public string $sourceReference,
+        public bool $distFailed = false,
     ) {}
 
     public function matches(string $version, string $commit): bool

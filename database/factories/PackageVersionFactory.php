@@ -104,6 +104,16 @@ class PackageVersionFactory extends Factory
     }
 
     /**
+     * Indicate that the version was read from a subdirectory of its repository.
+     */
+    public function atPath(string $path): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'source_path' => $path,
+        ]);
+    }
+
+    /**
      * Indicate that the version is a beta release.
      */
     public function beta(): static

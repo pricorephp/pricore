@@ -9,7 +9,9 @@ use App\Domains\Organization\Actions\CreateOrganizationAction;
 use App\Domains\Organization\Contracts\Data\OrganizationData;
 use App\Domains\Organization\Requests\StoreOrganizationRequest;
 use App\Domains\Package\Contracts\Data\FrequentPackageData;
+use App\Domains\Repository\Actions\BuildRepositoryHealthAction;
 use App\Domains\Repository\Contracts\Enums\GitProvider;
+use App\Domains\Security\Actions\BuildSecurityStatsAction;
 use App\Http\Controllers\Controller;
 use App\Models\Organization;
 use App\Models\User;
@@ -27,6 +29,8 @@ class OrganizationController extends Controller
         protected CreateOrganizationAction $createOrganization,
         protected BuildOrganizationStatsAction $buildStats,
         protected BuildOnboardingChecklistAction $buildOnboarding,
+        protected BuildRepositoryHealthAction $buildRepositoryHealthAction,
+        protected BuildSecurityStatsAction $buildSecurityStatsAction,
     ) {}
 
     public function index(): RedirectResponse
@@ -51,6 +55,8 @@ class OrganizationController extends Controller
             'stats' => $this->buildStats->handle($organization),
             'onboarding' => $this->buildOnboarding->handle($organization, $user),
             'configuredProviders' => $configuredProviders,
+            'repositories' => $this->buildRepositoryHealthAction->handle($organization),
+            'securityStats' => Inertia::defer(fn () => $this->buildSecurityStatsAction->handle($organization)),
             'activityLogs' => Inertia::defer(fn () => $organization->activityLogs()
                 ->with('actor')
                 ->orderByDesc('created_at')

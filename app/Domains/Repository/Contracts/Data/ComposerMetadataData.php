@@ -75,11 +75,25 @@ class ComposerMetadataData extends Data
             throw new ComposerMetadataException('composer.json is missing required field: name');
         }
 
-        if (! is_string($data['name']) || ! str_contains($data['name'], '/')) {
+        if (! is_string($data['name']) || ! self::isPathSafeName($data['name'])) {
             throw new ComposerMetadataException(
                 'composer.json name must be in format "vendor/package"'
             );
         }
+    }
+
+    /**
+     * Package names become directories on the dist disk, so a name must be
+     * exactly two plain segments. Looser than Composer's own rule, which
+     * existing packages with uppercase names would fail.
+     */
+    public static function isPathSafeName(string $name): bool
+    {
+        if (preg_match('{^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$}', $name) !== 1) {
+            return false;
+        }
+
+        return array_intersect(explode('/', $name), ['.', '..']) === [];
     }
 
     /**
@@ -88,13 +102,10 @@ class ComposerMetadataData extends Data
      */
     public static function extractVersion(string $ref): string
     {
-        // Remove 'v' prefix if present (e.g., v1.0.0 -> 1.0.0)
-        if (str_starts_with($ref, 'v') && preg_match('/^v\d/', $ref)) {
-            return substr($ref, 1);
-        }
-
-        // Branch names need dev- prefix for Composer compatibility
-        if (! preg_match('/^\d+\.\d+/', $ref)) {
+        // Branch names need a dev- prefix for Composer compatibility. Version tags are
+        // kept verbatim (e.g. v1.0.0 stays v1.0.0) so the pretty version matches the
+        // original Git tag; Composer derives the normalized form separately.
+        if (! preg_match('/^v?\d+\.\d+/', $ref)) {
             return "dev-{$ref}";
         }
 

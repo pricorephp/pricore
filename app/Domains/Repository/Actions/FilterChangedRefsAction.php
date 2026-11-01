@@ -17,18 +17,22 @@ class FilterChangedRefsAction
      * Filter out refs whose commit SHA hasn't changed since last sync.
      *
      * Compares each ref's computed version string and commit SHA against
-     * existing PackageVersion records to avoid unnecessary API calls.
+     * existing PackageVersion records to avoid unnecessary API calls. Versions
+     * whose dist archive failed to build count as changed so it gets retried.
+     * A ref without versions is unchanged when it held no composer.json at the
+     * same commit last time.
      */
     public function handle(RefsCollectionData $refs, Repository $repository): RefsCollectionData
     {
         $existingVersions = $this->getExistingVersionLookup($repository);
+        $emptyRefs = $repository->emptyRefs()->pluck('commit', 'name');
 
-        // If no packages exist yet, all refs are new
-        if ($existingVersions->isEmpty()) {
+        // Nothing synced yet, so every ref is new
+        if ($existingVersions->isEmpty() && $emptyRefs->isEmpty()) {
             return $refs;
         }
 
-        $filterChanged = fn (RefData $ref): bool => $this->hasChanged($ref, $existingVersions);
+        $filterChanged = fn (RefData $ref): bool => $this->hasChanged($ref, $existingVersions, $emptyRefs);
 
         $filteredTags = collect($refs->tags->toCollection())->filter($filterChanged)->values();
         $filteredBranches = collect($refs->branches->toCollection())->filter($filterChanged)->values();
@@ -42,9 +46,10 @@ class FilterChangedRefsAction
     }
 
     /**
-     * Build a keyed collection of existing package versions for fast lookup.
+     * Existing package versions grouped by version string. A monorepo yields one
+     * row per package for the same tag, so the lookup keeps all of them.
      *
-     * @return Collection<string, ExistingVersionData>
+     * @return Collection<string, Collection<int, ExistingVersionData>>
      */
     protected function getExistingVersionLookup(Repository $repository): Collection
     {
@@ -54,27 +59,41 @@ class FilterChangedRefsAction
             return collect();
         }
 
+        $retryFailedDists = (bool) config('pricore.dist.enabled');
+
         return PackageVersion::query()
             ->whereIn('package_uuid', $packageUuids)
             ->whereNotNull('source_reference')
-            ->get(['version', 'source_reference'])
+            ->get(['version', 'source_reference', 'dist_failed_at'])
             ->map(fn (PackageVersion $pv) => new ExistingVersionData(
                 version: $pv->version,
                 sourceReference: (string) $pv->source_reference,
+                distFailed: $retryFailedDists && $pv->dist_failed_at !== null,
             ))
-            ->keyBy('version');
+            ->groupBy('version');
     }
 
     /**
-     * Determine if a ref has changed compared to existing versions.
+     * A ref is unchanged only when every package synced from it already sits at
+     * its commit. A single stale row (a package that failed last time, one
+     * configured later, or one whose dist archive failed to build) keeps the
+     * ref in the sync.
      *
-     * @param  Collection<string, ExistingVersionData>  $existingVersions
+     * @param  Collection<string, Collection<int, ExistingVersionData>>  $existingVersions
+     * @param  Collection<string, string>  $emptyRefs
      */
-    protected function hasChanged(RefData $ref, Collection $existingVersions): bool
+    protected function hasChanged(RefData $ref, Collection $existingVersions, Collection $emptyRefs): bool
     {
         $version = ComposerMetadataData::extractVersion($ref->name);
         $existing = $existingVersions->get($version);
 
-        return ! $existing || ! $existing->matches($version, $ref->commit);
+        if ($existing === null || $existing->isEmpty()) {
+            return $emptyRefs->get($ref->name) !== $ref->commit;
+        }
+
+        return $existing->contains(
+            fn (ExistingVersionData $existingVersion) => $existingVersion->distFailed
+                || ! $existingVersion->matches($version, $ref->commit)
+        );
     }
 }

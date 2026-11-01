@@ -77,38 +77,32 @@ function SeverityBadge({
 }) {
     if (count === 0) return null;
 
-    const variants: Record<string, { className: string; label: string }> = {
-        critical: {
-            className:
-                'border-red-200 bg-red-50 text-red-700 dark:border-red-800 dark:bg-red-950 dark:text-red-400',
-            label: 'Critical',
-        },
+    const variants: Record<
+        string,
+        {
+            variant: 'destructive' | 'warning' | 'info';
+            className?: string;
+            label: string;
+        }
+    > = {
+        critical: { variant: 'destructive', label: 'Critical' },
         high: {
+            variant: 'warning',
             className:
-                'border-orange-200 bg-orange-50 text-orange-700 dark:border-orange-800 dark:bg-orange-950 dark:text-orange-400',
+                'bg-orange-500/10 text-orange-700 dark:bg-orange-500/15 dark:text-orange-400',
             label: 'High',
         },
-        medium: {
-            className:
-                'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-400',
-            label: 'Medium',
-        },
-        low: {
-            className:
-                'border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-800 dark:bg-blue-950 dark:text-blue-400',
-            label: 'Low',
-        },
+        medium: { variant: 'warning', label: 'Medium' },
+        low: { variant: 'info', label: 'Low' },
     };
 
     const variant = variants[severity];
     if (!variant) return null;
 
     return (
-        <span
-            className={`inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 text-xs ${variant.className}`}
-        >
+        <Badge variant={variant.variant} className={variant.className}>
             {count} {variant.label}
-        </span>
+        </Badge>
     );
 }
 

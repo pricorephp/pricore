@@ -1,5 +1,5 @@
 {
-    "openapi": "3.1.0",
+    "openapi": "3.1.2",
     "info": {
         "title": "Pricore API",
         "version": "v1",
@@ -100,7 +100,9 @@
                                         "message": {
                                             "type": "string",
                                             "description": "Error overview.",
-                                            "example": "This invitation has already been accepted."
+                                            "examples": [
+                                                "This invitation has already been accepted."
+                                            ]
                                         }
                                     },
                                     "required": [
@@ -340,7 +342,9 @@
                                         "message": {
                                             "type": "string",
                                             "description": "Error overview.",
-                                            "example": "Cannot remove the organization owner."
+                                            "examples": [
+                                                "Cannot remove the organization owner."
+                                            ]
                                         }
                                     },
                                     "required": [
@@ -1701,8 +1705,8 @@
                 "title": "PackageData"
             },
             "PaginatedDataCollection": {
-                "type": "object",
-                "additionalProperties": {},
+                "type": "array",
+                "items": {},
                 "title": "PaginatedDataCollection"
             },
             "RepositoryData": {
@@ -1747,7 +1751,6 @@
                     },
                     "url": {
                         "type": "string",
-                        "format": "uri",
                         "maxLength": 2048
                     },
                     "auth_type": {
@@ -1828,6 +1831,17 @@
                             "null"
                         ],
                         "format": "uuid"
+                    },
+                    "package_paths": {
+                        "type": [
+                            "array",
+                            "null"
+                        ],
+                        "items": {
+                            "type": "string",
+                            "maxLength": 255
+                        },
+                        "maxItems": 50
                     }
                 },
                 "required": [

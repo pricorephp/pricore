@@ -140,6 +140,49 @@ it('validates required fields when creating a mirror', function () {
         ->assertSessionHasErrors(['name', 'url', 'auth_type']);
 });
 
+it('rejects mirror URLs that resolve to private addresses', function () {
+    Queue::fake(SyncMirrorJob::class);
+    $this->hostResolver->set('metadata.internal', ['169.254.169.254']);
+
+    $user = User::factory()->create();
+    $organization = Organization::factory()->create(['owner_uuid' => $user->uuid]);
+    $organization->members()->attach($user->uuid, ['role' => 'owner', 'uuid' => (string) Str::uuid()]);
+
+    actingAs($user)
+        ->post(route('organizations.settings.mirrors.store', $organization->slug), [
+            'name' => 'Metadata endpoint',
+            'url' => 'http://metadata.internal/latest/meta-data',
+            'auth_type' => 'none',
+        ])
+        ->assertSessionHasErrors('url');
+
+    assertDatabaseMissing('mirrors', ['organization_uuid' => $organization->uuid]);
+    Queue::assertNothingPushed();
+});
+
+it('allows an explicitly configured private mirror hostname', function () {
+    Queue::fake(SyncMirrorJob::class);
+    config()->set('pricore.mirrors.allowed_private_hosts', ['satis.internal']);
+    $this->hostResolver->set('satis.internal', ['10.0.0.10']);
+
+    $user = User::factory()->create();
+    $organization = Organization::factory()->create(['owner_uuid' => $user->uuid]);
+    $organization->members()->attach($user->uuid, ['role' => 'owner', 'uuid' => (string) Str::uuid()]);
+
+    actingAs($user)
+        ->post(route('organizations.settings.mirrors.store', $organization->slug), [
+            'name' => 'Internal Satis',
+            'url' => 'https://satis.internal',
+            'auth_type' => 'none',
+        ])
+        ->assertRedirect(route('organizations.settings.mirrors.index', $organization->slug));
+
+    assertDatabaseHas('mirrors', [
+        'organization_uuid' => $organization->uuid,
+        'url' => 'https://satis.internal',
+    ]);
+});
+
 it('validates basic auth fields are required when auth_type is basic', function () {
     $user = User::factory()->create();
     $organization = Organization::factory()->create(['owner_uuid' => $user->uuid]);

@@ -98,8 +98,8 @@ it('handles tags with v prefix correctly', function () {
     $repository = Repository::factory()->forOrganization($organization)->create();
     $package = Package::factory()->forOrganization($organization)->forRepository($repository)->create();
 
-    // Version stored without v prefix (extractVersion strips it)
-    PackageVersion::factory()->forPackage($package)->create(['version' => '1.0.0', 'normalized_version' => '1.0.0.0']);
+    // Version stored with the v prefix preserved, matching the original tag
+    PackageVersion::factory()->forPackage($package)->create(['version' => 'v1.0.0', 'normalized_version' => '1.0.0.0']);
 
     $refs = makeRefsCollection(
         tags: [
@@ -111,6 +111,27 @@ it('handles tags with v prefix correctly', function () {
     $removed = $action->handle($repository, $refs);
 
     expect($removed)->toBe(0);
+});
+
+it('removes legacy versions stored without the v prefix on re-sync', function () {
+    $organization = Organization::factory()->create();
+    $repository = Repository::factory()->forOrganization($organization)->create();
+    $package = Package::factory()->forOrganization($organization)->forRepository($repository)->create();
+
+    // Legacy row stored before the prefix was preserved
+    PackageVersion::factory()->forPackage($package)->create(['version' => '1.0.0', 'normalized_version' => '1.0.0.0']);
+
+    $refs = makeRefsCollection(
+        tags: [
+            ['name' => 'v1.0.0', 'commit' => 'abc123'],
+        ]
+    );
+
+    $action = app(RemoveStaleVersionsAction::class);
+    $removed = $action->handle($repository, $refs);
+
+    expect($removed)->toBe(1);
+    expect(PackageVersion::where('package_uuid', $package->uuid)->count())->toBe(0);
 });
 
 it('returns zero when repository has no packages', function () {

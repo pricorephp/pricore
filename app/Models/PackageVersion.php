@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Storage;
 
@@ -25,15 +26,19 @@ use Illuminate\Support\Facades\Storage;
  * @property string|null $source_url
  * @property string|null $source_reference
  * @property string|null $source_tag
+ * @property string|null $source_path
  * @property string|null $dist_url
  * @property string|null $dist_shasum
  * @property string|null $dist_path
  * @property int|null $dist_size
+ * @property Carbon|null $dist_failed_at
  * @property Carbon|null $released_at
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property-read Package $package
  * @property-read Collection<int, SecurityAdvisoryMatch> $advisoryMatches
+ * @property-read Collection<int, DistArchive> $archives
+ * @property-read DistArchive|null $currentArchive
  *
  * @method static Builder<static>|PackageVersion dev()
  * @method static \Database\Factories\PackageVersionFactory factory($count = null, $state = [])
@@ -69,14 +74,29 @@ class PackageVersion extends Model
     protected $casts = [
         'composer_json' => 'array',
         'released_at' => 'datetime',
+        'dist_failed_at' => 'datetime',
     ];
 
     protected static function booted(): void
     {
         static::deleting(function (PackageVersion $version) {
-            if ($version->dist_path) {
-                Storage::disk(config('pricore.dist.disk'))->delete($version->dist_path);
+            $disk = Storage::disk(config('pricore.dist.disk'));
+
+            // A version owns every archive ever built for it, not just the one
+            // dist_path points at. The rows themselves go by foreign key cascade.
+            foreach ($version->archives as $archive) {
+                $disk->delete($archive->path);
             }
+
+            if ($version->dist_path) {
+                $disk->delete($version->dist_path);
+            }
+        });
+
+        // Removing a version leaves the remaining versions' timestamps as they
+        // were, so bump the package to move the metadata's Last-Modified.
+        static::deleted(function (PackageVersion $version) {
+            Package::query()->whereKey($version->package_uuid)->touch();
         });
     }
 
@@ -97,6 +117,23 @@ class PackageVersion extends Model
     }
 
     /**
+     * @return HasMany<DistArchive, $this>
+     */
+    public function archives(): HasMany
+    {
+        return $this->hasMany(DistArchive::class, 'package_version_uuid', 'uuid');
+    }
+
+    /**
+     * @return HasOne<DistArchive, $this>
+     */
+    public function currentArchive(): HasOne
+    {
+        return $this->hasOne(DistArchive::class, 'package_version_uuid', 'uuid')
+            ->whereNull('detached_at');
+    }
+
+    /**
      * @param  Builder<PackageVersion>  $query
      * @return Builder<PackageVersion>
      */
@@ -106,6 +143,24 @@ class PackageVersion extends Model
         // Normalized versions always start with a digit, even for v-prefixed versions
         return $query->whereRaw("SUBSTR(normalized_version, 1, 1) BETWEEN '0' AND '9'")
             ->whereNotLike('normalized_version', '%-dev');
+    }
+
+    /**
+     * Lock files created before versions kept their v prefix reference dist
+     * URLs without it, so match the version with and without the prefix.
+     *
+     * @param  Builder<PackageVersion>  $query
+     * @return Builder<PackageVersion>
+     */
+    public function scopeMatchingVersion(Builder $query, string $version): Builder
+    {
+        $candidates = match (true) {
+            preg_match('/^\d/', $version) === 1 => [$version, "v{$version}"],
+            preg_match('/^v\d/', $version) === 1 => [$version, substr($version, 1)],
+            default => [$version],
+        };
+
+        return $query->whereIn('version', $candidates);
     }
 
     /**

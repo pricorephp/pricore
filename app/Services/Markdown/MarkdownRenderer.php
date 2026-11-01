@@ -20,11 +20,14 @@ class MarkdownRenderer
      * to absolute Git-provider URLs so README links and images resolve correctly.
      *
      * Pass null base URLs (generic Git provider) to leave relative URLs untouched.
+     * Base URLs point at the repository root; $directory is where the file lives,
+     * so "docs/x.md" resolves inside it while "/docs/x.md" resolves from the root.
      */
     public function render(
         string $markdown,
         ?string $blobBaseUrl = null,
         ?string $rawFileBaseUrl = null,
+        string $directory = '',
     ): string {
         $environment = new Environment([
             'html_input' => 'escape',
@@ -45,6 +48,7 @@ class MarkdownRenderer
                     $event->getDocument(),
                     $blobBaseUrl,
                     $rawFileBaseUrl,
+                    trim($directory, '/'),
                 ),
             );
         }
@@ -52,18 +56,18 @@ class MarkdownRenderer
         return (string) (new MarkdownConverter($environment))->convert($markdown);
     }
 
-    protected function rewriteUrls(Node $document, ?string $blobBaseUrl, ?string $rawFileBaseUrl): void
+    protected function rewriteUrls(Node $document, ?string $blobBaseUrl, ?string $rawFileBaseUrl, string $directory): void
     {
         foreach ($document->iterator() as $node) {
             if ($node instanceof Image && $rawFileBaseUrl !== null) {
-                $this->rewriteIfRelative($node, $rawFileBaseUrl);
+                $this->rewriteIfRelative($node, $rawFileBaseUrl, $directory);
             } elseif ($node instanceof Link && $blobBaseUrl !== null) {
-                $this->rewriteIfRelative($node, $blobBaseUrl);
+                $this->rewriteIfRelative($node, $blobBaseUrl, $directory);
             }
         }
     }
 
-    protected function rewriteIfRelative(AbstractWebResource $node, string $baseUrl): void
+    protected function rewriteIfRelative(AbstractWebResource $node, string $baseUrl, string $directory): void
     {
         $url = $node->getUrl();
 
@@ -71,7 +75,9 @@ class MarkdownRenderer
             return;
         }
 
-        $node->setUrl(rtrim($baseUrl, '/').'/'.ltrim($url, '/'));
+        $path = str_starts_with($url, '/') || $directory === '' ? ltrim($url, '/') : "{$directory}/{$url}";
+
+        $node->setUrl(rtrim($baseUrl, '/').'/'.$path);
     }
 
     protected function isAbsolute(string $url): bool

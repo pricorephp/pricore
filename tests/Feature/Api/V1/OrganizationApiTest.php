@@ -101,3 +101,37 @@ it('deletes an organization as the owner but forbids an admin', function () {
 
     assertDatabaseMissing('organizations', ['uuid' => $organization->uuid, 'deleted_at' => null]);
 });
+
+it('does not let an organization token delete the organization or change its slug', function () {
+    $owner = User::factory()->create();
+    $organization = Organization::factory()->create(['owner_uuid' => $owner->uuid, 'slug' => 'acme']);
+    joinOrganization($organization, $owner, OrganizationRole::Owner);
+
+    $token = organizationAccessToken($organization);
+
+    $this->withToken($token)
+        ->patchJson('/api/v1/organizations/acme', ['name' => 'Renamed', 'slug' => 'taken-over'])
+        ->assertOk()
+        ->assertJsonPath('name', 'Renamed')
+        ->assertJsonPath('slug', 'acme');
+
+    $this->withToken($token)
+        ->deleteJson('/api/v1/organizations/acme')
+        ->assertForbidden();
+
+    assertDatabaseHas('organizations', ['uuid' => $organization->uuid, 'deleted_at' => null]);
+});
+
+it('renames an organization without requiring the slug', function () {
+    $user = User::factory()->create();
+    $organization = Organization::factory()->create(['owner_uuid' => $user->uuid]);
+    joinOrganization($organization, $user, OrganizationRole::Owner);
+
+    $token = personalAccessToken($user, [TokenScope::WriteOrganizations]);
+
+    $this->withToken($token)
+        ->patchJson("/api/v1/organizations/{$organization->slug}", ['name' => 'Renamed Org'])
+        ->assertOk()
+        ->assertJsonPath('name', 'Renamed Org')
+        ->assertJsonPath('slug', $organization->slug);
+});

@@ -19,6 +19,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
+import { Textarea } from '@/components/ui/textarea';
 import { Form, Link } from '@inertiajs/react';
 import { useEffect, useRef, useState } from 'react';
 
@@ -726,6 +727,38 @@ function AddRepositoryDialogBody({
                         <p className="text-sm text-muted-foreground">
                             The default branch to sync from. If not specified,
                             the repository's default branch will be used.
+                        </p>
+                    </div>
+
+                    <div className="grid space-y-2">
+                        <Label htmlFor="package_paths">
+                            Package paths (optional)
+                        </Label>
+                        <Textarea
+                            id="package_paths"
+                            name="package_paths"
+                            rows={3}
+                            className="font-mono"
+                            placeholder="packages/*"
+                        />
+                        {!processing &&
+                            !wasSuccessful &&
+                            Object.entries(errors)
+                                .filter(([key]) =>
+                                    key.startsWith('package_paths'),
+                                )
+                                .map(([key, message]) => (
+                                    <p key={key} className="text-destructive">
+                                        {message}
+                                    </p>
+                                ))}
+                        <p className="text-sm text-muted-foreground">
+                            For monorepos: directories holding a{' '}
+                            <code>composer.json</code>, one per line.{' '}
+                            <code>packages/*</code> selects every directory
+                            under <code>packages</code>, and <code>.</code>{' '}
+                            keeps the root package. Leave empty for a single
+                            package at the root.
                         </p>
                     </div>
 

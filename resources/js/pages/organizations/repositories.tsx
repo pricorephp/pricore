@@ -1,7 +1,9 @@
 import { show } from '@/actions/App/Domains/Repository/Http/Controllers/RepositoryController';
 import AddRepositoryDialog from '@/components/add-repository-dialog';
 import { EmptyState } from '@/components/empty-state';
-import GitProviderIcon from '@/components/git-provider-icon';
+import GitProviderIcon, {
+    getProviderColor,
+} from '@/components/git-provider-icon';
 import HeadingSmall from '@/components/heading-small';
 import ImportRepositoriesDialog from '@/components/import-repositories-dialog';
 import InfoBox from '@/components/info-box';
@@ -27,17 +29,6 @@ interface RepositoriesPageProps {
     repositories: RepositoryData[];
     configuredProviders?: string[];
     sshKeys?: OrganizationSshKeyData[];
-}
-
-function getProviderIconColor(provider: string): string {
-    const colors: Record<string, string> = {
-        github: 'text-gray-800 dark:text-gray-300',
-        gitlab: 'text-orange-600',
-        bitbucket: 'text-blue-600',
-        git: 'text-gray-600',
-    };
-
-    return colors[provider] || colors.git;
 }
 
 type RepositorySyncStatus =
@@ -122,7 +113,7 @@ export default function Repositories({
                             >
                                 <GitProviderIcon
                                     provider={repo.provider}
-                                    className={`size-8 shrink-0 ${getProviderIconColor(repo.provider)}`}
+                                    className={`size-8 shrink-0 ${getProviderColor(repo.provider)}`}
                                 />
                                 <div className="min-w-0 flex-1 space-y-1">
                                     <div className="flex items-center gap-2">

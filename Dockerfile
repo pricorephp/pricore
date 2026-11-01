@@ -1,5 +1,10 @@
 # Multi-stage Dockerfile for Laravel application with FrankenPHP
 
+# Exact PHP patch release for the runtime image. Pinned to 8.4.27 (or newer)
+# for CVE-2026-109618 and CVE-2026-109619:
+# https://www.php.net/archive/2026.php#2026-10-21-5
+ARG PHP_VERSION=8.4.27
+
 # Stage 1: Build frontend assets
 FROM node:22-alpine AS frontend-builder
 
@@ -69,7 +74,7 @@ COPY public/ ./public/
 RUN npm run build
 
 # Stage 2: Production application with FrankenPHP
-FROM dunglas/frankenphp:1-php8.4-alpine AS application
+FROM dunglas/frankenphp:1-php${PHP_VERSION}-alpine AS application
 
 ARG APP_VERSION=dev
 ENV APP_VERSION=${APP_VERSION}
@@ -129,8 +134,12 @@ RUN chown -R www-data:www-data /app \
     && chmod -R 755 /app/storage \
     && chmod -R 755 /app/bootstrap/cache
 
-# Create SQLite database directory
-RUN mkdir -p /app/database && touch /app/database/database.sqlite \
+# Create SQLite database directory. docker-compose.yml mounts its volume on
+# /app/database/data so the volume never hides the image's migrations. The
+# newest migration is recorded so the entrypoint can detect a volume that does.
+RUN mkdir -p /app/database/data \
+    && touch /app/database/data/database.sqlite \
+    && ls /app/database/migrations | sort | tail -n 1 > /app/.latest-migration \
     && chown -R www-data:www-data /app/database
 
 # PHP production configuration
@@ -141,7 +150,6 @@ RUN echo "opcache.enable=1" > /usr/local/etc/php/conf.d/99-production.ini && \
     echo "opcache.revalidate_freq=0" >> /usr/local/etc/php/conf.d/99-production.ini && \
     echo "opcache.validate_timestamps=0" >> /usr/local/etc/php/conf.d/99-production.ini && \
     echo "opcache.save_comments=1" >> /usr/local/etc/php/conf.d/99-production.ini && \
-    echo "opcache.fast_shutdown=1" >> /usr/local/etc/php/conf.d/99-production.ini && \
     echo "opcache.jit=1255" >> /usr/local/etc/php/conf.d/99-production.ini && \
     echo "opcache.jit_buffer_size=128M" >> /usr/local/etc/php/conf.d/99-production.ini && \
     echo "" >> /usr/local/etc/php/conf.d/99-production.ini && \
@@ -155,12 +163,18 @@ RUN echo "opcache.enable=1" > /usr/local/etc/php/conf.d/99-production.ini && \
     echo "post_max_size=64M" >> /usr/local/etc/php/conf.d/99-production.ini && \
     echo "upload_max_filesize=64M" >> /usr/local/etc/php/conf.d/99-production.ini && \
     echo "realpath_cache_size=4096K" >> /usr/local/etc/php/conf.d/99-production.ini && \
-    echo "realpath_cache_ttl=600" >> /usr/local/etc/php/conf.d/99-production.ini
+    echo "realpath_cache_ttl=600" >> /usr/local/etc/php/conf.d/99-production.ini && \
+    echo "session.upload_progress.enabled=Off" >> /usr/local/etc/php/conf.d/99-production.ini
 
 # Create Caddyfile for FrankenPHP
 RUN echo ':8000 {' > /etc/caddy/Caddyfile && \
     echo '    root * /app/public' >> /etc/caddy/Caddyfile && \
     echo '    encode zstd gzip' >> /etc/caddy/Caddyfile && \
+    echo '' >> /etc/caddy/Caddyfile && \
+    echo '    # Reject oversized bodies before PHP parses them. Matches post_max_size.' >> /etc/caddy/Caddyfile && \
+    echo '    request_body {' >> /etc/caddy/Caddyfile && \
+    echo '        max_size 64MiB' >> /etc/caddy/Caddyfile && \
+    echo '    }' >> /etc/caddy/Caddyfile && \
     echo '' >> /etc/caddy/Caddyfile && \
     echo '    # Health check endpoint' >> /etc/caddy/Caddyfile && \
     echo '    respond /health 200' >> /etc/caddy/Caddyfile && \

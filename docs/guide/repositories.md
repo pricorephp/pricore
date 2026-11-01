@@ -23,8 +23,8 @@ Generic Git support lets you connect any Git repository accessible via SSH or HT
 2. Select your Git provider (GitHub or GitLab)
 3. Select the repository from the list
 4. Pricore automatically:
-   - Fetches `composer.json` from the default branch
-   - Creates a package with the discovered metadata
+   - Reads `composer.json` from every tag and branch
+   - Creates a package for each `composer.json` it finds (the root one, unless you configure [package paths](#monorepos))
    - Sets up webhooks for automatic syncing
 
 ### Bitbucket (API Token)
@@ -51,6 +51,32 @@ Create a scoped API token at [Atlassian Account Settings > API tokens](https://i
 
 ::: tip
 Public repositories accessible over HTTPS don't require an SSH key. Just enter the HTTPS URL and leave the SSH key unselected.
+:::
+
+## Monorepos
+
+A single repository can hold several Composer packages, each with its own `composer.json` in a subdirectory. Tell Pricore where to look with **package paths**, either when connecting the repository or later from the repository's **Edit** page.
+
+Each line is a directory relative to the repository root:
+
+| Pattern | Selects |
+|---------|---------|
+| `packages/billing` | That directory |
+| `packages/*` | Every directory directly under `packages` |
+| `*` | Every directory at the repository root |
+| `.` | The repository root itself |
+
+When package paths are configured, the root `composer.json` is only synced if `.` is listed. Most monorepos keep a root `composer.json` that describes the repository rather than a publishable package, so leaving it out is usually right.
+
+How monorepo packages behave:
+
+- Every tag and branch is read once per package, so tag `v1.2.0` produces version `v1.2.0` for each package present at that tag. A package that does not exist yet at an older tag has no version there.
+- A package that disappears from a branch loses that branch's version; its other versions are kept. A `composer.json` that fails to parse leaves the existing version untouched.
+- Packages read from a subdirectory are installed from Pricore's dist archives only, because Composer cannot check out a subdirectory from Git. A version is offered to Composer once its archive is built, so keep [dist archives](/guide/dist-mirroring) enabled for these packages.
+- Saving different package paths starts a full sync, or queues one if a sync is already running. Packages with no versions left under the selected paths are removed from Pricore together with their versions and archives. A package that moved directories keeps the versions that are still selected.
+
+::: tip
+Per-package tag prefixes such as `billing/v1.2.0` are not supported. Tag the monorepo once per release.
 :::
 
 ## Webhook Configuration
@@ -154,7 +180,7 @@ Repository actions require appropriate organization roles:
 
 Common causes of sync failures:
 
-1. **Invalid composer.json** - Ensure your repository has a valid `composer.json` at the root
+1. **Invalid composer.json** - Ensure your repository has a valid `composer.json` at the root, or in each configured [package path](#monorepos)
 2. **Authentication issues** - Re-authorize the OAuth connection, or verify your SSH key is added as a deploy key
 3. **Webhook delivery failed** - Check your Git provider's webhook logs
 4. **Rate limiting** - Wait and retry, or check API limits
@@ -165,7 +191,7 @@ Common causes of sync failures:
 If versions aren't appearing:
 
 1. Verify tags follow semver format (e.g., `v1.0.0` or `1.0.0`)
-2. Check that `composer.json` exists in the tagged commit
+2. Check that `composer.json` exists in the tagged commit (for monorepos, inside the package directory)
 3. Trigger a manual sync
 4. Review sync logs for errors
 

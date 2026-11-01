@@ -15,6 +15,12 @@
         'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
         'Noto Color Emoji';
 
+    /* Fixed small sizes so the dense 13px root doesn't push meta text below a readable floor */
+    --text-xs: 12px;
+    --text-xs--line-height: 16px;
+    --text-sm: 13px;
+    --text-sm--line-height: 20px;
+
     --radius-lg: var(--radius);
     --radius-md: calc(var(--radius) - 2px);
     --radius-sm: calc(var(--radius) - 4px);
@@ -81,6 +87,17 @@
     /* Surface hierarchy */
     --color-surface-inset: var(--surface-inset);
 
+    --animate-toast-progress: toast-progress linear forwards;
+
+    @keyframes toast-progress {
+        from {
+            transform: scaleX(1);
+        }
+        to {
+            transform: scaleX(0);
+        }
+    }
+
     /* Elegant shadow system */
     --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.03);
     --shadow-sm:
@@ -100,15 +117,15 @@
     --popover-foreground: oklch(0.18 0.01 260);
     --primary: oklch(0.69 0.2 37);
     --primary-foreground: oklch(0.99 0 0);
-    --secondary: oklch(0.97 0.008 90);
+    --secondary: oklch(0.97 0.003 90);
     --secondary-foreground: oklch(0.25 0.01 260);
-    --muted: oklch(0.965 0.008 90);
+    --muted: oklch(0.965 0.003 90);
     --muted-foreground: oklch(0.5 0.01 260);
-    --accent: oklch(0.96 0.008 90);
+    --accent: oklch(0.96 0.003 90);
     --accent-foreground: oklch(0.25 0.01 260);
     --destructive: oklch(0.55 0.22 25);
     --destructive-foreground: oklch(0.55 0.22 25);
-    --surface-inset: oklch(0.975 0.008 90);
+    --surface-inset: oklch(0.975 0.003 90);
 
     /* Button depth styling */
     --button-primary-from: oklch(0.74 0.18 37);

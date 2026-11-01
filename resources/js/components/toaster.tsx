@@ -3,6 +3,7 @@ import {
     ToastClose,
     ToastDescription,
     ToastIcon,
+    ToastProgress,
     ToastProvider,
     ToastTitle,
     ToastViewport,
@@ -32,7 +33,7 @@ export function Toaster() {
                         {...props}
                     >
                         <ToastIcon variant={variant} />
-                        <div className="grid gap-0.5">
+                        <div className="grid min-w-0 gap-0.5">
                             {title && <ToastTitle>{title}</ToastTitle>}
                             {description && (
                                 <ToastDescription>
@@ -42,6 +43,10 @@ export function Toaster() {
                         </div>
                         {action}
                         <ToastClose />
+                        <ToastProgress
+                            variant={variant}
+                            duration={TOAST_DURATION}
+                        />
                     </Toast>
                 );
             })}

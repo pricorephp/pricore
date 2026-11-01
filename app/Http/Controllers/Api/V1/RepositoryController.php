@@ -7,6 +7,7 @@ use App\Domains\Activity\Contracts\Enums\ActivityType;
 use App\Domains\Repository\Actions\BulkCreateRepositoriesAction;
 use App\Domains\Repository\Actions\CreateRepositoryAction;
 use App\Domains\Repository\Actions\DeleteWebhookAction;
+use App\Domains\Repository\Actions\PurgeDistArchiveFilesTask;
 use App\Domains\Repository\Contracts\Data\BulkImportResultData;
 use App\Domains\Repository\Contracts\Data\RepositoryData;
 use App\Domains\Repository\Contracts\Enums\GitProvider;
@@ -26,6 +27,7 @@ class RepositoryController extends ApiController
     public function __construct(
         protected DeleteWebhookAction $deleteWebhook,
         protected RecordActivityTask $recordActivity,
+        protected PurgeDistArchiveFilesTask $purgeDistArchiveFilesTask,
     ) {}
 
     /**
@@ -48,17 +50,24 @@ class RepositoryController extends ApiController
     {
         $this->authorize('deleteRepository', $organization);
 
+        $provider = GitProvider::from($request->validated('provider'));
+
+        if ($provider !== GitProvider::Git) {
+            $this->requirePersonalAccessTokenForCredentials($request);
+        }
+
         /** @var User $user */
         $user = $request->user();
 
         $repository = $createRepository->handle(
             organization: $organization,
-            provider: GitProvider::from($request->validated('provider')),
+            provider: $provider,
             repoIdentifier: $request->validated('repo_identifier'),
             user: $user,
             name: $request->validated('name'),
             defaultBranch: $request->validated('default_branch'),
             sshKeyUuid: $request->validated('ssh_key_uuid'),
+            packagePaths: $request->packagePaths(),
         );
 
         return RepositoryData::fromModel($repository->loadCount('packages'));
@@ -67,6 +76,7 @@ class RepositoryController extends ApiController
     public function bulkStore(BulkStoreRepositoryRequest $request, Organization $organization, BulkCreateRepositoriesAction $bulkCreate): BulkImportResultData
     {
         $this->authorize('deleteRepository', $organization);
+        $this->requirePersonalAccessTokenForCredentials($request);
 
         /** @var User $user */
         $user = $request->user();
@@ -114,9 +124,27 @@ class RepositoryController extends ApiController
 
         $this->deleteWebhook->handle($repository);
 
+        // Packages, versions and archive rows all cascade at the database level,
+        // which fires no model events. Clear the files while the rows still exist.
+        $this->purgeDistArchiveFilesTask->handle($repository->packages()->pluck('uuid'));
+
         $repository->delete();
 
         return response()->noContent();
+    }
+
+    /**
+     * Repositories on a Git provider are cloned with the Git credentials of the
+     * user adding them. An organization token acts as the owner, so it must not
+     * borrow the owner's credentials on behalf of whoever created the token.
+     */
+    private function requirePersonalAccessTokenForCredentials(Request $request): void
+    {
+        abort_if(
+            $this->accessToken($request)->organization_uuid !== null,
+            403,
+            'Adding repositories from a Git provider uses your own Git credentials and requires a personal access token.',
+        );
     }
 
     private function ensureBelongsToOrganization(Organization $organization, Repository $repository): void

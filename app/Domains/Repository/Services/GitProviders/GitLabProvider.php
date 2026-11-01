@@ -4,8 +4,8 @@ namespace App\Domains\Repository\Services\GitProviders;
 
 use App\Domains\Repository\Contracts\Data\RepositorySuggestionData;
 use App\Domains\Repository\Exceptions\GitProviderException;
+use App\Domains\Repository\Exceptions\GitProviderRateLimitedException;
 use Illuminate\Http\Client\PendingRequest;
-use Illuminate\Http\Client\RequestException;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -17,42 +17,9 @@ class GitLabProvider extends AbstractGitProvider
         $token = $this->getCredential('token');
         $baseUrl = rtrim($this->getBaseUrl(), '/').'/api/v4';
 
-        return Http::baseUrl($baseUrl)
+        return $this->withRetries(Http::baseUrl($baseUrl)
             ->withToken($token ?? '')
-            ->timeout(30)
-            ->retry(
-                times: 3,
-                sleepMilliseconds: function (int $attempt, \Throwable $exception) {
-                    $response = $exception instanceof RequestException ? $exception->response : null;
-
-                    if ($response && $response->status() === 429) {
-                        $retryAfter = (int) ($response->header('Retry-After') ?: '60');
-
-                        Log::warning('GitLab API rate limit hit, retrying after delay', [
-                            'repository' => $this->repositoryIdentifier,
-                            'retry_after' => $retryAfter,
-                        ]);
-
-                        return min($retryAfter, 60) * 1000;
-                    }
-
-                    return (int) (1000 * pow(5, $attempt - 1));
-                },
-                when: function (\Throwable $exception): bool {
-                    $response = $exception instanceof RequestException ? $exception->response : null;
-
-                    if ($response && $response->status() === 429) {
-                        return true;
-                    }
-
-                    if ($response) {
-                        return $response->serverError();
-                    }
-
-                    return false;
-                },
-                throw: true,
-            );
+            ->timeout(30));
     }
 
     public function getBaseUrl(): string
@@ -205,6 +172,71 @@ class GitLabProvider extends AbstractGitProvider
         }
     }
 
+    /**
+     * @return array<int, array{name: string, type: 'dir'|'file'}>
+     */
+    public function listDirectory(string $ref, string $path): array
+    {
+        try {
+            $entries = [];
+            $page = 1;
+            $perPage = 100;
+            $projectPath = $this->getEncodedProjectPath();
+            $path = trim($path, '/');
+
+            do {
+                $params = ['ref' => $ref, 'per_page' => $perPage, 'page' => $page];
+
+                if ($path !== '') {
+                    $params['path'] = $path;
+                }
+
+                $response = $this->http->get("/projects/{$projectPath}/repository/tree", $params);
+
+                if ($response->status() === 404) {
+                    return [];
+                }
+
+                if ($response->failed()) {
+                    throw new GitProviderException(
+                        "Failed to list directory on GitLab: {$response->body()}"
+                    );
+                }
+
+                $pageEntries = $response->json();
+
+                if (! is_array($pageEntries)) {
+                    return [];
+                }
+
+                foreach ($pageEntries as $entry) {
+                    $entries[] = [
+                        'name' => (string) $entry['name'],
+                        'type' => ($entry['type'] ?? null) === 'tree' ? 'dir' : 'file',
+                    ];
+                }
+
+                $page++;
+            } while (count($pageEntries) === $perPage);
+
+            return $entries;
+        } catch (GitProviderException $e) {
+            throw $e;
+        } catch (\Exception $e) {
+            Log::error('GitLab API error listing directory', [
+                'repository' => $this->repositoryIdentifier,
+                'ref' => $ref,
+                'path' => $path,
+                'error' => $e->getMessage(),
+            ]);
+
+            throw new GitProviderException(
+                "Failed to list directory: {$e->getMessage()}",
+                previous: $e
+            );
+        }
+    }
+
     public function validateCredentials(): bool
     {
         try {
@@ -212,6 +244,8 @@ class GitLabProvider extends AbstractGitProvider
             $response = $this->http->get("/projects/{$projectPath}");
 
             return $response->successful();
+        } catch (GitProviderRateLimitedException $e) {
+            throw $e;
         } catch (\Exception $e) {
             Log::error('GitLab API error validating credentials', [
                 'repository' => $this->repositoryIdentifier,
@@ -229,13 +263,14 @@ class GitLabProvider extends AbstractGitProvider
         return "{$baseUrl}/{$this->repositoryIdentifier}.git";
     }
 
-    public function downloadArchive(string $ref, string $outputPath): bool
+    protected function downloadFullArchive(string $ref, string $outputPath): bool
     {
         try {
             $projectPath = $this->getEncodedProjectPath();
 
             /** @var Response $response */
-            $response = $this->http
+            // withOptions() changes the client in place; the sink must not outlive this request
+            $response = (clone $this->http)
                 ->withOptions(['sink' => $outputPath])
                 ->get("/projects/{$projectPath}/repository/archive.zip", [
                     'sha' => $ref,

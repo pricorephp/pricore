@@ -25,6 +25,9 @@ use Illuminate\Support\Carbon;
  * @property string $repo_identifier
  * @property string|null $custom_base_url
  * @property string|null $default_branch
+ * @property array<int, string>|null $package_paths
+ * @property Carbon|null $full_sync_requested_at
+ * @property Carbon|null $sync_requested_at
  * @property string|null $webhook_id
  * @property string|null $webhook_secret
  * @property Carbon|null $last_synced_at
@@ -38,6 +41,7 @@ use Illuminate\Support\Carbon;
  * @property-read int|null $packages_count
  * @property-read Collection<int, RepositorySyncLog> $syncLogs
  * @property-read int|null $sync_logs_count
+ * @property-read Collection<int, RepositoryEmptyRef> $emptyRefs
  *
  * @method static RepositoryFactory factory($count = null, $state = [])
  * @method static Builder<static>|Repository newModelQuery()
@@ -68,6 +72,9 @@ class Repository extends Model
         'sync_status' => RepositorySyncStatus::class,
         'last_synced_at' => 'datetime',
         'webhook_secret' => 'encrypted',
+        'package_paths' => 'array',
+        'full_sync_requested_at' => 'datetime',
+        'sync_requested_at' => 'datetime',
     ];
 
     /**
@@ -108,5 +115,13 @@ class Repository extends Model
     public function syncLogs(): HasMany
     {
         return $this->hasMany(RepositorySyncLog::class, 'repository_uuid', 'uuid');
+    }
+
+    /**
+     * @return HasMany<RepositoryEmptyRef, $this>
+     */
+    public function emptyRefs(): HasMany
+    {
+        return $this->hasMany(RepositoryEmptyRef::class, 'repository_uuid', 'uuid');
     }
 }

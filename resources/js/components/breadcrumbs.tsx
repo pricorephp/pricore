@@ -1,3 +1,4 @@
+import { Badge } from '@/components/ui/badge';
 import {
     Breadcrumb,
     BreadcrumbItem,
@@ -98,9 +99,7 @@ function BreadcrumbDropdown({ item, isLast }: BreadcrumbDropdownProps) {
                     >
                         {item.title}
                         {activeBadge && (
-                            <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
-                                {activeBadge}
-                            </span>
+                            <Badge variant="secondary">{activeBadge}</Badge>
                         )}
                         <ChevronDown className="size-3 opacity-60" />
                     </button>
@@ -117,9 +116,9 @@ function BreadcrumbDropdown({ item, isLast }: BreadcrumbDropdownProps) {
                         >
                             {dropdownItem.title}
                             {dropdownItem.badge && (
-                                <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+                                <Badge variant="secondary">
                                     {dropdownItem.badge}
-                                </span>
+                                </Badge>
                             )}
                         </DropdownMenuItem>
                     ))}

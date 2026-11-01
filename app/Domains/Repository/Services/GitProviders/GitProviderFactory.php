@@ -4,6 +4,7 @@ namespace App\Domains\Repository\Services\GitProviders;
 
 use App\Domains\Repository\Contracts\Enums\GitProvider;
 use App\Domains\Repository\Contracts\Interfaces\GitProviderInterface;
+use App\Domains\Repository\Exceptions\GitProviderException;
 use App\Models\OrganizationSshKey;
 use App\Models\Repository;
 use App\Models\UserGitCredential;
@@ -56,6 +57,10 @@ class GitProviderFactory
 
         if (! $organizationSshKey) {
             return [];
+        }
+
+        if ($organizationSshKey->organization_uuid !== $repository->organization_uuid) {
+            throw new GitProviderException('The SSH key does not belong to the repository organization.');
         }
 
         return ['ssh_key' => $organizationSshKey->private_key];

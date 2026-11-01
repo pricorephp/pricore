@@ -1,5 +1,5 @@
+import TokenScopeFields from '@/components/token-scope-fields';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
 import {
     Dialog,
     DialogContent,
@@ -17,14 +17,12 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { API_SCOPE_GROUPS } from '@/lib/token-scopes';
 import { Form } from '@inertiajs/react';
-import { ChevronDown, ChevronRight } from 'lucide-react';
-import { useState } from 'react';
 
 interface CreateTokenDialogProps {
     storeUrl: string;
     description: string;
+    isOrganizationToken: boolean;
     isOpen: boolean;
     onClose: () => void;
 }
@@ -32,11 +30,10 @@ interface CreateTokenDialogProps {
 export default function CreateTokenDialog({
     storeUrl,
     description,
+    isOrganizationToken,
     isOpen,
     onClose,
 }: CreateTokenDialogProps) {
-    const [showApiScopes, setShowApiScopes] = useState(false);
-
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
             <DialogContent className="max-h-[90vh] overflow-y-auto">
@@ -97,89 +94,11 @@ export default function CreateTokenDialog({
                                 )}
                             </div>
 
-                            {/* Every token can install packages with Composer. */}
-                            <input
-                                type="hidden"
-                                name="scopes[]"
-                                value="composer"
+                            <TokenScopeFields
+                                idPrefix="scope"
+                                isOrganizationToken={isOrganizationToken}
+                                error={errors.scopes}
                             />
-
-                            <div className="rounded-md border">
-                                <button
-                                    type="button"
-                                    onClick={() => setShowApiScopes((v) => !v)}
-                                    className="flex w-full items-center justify-between gap-3 p-3 text-left"
-                                    aria-expanded={showApiScopes}
-                                >
-                                    <span>
-                                        <span className="text-sm font-medium">
-                                            API access
-                                        </span>
-                                        <span className="mt-0.5 block text-sm text-muted-foreground">
-                                            Optional — let this token automate
-                                            Pricore through the REST API.
-                                        </span>
-                                    </span>
-                                    {showApiScopes ? (
-                                        <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
-                                    ) : (
-                                        <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
-                                    )}
-                                </button>
-
-                                {showApiScopes && (
-                                    <div className="grid gap-3 border-t p-3">
-                                        <p className="text-sm text-muted-foreground">
-                                            Pick the permissions this token
-                                            needs. It can never exceed your own
-                                            access.
-                                        </p>
-                                        {API_SCOPE_GROUPS.map((group) => (
-                                            <div
-                                                key={group.label}
-                                                className="grid space-y-1.5"
-                                            >
-                                                <span className="text-xs font-medium text-muted-foreground">
-                                                    {group.label}
-                                                </span>
-                                                <div className="flex flex-wrap gap-x-4 gap-y-2">
-                                                    {group.scopes.map(
-                                                        (scope) => (
-                                                            <div
-                                                                key={
-                                                                    scope.value
-                                                                }
-                                                                className="flex items-center gap-2"
-                                                            >
-                                                                <Checkbox
-                                                                    id={`scope-${scope.value}`}
-                                                                    name="scopes[]"
-                                                                    value={
-                                                                        scope.value
-                                                                    }
-                                                                />
-                                                                <Label
-                                                                    htmlFor={`scope-${scope.value}`}
-                                                                    className="font-normal"
-                                                                >
-                                                                    {
-                                                                        scope.label
-                                                                    }
-                                                                </Label>
-                                                            </div>
-                                                        ),
-                                                    )}
-                                                </div>
-                                            </div>
-                                        ))}
-                                        {errors.scopes && (
-                                            <p className="text-destructive">
-                                                {errors.scopes}
-                                            </p>
-                                        )}
-                                    </div>
-                                )}
-                            </div>
 
                             <DialogFooter>
                                 <Button

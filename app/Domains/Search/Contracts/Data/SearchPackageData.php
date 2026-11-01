@@ -2,6 +2,7 @@
 
 namespace App\Domains\Search\Contracts\Data;
 
+use App\Models\Organization;
 use App\Models\Package;
 use Spatie\LaravelData\Data;
 use Spatie\TypeScriptTransformer\Attributes\TypeScript;
@@ -17,14 +18,14 @@ class SearchPackageData extends Data
         public string $organizationSlug,
     ) {}
 
-    public static function fromModel(Package $package): self
+    public static function fromModel(Package $package, Organization $organization): self
     {
         return new self(
             uuid: $package->uuid,
             name: $package->name,
             description: $package->description,
-            organizationName: $package->organization->name,
-            organizationSlug: $package->organization->slug,
+            organizationName: $organization->name,
+            organizationSlug: $organization->slug,
         );
     }
 }

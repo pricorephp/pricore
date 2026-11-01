@@ -13,6 +13,7 @@ use App\Domains\Package\Contracts\Data\PackageVersionDetailData;
 use App\Http\Controllers\Controller;
 use App\Models\Organization;
 use App\Models\Package;
+use App\Models\PackageVersion;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -43,6 +44,8 @@ class PackageController extends Controller
         return Inertia::render('organizations/packages', [
             'organization' => OrganizationData::fromModel($organization),
             'packages' => $packages,
+            'canUploadPackages' => request()->user()?->can('managePackages', $organization) ?? false,
+            'maxUploadSize' => config('pricore.uploads.max_size'),
         ]);
     }
 
@@ -62,8 +65,12 @@ class PackageController extends Controller
             properties: ['name' => $package->name],
         );
 
-        // Delete versions through Eloquent to trigger dist file cleanup
-        $package->versions()->each(fn ($version) => $version->delete());
+        // Deleted through Eloquent to trigger dist file cleanup, and keyed by id
+        // rather than offset: each() pages with OFFSET, so deleting as it goes
+        // would skip versions and leave their archives behind.
+        $package->versions()
+            ->lazyById(100, 'uuid')
+            ->each(fn (PackageVersion $version) => $version->delete());
 
         $package->delete();
 
@@ -146,6 +153,8 @@ class PackageController extends Controller
             'downloadStats' => $this->downloadStats->handle($package),
             'canManageVersions' => request()->user()?->can('deleteRepository', $organization) ?? false,
             'canDeletePackage' => request()->user()?->can('deleteRepository', $organization) ?? false,
+            'canUploadVersions' => $package->is_artifact && (request()->user()?->can('managePackages', $organization) ?? false),
+            'maxUploadSize' => config('pricore.uploads.max_size'),
             'activeVersion' => $activeVersion,
             'primaryVersion' => $primaryVersion,
         ]);

@@ -8,7 +8,7 @@ Pricore supports two types of tokens:
 
 ### Organization Tokens
 
-- Created by organization members
+- Created by organization owners and admins
 - Grant access only to packages within that organization
 - Ideal for CI/CD pipelines and shared access
 - Managed in **Organization Settings** > **Composer Tokens**
@@ -28,8 +28,10 @@ Pricore supports two types of tokens:
 2. Click **Create Token**
 3. Enter a descriptive name (e.g., "CI Pipeline", "Production Deploy")
 4. Select an expiration period (never, 30 days, 90 days, or 1 year)
-5. Click **Create**
-6. **Copy the token immediately** — it won't be shown again
+5. Enable **Allow publishing packages** only if the token needs to [upload package versions](/guide/packages#publishing-from-ci)
+6. Optionally pick [REST API](/api/) permissions under **API access**
+7. Click **Create**
+8. **Copy the token immediately** — it won't be shown again
 
 ### Personal Token
 
@@ -37,18 +39,27 @@ Pricore supports two types of tokens:
 2. Click **Create Token**
 3. Enter a name for the token
 4. Select an expiration period
-5. Click **Create**
-6. Copy and store the token securely
+5. Optionally enable **Allow publishing packages**, or pick [REST API](/api/) permissions under **API access**
+6. Click **Create**
+7. Copy and store the token securely
 
 After creation, a dialog shows the plain token along with a pre-filled Composer command you can copy directly.
 
-## Token Scopes
+## Token Permissions
 
-| Scope | Permission |
-|-------|------------|
-| `read` | Read-only access to packages |
-| `write` | Upload and modify packages |
-| `admin` | Administrative access |
+Every token can install all packages of the organizations it has access to. Tokens can additionally be allowed to publish, or to use the [REST API](/api/#scopes):
+
+| Permission | Scope | Allows |
+|------------|-------|--------|
+| Install (always) | `composer` | Installing packages with Composer |
+| Publish | `write:packages` | Uploading versions of [uploaded packages](/guide/packages#from-an-archive-upload) |
+| API access | `read:*`, `write:*`, `delete:*` | Managing Pricore through the [REST API](/api/) |
+
+Tokens can only install packages unless more was enabled. You can change a token's name and permissions later with the edit button in the token list; the token value stays the same. A personal token can only publish while its owner is an owner or admin of the organization.
+
+::: warning
+Anyone holding a publishing token can publish new versions of your uploaded packages. Use a dedicated organization token per pipeline, store it as a CI secret, and revoke it if it may have leaked. Uploads made with a token show up in the organization's activity feed with the token's name.
+:::
 
 ## Using Tokens with Composer
 
@@ -114,8 +125,9 @@ Or in your CI configuration:
 1. **Use descriptive names** — Know what each token is used for
 2. **Set expiration dates** — Rotate tokens regularly
 3. **Use organization tokens for CI/CD** — Limit access to a single organization
-4. **Use personal tokens for development** — Convenient access across all your organizations
-5. **Never commit tokens** — Use environment variables or secrets management
+4. **Only allow publishing where needed** — Keep install tokens read-only
+5. **Use personal tokens for development** — Convenient access across all your organizations
+6. **Never commit tokens** — Use environment variables or secrets management
 
 ### Revoking Tokens
 

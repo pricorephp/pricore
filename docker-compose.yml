@@ -7,14 +7,14 @@ services:
       - "${APP_PORT:-8000}:8000"
     volumes:
       - pricore-storage:/app/storage
-      - pricore-database:/app/database
+      - pricore-database:/app/database/data
     environment:
       - APP_ENV=${APP_ENV:-production}
       - APP_DEBUG=${APP_DEBUG:-false}
       - APP_KEY=${APP_KEY:-}
       - APP_URL=${APP_URL:-http://localhost:8000}
       - DB_CONNECTION=${DB_CONNECTION:-sqlite}
-      - DB_DATABASE=${DB_DATABASE:-/app/database/database.sqlite}
+      - DB_DATABASE=${DB_DATABASE:-/app/database/data/database.sqlite}
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - CACHE_STORE=redis
@@ -48,14 +48,14 @@ services:
     stop_grace_period: 30s
     volumes:
       - pricore-storage:/app/storage
-      - pricore-database:/app/database
+      - pricore-database:/app/database/data
     environment:
       - APP_ENV=${APP_ENV:-production}
       - APP_DEBUG=${APP_DEBUG:-false}
       - APP_KEY=${APP_KEY:-}
       - APP_URL=${APP_URL:-http://localhost:8000}
       - DB_CONNECTION=${DB_CONNECTION:-sqlite}
-      - DB_DATABASE=${DB_DATABASE:-/app/database/database.sqlite}
+      - DB_DATABASE=${DB_DATABASE:-/app/database/data/database.sqlite}
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - CACHE_STORE=redis
@@ -86,14 +86,14 @@ services:
     command: sh -c "while true; do php artisan schedule:run --verbose --no-interaction; sleep 60; done"
     volumes:
       - pricore-storage:/app/storage
-      - pricore-database:/app/database
+      - pricore-database:/app/database/data
     environment:
       - APP_ENV=${APP_ENV:-production}
       - APP_DEBUG=${APP_DEBUG:-false}
       - APP_KEY=${APP_KEY:-}
       - APP_URL=${APP_URL:-http://localhost:8000}
       - DB_CONNECTION=${DB_CONNECTION:-sqlite}
-      - DB_DATABASE=${DB_DATABASE:-/app/database/database.sqlite}
+      - DB_DATABASE=${DB_DATABASE:-/app/database/data/database.sqlite}
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - CACHE_STORE=redis
@@ -113,14 +113,14 @@ services:
       - "${REVERB_PORT:-8080}:8080"
     volumes:
       - pricore-storage:/app/storage
-      - pricore-database:/app/database
+      - pricore-database:/app/database/data
     environment:
       - APP_ENV=${APP_ENV:-production}
       - APP_DEBUG=${APP_DEBUG:-false}
       - APP_KEY=${APP_KEY:-}
       - APP_URL=${APP_URL:-http://localhost:8000}
       - DB_CONNECTION=${DB_CONNECTION:-sqlite}
-      - DB_DATABASE=${DB_DATABASE:-/app/database/database.sqlite}
+      - DB_DATABASE=${DB_DATABASE:-/app/database/data/database.sqlite}
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - CACHE_STORE=redis

@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Domains\Mirror\Contracts\Interfaces\HostResolverInterface;
+use App\Domains\Mirror\Services\Http\DnsHostResolver;
 use App\Listeners\AcceptPendingInvitationListener;
 use App\Models\AccessToken;
 use App\Models\Mirror;
@@ -27,7 +29,7 @@ class AppServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
-        //
+        $this->app->bind(HostResolverInterface::class, DnsHostResolver::class);
     }
 
     public function boot(): void
@@ -37,6 +39,10 @@ class AppServiceProvider extends ServiceProvider
         Event::listen(Login::class, AcceptPendingInvitationListener::class);
         Event::listen(Registered::class, AcceptPendingInvitationListener::class);
         Event::listen(SocialiteWasCalled::class, GitLabExtendSocialite::class.'@handle');
+
+        // Throttling may run before the token is resolved, so key on the credential itself
+        RateLimiter::for('artifact-uploads', fn (Request $request) => Limit::perMinute(config('pricore.uploads.rate_limit_per_minute'))
+            ->by(hash('sha256', $request->header('Authorization') ?? (string) $request->ip())));
 
         Relation::enforceMorphMap([
             'repository' => Repository::class,
@@ -49,7 +55,7 @@ class AppServiceProvider extends ServiceProvider
         ]);
 
         RateLimiter::for('api', function (Request $request) {
-            $accessToken = $request->get('accessToken');
+            $accessToken = $request->attributes->get('accessToken');
             $key = $accessToken instanceof AccessToken ? $accessToken->uuid : (string) $request->ip();
 
             return Limit::perMinute(120)->by($key);
