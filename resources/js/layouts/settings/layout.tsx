@@ -4,21 +4,29 @@ import { cn, isSameUrl, resolveUrl } from '@/lib/utils';
 import { edit as editAppearance } from '@/routes/appearance';
 import { edit } from '@/routes/profile';
 import { gitCredentials, organizations } from '@/routes/settings';
+import { index as connectedAppsIndex } from '@/routes/settings/connected-apps';
 import { index as tokensIndex } from '@/routes/settings/tokens';
 import { show } from '@/routes/two-factor';
 import { edit as editPassword } from '@/routes/user-password';
-import { type NavItem } from '@/types';
-import { Link } from '@inertiajs/react';
+import { type NavItem, type SharedData } from '@/types';
+import { Link, usePage } from '@inertiajs/react';
 import {
     GitBranch,
     Key,
     Lock,
     Paintbrush,
+    Plug,
     ShieldCheck,
     User,
     Users,
 } from 'lucide-react';
 import { type PropsWithChildren } from 'react';
+
+const connectedAppsNavItem: NavItem = {
+    title: 'Connected Apps',
+    href: connectedAppsIndex(),
+    icon: Plug,
+};
 
 const sidebarNavItems: NavItem[] = [
     {
@@ -51,6 +59,7 @@ const sidebarNavItems: NavItem[] = [
         href: tokensIndex(),
         icon: Key,
     },
+    connectedAppsNavItem,
     {
         title: 'Organizations',
         href: organizations.url(),
@@ -59,6 +68,8 @@ const sidebarNavItems: NavItem[] = [
 ];
 
 export default function SettingsLayout({ children }: PropsWithChildren) {
+    const { mcpEnabled } = usePage<SharedData>().props;
+
     // When server-side rendering, we only render the layout on the client...
     if (typeof window === 'undefined') {
         return null;
@@ -82,27 +93,32 @@ export default function SettingsLayout({ children }: PropsWithChildren) {
             <div className="flex flex-col space-y-8 lg:flex-row lg:space-y-0 lg:space-x-12">
                 <aside className="w-full shrink-0 lg:w-48">
                     <nav className="flex space-x-2 lg:flex-col lg:space-y-1 lg:space-x-0">
-                        {sidebarNavItems.map((item, index) => (
-                            <Button
-                                key={`${resolveUrl(item.href)}-${index}`}
-                                size="sm"
-                                variant="ghost"
-                                asChild
-                                className={cn('w-full justify-start', {
-                                    'bg-muted': isSameUrl(
-                                        currentPath,
-                                        item.href,
-                                    ),
-                                })}
-                            >
-                                <Link href={item.href}>
-                                    {item.icon && (
-                                        <item.icon className="h-4 w-4" />
-                                    )}
-                                    {item.title}
-                                </Link>
-                            </Button>
-                        ))}
+                        {sidebarNavItems
+                            .filter(
+                                (item) =>
+                                    mcpEnabled || item !== connectedAppsNavItem,
+                            )
+                            .map((item, index) => (
+                                <Button
+                                    key={`${resolveUrl(item.href)}-${index}`}
+                                    size="sm"
+                                    variant="ghost"
+                                    asChild
+                                    className={cn('w-full justify-start', {
+                                        'bg-muted': isSameUrl(
+                                            currentPath,
+                                            item.href,
+                                        ),
+                                    })}
+                                >
+                                    <Link href={item.href}>
+                                        {item.icon && (
+                                            <item.icon className="h-4 w-4" />
+                                        )}
+                                        {item.title}
+                                    </Link>
+                                </Button>
+                            ))}
                     </nav>
                 </aside>
 

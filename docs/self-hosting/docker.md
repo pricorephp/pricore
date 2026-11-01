@@ -30,7 +30,8 @@ On first boot, the entrypoint script automatically handles:
 1. **APP_KEY generation** — If no `APP_KEY` is provided, one is generated and persisted to `/app/storage/app_key` (survives restarts via the storage volume)
 2. **SQLite database creation** — Creates the database file if it doesn't exist
 3. **Database migrations** — Runs `php artisan migrate --force` (only on the main app container, not horizon/scheduler)
-4. **Cache warming** — Caches config, routes, views, and events for production performance
+4. **OAuth key generation** — If `PASSPORT_PRIVATE_KEY` is not set, generates the keys that sign [MCP](/guide/mcp) access tokens in `/app/storage`
+5. **Cache warming** — Caches config, routes, views, and events for production performance
 
 Horizon and the scheduler wait for the app container to be healthy before starting, ensuring migrations are complete.
 

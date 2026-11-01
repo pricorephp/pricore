@@ -55,6 +55,18 @@ time: string | null,
 }
 }
 }
+namespace Mcp {
+namespace Contracts {
+namespace Data {
+export type ConnectedAppData = {
+clientId: string,
+name: string,
+authorizedAt: string | null,
+lastActiveAt: string | null,
+};
+}
+}
+}
 namespace Mirror {
 namespace Contracts {
 namespace Data {

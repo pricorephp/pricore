@@ -9,3 +9,5 @@ Schedule::call(function () {
 })->everyFourHours()->name('sync-mirrors');
 
 Schedule::command('security:sync-advisories')->everyFourHours()->name('sync-advisories');
+
+Schedule::command('passport:purge')->daily()->name('purge-oauth-tokens');

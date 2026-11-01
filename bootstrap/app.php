@@ -13,8 +13,10 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
+use Laravel\Mcp\Server\Middleware\AddAuthorizationFramingHeaders;
 use Sentry\Laravel\Integration;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -52,6 +54,7 @@ return Application::configure(basePath: dirname(__DIR__))
             HandleAppearance::class,
             HandleInertiaRequests::class,
             AddLinkHeadersForPreloadedAssets::class,
+            AddAuthorizationFramingHeaders::class,
         ]);
 
         // A group rather than an alias so installed packages can append their
@@ -77,6 +80,9 @@ return Application::configure(basePath: dirname(__DIR__))
     ])
     ->withExceptions(function (Exceptions $exceptions): void {
         Integration::handles($exceptions);
+
+        // MCP clients need a 401 with WWW-Authenticate rather than a login redirect
+        $exceptions->shouldRenderJsonWhen(fn (Request $request) => $request->is('mcp') || $request->expectsJson());
 
         $exceptions->respond(function (Response $response) {
             if (app()->hasDebugModeEnabled() && $response->getStatusCode() === 500) {

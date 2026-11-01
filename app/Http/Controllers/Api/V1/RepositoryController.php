@@ -8,15 +8,14 @@ use App\Domains\Repository\Actions\BulkCreateRepositoriesAction;
 use App\Domains\Repository\Actions\CreateRepositoryAction;
 use App\Domains\Repository\Actions\DeleteWebhookAction;
 use App\Domains\Repository\Actions\PurgeDistArchiveFilesTask;
+use App\Domains\Repository\Actions\RequestRepositorySyncAction;
 use App\Domains\Repository\Actions\UpdatePackagePathsAction;
 use App\Domains\Repository\Contracts\Data\BulkImportResultData;
 use App\Domains\Repository\Contracts\Data\RepositoryData;
 use App\Domains\Repository\Contracts\Enums\GitProvider;
-use App\Domains\Repository\Contracts\Enums\RepositorySyncStatus;
 use App\Domains\Repository\Http\Requests\BulkStoreRepositoryRequest;
 use App\Domains\Repository\Http\Requests\StoreRepositoryRequest;
 use App\Domains\Repository\Http\Requests\UpdateRepositoryRequest;
-use App\Domains\Repository\Jobs\SyncRepositoryJob;
 use App\Models\Organization;
 use App\Models\Repository;
 use App\Models\User;
@@ -103,14 +102,12 @@ class RepositoryController extends ApiController
         );
     }
 
-    public function sync(Organization $organization, Repository $repository): RepositoryData
+    public function sync(Organization $organization, Repository $repository, RequestRepositorySyncAction $requestRepositorySyncAction): RepositoryData
     {
         $this->authorize('deleteRepository', $organization);
         $this->ensureBelongsToOrganization($organization, $repository);
 
-        $repository->update(['sync_status' => RepositorySyncStatus::Pending]);
-
-        SyncRepositoryJob::dispatch($repository);
+        $requestRepositorySyncAction->handle($repository);
 
         return RepositoryData::fromModel($repository->loadCount('packages'), includeWebhookSecret: true);
     }
