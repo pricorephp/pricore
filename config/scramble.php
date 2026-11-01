@@ -4,7 +4,6 @@ use App\Services\OpenApi\DataToSchema;
 use App\Services\OpenApi\PaginatedDataCollectionToSchema;
 use Dedoc\Scramble\Http\Middleware\RestrictedDocsAccess;
 use Dedoc\Scramble\SecurityDocumentation\MiddlewareAuthSecurityStrategy;
-use Dedoc\Scramble\Support\Generator\SecurityScheme;
 
 return [
     /*
@@ -176,11 +175,12 @@ return [
      *     ],
      * ],
      */
+    // The strategy defaults to a bearer scheme. Passing a SecurityScheme object here
+    // would break `php artisan config:cache`, which only serializes plain values.
     'security_strategy' => [
         MiddlewareAuthSecurityStrategy::class,
         [
             'middleware' => ['api.token'],
-            'scheme' => SecurityScheme::http('bearer'),
         ],
     ],
 ];
