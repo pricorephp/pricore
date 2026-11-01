@@ -1893,6 +1893,63 @@
                     }
                 }
             },
+            "patch": {
+                "operationId": "v1.repositories.update",
+                "summary": "Update a repository's monorepo package paths. Omit `package_paths` to leave them\nas they are, or send `null` to read the package from the repository root. Packages\noutside the new paths are removed and a full sync is started",
+                "tags": [
+                    "Repository"
+                ],
+                "parameters": [
+                    {
+                        "name": "organization",
+                        "in": "path",
+                        "required": true,
+                        "description": "The organization slug",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "repository",
+                        "in": "path",
+                        "required": true,
+                        "description": "The repository UUID",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UpdateRepositoryRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "`RepositoryData`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/RepositoryData"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            },
             "delete": {
                 "operationId": "v1.repositories.destroy",
                 "tags": [
@@ -3663,6 +3720,23 @@
                     "name"
                 ],
                 "title": "UpdateOrganizationRequest"
+            },
+            "UpdateRepositoryRequest": {
+                "type": "object",
+                "properties": {
+                    "package_paths": {
+                        "type": [
+                            "array",
+                            "null"
+                        ],
+                        "items": {
+                            "type": "string",
+                            "maxLength": 255
+                        },
+                        "maxItems": 50
+                    }
+                },
+                "title": "UpdateRepositoryRequest"
             }
         },
         "responses": {

@@ -38,7 +38,7 @@ Every token carries a set of scopes that limit what it can do. Requests are chec
 |-------|--------|
 | `composer` | Composer registry access (package resolution & downloads) |
 | `read:organizations` / `write:organizations` / `delete:organizations` | View / create & update / delete organizations |
-| `read:repositories` / `write:repositories` / `delete:repositories` | View / add & sync / delete repositories |
+| `read:repositories` / `write:repositories` / `delete:repositories` | View / add, sync & update package paths / delete repositories |
 | `read:packages` / `write:packages` / `delete:packages` | View / [publish uploaded versions](#upload-a-package-version) / delete packages & versions |
 | `read:members` / `write:members` | View / manage members & invitations |
 | `read:mirrors` / `write:mirrors` / `delete:mirrors` | View / add & sync / delete mirrors |
@@ -60,14 +60,14 @@ List endpoints return a paginated envelope. Use `?page=` and `?per_page=` (max 1
 
 | Resource | Endpoints |
 |----------|-----------|
-| User | `GET /user`, `GET /user/organizations`, `GET\|POST\|DELETE /user/tokens` |
+| User | `GET /user`, `GET /user/organizations`, `GET\|POST /user/tokens`, `PATCH\|DELETE /user/tokens/{uuid}` |
 | Organizations | `GET\|POST /organizations`, `GET\|PATCH\|DELETE /organizations/{organization}` |
-| Repositories | `GET\|POST /…/repositories`, `POST /…/repositories/bulk`, `GET\|POST(sync)\|DELETE /…/repositories/{uuid}` |
+| Repositories | `GET\|POST /…/repositories`, `POST /…/repositories/bulk`, `GET\|PATCH\|POST(sync)\|DELETE /…/repositories/{uuid}` |
 | Packages | `GET /…/packages`, `GET\|DELETE /…/packages/{uuid}`, `GET /…/packages/{uuid}/versions`, `DELETE /…/packages/{uuid}/versions/{uuid}` |
 | Members | `GET\|POST /…/members`, `PATCH\|DELETE /…/members/{uuid}` |
 | Invitations | `GET /…/invitations`, `POST /…/invitations/{uuid}/resend`, `DELETE /…/invitations/{uuid}` |
 | Mirrors | `GET\|POST /…/mirrors`, `GET\|POST(sync)\|DELETE /…/mirrors/{uuid}` |
-| Tokens | `GET\|POST /…/tokens`, `DELETE /…/tokens/{uuid}` |
+| Tokens | `GET\|POST /…/tokens`, `PATCH\|DELETE /…/tokens/{uuid}` |
 
 See the [OpenAPI specification](/openapi.json) for request/response schemas of every endpoint.
 

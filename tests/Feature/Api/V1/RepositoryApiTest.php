@@ -115,3 +115,76 @@ it('does not let an organization token add repositories with Git provider creden
 
     assertDatabaseMissing('repositories', ['repo_identifier' => 'acme/widgets']);
 });
+
+it('updates the package paths and starts a full sync', function () {
+    Queue::fake();
+
+    $repository = Repository::factory()->create(['organization_uuid' => $this->organization->uuid, 'package_paths' => null]);
+
+    $token = personalAccessToken($this->user, [TokenScope::WriteRepositories]);
+
+    $this->withToken($token)
+        ->patchJson("/api/v1/organizations/{$this->organization->slug}/repositories/{$repository->uuid}", [
+            'package_paths' => ['packages/*'],
+        ])
+        ->assertOk()
+        ->assertJsonPath('packagePaths', ['packages/*']);
+
+    expect($repository->refresh()->package_paths)->toBe(['packages/*']);
+
+    Queue::assertPushed(SyncRepositoryJob::class, fn (SyncRepositoryJob $job) => $job->force);
+});
+
+it('leaves the package paths alone when they are omitted', function () {
+    Queue::fake();
+
+    $repository = Repository::factory()->create(['organization_uuid' => $this->organization->uuid, 'package_paths' => ['packages/*']]);
+
+    $token = personalAccessToken($this->user, [TokenScope::WriteRepositories]);
+
+    $this->withToken($token)
+        ->patchJson("/api/v1/organizations/{$this->organization->slug}/repositories/{$repository->uuid}", [])
+        ->assertOk()
+        ->assertJsonPath('packagePaths', ['packages/*']);
+
+    Queue::assertNothingPushed();
+});
+
+it('forbids a plain member from updating package paths', function () {
+    $repository = Repository::factory()->create(['organization_uuid' => $this->organization->uuid, 'package_paths' => null]);
+
+    $member = User::factory()->create();
+    joinOrganization($this->organization, $member, OrganizationRole::Member);
+
+    $this->withToken(personalAccessToken($member, [TokenScope::WriteRepositories]))
+        ->patchJson("/api/v1/organizations/{$this->organization->slug}/repositories/{$repository->uuid}", [
+            'package_paths' => ['packages/*'],
+        ])
+        ->assertForbidden();
+
+    expect($repository->refresh()->package_paths)->toBeNull();
+});
+
+it('shows the manual webhook secret only to members who manage repositories', function () {
+    $repository = Repository::factory()
+        ->forOrganization($this->organization)
+        ->withWebhook()
+        ->create(['provider' => 'git', 'repo_identifier' => 'https://git.example.com/acme/package.git']);
+
+    $member = User::factory()->create();
+    joinOrganization($this->organization, $member, OrganizationRole::Member);
+
+    $url = "/api/v1/organizations/{$this->organization->slug}/repositories/{$repository->uuid}";
+
+    $this->withToken(personalAccessToken($this->user, [TokenScope::ReadRepositories]))
+        ->getJson($url)
+        ->assertJsonPath('webhookSecret', $repository->webhook_secret);
+
+    $this->withToken(personalAccessToken($member, [TokenScope::ReadRepositories]))
+        ->getJson($url)
+        ->assertJsonPath('webhookSecret', null);
+
+    $this->withToken(personalAccessToken($this->user, [TokenScope::ReadRepositories]))
+        ->getJson("/api/v1/organizations/{$this->organization->slug}/repositories")
+        ->assertJsonPath('data.0.webhookSecret', null);
+});

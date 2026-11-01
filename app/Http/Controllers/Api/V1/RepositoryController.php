@@ -8,12 +8,14 @@ use App\Domains\Repository\Actions\BulkCreateRepositoriesAction;
 use App\Domains\Repository\Actions\CreateRepositoryAction;
 use App\Domains\Repository\Actions\DeleteWebhookAction;
 use App\Domains\Repository\Actions\PurgeDistArchiveFilesTask;
+use App\Domains\Repository\Actions\UpdatePackagePathsAction;
 use App\Domains\Repository\Contracts\Data\BulkImportResultData;
 use App\Domains\Repository\Contracts\Data\RepositoryData;
 use App\Domains\Repository\Contracts\Enums\GitProvider;
 use App\Domains\Repository\Contracts\Enums\RepositorySyncStatus;
 use App\Domains\Repository\Http\Requests\BulkStoreRepositoryRequest;
 use App\Domains\Repository\Http\Requests\StoreRepositoryRequest;
+use App\Domains\Repository\Http\Requests\UpdateRepositoryRequest;
 use App\Domains\Repository\Jobs\SyncRepositoryJob;
 use App\Models\Organization;
 use App\Models\Repository;
@@ -70,7 +72,7 @@ class RepositoryController extends ApiController
             packagePaths: $request->packagePaths(),
         );
 
-        return RepositoryData::fromModel($repository->loadCount('packages'));
+        return RepositoryData::fromModel($repository->loadCount('packages'), includeWebhookSecret: true);
     }
 
     public function bulkStore(BulkStoreRepositoryRequest $request, Organization $organization, BulkCreateRepositoriesAction $bulkCreate): BulkImportResultData
@@ -89,12 +91,16 @@ class RepositoryController extends ApiController
         );
     }
 
-    public function show(Organization $organization, Repository $repository): RepositoryData
+    public function show(Request $request, Organization $organization, Repository $repository): RepositoryData
     {
         $this->authorize('view', $organization);
         $this->ensureBelongsToOrganization($organization, $repository);
 
-        return RepositoryData::fromModel($repository->loadCount('packages'));
+        // Like the repository page: only those who manage repositories see the webhook secret.
+        return RepositoryData::fromModel(
+            $repository->loadCount('packages'),
+            includeWebhookSecret: $request->user()?->can('deleteRepository', $organization) ?? false,
+        );
     }
 
     public function sync(Organization $organization, Repository $repository): RepositoryData
@@ -106,7 +112,24 @@ class RepositoryController extends ApiController
 
         SyncRepositoryJob::dispatch($repository);
 
-        return RepositoryData::fromModel($repository->loadCount('packages'));
+        return RepositoryData::fromModel($repository->loadCount('packages'), includeWebhookSecret: true);
+    }
+
+    /**
+     * Update a repository's monorepo package paths. Omit `package_paths` to leave them
+     * as they are, or send `null` to read the package from the repository root. Packages
+     * outside the new paths are removed and a full sync is started.
+     */
+    public function update(UpdateRepositoryRequest $request, Organization $organization, Repository $repository, UpdatePackagePathsAction $updatePackagePathsAction): RepositoryData
+    {
+        $this->authorize('deleteRepository', $organization);
+        $this->ensureBelongsToOrganization($organization, $repository);
+
+        if ($request->has('package_paths')) {
+            $updatePackagePathsAction->handle($repository, $request->packagePaths(), $request->user());
+        }
+
+        return RepositoryData::fromModel($repository->refresh()->loadCount('packages'), includeWebhookSecret: true);
     }
 
     public function destroy(Request $request, Organization $organization, Repository $repository): Response

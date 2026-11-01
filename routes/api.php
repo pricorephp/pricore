@@ -53,6 +53,8 @@ Route::middleware(['api.token', 'throttle:api'])->group(function () {
                 ->middleware('scope:write:repositories')->name('repositories.bulk');
             Route::get('repositories/{repository:uuid}', [RepositoryController::class, 'show'])
                 ->middleware('scope:read:repositories')->name('repositories.show');
+            Route::patch('repositories/{repository:uuid}', [RepositoryController::class, 'update'])
+                ->middleware('scope:write:repositories')->name('repositories.update');
             Route::post('repositories/{repository:uuid}/sync', [RepositoryController::class, 'sync'])
                 ->middleware('scope:write:repositories')->name('repositories.sync');
             Route::delete('repositories/{repository:uuid}', [RepositoryController::class, 'destroy'])
