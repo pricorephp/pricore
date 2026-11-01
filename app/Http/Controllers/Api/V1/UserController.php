@@ -18,6 +18,9 @@ class UserController extends ApiController
     {
         $this->requirePersonalAccessToken($request);
 
+        // Tokens limited to installing or publishing packages don't reveal who they belong to.
+        abort_unless($this->accessToken($request)->hasApiAccess(), 403, 'This token has no REST API access.');
+
         /** @var User $user */
         $user = $request->user();
 

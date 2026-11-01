@@ -1,5 +1,7 @@
 <?php
 
+use App\Services\OpenApi\DataToSchema;
+use App\Services\OpenApi\PaginatedDataCollectionToSchema;
 use Dedoc\Scramble\Http\Middleware\RestrictedDocsAccess;
 use Dedoc\Scramble\SecurityDocumentation\MiddlewareAuthSecurityStrategy;
 use Dedoc\Scramble\Support\Generator\SecurityScheme;
@@ -147,7 +149,10 @@ return [
         RestrictedDocsAccess::class,
     ],
 
-    'extensions' => [],
+    'extensions' => [
+        DataToSchema::class,
+        PaginatedDataCollectionToSchema::class,
+    ],
 
     /*
      * Automatically document API security (OpenAPI `security` / `securitySchemes`) based on route

@@ -57,6 +57,14 @@ enum TokenScope: string
     }
 
     /**
+     * Whether the scope grants access to the REST API, rather than to the Composer registry.
+     */
+    public function isApiScope(): bool
+    {
+        return ! in_array($this, [self::Composer, self::WritePackages], true);
+    }
+
+    /**
      * @return array<string, string>
      */
     public static function options(): array

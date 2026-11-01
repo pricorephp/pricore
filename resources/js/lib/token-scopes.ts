@@ -70,3 +70,34 @@ export function apiScopeGroups(isOrganizationToken: boolean): ScopeGroup[] {
         ),
     }));
 }
+
+// Read endpoints an organization token can call, in order of preference.
+const ORGANIZATION_EXAMPLE_PATHS: [TokenScope, string][] = [
+    ['read:organizations', ''],
+    ['read:repositories', '/repositories'],
+    ['read:packages', '/packages'],
+    ['read:members', '/members'],
+    ['read:mirrors', '/mirrors'],
+    ['read:tokens', '/tokens'],
+];
+
+/**
+ * A first request the token is allowed to make, or null when it only has
+ * write or delete scopes. Personal tokens can always read their own profile.
+ */
+export function apiExamplePath(
+    scopes: string[],
+    organizationSlug?: string,
+): string | null {
+    if (!organizationSlug) {
+        return '/api/v1/user';
+    }
+
+    const match = ORGANIZATION_EXAMPLE_PATHS.find(([scope]) =>
+        scopes.includes(scope),
+    );
+
+    return match
+        ? `/api/v1/organizations/${organizationSlug}${match[1]}`
+        : null;
+}

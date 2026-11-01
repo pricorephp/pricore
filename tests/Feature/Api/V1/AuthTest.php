@@ -1,6 +1,7 @@
 <?php
 
 use App\Domains\Organization\Contracts\Enums\OrganizationRole;
+use App\Domains\Token\Contracts\Enums\TokenScope;
 use App\Models\AccessToken;
 use App\Models\Organization;
 use App\Models\User;
@@ -66,4 +67,15 @@ it('records last_used_at when a token authenticates', function () {
 it('rejects unauthenticated requests before resolving the organization', function () {
     $this->getJson("/api/v1/organizations/{$this->organization->slug}/repositories")->assertUnauthorized();
     $this->getJson('/api/v1/organizations/does-not-exist/repositories')->assertUnauthorized();
+});
+
+it('does not reveal the profile to tokens without API access', function () {
+    $token = personalAccessToken($this->user, [TokenScope::Composer, TokenScope::WritePackages]);
+
+    $this->withToken($token)->getJson('/api/v1/user')->assertForbidden();
+
+    $this->withToken(personalAccessToken($this->user, [TokenScope::ReadPackages]))
+        ->getJson('/api/v1/user')
+        ->assertOk()
+        ->assertJsonPath('email', $this->user->email);
 });

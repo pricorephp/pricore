@@ -26,4 +26,12 @@ it('generates a valid OpenAPI specification for the API', function () {
     expect($paths)->toContain('organizations');
     expect($paths)->toContain('repositories');
     expect($paths)->toContain('tokens');
+
+    // Data objects are documented by their properties, and lists by their pagination envelope.
+    expect(array_keys($spec['components']['schemas']['RepositoryData']['properties']))->toContain('uuid', 'repoIdentifier', 'packagePaths');
+
+    $listSchema = $spec['paths']['/organizations/{organization}/repositories']['get']['responses']['200']['content']['application/json']['schema'];
+
+    expect(array_keys($listSchema['properties']))->toBe(['data', 'links', 'meta'])
+        ->and($listSchema['properties']['data']['items']['$ref'])->toBe('#/components/schemas/RepositoryData');
 });

@@ -8,6 +8,7 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { apiExamplePath } from '@/lib/token-scopes';
 import { Check, Copy } from 'lucide-react';
 import { useRef, useState } from 'react';
 
@@ -16,6 +17,7 @@ interface TokenCreatedDialogProps {
     name: string;
     expiresAt: string | null;
     scopes: string[];
+    organizationSlug?: string;
     isOpen: boolean;
     onClose: () => void;
 }
@@ -25,6 +27,7 @@ export default function TokenCreatedDialog({
     name,
     expiresAt,
     scopes,
+    organizationSlug,
     isOpen,
     onClose,
 }: TokenCreatedDialogProps) {
@@ -69,7 +72,8 @@ export default function TokenCreatedDialog({
     );
 
     const composerCommand = `composer config --global --auth http-basic.${domain} token ${token}`;
-    const apiCommand = `curl -H "Authorization: Bearer ${token}" \\\n     -H "Accept: application/json" \\\n     https://${domain}/api/v1/user`;
+    const apiPath = apiExamplePath(scopes, organizationSlug);
+    const apiCommand = `curl -H "Authorization: Bearer ${token}" \\\n     -H "Accept: application/json" \\\n     https://${domain}${apiPath}`;
 
     return (
         <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
@@ -175,26 +179,28 @@ export default function TokenCreatedDialog({
                                 </a>
                                 .
                             </p>
-                            <div className="mt-2 flex items-start gap-2">
-                                <code className="min-w-0 flex-1 rounded border border-border bg-muted p-2 font-mono text-xs break-all whitespace-pre-wrap">
-                                    {apiCommand}
-                                </code>
-                                <Button
-                                    type="button"
-                                    variant="secondary"
-                                    size="icon"
-                                    onClick={() =>
-                                        copyToClipboard(apiCommand, 'api')
-                                    }
-                                    className="shrink-0"
-                                >
-                                    {copied === 'api' ? (
-                                        <Check className="h-4 w-4" />
-                                    ) : (
-                                        <Copy className="h-4 w-4" />
-                                    )}
-                                </Button>
-                            </div>
+                            {apiPath && (
+                                <div className="mt-2 flex items-start gap-2">
+                                    <code className="min-w-0 flex-1 rounded border border-border bg-muted p-2 font-mono text-xs break-all whitespace-pre-wrap">
+                                        {apiCommand}
+                                    </code>
+                                    <Button
+                                        type="button"
+                                        variant="secondary"
+                                        size="icon"
+                                        onClick={() =>
+                                            copyToClipboard(apiCommand, 'api')
+                                        }
+                                        className="shrink-0"
+                                    >
+                                        {copied === 'api' ? (
+                                            <Check className="h-4 w-4" />
+                                        ) : (
+                                            <Copy className="h-4 w-4" />
+                                        )}
+                                    </Button>
+                                </div>
+                            )}
                         </div>
                     )}
                 </div>

@@ -171,6 +171,7 @@ export default function Tokens({
                     name={tokenCreated.name}
                     expiresAt={tokenCreated.expiresAt}
                     scopes={tokenCreated.scopes}
+                    organizationSlug={organization.slug}
                     isOpen={tokenCreatedDialogOpen}
                     onClose={() => setTokenCreatedDialogOpen(false)}
                 />

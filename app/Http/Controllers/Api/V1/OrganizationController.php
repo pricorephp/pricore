@@ -29,7 +29,8 @@ class OrganizationController extends ApiController
         } else {
             /** @var User $user */
             $user = $request->user();
-            $query = $user->organizations()->getQuery();
+            // Keep the relation: its getQuery() selects the joined pivot uuid over the organization's.
+            $query = $user->organizations();
         }
 
         $organizations = $query

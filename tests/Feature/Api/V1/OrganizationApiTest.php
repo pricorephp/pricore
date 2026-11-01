@@ -135,3 +135,14 @@ it('renames an organization without requiring the slug', function () {
         ->assertJsonPath('name', 'Renamed Org')
         ->assertJsonPath('slug', $organization->slug);
 });
+
+it('lists organizations by their own uuid, not the membership uuid', function () {
+    $user = User::factory()->create();
+    $organization = Organization::factory()->create(['owner_uuid' => $user->uuid]);
+    joinOrganization($organization, $user, OrganizationRole::Owner);
+
+    $token = personalAccessToken($user, [TokenScope::ReadOrganizations]);
+
+    $this->withToken($token)->getJson('/api/v1/organizations')->assertJsonPath('data.0.uuid', $organization->uuid);
+    $this->withToken($token)->getJson('/api/v1/user/organizations')->assertJsonPath('data.0.uuid', $organization->uuid);
+});

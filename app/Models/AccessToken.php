@@ -101,6 +101,11 @@ class AccessToken extends Model
         return in_array($scope->value, $this->scopes ?? [TokenScope::Composer->value], true);
     }
 
+    public function hasApiAccess(): bool
+    {
+        return $this->hasAnyScope(...array_filter(TokenScope::cases(), fn (TokenScope $scope) => $scope->isApiScope()));
+    }
+
     public function hasAnyScope(TokenScope ...$scopes): bool
     {
         foreach ($scopes as $scope) {
