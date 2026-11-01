@@ -84,11 +84,11 @@ it('marks shared tags with the packages that have their own tag of that version'
         tagFormatRefs(['billing@1.0.0', '1.0.0', '2.0.0', 'nightly'], ['main']),
     );
 
-    $claimed = collect($refs->all->toCollection())->mapWithKeys(fn (RefData $ref) => [$ref->name => $ref->claimedPackageKeys])->all();
+    $claimed = collect($refs->all->toCollection())->mapWithKeys(fn (RefData $ref) => [$ref->name => $ref->packageTags])->all();
 
     expect($claimed)->toBe([
         'billing@1.0.0' => [],
-        '1.0.0' => ['billing'],
+        '1.0.0' => ['billing' => 'billing@1.0.0'],
         '2.0.0' => [],
         'nightly' => [],
         'main' => [],
@@ -113,6 +113,16 @@ it('removes a version whose package tag was deleted, even when a shared tag has 
     expect($removed)->toBe(1)
         ->and($this->billing->versions()->count())->toBe(0)
         ->and($this->crm->versions()->pluck('version')->all())->toBe(['1.0.0']);
+});
+
+it('keeps versions of a live branch whose name fits the format', function () {
+    $this->repository->update(['tag_format' => 'release/{package}/{version}']);
+    tagFormatVersion($this->billing, 'dev-release/billing/1.2.0', 'release/billing/1.2.0');
+
+    $removed = app(RemoveStaleVersionsAction::class)->handle($this->repository, tagFormatRefs(branches: ['release/billing/1.2.0']));
+
+    expect($removed)->toBe(0)
+        ->and($this->billing->versions()->pluck('version')->all())->toBe(['dev-release/billing/1.2.0']);
 });
 
 it('keeps the shared versions and those of each package\'s own tags', function () {

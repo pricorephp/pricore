@@ -194,10 +194,14 @@ class SyncRefAction
             ->where('version', $metadata->version)
             ->first();
 
-        // A tag of this package alone outranks a shared tag of the same version
-        if ($format !== null
-            && $target->isShared()
-            && in_array($format->keyFor($path, $package->name), $ref->claimedPackageKeys, true)) {
+        // A tag of this package alone outranks a shared tag of the same version, once
+        // it released that version. Until then, or when that tag holds no package,
+        // the shared tag releases it, and the package tag takes it over later.
+        $packageTag = $format !== null && $target->isShared()
+            ? ($ref->packageTags[(string) $format->keyFor($path, $package->name)] ?? null)
+            : null;
+
+        if ($packageTag !== null && $existingVersion?->source_tag === $packageTag) {
             return 'skipped';
         }
 

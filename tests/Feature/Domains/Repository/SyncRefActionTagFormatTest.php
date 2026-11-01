@@ -67,7 +67,7 @@ beforeEach(function () {
     ];
 
     $this->sync = fn (GitProviderInterface $provider, string $tag, string $commit = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', bool $isTag = true, array $claimed = []) => app(SyncRefAction::class)
-        ->handle($provider, $this->repository, new RefData(name: $tag, commit: $commit, isTag: $isTag, claimedPackageKeys: $claimed));
+        ->handle($provider, $this->repository, new RefData(name: $tag, commit: $commit, isTag: $isTag, packageTags: $claimed));
 
     $this->versionsOf = fn (string $package) => PackageVersion::query()
         ->whereHas('package', fn ($query) => $query->where('name', $package))
@@ -133,7 +133,7 @@ it('lets a package tag outrank a shared tag of the same version', function () {
     $sharedCommit = str_repeat('b', 40);
 
     ($this->sync)(tagFormatProvider($this->files, $this->directories), 'billing@1.0.0', $packageCommit);
-    ($this->sync)(tagFormatProvider($this->files, $this->directories), '1.0.0', $sharedCommit, claimed: ['billing']);
+    ($this->sync)(tagFormatProvider($this->files, $this->directories), '1.0.0', $sharedCommit, claimed: ['billing' => 'billing@1.0.0']);
 
     expect(($this->versionsOf)('acme/billing'))->toBe(['1.0.0' => $packageCommit])
         ->and(($this->versionsOf)('acme/crm'))->toBe(['1.0.0' => $sharedCommit]);
@@ -198,4 +198,15 @@ it('finds a package that lived in another directory at an older tag', function (
         ->and($result->empty)->toBeFalse()
         ->and($version->package->name)->toBe('acme/billing')
         ->and($version->source_path)->toBe('packages/billing');
+});
+
+it('lets a shared tag release a package whose own tag released nothing', function () {
+    $sharedCommit = str_repeat('b', 40);
+
+    // billing@1.0.0 exists, but holds no billing package, so it released nothing
+    ($this->sync)(tagFormatProvider([], $this->directories), 'billing@1.0.0', str_repeat('a', 40));
+    ($this->sync)(tagFormatProvider($this->files, $this->directories), '1.0.0', $sharedCommit, claimed: ['billing' => 'billing@1.0.0']);
+
+    expect(($this->versionsOf)('acme/billing'))->toBe(['1.0.0' => $sharedCommit])
+        ->and(($this->versionsOf)('acme/crm'))->toBe(['1.0.0' => $sharedCommit]);
 });

@@ -12,10 +12,10 @@ class RefData extends Data
         public bool $isTag = false,
         /**
          * For a shared tag: the packages that release the same version from a tag
-         * of their own, which outranks this one.
+         * of their own, which outranks this one, mapped to that tag's name.
          *
-         * @var array<int, string>
+         * @var array<string, string>
          */
-        public array $claimedPackageKeys = [],
+        public array $packageTags = [],
     ) {}
 }

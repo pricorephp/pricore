@@ -11,9 +11,9 @@ use Spatie\LaravelData\DataCollection;
 class ClaimSharedVersionsAction
 {
     /**
-     * Mark on each shared tag the packages that release the same version from a
-     * tag of their own. Refs are synced one job at a time and some providers
-     * cannot list tags there, so the precedence travels with the ref.
+     * Mark on each shared tag the packages that have a tag of their own for the
+     * same version. Refs are synced one job at a time and some providers cannot
+     * list tags there, so the precedence travels with the ref.
      */
     public function handle(Repository $repository, RefsCollectionData $refs): RefsCollectionData
     {
@@ -25,14 +25,14 @@ class ClaimSharedVersionsAction
 
         $tags = collect($refs->tags->toCollection());
 
-        /** @var array<string, array<int, string>> $claimedByVersion */
+        /** @var array<string, array<string, string>> $claimedByVersion */
         $claimedByVersion = [];
 
         foreach ($tags as $ref) {
             $target = TagFormat::target($format, $ref);
 
             if ($target !== null && $target->packageKey !== null) {
-                $claimedByVersion[$target->version][] = $target->packageKey;
+                $claimedByVersion[$target->version][$target->packageKey] = $ref->name;
             }
         }
 
@@ -47,7 +47,7 @@ class ClaimSharedVersionsAction
                 return $ref;
             }
 
-            return new RefData($ref->name, $ref->commit, $ref->isTag, array_values(array_unique($claimedByVersion[$target->version])));
+            return new RefData($ref->name, $ref->commit, $ref->isTag, $claimedByVersion[$target->version]);
         });
 
         $branches = collect($refs->branches->toCollection());
