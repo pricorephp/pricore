@@ -125,6 +125,22 @@ it('keeps versions of a live branch whose name fits the format', function () {
         ->and($this->billing->versions()->pluck('version')->all())->toBe(['dev-release/billing/1.2.0']);
 });
 
+it('removes a deleted package tag\'s version even when a branch has the same name', function () {
+    $this->repository->update(['tag_format' => 'release/{package}/{version}']);
+    tagFormatVersion($this->billing, '1.2.0', 'release/billing/1.2.0');
+    tagFormatVersion($this->billing, 'dev-release/billing/1.2.0', 'release/billing/1.2.0');
+    tagFormatVersion($this->crm, '1.2.0', '1.2.0');
+
+    $refs = tagFormatRefs(['1.2.0'], ['release/billing/1.2.0']);
+
+    $filtered = app(FilterChangedRefsAction::class)->handle($refs, $this->repository);
+    $removed = app(RemoveStaleVersionsAction::class)->handle($this->repository, $refs);
+
+    expect(collect($filtered->all->toCollection())->pluck('name')->all())->toContain('1.2.0')
+        ->and($removed)->toBe(1)
+        ->and($this->billing->versions()->pluck('version')->all())->toBe(['dev-release/billing/1.2.0']);
+});
+
 it('keeps the shared versions and those of each package\'s own tags', function () {
     tagFormatVersion($this->billing, '1.0.0', 'billing@1.0.0');
     tagFormatVersion($this->billing, '2.0.0', 'billing@2.0.0');

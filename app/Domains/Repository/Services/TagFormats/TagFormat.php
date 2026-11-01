@@ -122,6 +122,24 @@ class TagFormat
             ?? (str_starts_with($sharedVersion, 'dev-') ? null : new RefTargetData($sharedVersion));
     }
 
+    /**
+     * Whether a version came from a tag of a single package that no longer exists.
+     * A branch can carry the same name, but its versions are dev-<name>, so the
+     * version must be the one that tag releases.
+     *
+     * @param  array<int, string>  $tagNames
+     */
+    public static function ownedByDeletedPackageTag(?self $format, ?string $sourceTag, string $version, array $tagNames): bool
+    {
+        if ($format === null || $sourceTag === null || in_array($sourceTag, $tagNames, true)) {
+            return false;
+        }
+
+        $owner = self::target($format, new RefData($sourceTag, '', isTag: true));
+
+        return $owner !== null && ! $owner->isShared() && $owner->version === $version;
+    }
+
     public function match(string $tag): ?RefTargetData
     {
         if (preg_match($this->regex, $tag, $matches) !== 1) {

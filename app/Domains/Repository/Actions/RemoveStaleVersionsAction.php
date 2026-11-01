@@ -46,7 +46,7 @@ class RemoveStaleVersionsAction
             ->groupBy('packageKey')
             ->map(fn (Collection $packageTargets) => $packageTargets->pluck('version')->all());
 
-        $refNames = collect($refs->all->toCollection())->pluck('name')->all();
+        $tagNames = collect($refs->tags->toCollection())->pluck('name')->all();
 
         // Deleted one model at a time so the deleting hook removes each version's
         // archive files; a bulk delete fires no events and strands them.
@@ -57,12 +57,12 @@ class RemoveStaleVersionsAction
             ->whereIn('package_uuid', $packageUuids)
             ->when($format === null, fn ($query) => $query->whereNotIn('version', $sharedVersions))
             ->lazyById(100, 'uuid')
-            ->filter(function (PackageVersion $version) use ($format, $sharedVersions, $versionsByPackageKey, $refNames) {
+            ->filter(function (PackageVersion $version) use ($format, $sharedVersions, $versionsByPackageKey, $tagNames) {
                 if ($format === null) {
                     return true;
                 }
 
-                if ($this->ownedByDeletedPackageTag($format, $version, $refNames)) {
+                if (TagFormat::ownedByDeletedPackageTag($format, $version->source_tag, $version->version, $tagNames)) {
                     return true;
                 }
 
@@ -84,23 +84,6 @@ class RemoveStaleVersionsAction
         }
 
         return $deleted;
-    }
-
-    /**
-     * Branches count as existing refs too: a branch whose name happens to fit the
-     * format, such as release/billing/1.2.0, still owns its versions.
-     *
-     * @param  array<int, string>  $refNames
-     */
-    protected function ownedByDeletedPackageTag(TagFormat $format, PackageVersion $version, array $refNames): bool
-    {
-        if ($version->source_tag === null || in_array($version->source_tag, $refNames, true)) {
-            return false;
-        }
-
-        $owner = TagFormat::target($format, new RefData($version->source_tag, '', isTag: true));
-
-        return $owner !== null && ! $owner->isShared();
     }
 
     /**

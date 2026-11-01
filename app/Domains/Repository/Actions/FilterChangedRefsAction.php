@@ -32,7 +32,7 @@ class FilterChangedRefsAction
     public function handle(RefsCollectionData $refs, Repository $repository): RefsCollectionData
     {
         $format = TagFormat::forRepository($repository);
-        $refNames = collect($refs->all->toCollection())->pluck('name')->all();
+        $tagNames = collect($refs->tags->toCollection())->pluck('name')->all();
 
         if ($format !== null) {
             $refs = $this->withoutIgnoredTags($refs, $format);
@@ -48,7 +48,7 @@ class FilterChangedRefsAction
         }
 
         $orphanedVersions = $format === null ? [] : $existing
-            ->filter(fn (ExistingVersionData $version) => $version->sourceTag !== null && ! in_array($version->sourceTag, $refNames, true))
+            ->filter(fn (ExistingVersionData $version) => TagFormat::ownedByDeletedPackageTag($format, $version->sourceTag, $version->version, $tagNames))
             ->pluck('version')
             ->unique()
             ->all();
