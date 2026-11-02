@@ -76,19 +76,20 @@ class FakePasskeyAuthenticator
      * @param  array{challenge: string, rpId?: string}  $options
      * @return array{id: string, rawId: string, type: string, response: array<string, string>}
      */
-    public function assert(array $options, string $userHandle): array
+    public function assert(array $options, string $userHandle, bool $userVerified = true, ?string $origin = null): array
     {
         $relyingPartyId = $options['rpId'] ?? config()->string('passkeys.relying_party_id');
 
         $clientDataJson = json_encode([
             'type' => 'webauthn.get',
             'challenge' => $options['challenge'],
-            'origin' => config('passkeys.allowed_origins')[0],
+            'origin' => $origin ?? config('passkeys.allowed_origins')[0],
             'crossOrigin' => false,
         ], JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES);
 
-        // User present and user verified, with a counter of 1.
-        $authenticatorData = hash('sha256', $relyingPartyId, binary: true).chr(0x05).pack('N', 1);
+        // User present (0x01), optionally user verified (0x04), with a counter of 1.
+        $flags = $userVerified ? 0x05 : 0x01;
+        $authenticatorData = hash('sha256', $relyingPartyId, binary: true).chr($flags).pack('N', 1);
 
         openssl_sign($authenticatorData.hash('sha256', $clientDataJson, binary: true), $signature, $this->privateKey, OPENSSL_ALGO_SHA256);
 

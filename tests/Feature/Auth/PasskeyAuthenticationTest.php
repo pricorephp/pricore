@@ -49,6 +49,38 @@ test('users can not sign in with an invalid passkey signature', function () {
     $this->assertGuest();
 });
 
+test('users can not sign in with a passkey that skipped device verification', function () {
+    $user = User::factory()->create();
+    $fakePasskeyAuthenticator = new FakePasskeyAuthenticator;
+    $fakePasskeyAuthenticator->register($user);
+
+    $options = $this->getJson(route('passkey.login-options'))->json('options');
+
+    $this->postJson(route('passkey.login'), [
+        'credential' => $fakePasskeyAuthenticator->assert($options, $user->getPasskeyUserHandle(), userVerified: false),
+    ])
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors('credential');
+
+    $this->assertGuest();
+});
+
+test('users can not sign in with a passkey assertion from another origin', function () {
+    $user = User::factory()->create();
+    $fakePasskeyAuthenticator = new FakePasskeyAuthenticator;
+    $fakePasskeyAuthenticator->register($user);
+
+    $options = $this->getJson(route('passkey.login-options'))->json('options');
+
+    $this->postJson(route('passkey.login'), [
+        'credential' => $fakePasskeyAuthenticator->assert($options, $user->getPasskeyUserHandle(), origin: 'https://evil.example'),
+    ])
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors('credential');
+
+    $this->assertGuest();
+});
+
 test('users can not sign in with a passkey that was removed', function () {
     $user = User::factory()->create();
     $fakePasskeyAuthenticator = new FakePasskeyAuthenticator;
