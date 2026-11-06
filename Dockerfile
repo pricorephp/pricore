@@ -5,6 +5,11 @@
 # https://www.php.net/archive/2026.php#2026-10-21-5
 ARG PHP_VERSION=8.4.27
 
+# Exact FrankenPHP release for the runtime image. Pinned to 1.13.5 (or newer)
+# for its security fixes:
+# https://github.com/php/frankenphp/releases/tag/v1.13.5
+ARG FRANKENPHP_VERSION=1.13.5
+
 # Stage 1: Build frontend assets
 FROM node:22-alpine AS frontend-builder
 
@@ -74,7 +79,7 @@ COPY public/ ./public/
 RUN npm run build
 
 # Stage 2: Production application with FrankenPHP
-FROM dunglas/frankenphp:1-php${PHP_VERSION}-alpine AS application
+FROM dunglas/frankenphp:${FRANKENPHP_VERSION}-php${PHP_VERSION}-alpine AS application
 
 ARG APP_VERSION=dev
 ENV APP_VERSION=${APP_VERSION}
