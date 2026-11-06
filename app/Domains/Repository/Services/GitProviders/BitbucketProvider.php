@@ -237,7 +237,8 @@ class BitbucketProvider extends AbstractGitProvider
 
     public function getRepositoryUrl(): string
     {
-        return "git@bitbucket.org:{$this->repositoryIdentifier}.git";
+        // Bitbucket Cloud serves SSH only on ssh.bitbucket.org; bitbucket.org is HTTPS-only.
+        return "git@ssh.bitbucket.org:{$this->repositoryIdentifier}.git";
     }
 
     /**

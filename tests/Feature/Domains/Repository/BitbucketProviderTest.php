@@ -159,3 +159,12 @@ it('cuts a subdirectory archive from the full archive download', function () {
         rmdir($directory);
     }
 });
+
+it('uses the dedicated SSH host for the repository url', function () {
+    $provider = new BitbucketProvider('acme/monorepo', [
+        'email' => 'user@example.com',
+        'api_token' => 'token',
+    ]);
+
+    expect($provider->getRepositoryUrl())->toBe('git@ssh.bitbucket.org:acme/monorepo.git');
+});
