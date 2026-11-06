@@ -1,6 +1,7 @@
 <?php
 
 use App\Domains\Repository\Actions\CreateGitCloneAction;
+use App\Domains\Repository\Exceptions\GitProviderException;
 use App\Models\Repository;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Process;
@@ -84,4 +85,43 @@ it('fetches from the repository address when a leftover clone has an outdated or
     app(CreateGitCloneAction::class)->handle($this->repository);
 
     expect(runCloneFixtureGit($this->clonePath, 'rev-parse', 'refs/heads/main'))->toBe($sha);
+});
+
+it('keeps URL credentials out of a failed clone', function () {
+    $repository = Repository::factory()->create([
+        'provider' => 'git',
+        'repo_identifier' => 'https://dev:hunter2@git.example.test/acme/package.git',
+    ]);
+
+    Process::fake(['*' => Process::result(
+        errorOutput: "fatal: unable to access 'https://dev:hunter2@git.example.test/acme/package.git/': 403\n",
+        exitCode: 128,
+    )]);
+
+    try {
+        app(CreateGitCloneAction::class)->handle($repository);
+        $this->fail('Expected a GitProviderException');
+    } catch (GitProviderException $e) {
+        expect($e->getMessage())
+            ->toContain("Failed to clone repository: fatal: unable to access 'https://***@git.example.test/acme/package.git/'")
+            ->not->toContain('hunter2');
+    }
+});
+
+it('keeps URL credentials out of a failed clone update', function () {
+    $this->repository->update(['repo_identifier' => 'https://dev:hunter2@git.example.test/acme/package.git']);
+
+    Process::fake(['*' => Process::result(
+        errorOutput: "fatal: unable to access 'https://dev:hunter2@git.example.test/acme/package.git/': 403\n",
+        exitCode: 128,
+    )]);
+
+    try {
+        app(CreateGitCloneAction::class)->handle($this->repository);
+        $this->fail('Expected a GitProviderException');
+    } catch (GitProviderException $e) {
+        expect($e->getMessage())
+            ->toContain("Failed to update repository clone: fatal: unable to access 'https://***@git.example.test/acme/package.git/'")
+            ->not->toContain('hunter2');
+    }
 });

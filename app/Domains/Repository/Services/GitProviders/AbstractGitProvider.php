@@ -3,6 +3,7 @@
 namespace App\Domains\Repository\Services\GitProviders;
 
 use App\Domains\Repository\Contracts\Interfaces\GitProviderInterface;
+use App\Domains\Repository\Exceptions\GitProviderException;
 use App\Domains\Repository\Exceptions\GitProviderRateLimitedException;
 use App\Domains\Repository\Services\Archive\ZipSubtreeExtractor;
 use Illuminate\Http\Client\PendingRequest;
@@ -13,6 +14,8 @@ use Illuminate\Support\Str;
 
 abstract class AbstractGitProvider implements GitProviderInterface
 {
+    protected const CREDENTIALS_HINT = 'Pricore connects with the Git credentials of the person who added this repository; they can update them under Settings > Git Providers.';
+
     protected PendingRequest $http;
 
     /**
@@ -95,6 +98,34 @@ abstract class AbstractGitProvider implements GitProviderInterface
         }
 
         return max(1, (int) ($response->header('Retry-After') ?: 60));
+    }
+
+    /**
+     * Request the repository from the provider's API. The failure message ends up
+     * in the sync log, where it is all a user has to go on, so it is left to the
+     * provider to word: a null status means the provider could not be reached.
+     *
+     * @param  callable(?int): string  $failureMessage
+     */
+    protected function ensureApiAccess(string $path, callable $failureMessage): void
+    {
+        try {
+            $response = $this->http->get($path);
+        } catch (GitProviderRateLimitedException $e) {
+            throw $e;
+        } catch (\Exception $e) {
+            Log::error('Git provider API error checking repository access', [
+                'provider' => class_basename($this),
+                'repository' => $this->repositoryIdentifier,
+                'error' => $e->getMessage(),
+            ]);
+
+            throw new GitProviderException($failureMessage(null), previous: $e);
+        }
+
+        if (! $response->successful()) {
+            throw new GitProviderException($failureMessage($response->status()));
+        }
     }
 
     /**

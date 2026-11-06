@@ -4,7 +4,6 @@ namespace App\Domains\Repository\Services\GitProviders;
 
 use App\Domains\Repository\Contracts\Data\RepositorySuggestionData;
 use App\Domains\Repository\Exceptions\GitProviderException;
-use App\Domains\Repository\Exceptions\GitProviderRateLimitedException;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
@@ -253,22 +252,29 @@ class GitHubProvider extends AbstractGitProvider
         }
     }
 
-    public function validateCredentials(): bool
+    public function ensureRepositoryAccess(): void
     {
-        try {
-            $response = $this->http->get("/repos/{$this->repositoryIdentifier}");
+        $this->ensureApiAccess("/repos/{$this->repositoryIdentifier}", $this->accessFailureMessage(...));
+    }
 
-            return $response->successful();
-        } catch (GitProviderRateLimitedException $e) {
-            throw $e;
-        } catch (\Exception $e) {
-            Log::error('GitHub API error validating credentials', [
-                'repository' => $this->repositoryIdentifier,
-                'error' => $e->getMessage(),
-            ]);
+    protected function accessFailureMessage(?int $status): string
+    {
+        $repository = $this->repositoryIdentifier;
 
-            return false;
+        if ($status === null) {
+            return 'Could not connect to GitHub. Try again later, and check that GitHub is reachable from Pricore if this persists.';
         }
+
+        if (! $this->hasCredential('token')) {
+            return 'No GitHub token is available for this repository. '.static::CREDENTIALS_HINT;
+        }
+
+        return match ($status) {
+            401 => 'GitHub rejected the token (HTTP 401). It may have expired or been revoked. '.static::CREDENTIALS_HINT,
+            403 => "GitHub denied access to {$repository} (HTTP 403). A classic token needs the repo scope, and a fine-grained token needs access to this repository with read permission on Contents. Organizations using SAML SSO must also authorize the token. ".static::CREDENTIALS_HINT,
+            404 => "GitHub could not find {$repository} (HTTP 404). Check the repository path, and that the token can access it: a classic token needs the repo scope, and a fine-grained token must include this repository. GitHub hides repositories a token cannot access. ".static::CREDENTIALS_HINT,
+            default => "GitHub responded with HTTP {$status} for {$repository}. Try again later.",
+        };
     }
 
     public function getRepositoryUrl(): string

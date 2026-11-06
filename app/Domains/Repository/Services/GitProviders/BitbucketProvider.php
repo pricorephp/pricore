@@ -4,7 +4,6 @@ namespace App\Domains\Repository\Services\GitProviders;
 
 use App\Domains\Repository\Contracts\Data\RepositorySuggestionData;
 use App\Domains\Repository\Exceptions\GitProviderException;
-use App\Domains\Repository\Exceptions\GitProviderRateLimitedException;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
@@ -217,22 +216,29 @@ class BitbucketProvider extends AbstractGitProvider
         }
     }
 
-    public function validateCredentials(): bool
+    public function ensureRepositoryAccess(): void
     {
-        try {
-            $response = $this->http->get("/repositories/{$this->repositoryIdentifier}");
+        $this->ensureApiAccess("/repositories/{$this->repositoryIdentifier}", $this->accessFailureMessage(...));
+    }
 
-            return $response->successful();
-        } catch (GitProviderRateLimitedException $e) {
-            throw $e;
-        } catch (\Exception $e) {
-            Log::error('Bitbucket API error validating credentials', [
-                'repository' => $this->repositoryIdentifier,
-                'error' => $e->getMessage(),
-            ]);
+    protected function accessFailureMessage(?int $status): string
+    {
+        $repository = $this->repositoryIdentifier;
 
-            return false;
+        if ($status === null) {
+            return 'Could not connect to Bitbucket. Try again later, and check that Bitbucket is reachable from Pricore if this persists.';
         }
+
+        if (! $this->hasCredential('api_token')) {
+            return 'No Bitbucket API token is available for this repository. '.static::CREDENTIALS_HINT;
+        }
+
+        return match ($status) {
+            401 => 'Bitbucket rejected the email and API token (HTTP 401). The token may have expired or been revoked. '.static::CREDENTIALS_HINT,
+            403 => "Bitbucket denied access to {$repository} (HTTP 403). The API token needs the read:repository:bitbucket scope. ".static::CREDENTIALS_HINT,
+            404 => "Bitbucket could not find {$repository} (HTTP 404). Check the workspace and repository name, and that the account has access to it. ".static::CREDENTIALS_HINT,
+            default => "Bitbucket responded with HTTP {$status} for {$repository}. Try again later.",
+        };
     }
 
     public function getRepositoryUrl(): string
