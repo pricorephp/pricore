@@ -155,11 +155,12 @@ cp /var/lib/redis/dump.rdb backup/
 - Use strong `APP_KEY`
 - Disable debug mode in production
 - Configure secure session settings
+- Set `APP_URL` to the HTTPS address users visit, since passkeys are bound to that domain
 
 ### Access Control
 
 - Use strong passwords
-- Enable two-factor authentication
+- Enable two-factor authentication or sign in with passkeys
 - Regularly audit access tokens
 - Review organization memberships
 

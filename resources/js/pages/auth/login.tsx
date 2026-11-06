@@ -6,11 +6,16 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Spinner } from '@/components/ui/spinner';
 import AuthLayout from '@/layouts/auth-layout';
-import { register } from '@/routes';
+import { dashboard, register } from '@/routes';
 import { store } from '@/routes/login';
+import { loginOptions, login as passkeyLogin } from '@/routes/passkey';
 import { request } from '@/routes/password';
 import { SharedData } from '@/types';
 import { Form, Head, usePage } from '@inertiajs/react';
+import { UserCancelledError } from '@laravel/passkeys';
+import { usePasskeyVerify } from '@laravel/passkeys/react';
+import { Fingerprint } from 'lucide-react';
+import { useState } from 'react';
 
 interface LoginProps {
     status?: string;
@@ -18,6 +23,7 @@ interface LoginProps {
     canRegister: boolean;
     githubEnabled?: boolean;
     gitlabEnabled?: boolean;
+    passkeysEnabled?: boolean;
 }
 
 export default function Login({
@@ -26,8 +32,37 @@ export default function Login({
     canRegister,
     githubEnabled,
     gitlabEnabled,
+    passkeysEnabled = false,
 }: LoginProps) {
     const { flash } = usePage<SharedData>().props;
+    const [passkeyAttempted, setPasskeyAttempted] = useState(false);
+    const [verifyingPasskey, setVerifyingPasskey] = useState(false);
+
+    // The hook keeps isLoading on while autofill waits for a pick, so the button tracks its own state.
+    const { verify, error, errorInstance, isSupported } = usePasskeyVerify({
+        autofill: passkeysEnabled,
+        remember: true,
+        routes: {
+            options: loginOptions.url(),
+            submit: passkeyLogin.url(),
+        },
+        onSuccess: (response) => {
+            window.location.assign(response.redirect ?? dashboard.url());
+        },
+    });
+
+    const signInWithPasskey = async () => {
+        setPasskeyAttempted(true);
+        setVerifyingPasskey(true);
+        await verify();
+        setVerifyingPasskey(false);
+    };
+
+    // Autofill runs in the background, so only surface errors once the user asked for a passkey.
+    const passkeyError =
+        passkeyAttempted && !(errorInstance instanceof UserCancelledError)
+            ? error
+            : null;
 
     return (
         <AuthLayout
@@ -108,7 +143,11 @@ export default function Login({
                                     required
                                     autoFocus
                                     tabIndex={1}
-                                    autoComplete="email"
+                                    autoComplete={
+                                        passkeysEnabled
+                                            ? 'email webauthn'
+                                            : 'email'
+                                    }
                                     placeholder="email@example.com"
                                 />
                                 <InputError message={errors.email} />
@@ -155,6 +194,26 @@ export default function Login({
                     </>
                 )}
             </Form>
+
+            {passkeysEnabled && isSupported && (
+                <div className="flex flex-col gap-2">
+                    <Button
+                        type="button"
+                        variant="outline"
+                        className="h-10 w-full"
+                        onClick={signInWithPasskey}
+                        disabled={verifyingPasskey}
+                        data-test="passkey-login-button"
+                    >
+                        {verifyingPasskey ? <Spinner /> : <Fingerprint />}
+                        Sign in with a passkey
+                    </Button>
+                    <InputError
+                        message={passkeyError ?? undefined}
+                        className="text-center"
+                    />
+                </div>
+            )}
 
             {flash?.error && (
                 <div className="text-center text-sm font-medium text-red-600">

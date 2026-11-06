@@ -6,6 +6,7 @@ use App\Http\Controllers\Settings\ConnectGitHubController;
 use App\Http\Controllers\Settings\ConnectGitLabController;
 use App\Http\Controllers\Settings\LeaveOrganizationController;
 use App\Http\Controllers\Settings\OrganizationsController;
+use App\Http\Controllers\Settings\PasskeyController;
 use App\Http\Controllers\Settings\PasswordController;
 use App\Http\Controllers\Settings\ProfileController;
 use App\Http\Controllers\Settings\TwoFactorAuthenticationController;
@@ -32,6 +33,8 @@ Route::middleware('auth')->group(function () {
 
     Route::get('settings/two-factor', [TwoFactorAuthenticationController::class, 'show'])
         ->name('two-factor.show');
+
+    Route::get('settings/passkeys', [PasskeyController::class, 'index'])->name('settings.passkeys');
 
     Route::get('settings/organizations', [OrganizationsController::class, 'index'])->name('settings.organizations');
     Route::delete('settings/organizations/{organization:slug}', LeaveOrganizationController::class)->name('settings.organizations.leave');
