@@ -218,7 +218,7 @@ Pricore checks access at the start of each sync, using the Git credentials of th
 |--------|---------------|
 | No token available | Credentials exist for this provider, for the person who added the repository |
 | HTTP 401 | The token has not expired or been revoked, and belongs to this GitLab instance |
-| HTTP 403 | The token has the required scope (`api` on GitLab, `repo` on GitHub), and no IP allowlist or SSO policy blocks it |
+| HTTP 403 | The token has the required access (`api` on GitLab; on GitHub `repo` for a classic token, or read permission on Contents for a fine-grained token), and no IP allowlist or SSO policy blocks it |
 | HTTP 404 | The repository path is correct and the account can see it (at least Reporter on GitLab). Providers answer 404 for repositories an account cannot access |
 | Could not connect | The GitLab URL is correct, and the instance is reachable from Pricore with a trusted TLS certificate |
 

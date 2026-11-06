@@ -271,8 +271,8 @@ class GitHubProvider extends AbstractGitProvider
 
         return match ($status) {
             401 => 'GitHub rejected the token (HTTP 401). It may have expired or been revoked. '.static::CREDENTIALS_HINT,
-            403 => "GitHub denied access to {$repository} (HTTP 403). The token needs the repo scope, and organizations using SAML SSO must authorize it. ".static::CREDENTIALS_HINT,
-            404 => "GitHub could not find {$repository} (HTTP 404). Check the repository path, and that the token has the repo scope, since GitHub hides repositories a token cannot access. ".static::CREDENTIALS_HINT,
+            403 => "GitHub denied access to {$repository} (HTTP 403). A classic token needs the repo scope, and a fine-grained token needs access to this repository with read permission on Contents. Organizations using SAML SSO must also authorize the token. ".static::CREDENTIALS_HINT,
+            404 => "GitHub could not find {$repository} (HTTP 404). Check the repository path, and that the token can access it: a classic token needs the repo scope, and a fine-grained token must include this repository. GitHub hides repositories a token cannot access. ".static::CREDENTIALS_HINT,
             default => "GitHub responded with HTTP {$status} for {$repository}. Try again later.",
         };
     }

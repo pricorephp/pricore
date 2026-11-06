@@ -82,7 +82,8 @@ it('explains why GitHub refused access', function (int $status, string $message)
         ->toThrow(GitProviderException::class, $message);
 })->with([
     [401, 'GitHub rejected the token (HTTP 401)'],
-    [404, 'GitHub could not find acme/package (HTTP 404)'],
+    [403, 'a fine-grained token needs access to this repository with read permission on Contents'],
+    [404, 'a fine-grained token must include this repository'],
 ]);
 
 it('explains why Bitbucket refused access', function (int $status, string $message) {
@@ -104,6 +105,45 @@ it('passes on what git reported for a generic repository', function () {
     expect(fn () => (new GenericGitProvider('git@git.acme.test:acme/package.git', []))->ensureRepositoryAccess())
         ->toThrow(GitProviderException::class, 'Permission denied (publickey)');
 });
+
+it('keeps credentials in a generic repository URL out of the message', function (string $url, string $expected, string $secret) {
+    Process::fake(['*' => Process::result(errorOutput: "fatal: unable to access '{$url}/': 403\n", exitCode: 128)]);
+
+    try {
+        (new GenericGitProvider($url, []))->ensureRepositoryAccess();
+        $this->fail('Expected a GitProviderException');
+    } catch (GitProviderException $e) {
+        expect($e->getMessage())
+            ->toContain("Could not read {$expected}.")
+            ->toContain("unable to access '{$expected}/'")
+            ->not->toContain($secret);
+    }
+})->with([
+    'password' => ['https://dev:hunter2@git.acme.test/package.git', 'https://***@git.acme.test/package.git', 'hunter2'],
+    'token as username' => ['https://glpat-secret@git.acme.test/package.git', 'https://***@git.acme.test/package.git', 'glpat-secret'],
+    'password with an at sign' => ['https://dev:hun@ter2@git.acme.test/package.git', 'https://***@git.acme.test/package.git', 'ter2'],
+    'ssh password' => ['ssh://git:hunter2@git.acme.test/package.git', 'ssh://git:***@git.acme.test/package.git', 'hunter2'],
+]);
+
+it('keeps credentials out of the message when git does not finish', function () {
+    Process::fake(fn () => throw new RuntimeException('git timed out'));
+
+    $genericGitProvider = new GenericGitProvider('https://dev:hunter2@git.acme.test/package.git', []);
+
+    expect(fn () => $genericGitProvider->ensureRepositoryAccess())
+        ->toThrow(GitProviderException::class, 'Could not read https://***@git.acme.test/package.git: git did not finish.');
+});
+
+it('leaves a generic repository URL without credentials as it is', function (string $url) {
+    Process::fake(['*' => Process::result(errorOutput: "fatal: repository not found\n", exitCode: 128)]);
+
+    expect(fn () => (new GenericGitProvider($url, []))->ensureRepositoryAccess())
+        ->toThrow(GitProviderException::class, "Could not read {$url}.");
+})->with([
+    'ssh user' => 'ssh://git@git.acme.test:22/package.git',
+    'scp style' => 'git@git.acme.test:acme/package.git',
+    'port and at sign in the path' => 'https://git.acme.test:8443/acme/package@v1.git',
+]);
 
 it('does not reword a rate limit', function () {
     Http::fake(['gitlab.acme.test/*' => Http::response([], 429, ['Retry-After' => '30'])]);
