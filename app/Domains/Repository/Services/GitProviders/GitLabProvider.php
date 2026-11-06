@@ -4,7 +4,6 @@ namespace App\Domains\Repository\Services\GitProviders;
 
 use App\Domains\Repository\Contracts\Data\RepositorySuggestionData;
 use App\Domains\Repository\Exceptions\GitProviderException;
-use App\Domains\Repository\Exceptions\GitProviderRateLimitedException;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
@@ -237,23 +236,35 @@ class GitLabProvider extends AbstractGitProvider
         }
     }
 
-    public function validateCredentials(): bool
+    public function ensureRepositoryAccess(): void
     {
-        try {
-            $projectPath = $this->getEncodedProjectPath();
-            $response = $this->http->get("/projects/{$projectPath}");
+        $this->ensureApiAccess("/projects/{$this->getEncodedProjectPath()}", $this->accessFailureMessage(...));
+    }
 
-            return $response->successful();
-        } catch (GitProviderRateLimitedException $e) {
-            throw $e;
-        } catch (\Exception $e) {
-            Log::error('GitLab API error validating credentials', [
-                'repository' => $this->repositoryIdentifier,
-                'error' => $e->getMessage(),
-            ]);
+    protected function accessFailureMessage(?int $status): string
+    {
+        $gitLab = "GitLab at {$this->getBaseUrl()}";
+        $project = $this->repositoryIdentifier;
 
-            return false;
+        if ($status === null) {
+            return "Could not connect to {$gitLab}. Check the GitLab URL under Settings > Git Providers, and that the instance is reachable from Pricore and uses a trusted TLS certificate.";
         }
+
+        if (! $this->hasCredential('token')) {
+            return 'No GitLab token is available for this repository. '.static::CREDENTIALS_HINT;
+        }
+
+        // Without a URL the request went to GitLab.com, whatever the token was made for
+        $selfHostedHint = $this->hasCredential('url')
+            ? ''
+            : ' For a self-hosted instance, also set the GitLab URL in the credentials.';
+
+        return match ($status) {
+            401 => "{$gitLab} rejected the token (HTTP 401). It may have expired or been revoked, or belong to another GitLab instance. ".static::CREDENTIALS_HINT.$selfHostedHint,
+            403 => "{$gitLab} denied access to project {$project} (HTTP 403). The token needs the api scope, and an IP allowlist or firewall on the instance can also block Pricore. ".static::CREDENTIALS_HINT,
+            404 => "{$gitLab} could not find project {$project} (HTTP 404). Check the project path, and that the token's account has at least the Reporter role, since GitLab hides projects an account cannot access. ".static::CREDENTIALS_HINT.$selfHostedHint,
+            default => "{$gitLab} responded with HTTP {$status} for project {$project}. Try again later, and check the instance if this persists.",
+        };
     }
 
     public function getRepositoryUrl(): string

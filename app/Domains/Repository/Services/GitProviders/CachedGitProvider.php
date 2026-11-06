@@ -42,9 +42,11 @@ class CachedGitProvider implements GitProviderInterface
         return $result->output();
     }
 
-    public function validateCredentials(): bool
+    public function ensureRepositoryAccess(): void
     {
-        return is_dir($this->clonePath);
+        if (! is_dir($this->clonePath)) {
+            throw new GitProviderException('The repository clone is missing.');
+        }
     }
 
     public function getRepositoryIdentifier(): string

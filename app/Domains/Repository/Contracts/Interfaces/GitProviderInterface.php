@@ -2,6 +2,8 @@
 
 namespace App\Domains\Repository\Contracts\Interfaces;
 
+use App\Domains\Repository\Exceptions\GitProviderException;
+
 interface GitProviderInterface
 {
     /**
@@ -16,7 +18,12 @@ interface GitProviderInterface
 
     public function getFileContent(string $ref, string $path): ?string;
 
-    public function validateCredentials(): bool;
+    /**
+     * Throws when the repository cannot be read, with a message saying how to fix it.
+     *
+     * @throws GitProviderException
+     */
+    public function ensureRepositoryAccess(): void;
 
     public function getRepositoryIdentifier(): string;
 

@@ -59,10 +59,7 @@ class FixtureArchiveProvider extends AbstractGitProvider
         return [];
     }
 
-    public function validateCredentials(): bool
-    {
-        return true;
-    }
+    public function ensureRepositoryAccess(): void {}
 
     public function getRepositoryUrl(): string
     {

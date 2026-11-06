@@ -124,14 +124,20 @@ class GenericGitProvider extends AbstractGitProvider
         }
     }
 
-    public function validateCredentials(): bool
+    public function ensureRepositoryAccess(): void
     {
         try {
             $this->runGitCommand(['ls-remote', '--', $this->getAuthenticatedUrl(), 'HEAD']);
-
-            return true;
+        } catch (GitProviderException $e) {
+            throw new GitProviderException(
+                "Could not read {$this->repositoryIdentifier}. Check the URL and, for a private repository, that the selected SSH key is added as a deploy key.\n\n".trim($e->getMessage()),
+                previous: $e,
+            );
         } catch (\Exception $e) {
-            return false;
+            throw new GitProviderException(
+                "Could not read {$this->repositoryIdentifier}: git did not finish. Check that the host is reachable from Pricore.",
+                previous: $e,
+            );
         }
     }
 

@@ -205,10 +205,24 @@ Repository actions require appropriate organization roles:
 Common causes of sync failures:
 
 1. **Invalid composer.json** - Ensure your repository has a valid `composer.json` at the root, or in each configured [package path](#monorepos)
-2. **Authentication issues** - Re-authorize the OAuth connection, or verify your SSH key is added as a deploy key
+2. **Repository access** - See [Repository Access Errors](#repository-access-errors), or verify your SSH key is added as a deploy key
 3. **Webhook delivery failed** - Check your Git provider's webhook logs
 4. **Rate limiting** - Wait and retry, or check API limits
 5. **SSH key not found** - Ensure the repository has an SSH key selected and the key hasn't been deleted
+
+### Repository Access Errors
+
+Pricore checks access at the start of each sync, using the Git credentials of the person who added the repository. If the check fails, **View error** in the sync history says what the provider answered. They can update the credentials under **Settings > Git Providers**.
+
+| Answer | What to check |
+|--------|---------------|
+| No token available | Credentials exist for this provider, for the person who added the repository |
+| HTTP 401 | The token has not expired or been revoked, and belongs to this GitLab instance |
+| HTTP 403 | The token has the required scope (`api` on GitLab, `repo` on GitHub), and no IP allowlist or SSO policy blocks it |
+| HTTP 404 | The repository path is correct and the account can see it (at least Reporter on GitLab). Providers answer 404 for repositories an account cannot access |
+| Could not connect | The GitLab URL is correct, and the instance is reachable from Pricore with a trusted TLS certificate |
+
+For a self-hosted GitLab instance, set the **GitLab URL** in the credentials. Without it, Pricore connects to GitLab.com.
 
 ### Missing Versions
 

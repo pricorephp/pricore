@@ -123,7 +123,7 @@ it('uses an authorized key for both provider requests and cloning then removes t
         return Process::result();
     });
 
-    expect(GitProviderFactory::make($repository)->validateCredentials())->toBeTrue();
+    GitProviderFactory::make($repository)->ensureRepositoryAccess();
     app(CreateGitCloneAction::class)->handle($repository);
 
     expect($keyPaths)->toHaveCount(2);
