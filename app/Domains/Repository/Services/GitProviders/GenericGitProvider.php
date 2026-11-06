@@ -126,16 +126,18 @@ class GenericGitProvider extends AbstractGitProvider
 
     public function ensureRepositoryAccess(): void
     {
+        $redactedUrl = static::redactUrlCredentials($this->repositoryIdentifier);
+
         try {
             $this->runGitCommand(['ls-remote', '--', $this->getAuthenticatedUrl(), 'HEAD']);
         } catch (GitProviderException $e) {
             throw new GitProviderException(
-                "Could not read {$this->redactUrlCredentials($this->repositoryIdentifier)}. Check the URL and, for a private repository, that the selected SSH key is added as a deploy key.\n\n".trim($e->getMessage()),
+                "Could not read {$redactedUrl}. Check the URL and, for a private repository, that the selected SSH key is added as a deploy key.\n\n".trim($e->getMessage()),
                 previous: $e,
             );
         } catch (\Exception $e) {
             throw new GitProviderException(
-                "Could not read {$this->redactUrlCredentials($this->repositoryIdentifier)}: git did not finish. Check that the host is reachable from Pricore.",
+                "Could not read {$redactedUrl}: git did not finish. Check that the host is reachable from Pricore.",
                 previous: $e,
             );
         }
@@ -208,7 +210,7 @@ class GenericGitProvider extends AbstractGitProvider
      * http(s) a token may sit in the username, so the whole userinfo goes; over
      * other transports the username is not secret, as in ssh://git@host.
      */
-    protected function redactUrlCredentials(string $text): string
+    public static function redactUrlCredentials(string $text): string
     {
         $text = (string) preg_replace('#(https?://)[^/\s]+@#i', '$1***@', $text);
 
@@ -237,7 +239,7 @@ class GenericGitProvider extends AbstractGitProvider
             $result = Process::env($env)->run(array_merge(['git'], $command));
 
             if ($result->failed()) {
-                throw new GitProviderException('Git command failed: '.$this->redactUrlCredentials($result->errorOutput()));
+                throw new GitProviderException('Git command failed: '.static::redactUrlCredentials($result->errorOutput()));
             }
 
             return trim($result->output());
