@@ -44,12 +44,13 @@ class FakePasskeyAuthenticator
 
         assert(is_array($details));
 
+        // OpenSSL drops leading zero bytes from the coordinates, while COSE requires their full 32 bytes.
         $publicKey = MapObject::create()
             ->add(UnsignedIntegerObject::create(1), UnsignedIntegerObject::create(2))
             ->add(UnsignedIntegerObject::create(3), NegativeIntegerObject::create(-7))
             ->add(NegativeIntegerObject::create(-1), UnsignedIntegerObject::create(1))
-            ->add(NegativeIntegerObject::create(-2), ByteStringObject::create($details['ec']['x']))
-            ->add(NegativeIntegerObject::create(-3), ByteStringObject::create($details['ec']['y']));
+            ->add(NegativeIntegerObject::create(-2), ByteStringObject::create(str_pad($details['ec']['x'], 32, "\0", STR_PAD_LEFT)))
+            ->add(NegativeIntegerObject::create(-3), ByteStringObject::create(str_pad($details['ec']['y'], 32, "\0", STR_PAD_LEFT)));
 
         $credentialRecord = CredentialRecord::create(
             publicKeyCredentialId: $this->credentialId,
