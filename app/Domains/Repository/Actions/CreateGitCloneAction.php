@@ -64,10 +64,11 @@ class CreateGitCloneAction
 
         try {
             // A bare clone has no fetch refspec, so the refs to update must be named
-            // explicitly; otherwise the fetch only writes FETCH_HEAD.
+            // explicitly; otherwise the fetch only writes FETCH_HEAD. It fetches from the
+            // repository's address because a leftover clone's origin can be out of date.
             $result = Process::path($clonePath)
                 ->env($env)
-                ->run(['git', 'fetch', '--prune', 'origin', '+refs/heads/*:refs/heads/*', '+refs/tags/*:refs/tags/*']);
+                ->run(['git', 'fetch', '--prune', '--', $repository->repo_identifier, '+refs/heads/*:refs/heads/*', '+refs/tags/*:refs/tags/*']);
 
             if ($result->failed()) {
                 throw new GitProviderException('Failed to update repository clone: '.$result->errorOutput());

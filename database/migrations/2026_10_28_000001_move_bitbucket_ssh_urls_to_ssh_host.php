@@ -35,8 +35,8 @@ return new class extends Migration
                     }
                 }, 'uuid');
 
-            // Bare clones only live for the duration of a sync batch, so the next sync
-            // clones from the new address without dropping one that is still in use.
+            // Bare clones stay in place because a running sync may still need them; a sync
+            // always fetches from repo_identifier, whatever a leftover clone has as origin.
             DB::table('repositories')
                 ->where('provider', GitProvider::Git->value)
                 ->where('repo_identifier', 'like', $old.'%')
