@@ -7,6 +7,7 @@ use App\Domains\Auth\Actions\FindOrCreateGitLabUserAction;
 use App\Domains\Auth\Actions\SyncUserGitLabCredentialAction;
 use App\Domains\Auth\Actions\UpdateUserGitLabProfileAction;
 use App\Domains\Auth\Contracts\Enums\GitLabOAuthIntent;
+use App\Domains\Auth\Exceptions\UnverifiedOAuthEmailException;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
@@ -76,8 +77,13 @@ class GitLabAuthController extends Controller
                 ->with('error', 'Registration is currently closed. You need an invitation to create an account.');
         }
 
-        /** @var TwoUser $gitlabUser */
-        $user = $findOrCreateUser->handle($gitlabUser, $gitlabUser->token);
+        try {
+            /** @var TwoUser $gitlabUser */
+            $user = $findOrCreateUser->handle($gitlabUser, $gitlabUser->token);
+        } catch (UnverifiedOAuthEmailException) {
+            return redirect()->route('login')
+                ->with('error', 'We could not link your GitLab account to the existing account with this email address because the email address has not been verified. Please sign in with your password and connect GitLab from your settings.');
+        }
 
         $response = $authenticateUser->handle($user);
 

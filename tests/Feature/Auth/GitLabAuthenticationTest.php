@@ -5,6 +5,7 @@ use App\Models\User;
 use App\Models\UserGitCredential;
 use Laravel\Socialite\Contracts\User as SocialiteUser;
 use Laravel\Socialite\Facades\Socialite;
+use Laravel\Socialite\Two\User as TwoUser;
 use SocialiteProviders\GitLab\Provider as GitLabSocialiteProvider;
 
 uses()->group('auth', 'gitlab');
@@ -18,19 +19,21 @@ function mockGitLabSocialiteUser(array $attributes = []): SocialiteUser
         'nickname' => 'janedoe',
         'avatar' => 'https://gitlab.com/uploads/-/system/user/avatar/87654321/avatar.png',
         'token' => 'glpat-test_token_abc123',
+        'confirmed_at' => '2024-01-01T00:00:00.000Z',
     ];
 
     $data = array_merge($defaults, $attributes);
 
-    $socialiteUser = Mockery::mock(SocialiteUser::class);
-    $socialiteUser->shouldReceive('getId')->andReturn($data['id']);
-    $socialiteUser->shouldReceive('getName')->andReturn($data['name']);
-    $socialiteUser->shouldReceive('getEmail')->andReturn($data['email']);
-    $socialiteUser->shouldReceive('getNickname')->andReturn($data['nickname']);
-    $socialiteUser->shouldReceive('getAvatar')->andReturn($data['avatar']);
-    $socialiteUser->token = $data['token'];
-
-    return $socialiteUser;
+    return (new TwoUser)
+        ->setRaw(['confirmed_at' => $data['confirmed_at']])
+        ->map([
+            'id' => $data['id'],
+            'name' => $data['name'],
+            'email' => $data['email'],
+            'nickname' => $data['nickname'],
+            'avatar' => $data['avatar'],
+        ])
+        ->setToken($data['token']);
 }
 
 function mockGitLabSocialiteCallback(SocialiteUser $user): void
@@ -126,6 +129,42 @@ test('callback links GitLab account to existing user matched by email', function
     $user->refresh();
     expect($user->gitlab_id)->toBe('87654321')
         ->and($user->gitlab_nickname)->toBe('janedoe');
+});
+
+test('callback does not link GitLab account to existing user with an unverified email', function () {
+    $user = User::factory()->withoutTwoFactor()->unverified()->create(['email' => 'jane@example.com']);
+
+    $socialiteUser = mockGitLabSocialiteUser(['email' => 'jane@example.com']);
+    mockGitLabSocialiteCallback($socialiteUser);
+
+    $response = $this->get(route('auth.gitlab.callback'));
+
+    $response->assertRedirect(route('login'));
+    $response->assertSessionHas('error');
+    $this->assertGuest();
+
+    $user->refresh();
+    expect($user->gitlab_id)->toBeNull()
+        ->and($user->gitlab_token)->toBeNull()
+        ->and(User::count())->toBe(1);
+});
+
+test('callback does not link GitLab account when GitLab has not confirmed the email', function () {
+    $user = User::factory()->withoutTwoFactor()->create(['email' => 'jane@example.com']);
+
+    $socialiteUser = mockGitLabSocialiteUser(['email' => 'jane@example.com', 'confirmed_at' => null]);
+    mockGitLabSocialiteCallback($socialiteUser);
+
+    $response = $this->get(route('auth.gitlab.callback'));
+
+    $response->assertRedirect(route('login'));
+    $response->assertSessionHas('error');
+    $this->assertGuest();
+
+    $user->refresh();
+    expect($user->gitlab_id)->toBeNull()
+        ->and($user->gitlab_token)->toBeNull()
+        ->and(User::count())->toBe(1);
 });
 
 test('callback handles null email gracefully', function () {

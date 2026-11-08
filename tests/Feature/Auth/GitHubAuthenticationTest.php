@@ -128,6 +128,24 @@ test('callback links GitHub account to existing user matched by email', function
         ->and($user->github_nickname)->toBe('johndoe');
 });
 
+test('callback does not link GitHub account to existing user with an unverified email', function () {
+    $user = User::factory()->withoutTwoFactor()->unverified()->create(['email' => 'john@example.com']);
+
+    $socialiteUser = mockSocialiteUser(['email' => 'john@example.com']);
+    mockSocialiteCallback($socialiteUser);
+
+    $response = $this->get(route('auth.github.callback'));
+
+    $response->assertRedirect(route('login'));
+    $response->assertSessionHas('error');
+    $this->assertGuest();
+
+    $user->refresh();
+    expect($user->github_id)->toBeNull()
+        ->and($user->github_token)->toBeNull()
+        ->and(User::count())->toBe(1);
+});
+
 test('callback handles null email gracefully', function () {
     $socialiteUser = mockSocialiteUser(['email' => null]);
     mockSocialiteCallback($socialiteUser);
