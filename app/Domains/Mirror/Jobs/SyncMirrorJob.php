@@ -5,6 +5,7 @@ namespace App\Domains\Mirror\Jobs;
 use App\Domains\Mirror\Actions\CreateMirrorSyncLogAction;
 use App\Domains\Mirror\Actions\RemoveStaleMirrorVersionsAction;
 use App\Domains\Mirror\Events\MirrorSyncStatusUpdated;
+use App\Domains\Mirror\Exceptions\MirrorSyncException;
 use App\Domains\Mirror\Services\RegistryClient\RegistryClientFactory;
 use App\Domains\Repository\Contracts\Enums\RepositorySyncStatus;
 use App\Domains\Repository\Contracts\Enums\SyncStatus;
@@ -63,10 +64,34 @@ class SyncMirrorJob implements ShouldBeUnique, ShouldQueue
                 return;
             }
 
-            // Collect all versions per package for stale removal and job dispatch
+            // Collect all versions per package for stale removal and job dispatch.
+            // A package whose metadata fails to load is left out, so its existing
+            // versions are kept and the other packages still sync.
             $allPackageVersions = [];
+            $failedPackageExceptions = [];
             foreach ($availablePackages as $packageName) {
-                $allPackageVersions[$packageName] = $registryClient->getPackageVersions($packageName);
+                try {
+                    $allPackageVersions[$packageName] = $registryClient->getPackageVersions($packageName);
+                } catch (MirrorSyncException $e) {
+                    $failedPackageExceptions[$packageName] = $e;
+
+                    Log::warning('Mirror package metadata failed to load', [
+                        'mirror' => $this->mirror->name,
+                        'package' => $packageName,
+                        'error' => $e->getMessage(),
+                    ]);
+                }
+            }
+
+            if (empty($allPackageVersions) && ! empty($failedPackageExceptions)) {
+                $syncLog->update([
+                    'details' => [
+                        'packages_found' => count($availablePackages),
+                        'packages_failed' => array_keys($failedPackageExceptions),
+                    ],
+                ]);
+
+                throw reset($failedPackageExceptions);
             }
 
             $staleVersionsRemoved = $removeStaleMirrorVersionsAction->handle($this->mirror, $allPackageVersions);
@@ -77,6 +102,7 @@ class SyncMirrorJob implements ShouldBeUnique, ShouldQueue
                 'versions_removed' => $staleVersionsRemoved,
                 'details' => [
                     'packages_found' => count($availablePackages),
+                    'packages_failed' => array_keys($failedPackageExceptions),
                     'versions_found' => $totalVersions,
                     'stale_versions_removed' => $staleVersionsRemoved,
                 ],

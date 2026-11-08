@@ -11,6 +11,7 @@ use App\Models\Organization;
 use App\Models\Package;
 use App\Models\PackageVersion;
 use Composer\MetadataMinifier\MetadataMinifier;
+use Illuminate\Bus\PendingBatch;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Http;
 
@@ -283,4 +284,113 @@ it('supports includes format in packages.json', function () {
     $syncLog = MirrorSyncLog::where('mirror_uuid', $this->mirror->uuid)->latest()->first();
     expect($syncLog->details['packages_found'])->toBe(1);
     expect($syncLog->details['versions_found'])->toBe(1);
+});
+
+it('keeps versions of a package whose metadata fails to load and syncs the others', function () {
+    $failingPackage = Package::factory()->withoutRepository()->create([
+        'organization_uuid' => $this->organization->uuid,
+        'mirror_uuid' => $this->mirror->uuid,
+        'name' => 'vendor/pkg',
+    ]);
+
+    $failingPackageVersion = PackageVersion::factory()->create([
+        'package_uuid' => $failingPackage->uuid,
+        'version' => '1.0.0',
+        'source_reference' => 'abc',
+    ]);
+
+    $otherPackage = Package::factory()->withoutRepository()->create([
+        'organization_uuid' => $this->organization->uuid,
+        'mirror_uuid' => $this->mirror->uuid,
+        'name' => 'vendor/other',
+    ]);
+
+    $staleVersion = PackageVersion::factory()->create([
+        'package_uuid' => $otherPackage->uuid,
+        'version' => '0.1.0',
+        'source_reference' => 'old',
+    ]);
+
+    Bus::fake(SyncMirrorVersionJob::class);
+
+    Http::fake([
+        'satis.example.com/packages.json' => Http::response([
+            'metadata-url' => '/p2/%package%.json',
+            'available-packages' => ['vendor/other', 'vendor/pkg'],
+        ]),
+        'satis.example.com/p2/vendor/other.json' => Http::response([
+            'minified' => 'composer/2.0',
+            'packages' => [
+                'vendor/other' => MetadataMinifier::minify([
+                    ['name' => 'vendor/other', 'version' => '1.0.0', 'version_normalized' => '1.0.0.0', 'dist' => ['reference' => 'new']],
+                ]),
+            ],
+        ]),
+        'satis.example.com/p2/vendor/other~dev.json' => Http::response('Not Found', 404),
+        'satis.example.com/p2/vendor/pkg.json' => Http::response('Server Error', 500),
+        'satis.example.com/p2/vendor/pkg~dev.json' => Http::response([
+            'minified' => 'composer/2.0',
+            'packages' => [
+                'vendor/pkg' => MetadataMinifier::minify([
+                    ['name' => 'vendor/pkg', 'version' => 'dev-main', 'version_normalized' => 'dev-main', 'dist' => ['reference' => 'dev']],
+                ]),
+            ],
+        ]),
+    ]);
+
+    SyncMirrorJob::dispatchSync($this->mirror);
+
+    $this->assertDatabaseHas('package_versions', ['uuid' => $failingPackageVersion->uuid]);
+    $this->assertDatabaseMissing('package_versions', ['uuid' => $staleVersion->uuid]);
+
+    Bus::assertBatched(fn (PendingBatch $pendingBatch) => $pendingBatch->jobs
+        ->map(fn (SyncMirrorVersionJob $syncMirrorVersionJob) => $syncMirrorVersionJob->packageName)
+        ->all() === ['vendor/other']);
+
+    $syncLog = MirrorSyncLog::where('mirror_uuid', $this->mirror->uuid)->latest()->first();
+    expect($syncLog->versions_removed)->toBe(1)
+        ->and($syncLog->details['packages_found'])->toBe(2)
+        ->and($syncLog->details['packages_failed'])->toBe(['vendor/pkg']);
+});
+
+it('marks the sync as failed when every package fails to load', function () {
+    $package = Package::factory()->withoutRepository()->create([
+        'organization_uuid' => $this->organization->uuid,
+        'mirror_uuid' => $this->mirror->uuid,
+        'name' => 'vendor/pkg',
+    ]);
+
+    $packageVersion = PackageVersion::factory()->create([
+        'package_uuid' => $package->uuid,
+        'version' => '1.0.0',
+        'source_reference' => 'abc',
+    ]);
+
+    Bus::fake(SyncMirrorVersionJob::class);
+
+    Http::fake([
+        'satis.example.com/packages.json' => Http::response([
+            'metadata-url' => '/p2/%package%.json',
+            'available-packages' => ['vendor/pkg', 'vendor/other'],
+        ]),
+        'satis.example.com/p2/*' => Http::response('Unauthorized', 401),
+    ]);
+
+    try {
+        SyncMirrorJob::dispatchSync($this->mirror);
+    } catch (MirrorSyncException) {
+        // Expected
+    }
+
+    $this->assertDatabaseHas('package_versions', ['uuid' => $packageVersion->uuid]);
+    Bus::assertNothingBatched();
+
+    $this->mirror->refresh();
+    expect($this->mirror->sync_status)->toBe(RepositorySyncStatus::Failed);
+
+    $syncLog = MirrorSyncLog::where('mirror_uuid', $this->mirror->uuid)->latest()->first();
+    expect($syncLog->status)->toBe(SyncStatus::Failed)
+        ->and($syncLog->error_message)->toContain('vendor/pkg')
+        ->and($syncLog->error_message)->toContain('HTTP 401')
+        ->and($syncLog->details['packages_failed'])->toBe(['vendor/pkg', 'vendor/other']);
 });
