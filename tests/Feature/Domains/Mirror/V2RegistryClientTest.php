@@ -104,6 +104,58 @@ it('ignores a missing dev metadata file', function () {
     expect(array_keys($versions))->toBe(['1.0.0']);
 });
 
+it('throws when the stable metadata file fails to load', function (int $status) {
+    Http::fake([
+        'registry.example.com/packages.json' => Http::response([
+            'metadata-url' => '/p2/%package%.json',
+            'available-packages' => ['vendor/pkg'],
+        ]),
+        'registry.example.com/p2/vendor/pkg.json' => Http::response('Error', $status),
+        'registry.example.com/p2/vendor/pkg~dev.json' => Http::response(fakeMetadataResponse('vendor/pkg', [
+            ['name' => 'vendor/pkg', 'version' => 'dev-main', 'version_normalized' => 'dev-main', 'dist' => ['reference' => 'ref-dev']],
+        ])),
+    ]);
+
+    $client = RegistryClientFactory::make($this->mirror);
+
+    expect(fn () => $client->getPackageVersions('vendor/pkg'))
+        ->toThrow(MirrorSyncException::class, "HTTP {$status}");
+})->with([404, 401, 429, 500]);
+
+it('throws when the dev metadata file fails with anything other than a 404', function () {
+    Http::fake([
+        'registry.example.com/packages.json' => Http::response([
+            'metadata-url' => '/p2/%package%.json',
+            'available-packages' => ['vendor/pkg'],
+        ]),
+        'registry.example.com/p2/vendor/pkg.json' => Http::response(fakeMetadataResponse('vendor/pkg', [
+            ['name' => 'vendor/pkg', 'version' => '1.0.0', 'version_normalized' => '1.0.0.0', 'dist' => ['reference' => 'ref-1']],
+        ])),
+        'registry.example.com/p2/vendor/pkg~dev.json' => Http::response('Error', 500),
+    ]);
+
+    $client = RegistryClientFactory::make($this->mirror);
+
+    expect(fn () => $client->getPackageVersions('vendor/pkg'))
+        ->toThrow(MirrorSyncException::class, 'HTTP 500');
+});
+
+it('throws when the stable metadata file is malformed', function () {
+    Http::fake([
+        'registry.example.com/packages.json' => Http::response([
+            'metadata-url' => '/p2/%package%.json',
+            'available-packages' => ['vendor/pkg'],
+        ]),
+        'registry.example.com/p2/vendor/pkg.json' => Http::response('<html>Maintenance</html>'),
+        'registry.example.com/p2/vendor/pkg~dev.json' => Http::response('Not Found', 404),
+    ]);
+
+    $client = RegistryClientFactory::make($this->mirror);
+
+    expect(fn () => $client->getPackageVersions('vendor/pkg'))
+        ->toThrow(MirrorSyncException::class, 'Invalid metadata response');
+});
+
 it('throws when a v2 registry does not advertise available-packages', function () {
     Http::fake([
         'registry.example.com/packages.json' => Http::response([

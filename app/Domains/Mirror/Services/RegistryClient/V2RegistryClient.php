@@ -3,6 +3,7 @@
 namespace App\Domains\Mirror\Services\RegistryClient;
 
 use App\Domains\Mirror\Contracts\Interfaces\RegistryClientInterface;
+use App\Domains\Mirror\Exceptions\MirrorSyncException;
 use App\Domains\Mirror\Services\Http\SecureMirrorHttpClient;
 use Composer\MetadataMinifier\MetadataMinifier;
 use Illuminate\Support\Str;
@@ -26,11 +27,11 @@ class V2RegistryClient implements RegistryClientInterface
 
     public function getPackageVersions(string $packageName): array
     {
-        $versions = $this->fetchVersions($this->metadataUrl($packageName));
+        $versions = $this->fetchVersions($packageName, $this->metadataUrl($packageName));
 
         // Dev versions live in a separate "~dev" metadata file. A missing file
         // is expected for packages without dev branches, so 404s are ignored.
-        $devVersions = $this->fetchVersions($this->metadataUrl($packageName.'~dev'));
+        $devVersions = $this->fetchVersions($packageName, $this->metadataUrl($packageName.'~dev'), ignoreMissing: true);
 
         return array_merge($versions, $devVersions);
     }
@@ -50,20 +51,31 @@ class V2RegistryClient implements RegistryClientInterface
     /**
      * Fetch and expand the minified version metadata at the given URL.
      *
+     * A failed or malformed response throws instead of returning no versions,
+     * so it is never mistaken for upstream having removed them.
+     *
      * @return array<string, array<string, mixed>> version => composer.json data
      */
-    protected function fetchVersions(string $url): array
+    protected function fetchVersions(string $packageName, string $url, bool $ignoreMissing = false): array
     {
         $response = $this->httpClient->get($url);
 
-        if (! $response->successful()) {
+        if ($ignoreMissing && $response->notFound()) {
             return [];
+        }
+
+        if (! $response->successful()) {
+            throw new MirrorSyncException(
+                "Failed to fetch metadata for {$packageName}: HTTP {$response->status()}"
+            );
         }
 
         $data = $response->json();
 
         if (! is_array($data) || ! isset($data['packages']) || ! is_array($data['packages'])) {
-            return [];
+            throw new MirrorSyncException(
+                "Invalid metadata response for {$packageName}: expected a packages object"
+            );
         }
 
         $versions = [];
