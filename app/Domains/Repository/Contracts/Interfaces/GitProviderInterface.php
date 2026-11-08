@@ -25,6 +25,15 @@ interface GitProviderInterface
      */
     public function ensureRepositoryAccess(): void;
 
+    /**
+     * Throws when $ref (a commit SHA or ref name) cannot be read. A provider answers
+     * a file request with "not found" too when access to the repository was lost,
+     * so only a readable ref proves a missing file was removed.
+     *
+     * @throws GitProviderException
+     */
+    public function ensureRefResolves(string $ref): void;
+
     public function getRepositoryIdentifier(): string;
 
     public function getRepositoryUrl(): string;

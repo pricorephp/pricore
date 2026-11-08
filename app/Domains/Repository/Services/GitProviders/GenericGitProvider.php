@@ -143,6 +143,15 @@ class GenericGitProvider extends AbstractGitProvider
         }
     }
 
+    /**
+     * A remote cannot be asked for a commit by SHA without fetching it, so this
+     * settles for the repository still being readable.
+     */
+    public function ensureRefResolves(string $ref): void
+    {
+        $this->ensureRepositoryAccess();
+    }
+
     public function getRepositoryUrl(): string
     {
         return $this->repositoryIdentifier;

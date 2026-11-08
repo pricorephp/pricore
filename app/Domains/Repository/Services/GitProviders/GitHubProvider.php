@@ -257,6 +257,12 @@ class GitHubProvider extends AbstractGitProvider
         $this->ensureApiAccess("/repos/{$this->repositoryIdentifier}", $this->accessFailureMessage(...));
     }
 
+    public function ensureRefResolves(string $ref): void
+    {
+        // The Git database endpoint, unlike /commits, leaves out the diff
+        $this->ensureApiAccess("/repos/{$this->repositoryIdentifier}/git/commits/{$ref}", $this->accessFailureMessage(...));
+    }
+
     protected function accessFailureMessage(?int $status): string
     {
         $repository = $this->repositoryIdentifier;

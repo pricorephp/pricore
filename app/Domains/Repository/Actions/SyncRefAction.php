@@ -48,6 +48,7 @@ class SyncRefAction
         $unreadablePaths = [];
         $pathsByName = [];
         $composerJsonFound = false;
+        $composerJsonMissing = false;
 
         [$paths, $narrowed] = $this->pathsFor($provider, $repository, $ref, $format, $target);
         $checkedPaths = [];
@@ -58,6 +59,7 @@ class SyncRefAction
                 $composerJson = $provider->getFileContent($ref->name, self::join($path, 'composer.json'));
 
                 if ($composerJson === null) {
+                    $composerJsonMissing = true;
                     $result->skipped++;
 
                     continue;
@@ -127,6 +129,12 @@ class SyncRefAction
                 ? array_values(array_diff($this->resolvePackagePathsAction->handle($provider, $repository, $ref->name), $checkedPaths))
                 : [];
             $narrowed = false;
+        }
+
+        // Providers answer "not found" as well once access to the repository is
+        // lost, which must not pass for packages removed at this ref
+        if ($composerJsonMissing || $checkedPaths === []) {
+            $provider->ensureRefResolves($ref->commit);
         }
 
         $result->packagesFound = count($syncedPackageUuids);

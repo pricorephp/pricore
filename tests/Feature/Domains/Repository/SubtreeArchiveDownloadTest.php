@@ -61,6 +61,8 @@ class FixtureArchiveProvider extends AbstractGitProvider
 
     public function ensureRepositoryAccess(): void {}
 
+    public function ensureRefResolves(string $ref): void {}
+
     public function getRepositoryUrl(): string
     {
         return 'https://example.test/acme/monorepo.git';
