@@ -15,11 +15,12 @@ import {
 import AppLayout from '@/layouts/app-layout';
 import SettingsLayout from '@/layouts/settings/layout';
 import { cn } from '@/lib/utils';
+import { sshKeys } from '@/routes/organizations/settings';
 import { edit as editProfile } from '@/routes/profile';
 import { gitCredentials as gitCredentialsRoute } from '@/routes/settings';
-import { type BreadcrumbItem } from '@/types';
-import { Head, router } from '@inertiajs/react';
-import { Pencil, Plus, Trash2 } from 'lucide-react';
+import { type BreadcrumbItem, type SharedData } from '@/types';
+import { Head, Link, router, usePage } from '@inertiajs/react';
+import { KeyRound, Pencil, Plus, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 
 type GitCredentialData =
@@ -87,6 +88,10 @@ export default function GitCredentials({
     gitlabConnectUrl,
     gitlabInstanceHost,
 }: GitCredentialsPageProps) {
+    const { auth } = usePage<SharedData>().props;
+    const sshKeyOrganizations = auth.organizations.filter(
+        (organization) => organization.permissions?.canViewSettings,
+    );
     const [dialog, setDialog] = useState<DialogState>(null);
     const [removing, setRemoving] = useState<GitCredentialData | null>(null);
 
@@ -233,6 +238,71 @@ export default function GitCredentials({
                                 </section>
                             );
                         })}
+
+                        <section className="rounded-lg border bg-card">
+                            <header className="flex items-center justify-between gap-4 px-4 py-3">
+                                <div className="flex items-center gap-3">
+                                    <div className="flex size-8 items-center justify-center rounded-md border bg-surface-inset">
+                                        <GitProviderIcon
+                                            provider="git"
+                                            className={cn(
+                                                'size-4',
+                                                getProviderColor('git'),
+                                            )}
+                                        />
+                                    </div>
+                                    <div>
+                                        <h4 className="font-medium">
+                                            Other Git servers
+                                        </h4>
+                                        <p className="text-xs text-muted-foreground">
+                                            Gitea, Forgejo or any self-hosted
+                                            server over SSH
+                                        </p>
+                                    </div>
+                                </div>
+                                {sshKeyOrganizations.length === 1 && (
+                                    <Button
+                                        variant="secondary"
+                                        size="sm"
+                                        asChild
+                                    >
+                                        <Link
+                                            href={sshKeys(
+                                                sshKeyOrganizations[0].slug,
+                                            )}
+                                        >
+                                            <KeyRound className="size-4" />
+                                            SSH keys
+                                        </Link>
+                                    </Button>
+                                )}
+                            </header>
+                            <div className="border-t px-4 py-3 text-muted-foreground">
+                                These don't need an account here. Add an SSH key
+                                to your organization, give its public key read
+                                access on the server, and add the repository
+                                with the <strong>Generic Git</strong> provider.
+                                {sshKeyOrganizations.length > 1 && (
+                                    <span className="mt-2 flex flex-wrap gap-x-3 gap-y-1">
+                                        <span>SSH keys:</span>
+                                        {sshKeyOrganizations.map(
+                                            (organization) => (
+                                                <Link
+                                                    key={organization.uuid}
+                                                    href={sshKeys(
+                                                        organization.slug,
+                                                    )}
+                                                    className="text-primary hover:underline"
+                                                >
+                                                    {organization.name}
+                                                </Link>
+                                            ),
+                                        )}
+                                    </span>
+                                )}
+                            </div>
+                        </section>
                     </div>
 
                     <InfoBox
