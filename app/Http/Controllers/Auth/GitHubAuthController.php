@@ -7,6 +7,7 @@ use App\Domains\Auth\Actions\FindOrCreateGitHubUserAction;
 use App\Domains\Auth\Actions\SyncUserGitHubCredentialAction;
 use App\Domains\Auth\Actions\UpdateUserGitHubProfileAction;
 use App\Domains\Auth\Contracts\Enums\GitHubOAuthIntent;
+use App\Domains\Auth\Exceptions\UnverifiedOAuthEmailException;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
@@ -76,8 +77,13 @@ class GitHubAuthController extends Controller
                 ->with('error', 'Registration is currently closed. You need an invitation to create an account.');
         }
 
-        /** @var TwoUser $githubUser */
-        $user = $findOrCreateUser->handle($githubUser, $githubUser->token);
+        try {
+            /** @var TwoUser $githubUser */
+            $user = $findOrCreateUser->handle($githubUser, $githubUser->token);
+        } catch (UnverifiedOAuthEmailException) {
+            return redirect()->route('login')
+                ->with('error', 'We could not link your GitHub account to the existing account with this email address because the email address has not been verified. Please sign in with your password and connect GitHub from your settings.');
+        }
 
         $response = $authenticateUser->handle($user);
 
