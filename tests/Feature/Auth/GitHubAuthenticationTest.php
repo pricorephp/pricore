@@ -409,6 +409,23 @@ test('connect callback adds a credential when connecting another GitHub account'
         ->and($existing->fresh()->credentials['token'])->toBe($existingToken);
 });
 
+test('connect callback leaves a named manual token alone', function () {
+    $user = User::factory()->withGitHub()->create();
+
+    $manual = UserGitCredential::factory()->github()->create(['user_uuid' => $user->uuid, 'name' => 'Deploy token']);
+    $manualToken = $manual->credentials['token'];
+
+    mockSocialiteCallback(mockSocialiteUser(['id' => $user->github_id, 'token' => 'gho_oauth', 'nickname' => 'octocat']));
+
+    $this->actingAs($user)
+        ->withSession(['github_oauth_intent' => GitHubOAuthIntent::Connect])
+        ->get(route('auth.github.callback'))
+        ->assertSessionHas('status', 'GitHub credentials connected successfully.');
+
+    expect(UserGitCredential::where('user_uuid', $user->uuid)->count())->toBe(2)
+        ->and($manual->fresh()->credentials['token'])->toBe($manualToken);
+});
+
 test('connect callback does not overwrite github_token on user', function () {
     $user = User::factory()->withGitHub()->create([
         'github_token' => 'gho_login_token',

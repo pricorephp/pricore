@@ -37,7 +37,7 @@ class BulkCreateRepositoriesAction
             ->where('organization_uuid', $organization->uuid)
             ->where('provider', $provider)
             ->get(['repo_identifier', 'custom_base_url'])
-            ->filter(fn (Repository $repository) => $gitCredential?->servesBaseUrl($repository->custom_base_url) ?? true)
+            ->filter(fn (Repository $repository) => $provider->isSameInstance($baseUrl, $repository->custom_base_url))
             ->pluck('repo_identifier')
             ->toArray();
 

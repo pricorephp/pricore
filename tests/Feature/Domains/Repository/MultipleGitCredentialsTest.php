@@ -161,6 +161,25 @@ it('does not import a repository twice when the instance URL is written differen
     expect(Repository::where('repo_identifier', 'acme/billing')->count())->toBe(1);
 });
 
+it('only skips repositories on GitLab.com when importing without credentials', function () {
+    $otherUser = User::factory()->create();
+    $this->organization->members()->attach($otherUser->uuid, ['role' => 'owner', 'uuid' => (string) Str::uuid()]);
+
+    Repository::factory()->for($this->organization, 'organization')->gitlab()->create([
+        'repo_identifier' => 'acme/billing',
+        'custom_base_url' => 'https://gitlab.acme.test',
+    ]);
+
+    $this->actingAs($otherUser)
+        ->post(route('organizations.repositories.bulk-store', $this->organization), [
+            'provider' => 'gitlab',
+            'repositories' => [['repo_identifier' => 'acme/billing']],
+        ])
+        ->assertSessionHasNoErrors();
+
+    expect(Repository::where('repo_identifier', 'acme/billing')->whereNull('custom_base_url')->exists())->toBeTrue();
+});
+
 it('refuses to roll back while users have several credentials for a provider', function () {
     $migration = require database_path('migrations/2026_11_08_000001_allow_multiple_git_credentials_per_provider.php');
 

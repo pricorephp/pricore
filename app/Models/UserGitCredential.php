@@ -104,13 +104,7 @@ class UserGitCredential extends Model
      */
     public function servesBaseUrl(?string $baseUrl): bool
     {
-        if (! $this->provider->supportsSelfHosted()) {
-            return true;
-        }
-
-        $normalize = fn (?string $url): string => strtolower(rtrim($url ?? 'https://gitlab.com', '/'));
-
-        return $normalize($this->baseUrl()) === $normalize($baseUrl);
+        return $this->provider->isSameInstance($this->baseUrl(), $baseUrl);
     }
 
     /**

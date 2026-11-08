@@ -9,8 +9,9 @@ use App\Models\UserGitCredential;
 class SyncUserOAuthCredentialAction
 {
     /**
-     * Updates the credential of the same provider account on the same instance, or a lone
-     * credential from before accounts were tracked, and creates one otherwise.
+     * Updates the credential of the same provider account on the same instance, or a lone unnamed
+     * credential from before accounts were tracked, and creates one otherwise. Named credentials
+     * without an account were added by hand and are never taken over.
      *
      * @param  array<string, mixed>  $credentials
      * @return bool Whether an existing credential was updated
@@ -32,8 +33,10 @@ class SyncUserOAuthCredentialAction
 
         $credential = $sameInstance->first(fn (UserGitCredential $credential) => $credential->account_id === $accountId);
 
-        if (! $credential && $sameInstance->count() === 1 && $sameInstance->first()?->account_id === null) {
-            $credential = $sameInstance->first();
+        $loneCredential = $sameInstance->count() === 1 ? $sameInstance->first() : null;
+
+        if (! $credential && $loneCredential?->account_id === null && $loneCredential?->name === null) {
+            $credential = $loneCredential;
         }
 
         if ($credential) {
