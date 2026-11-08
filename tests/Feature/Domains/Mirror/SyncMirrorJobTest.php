@@ -391,5 +391,6 @@ it('marks the sync as failed when every package fails to load', function () {
     $syncLog = MirrorSyncLog::where('mirror_uuid', $this->mirror->uuid)->latest()->first();
     expect($syncLog->status)->toBe(SyncStatus::Failed)
         ->and($syncLog->error_message)->toContain('vendor/pkg')
-        ->and($syncLog->error_message)->toContain('HTTP 401');
+        ->and($syncLog->error_message)->toContain('HTTP 401')
+        ->and($syncLog->details['packages_failed'])->toBe(['vendor/pkg', 'vendor/other']);
 });

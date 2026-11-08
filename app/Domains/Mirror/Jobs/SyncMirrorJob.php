@@ -84,6 +84,13 @@ class SyncMirrorJob implements ShouldBeUnique, ShouldQueue
             }
 
             if (empty($allPackageVersions) && ! empty($failedPackageExceptions)) {
+                $syncLog->update([
+                    'details' => [
+                        'packages_found' => count($availablePackages),
+                        'packages_failed' => array_keys($failedPackageExceptions),
+                    ],
+                ]);
+
                 throw reset($failedPackageExceptions);
             }
 
