@@ -165,14 +165,19 @@ it('shows the explanation in the sync log without exposing the token', function 
 
     $user = User::factory()->create();
     $organization = Organization::factory()->create(['owner_uuid' => $user->uuid]);
+    $credential = UserGitCredential::factory()->for($user, 'user')->gitlab()->create([
+        'credentials' => ['token' => 'glpat-secret', 'url' => 'https://gitlab.acme.test'],
+    ]);
+
     $repository = Repository::factory()
         ->for($organization, 'organization')
         ->gitlab()
-        ->create(['credential_user_uuid' => $user->uuid, 'repo_identifier' => 'acme/package']);
-
-    UserGitCredential::factory()->for($user, 'user')->gitlab()->create([
-        'credentials' => ['token' => 'glpat-secret', 'url' => 'https://gitlab.acme.test'],
-    ]);
+        ->create([
+            'credential_user_uuid' => $user->uuid,
+            'git_credential_uuid' => $credential->uuid,
+            'custom_base_url' => 'https://gitlab.acme.test',
+            'repo_identifier' => 'acme/package',
+        ]);
 
     expect(fn () => SyncRepositoryJob::dispatchSync($repository))->toThrow(GitProviderException::class);
 

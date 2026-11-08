@@ -1,21 +1,26 @@
 import GitCredentialDialog from '@/components/git-credential-dialog';
-import GitProviderIcon from '@/components/git-provider-icon';
+import GitProviderIcon, {
+    getProviderColor,
+} from '@/components/git-provider-icon';
 import InfoBox from '@/components/info-box';
 import { Button } from '@/components/ui/button';
 import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from '@/components/ui/card';
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import AppLayout from '@/layouts/app-layout';
 import SettingsLayout from '@/layouts/settings/layout';
+import { cn } from '@/lib/utils';
+import { sshKeys } from '@/routes/organizations/settings';
 import { edit as editProfile } from '@/routes/profile';
 import { gitCredentials as gitCredentialsRoute } from '@/routes/settings';
-import { type BreadcrumbItem } from '@/types';
-import { router } from '@inertiajs/react';
-import { Edit, Plus, Trash2 } from 'lucide-react';
+import { type BreadcrumbItem, type SharedData } from '@/types';
+import { Head, Link, router, usePage } from '@inertiajs/react';
+import { KeyRound, Pencil, Plus, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 
 type GitCredentialData =
@@ -26,6 +31,7 @@ interface GitCredentialsPageProps {
     providers: Record<string, string>;
     githubConnectUrl: string;
     gitlabConnectUrl: string;
+    gitlabInstanceHost: string;
 }
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -39,231 +45,320 @@ const breadcrumbs: BreadcrumbItem[] = [
     },
 ];
 
+const providerHints: Record<string, string> = {
+    github: 'GitHub account or personal access token',
+    gitlab: 'GitLab.com or a self-hosted instance',
+    bitbucket: 'Atlassian account with an API token',
+};
+
+// Unnamed GitLab credentials are already labelled by their host
+function credentialHost(credential: GitCredentialData): string | null {
+    if (credential.provider !== 'gitlab' || !credential.name) {
+        return null;
+    }
+
+    if (!credential.baseUrl) {
+        return 'gitlab.com';
+    }
+
+    try {
+        return new URL(credential.baseUrl).host;
+    } catch {
+        return credential.baseUrl;
+    }
+}
+
+function repositoriesLabel(count: number): string {
+    if (count === 0) {
+        return 'Not used by any repository';
+    }
+
+    return `Used by ${count} ${count === 1 ? 'repository' : 'repositories'}`;
+}
+
+type DialogState =
+    | { mode: 'add'; provider: string }
+    | { mode: 'edit'; credential: GitCredentialData }
+    | null;
+
 export default function GitCredentials({
     credentials,
     providers,
     githubConnectUrl,
     gitlabConnectUrl,
+    gitlabInstanceHost,
 }: GitCredentialsPageProps) {
-    const [dialogOpen, setDialogOpen] = useState(false);
-    const [editingCredential, setEditingCredential] =
-        useState<GitCredentialData | null>(null);
-    const [addingProvider, setAddingProvider] = useState<string | null>(null);
-
-    const configuredProviders = new Set(credentials.map((c) => c.provider));
-    const availableProviders = Object.entries(providers).filter(
-        ([provider]) => !configuredProviders.has(provider),
+    const { auth } = usePage<SharedData>().props;
+    const sshKeyOrganizations = auth.organizations.filter(
+        (organization) => organization.permissions?.canViewSettings,
     );
+    const [dialog, setDialog] = useState<DialogState>(null);
+    const [removing, setRemoving] = useState<GitCredentialData | null>(null);
 
-    const handleAdd = (provider: string) => {
-        setAddingProvider(provider);
-        setEditingCredential(null);
-        setDialogOpen(true);
-    };
-
-    const handleEdit = (credential: GitCredentialData) => {
-        setEditingCredential(credential);
-        setAddingProvider(null);
-        setDialogOpen(true);
-    };
-
-    const handleDelete = (credential: GitCredentialData) => {
-        if (
-            confirm(
-                `Are you sure you want to remove credentials for ${credential.providerLabel}? This will prevent syncing repositories using this provider.`,
-            )
-        ) {
-            router.delete(`/settings/git-credentials/${credential.uuid}`, {
-                preserveScroll: true,
-            });
+    const confirmRemove = () => {
+        if (!removing) {
+            return;
         }
-    };
 
-    const getProviderIconColor = (provider: string): string => {
-        const colors: Record<string, string> = {
-            github: 'text-gray-800',
-            gitlab: 'text-orange-600',
-            bitbucket: 'text-blue-600',
-            git: 'text-gray-600',
-        };
-
-        return colors[provider] || colors.git;
-    };
-
-    const getProviderBorderColor = (provider: string): string => {
-        const colors: Record<string, string> = {
-            github: 'border-l-gray-800',
-            gitlab: 'border-l-orange-600',
-            bitbucket: 'border-l-blue-600',
-            git: 'border-l-gray-600',
-        };
-
-        return colors[provider] || colors.git;
+        router.delete(`/settings/git-credentials/${removing.uuid}`, {
+            preserveScroll: true,
+            onFinish: () => setRemoving(null),
+        });
     };
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
+            <Head title="Git Providers" />
+
             <SettingsLayout>
                 <div className="space-y-6">
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <h3 className="text-lg font-medium">
-                                Git Providers
-                            </h3>
-                            <p className="text-muted-foreground">
-                                Configure authentication for Git providers to
-                                enable repository syncing
-                            </p>
-                        </div>
+                    <div>
+                        <h3 className="text-lg font-medium">Git Providers</h3>
+                        <p className="text-muted-foreground">
+                            Accounts Pricore uses to read your private
+                            repositories. Connect as many accounts or
+                            self-hosted instances as you need.
+                        </p>
                     </div>
 
                     <div className="space-y-4">
-                        {credentials.length > 0 && (
-                            <div className="space-y-3">
-                                <h4 className="font-medium">
-                                    Configured Providers
-                                </h4>
-                                {credentials.map((credential) => (
-                                    <Card
-                                        key={credential.uuid}
-                                        className={`border-l-4 ${getProviderBorderColor(credential.provider)}`}
-                                    >
-                                        <CardHeader>
-                                            <div className="flex items-start justify-between">
-                                                <div className="flex items-center gap-3">
-                                                    <GitProviderIcon
-                                                        provider={
-                                                            credential.provider
-                                                        }
-                                                        className={`h-5 w-5 ${getProviderIconColor(credential.provider)}`}
-                                                    />
-                                                    <div>
-                                                        <CardTitle className="text-base">
-                                                            {
-                                                                credential.providerLabel
-                                                            }
-                                                        </CardTitle>
-                                                        <CardDescription>
-                                                            {credential.isConfigured
-                                                                ? 'Credentials configured'
-                                                                : 'No credentials set'}
-                                                        </CardDescription>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </CardHeader>
-                                        <CardContent>
-                                            <div className="flex gap-2">
-                                                <Button
-                                                    variant="secondary"
-                                                    size="sm"
-                                                    onClick={() =>
-                                                        handleEdit(credential)
-                                                    }
-                                                >
-                                                    <Edit className="h-4 w-4" />
-                                                    Edit
-                                                </Button>
-                                                <Button
-                                                    variant="secondary"
-                                                    size="sm"
-                                                    onClick={() =>
-                                                        handleDelete(credential)
-                                                    }
-                                                >
-                                                    <Trash2 className="h-4 w-4" />
-                                                    Remove
-                                                </Button>
-                                            </div>
-                                        </CardContent>
-                                    </Card>
-                                ))}
-                            </div>
-                        )}
+                        {Object.entries(providers).map(([provider, label]) => {
+                            const providerCredentials = credentials.filter(
+                                (credential) =>
+                                    credential.provider === provider,
+                            );
 
-                        {availableProviders.length > 0 && (
-                            <div className="space-y-3">
-                                <h4 className="font-medium">
-                                    Available Providers
-                                </h4>
-                                <div className="grid gap-4 sm:grid-cols-2">
-                                    {availableProviders.map(
-                                        ([provider, label]) => (
-                                            <Card
-                                                key={provider}
-                                                className={`cursor-pointer border-l-4 transition-colors hover:bg-accent/50 ${getProviderBorderColor(provider)}`}
-                                                onClick={() =>
-                                                    handleAdd(provider)
-                                                }
-                                            >
-                                                <CardHeader>
-                                                    <div className="flex items-start justify-between">
-                                                        <div className="flex items-center gap-3">
-                                                            <GitProviderIcon
-                                                                provider={
-                                                                    provider
-                                                                }
-                                                                className={`h-5 w-5 ${getProviderIconColor(provider)}`}
-                                                            />
-                                                            <CardTitle className="text-base">
-                                                                {label}
-                                                            </CardTitle>
-                                                        </div>
-                                                    </div>
-                                                </CardHeader>
-                                                <CardContent>
-                                                    <Button
-                                                        variant="outline"
-                                                        size="sm"
-                                                        className="w-full"
+                            return (
+                                <section
+                                    key={provider}
+                                    className="rounded-lg border bg-card"
+                                >
+                                    <header className="flex items-center justify-between gap-4 px-4 py-3">
+                                        <div className="flex items-center gap-3">
+                                            <div className="flex size-8 items-center justify-center rounded-md border bg-surface-inset">
+                                                <GitProviderIcon
+                                                    provider={provider}
+                                                    className={cn(
+                                                        'size-4',
+                                                        getProviderColor(
+                                                            provider,
+                                                        ),
+                                                    )}
+                                                />
+                                            </div>
+                                            <div>
+                                                <h4 className="font-medium">
+                                                    {label}
+                                                </h4>
+                                                <p className="text-xs text-muted-foreground">
+                                                    {providerHints[provider]}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <Button
+                                            variant="secondary"
+                                            size="sm"
+                                            onClick={() =>
+                                                setDialog({
+                                                    mode: 'add',
+                                                    provider,
+                                                })
+                                            }
+                                        >
+                                            <Plus className="size-4" />
+                                            {providerCredentials.length > 0
+                                                ? 'Add account'
+                                                : 'Connect'}
+                                        </Button>
+                                    </header>
+
+                                    {providerCredentials.length > 0 && (
+                                        <ul className="divide-y border-t">
+                                            {providerCredentials.map(
+                                                (credential) => (
+                                                    <li
+                                                        key={credential.uuid}
+                                                        className="group/credential flex items-center justify-between gap-4 px-4 py-2.5"
                                                     >
-                                                        <Plus className="h-4 w-4" />
-                                                        Add Credentials
-                                                    </Button>
-                                                </CardContent>
-                                            </Card>
-                                        ),
+                                                        <div className="min-w-0">
+                                                            <div className="flex items-center gap-2">
+                                                                <span className="truncate font-medium">
+                                                                    {
+                                                                        credential.label
+                                                                    }
+                                                                </span>
+                                                                {credentialHost(
+                                                                    credential,
+                                                                ) && (
+                                                                    <span className="truncate font-mono text-xs text-muted-foreground">
+                                                                        {credentialHost(
+                                                                            credential,
+                                                                        )}
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                            <p className="text-xs text-muted-foreground">
+                                                                {repositoriesLabel(
+                                                                    credential.repositoriesCount,
+                                                                )}
+                                                            </p>
+                                                        </div>
+                                                        <div className="flex shrink-0 items-center gap-1">
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                onClick={() =>
+                                                                    setDialog({
+                                                                        mode: 'edit',
+                                                                        credential,
+                                                                    })
+                                                                }
+                                                                aria-label={`Edit ${credential.label}`}
+                                                            >
+                                                                <Pencil className="size-4" />
+                                                            </Button>
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                onClick={() =>
+                                                                    setRemoving(
+                                                                        credential,
+                                                                    )
+                                                                }
+                                                                aria-label={`Remove ${credential.label}`}
+                                                            >
+                                                                <Trash2 className="size-4" />
+                                                            </Button>
+                                                        </div>
+                                                    </li>
+                                                ),
+                                            )}
+                                        </ul>
                                     )}
-                                </div>
-                            </div>
-                        )}
+                                </section>
+                            );
+                        })}
 
-                        {credentials.length === 0 &&
-                            availableProviders.length === 0 && (
-                                <div className="rounded-lg border border-dashed p-12 text-center">
-                                    <p className="text-muted-foreground">
-                                        All Git providers are configured.
-                                    </p>
+                        <section className="rounded-lg border bg-card">
+                            <header className="flex items-center justify-between gap-4 px-4 py-3">
+                                <div className="flex items-center gap-3">
+                                    <div className="flex size-8 items-center justify-center rounded-md border bg-surface-inset">
+                                        <GitProviderIcon
+                                            provider="git"
+                                            className={cn(
+                                                'size-4',
+                                                getProviderColor('git'),
+                                            )}
+                                        />
+                                    </div>
+                                    <div>
+                                        <h4 className="font-medium">
+                                            Other Git servers
+                                        </h4>
+                                        <p className="text-xs text-muted-foreground">
+                                            Gitea, Forgejo or any self-hosted
+                                            server over SSH
+                                        </p>
+                                    </div>
                                 </div>
-                            )}
+                                {sshKeyOrganizations.length === 1 && (
+                                    <Button
+                                        variant="secondary"
+                                        size="sm"
+                                        asChild
+                                    >
+                                        <Link
+                                            href={sshKeys(
+                                                sshKeyOrganizations[0].slug,
+                                            )}
+                                        >
+                                            <KeyRound className="size-4" />
+                                            SSH keys
+                                        </Link>
+                                    </Button>
+                                )}
+                            </header>
+                            <div className="border-t px-4 py-3 text-muted-foreground">
+                                These don't need an account here. Add an SSH key
+                                to your organization, give its public key read
+                                access on the server, and add the repository
+                                with the <strong>Generic Git</strong> provider.
+                                {sshKeyOrganizations.length > 1 && (
+                                    <span className="mt-2 flex flex-wrap gap-x-3 gap-y-1">
+                                        <span>SSH keys:</span>
+                                        {sshKeyOrganizations.map(
+                                            (organization) => (
+                                                <Link
+                                                    key={organization.uuid}
+                                                    href={sshKeys(
+                                                        organization.slug,
+                                                    )}
+                                                    className="text-primary hover:underline"
+                                                >
+                                                    {organization.name}
+                                                </Link>
+                                            ),
+                                        )}
+                                    </span>
+                                )}
+                            </div>
+                        </section>
                     </div>
 
                     <InfoBox
-                        title="About Git Providers"
-                        description="Git provider credentials are required to sync packages from
- private repositories. Each provider requires different
- authentication methods. Credentials are encrypted and stored
- securely."
+                        title="How credentials are used"
+                        description="When you add a repository you pick which account Pricore syncs it with, and it keeps syncing with that account for everyone in the organization. Tokens are encrypted and only visible to you."
                     />
-
-                    {(editingCredential || addingProvider) && (
-                        <GitCredentialDialog
-                            credential={editingCredential}
-                            provider={
-                                addingProvider ?? editingCredential!.provider
-                            }
-                            providers={providers}
-                            githubConnectUrl={githubConnectUrl}
-                            gitlabConnectUrl={gitlabConnectUrl}
-                            isOpen={dialogOpen}
-                            onClose={() => {
-                                setDialogOpen(false);
-                                setEditingCredential(null);
-                                setAddingProvider(null);
-                            }}
-                        />
-                    )}
                 </div>
+
+                {dialog && (
+                    <GitCredentialDialog
+                        credential={
+                            dialog.mode === 'edit' ? dialog.credential : null
+                        }
+                        provider={
+                            dialog.mode === 'edit'
+                                ? dialog.credential.provider
+                                : dialog.provider
+                        }
+                        providers={providers}
+                        githubConnectUrl={githubConnectUrl}
+                        gitlabConnectUrl={gitlabConnectUrl}
+                        gitlabInstanceHost={gitlabInstanceHost}
+                        isOpen
+                        onClose={() => setDialog(null)}
+                    />
+                )}
+
+                <Dialog
+                    open={removing !== null}
+                    onOpenChange={(open) => !open && setRemoving(null)}
+                >
+                    <DialogContent>
+                        <DialogHeader>
+                            <DialogTitle>Remove {removing?.label}</DialogTitle>
+                            <DialogDescription>
+                                {removing && removing.repositoriesCount > 0
+                                    ? `${repositoriesLabel(removing.repositoriesCount)}. ${removing.repositoriesCount === 1 ? 'It stops' : 'They stop'} syncing until ${removing.repositoriesCount === 1 ? 'it is' : 'they are'} added again with another account.`
+                                    : 'Pricore will no longer be able to use this account.'}
+                            </DialogDescription>
+                        </DialogHeader>
+                        <DialogFooter>
+                            <Button
+                                variant="secondary"
+                                onClick={() => setRemoving(null)}
+                            >
+                                Cancel
+                            </Button>
+                            <Button
+                                variant="destructive"
+                                onClick={confirmRemove}
+                            >
+                                Remove
+                            </Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
             </SettingsLayout>
         </AppLayout>
     );

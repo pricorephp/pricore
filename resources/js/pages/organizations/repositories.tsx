@@ -28,6 +28,7 @@ interface RepositoriesPageProps {
     organization: OrganizationData;
     repositories: RepositoryData[];
     configuredProviders?: string[];
+    gitCredentials?: App.Domains.Organization.Contracts.Data.GitCredentialData[];
     sshKeys?: OrganizationSshKeyData[];
 }
 
@@ -47,6 +48,7 @@ export default function Repositories({
     organization,
     repositories,
     configuredProviders = [],
+    gitCredentials = [],
     sshKeys = [],
 }: RepositoriesPageProps) {
     const { auth } = usePage<{
@@ -155,6 +157,7 @@ export default function Repositories({
                     isOpen={isDialogOpen}
                     onClose={() => setIsDialogOpen(false)}
                     configuredProviders={configuredProviders}
+                    gitCredentials={gitCredentials}
                     sshKeys={sshKeys}
                 />
 
@@ -164,6 +167,7 @@ export default function Repositories({
                         isOpen={isImportOpen}
                         onClose={() => setIsImportOpen(false)}
                         configuredProviders={configuredProviders}
+                        gitCredentials={gitCredentials}
                     />
                 )}
             </div>

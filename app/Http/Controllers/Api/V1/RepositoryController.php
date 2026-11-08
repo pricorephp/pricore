@@ -70,6 +70,7 @@ class RepositoryController extends ApiController
             defaultBranch: $request->validated('default_branch'),
             sshKeyUuid: $request->validated('ssh_key_uuid'),
             packagePaths: $request->packagePaths(),
+            gitCredentialUuid: $request->validated('git_credential_uuid'),
         );
 
         return RepositoryData::fromModel($repository->loadCount('packages'), includeWebhookSecret: true);
@@ -87,7 +88,8 @@ class RepositoryController extends ApiController
             organization: $organization,
             provider: GitProvider::from($request->validated('provider')),
             repositories: $request->validated('repositories'),
-            userUuid: $user->uuid,
+            user: $user,
+            gitCredentialUuid: $request->validated('git_credential_uuid'),
         );
     }
 

@@ -41,6 +41,7 @@ interface OrganizationShowProps {
     stats: OrganizationStatsData;
     onboarding: OnboardingChecklistData;
     configuredProviders?: string[];
+    gitCredentials?: App.Domains.Organization.Contracts.Data.GitCredentialData[];
     repositories: RepositoryHealthData[];
     securityStats?: SecurityStatsData;
     activityLogs?: ActivityLogData[];
@@ -52,6 +53,7 @@ export default function OrganizationShow({
     stats,
     onboarding,
     configuredProviders = [],
+    gitCredentials = [],
     repositories,
     securityStats,
     activityLogs,
@@ -112,6 +114,7 @@ export default function OrganizationShow({
                     organization={organization}
                     onboarding={onboarding}
                     configuredProviders={configuredProviders}
+                    gitCredentials={gitCredentials}
                     composerRepositoryUrl={organization.composerRepositoryUrl}
                 />
 

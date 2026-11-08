@@ -54,21 +54,60 @@ test('store creates a new git credential', function () {
         ->and($credential->credentials['token'])->toBe('ghp_test_token');
 });
 
-test('store prevents duplicate provider credentials', function () {
-    UserGitCredential::factory()->github()->create([
+test('store allows multiple credentials for the same provider', function () {
+    UserGitCredential::factory()->gitlab()->create([
         'user_uuid' => $this->user->uuid,
+        'credentials' => ['token' => 'glpat-public', 'url' => null],
     ]);
 
     $response = $this->actingAs($this->user)
         ->post(route('settings.git-credentials.store'), [
-            'provider' => 'github',
-            'credentials' => ['token' => 'ghp_another_token'],
+            'provider' => 'gitlab',
+            'name' => 'Self-hosted',
+            'credentials' => ['token' => 'glpat-self-hosted', 'url' => 'https://gitlab.acme.test'],
         ]);
 
     $response->assertRedirect(route('settings.git-credentials'));
-    $response->assertSessionHas('error');
+    $response->assertSessionHas('status', 'Git credentials added successfully.');
 
-    expect(UserGitCredential::where('user_uuid', $this->user->uuid)->count())->toBe(1);
+    $credential = UserGitCredential::where('user_uuid', $this->user->uuid)->where('name', 'Self-hosted')->first();
+
+    expect(UserGitCredential::where('user_uuid', $this->user->uuid)->count())->toBe(2)
+        ->and($credential->credentials['url'])->toBe('https://gitlab.acme.test')
+        ->and($credential->label())->toBe('Self-hosted');
+});
+
+test('credentials without a name are labelled by their instance or account', function () {
+    $gitlab = UserGitCredential::factory()->gitlab()->create([
+        'user_uuid' => $this->user->uuid,
+        'credentials' => ['token' => 'glpat-x', 'url' => 'https://gitlab.acme.test/'],
+    ]);
+    $bitbucket = UserGitCredential::factory()->create([
+        'user_uuid' => $this->user->uuid,
+        'provider' => 'bitbucket',
+        'credentials' => ['email' => 'dev@acme.test', 'api_token' => 'x'],
+    ]);
+
+    expect($gitlab->label())->toBe('gitlab.acme.test')
+        ->and($gitlab->baseUrl())->toBe('https://gitlab.acme.test')
+        ->and($bitbucket->label())->toBe('dev@acme.test');
+});
+
+test('update renames a credential and forgets its OAuth account', function () {
+    $credential = UserGitCredential::factory()->github()->create([
+        'user_uuid' => $this->user->uuid,
+        'account_id' => '123',
+    ]);
+
+    $this->actingAs($this->user)
+        ->patch(route('settings.git-credentials.update', $credential), [
+            'name' => 'Client account',
+            'credentials' => ['token' => 'ghp_client'],
+        ])
+        ->assertRedirect(route('settings.git-credentials'));
+
+    expect($credential->fresh()->name)->toBe('Client account')
+        ->and($credential->fresh()->account_id)->toBeNull();
 });
 
 test('store requires credentials token for github provider', function () {

@@ -29,6 +29,17 @@ class UpdateUserGitCredentialRequest extends FormRequest
 
         $provider = $credential?->provider;
 
+        return [
+            'name' => ['nullable', 'string', 'max:255'],
+            ...$this->credentialRules($provider),
+        ];
+    }
+
+    /**
+     * @return array<string, ValidationRule|array<mixed>|string>
+     */
+    protected function credentialRules(?GitProvider $provider): array
+    {
         return match ($provider) {
             GitProvider::GitHub => [
                 'credentials.token' => ['required', 'string'],

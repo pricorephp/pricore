@@ -109,7 +109,12 @@ class GitHubAuthController extends Controller
         $updateProfile->handle($user, $githubUser);
 
         /** @var TwoUser $githubUser */
-        $updated = $syncCredential->handle($user, $githubUser->token);
+        $updated = $syncCredential->handle(
+            user: $user,
+            token: $githubUser->token,
+            accountId: (string) $githubUser->getId(),
+            accountName: $githubUser->getNickname(),
+        );
 
         $message = $updated
             ? 'GitHub credentials updated successfully.'

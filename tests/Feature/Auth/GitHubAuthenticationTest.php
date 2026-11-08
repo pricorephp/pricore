@@ -373,6 +373,77 @@ test('connect callback updates existing credential', function () {
     expect(UserGitCredential::where('user_uuid', $user->uuid)->count())->toBe(1);
 });
 
+test('connect callback names the credential after the GitHub account', function () {
+    $user = User::factory()->withGitHub()->create();
+
+    mockSocialiteCallback(mockSocialiteUser(['id' => $user->github_id, 'token' => 'gho_token', 'nickname' => 'octocat']));
+
+    $this->actingAs($user)
+        ->withSession(['github_oauth_intent' => GitHubOAuthIntent::Connect])
+        ->get(route('auth.github.callback'));
+
+    $credential = UserGitCredential::where('user_uuid', $user->uuid)->sole();
+
+    expect($credential->name)->toBe('octocat')
+        ->and($credential->account_id)->toBe((string) $user->github_id);
+});
+
+test('connect callback updates the credential of the same GitHub account after it was renamed', function () {
+    $user = User::factory()->withGitHub()->create();
+
+    UserGitCredential::factory()->github()->create(['user_uuid' => $user->uuid, 'name' => 'octocat', 'account_id' => '999']);
+    $credential = UserGitCredential::factory()->github()->create([
+        'user_uuid' => $user->uuid,
+        'name' => 'Work',
+        'account_id' => (string) $user->github_id,
+    ]);
+
+    mockSocialiteCallback(mockSocialiteUser(['id' => $user->github_id, 'token' => 'gho_refreshed', 'nickname' => 'octocat']));
+
+    $this->actingAs($user)
+        ->withSession(['github_oauth_intent' => GitHubOAuthIntent::Connect])
+        ->get(route('auth.github.callback'))
+        ->assertSessionHas('status', 'GitHub credentials updated successfully.');
+
+    expect(UserGitCredential::where('user_uuid', $user->uuid)->count())->toBe(2)
+        ->and($credential->fresh()->credentials['token'])->toBe('gho_refreshed')
+        ->and($credential->fresh()->name)->toBe('Work');
+});
+
+test('connect callback adds a credential when connecting another GitHub account', function () {
+    $user = User::factory()->withGitHub()->create();
+
+    $existing = UserGitCredential::factory()->github()->create(['user_uuid' => $user->uuid, 'account_id' => '999']);
+    $existingToken = $existing->credentials['token'];
+
+    mockSocialiteCallback(mockSocialiteUser(['id' => $user->github_id, 'token' => 'gho_personal', 'nickname' => 'octocat']));
+
+    $this->actingAs($user)
+        ->withSession(['github_oauth_intent' => GitHubOAuthIntent::Connect])
+        ->get(route('auth.github.callback'))
+        ->assertSessionHas('status', 'GitHub credentials connected successfully.');
+
+    expect(UserGitCredential::where('user_uuid', $user->uuid)->count())->toBe(2)
+        ->and($existing->fresh()->credentials['token'])->toBe($existingToken);
+});
+
+test('connect callback leaves a named manual token alone', function () {
+    $user = User::factory()->withGitHub()->create();
+
+    $manual = UserGitCredential::factory()->github()->create(['user_uuid' => $user->uuid, 'name' => 'Deploy token']);
+    $manualToken = $manual->credentials['token'];
+
+    mockSocialiteCallback(mockSocialiteUser(['id' => $user->github_id, 'token' => 'gho_oauth', 'nickname' => 'octocat']));
+
+    $this->actingAs($user)
+        ->withSession(['github_oauth_intent' => GitHubOAuthIntent::Connect])
+        ->get(route('auth.github.callback'))
+        ->assertSessionHas('status', 'GitHub credentials connected successfully.');
+
+    expect(UserGitCredential::where('user_uuid', $user->uuid)->count())->toBe(2)
+        ->and($manual->fresh()->credentials['token'])->toBe($manualToken);
+});
+
 test('connect callback does not overwrite github_token on user', function () {
     $user = User::factory()->withGitHub()->create([
         'github_token' => 'gho_login_token',

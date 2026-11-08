@@ -23,6 +23,7 @@ class StoreUserGitCredentialRequest extends FormRequest
 
         $baseRules = [
             'provider' => ['required', 'string', Rule::enum(GitProvider::class)],
+            'name' => ['nullable', 'string', 'max:255'],
         ];
 
         $credentialRules = match ($provider) {
