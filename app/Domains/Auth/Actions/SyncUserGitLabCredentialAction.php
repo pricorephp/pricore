@@ -11,13 +11,14 @@ class SyncUserGitLabCredentialAction
         protected SyncUserOAuthCredentialAction $syncUserOAuthCredentialAction,
     ) {}
 
-    public function handle(User $user, string $token, string $url, ?string $account = null): bool
+    public function handle(User $user, string $token, string $url, string $accountId, ?string $accountName = null): bool
     {
         return $this->syncUserOAuthCredentialAction->handle(
             user: $user,
             provider: GitProvider::GitLab,
             credentials: ['token' => $token, 'url' => $url],
-            account: $account,
+            accountId: $accountId,
+            accountName: $accountName,
         );
     }
 }

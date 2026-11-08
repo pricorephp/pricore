@@ -36,7 +36,8 @@ class BulkCreateRepositoriesAction
         $existingIdentifiers = Repository::query()
             ->where('organization_uuid', $organization->uuid)
             ->where('provider', $provider)
-            ->when($provider->supportsSelfHosted(), fn ($query) => $query->where('custom_base_url', $baseUrl))
+            ->get(['repo_identifier', 'custom_base_url'])
+            ->filter(fn (Repository $repository) => $gitCredential?->servesBaseUrl($repository->custom_base_url) ?? true)
             ->pluck('repo_identifier')
             ->toArray();
 

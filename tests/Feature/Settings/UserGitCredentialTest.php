@@ -93,9 +93,10 @@ test('credentials without a name are labelled by their instance or account', fun
         ->and($bitbucket->label())->toBe('dev@acme.test');
 });
 
-test('update renames a credential', function () {
+test('update renames a credential and forgets its OAuth account', function () {
     $credential = UserGitCredential::factory()->github()->create([
         'user_uuid' => $this->user->uuid,
+        'account_id' => '123',
     ]);
 
     $this->actingAs($this->user)
@@ -105,7 +106,8 @@ test('update renames a credential', function () {
         ])
         ->assertRedirect(route('settings.git-credentials'));
 
-    expect($credential->fresh()->name)->toBe('Client account');
+    expect($credential->fresh()->name)->toBe('Client account')
+        ->and($credential->fresh()->account_id)->toBeNull();
 });
 
 test('store requires credentials token for github provider', function () {

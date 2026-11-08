@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Models\UserGitCredential;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
 beforeEach(function () {
@@ -137,5 +138,32 @@ it('unlinks repositories when their credential is removed', function () {
         ->delete(route('settings.git-credentials.destroy', $this->selfHosted))
         ->assertRedirect(route('settings.git-credentials'));
 
-    expect($repository->fresh()->git_credential_uuid)->toBeNull();
+    expect($repository->fresh()->git_credential_uuid)->toBeNull()
+        ->and(GitProviderFactory::resolveCredential($repository->fresh()))->toBeNull();
+});
+
+it('does not import a repository twice when the instance URL is written differently', function () {
+    $this->gitlabCom->update(['credentials' => ['token' => 'glpat-public', 'url' => 'https://GitLab.com/']]);
+
+    Repository::factory()->for($this->organization, 'organization')->gitlab()->create([
+        'repo_identifier' => 'acme/billing',
+        'custom_base_url' => null,
+    ]);
+
+    $this->actingAs($this->user)
+        ->post(route('organizations.repositories.bulk-store', $this->organization), [
+            'provider' => 'gitlab',
+            'git_credential_uuid' => $this->gitlabCom->uuid,
+            'repositories' => [['repo_identifier' => 'acme/billing']],
+        ])
+        ->assertSessionHasNoErrors();
+
+    expect(Repository::where('repo_identifier', 'acme/billing')->count())->toBe(1);
+});
+
+it('refuses to roll back while users have several credentials for a provider', function () {
+    $migration = require database_path('migrations/2026_11_08_000001_allow_multiple_git_credentials_per_provider.php');
+
+    expect(fn () => $migration->down())->toThrow(RuntimeException::class);
+    expect(Schema::hasColumn('repositories', 'git_credential_uuid'))->toBeTrue();
 });

@@ -9,15 +9,20 @@ use App\Models\UserGitCredential;
 class SyncUserOAuthCredentialAction
 {
     /**
-     * Updates the credential named after the connected account on the same instance, or a
-     * lone unnamed one from before multiple credentials per provider, and creates one otherwise.
+     * Updates the credential of the same provider account on the same instance, or a lone
+     * credential from before accounts were tracked, and creates one otherwise.
      *
      * @param  array<string, mixed>  $credentials
      * @return bool Whether an existing credential was updated
      */
-    public function handle(User $user, GitProvider $provider, array $credentials, ?string $account = null): bool
-    {
-        $account = $account !== null && $account !== '' ? $account : null;
+    public function handle(
+        User $user,
+        GitProvider $provider,
+        array $credentials,
+        string $accountId,
+        ?string $accountName = null,
+    ): bool {
+        $accountName = $accountName !== null && $accountName !== '' ? $accountName : null;
 
         $sameInstance = $user->gitCredentials()
             ->where('provider', $provider)
@@ -25,17 +30,16 @@ class SyncUserOAuthCredentialAction
             ->get()
             ->filter(fn (UserGitCredential $credential) => $credential->servesBaseUrl($credentials['url'] ?? null));
 
-        $credential = $account !== null
-            ? $sameInstance->first(fn (UserGitCredential $credential) => $credential->name === $account)
-            : null;
+        $credential = $sameInstance->first(fn (UserGitCredential $credential) => $credential->account_id === $accountId);
 
-        if (! $credential && $sameInstance->count() === 1 && $sameInstance->first()?->name === null) {
+        if (! $credential && $sameInstance->count() === 1 && $sameInstance->first()?->account_id === null) {
             $credential = $sameInstance->first();
         }
 
         if ($credential) {
             $credential->update([
-                'name' => $credential->name ?? $account,
+                'name' => $credential->name ?? $accountName,
+                'account_id' => $accountId,
                 'credentials' => $credentials,
             ]);
 
@@ -45,7 +49,8 @@ class SyncUserOAuthCredentialAction
         UserGitCredential::create([
             'user_uuid' => $user->uuid,
             'provider' => $provider,
-            'name' => $account,
+            'name' => $accountName,
+            'account_id' => $accountId,
             'credentials' => $credentials,
         ]);
 

@@ -11,13 +11,14 @@ class SyncUserGitHubCredentialAction
         protected SyncUserOAuthCredentialAction $syncUserOAuthCredentialAction,
     ) {}
 
-    public function handle(User $user, string $token, ?string $account = null): bool
+    public function handle(User $user, string $token, string $accountId, ?string $accountName = null): bool
     {
         return $this->syncUserOAuthCredentialAction->handle(
             user: $user,
             provider: GitProvider::GitHub,
             credentials: ['token' => $token],
-            account: $account,
+            accountId: $accountId,
+            accountName: $accountName,
         );
     }
 }

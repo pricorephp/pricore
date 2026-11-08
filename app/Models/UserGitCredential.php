@@ -20,6 +20,7 @@ use Illuminate\Support\Carbon;
  * @property string $user_uuid
  * @property GitProvider $provider
  * @property string|null $name
+ * @property string|null $account_id
  * @property array<string, mixed> $credentials
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
@@ -46,6 +47,14 @@ class UserGitCredential extends Model
     protected $casts = [
         'provider' => GitProvider::class,
     ];
+
+    protected static function booted(): void
+    {
+        // Repositories of a removed credential must not fall back to another account of the same user
+        static::deleting(function (UserGitCredential $credential): void {
+            $credential->repositories()->update(['credential_user_uuid' => null]);
+        });
+    }
 
     /**
      * @return BelongsTo<User, $this>

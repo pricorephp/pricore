@@ -11,6 +11,7 @@ return new class extends Migration
     {
         Schema::table('user_git_credentials', function (Blueprint $table) {
             $table->string('name')->nullable()->after('provider');
+            $table->string('account_id')->nullable()->after('name');
 
             // Keeps an index on user_uuid for its foreign key once the unique index is gone
             $table->index(['user_uuid', 'provider']);
@@ -47,6 +48,16 @@ return new class extends Migration
 
     public function down(): void
     {
+        $hasDuplicates = DB::table('user_git_credentials')
+            ->select('user_uuid', 'provider')
+            ->groupBy('user_uuid', 'provider')
+            ->havingRaw('count(*) > 1')
+            ->exists();
+
+        if ($hasDuplicates) {
+            throw new RuntimeException('Users have several Git credentials for one provider. Remove the extra credentials before rolling back.');
+        }
+
         Schema::table('repositories', function (Blueprint $table) {
             $table->dropConstrainedForeignId('git_credential_uuid');
         });
@@ -57,7 +68,7 @@ return new class extends Migration
 
         Schema::table('user_git_credentials', function (Blueprint $table) {
             $table->dropIndex(['user_uuid', 'provider']);
-            $table->dropColumn('name');
+            $table->dropColumn(['name', 'account_id']);
         });
     }
 };

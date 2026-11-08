@@ -55,8 +55,10 @@ class UserGitCredentialController extends Controller
 
     public function update(UpdateUserGitCredentialRequest $request, UserGitCredential $credential): RedirectResponse
     {
+        // A token entered by hand may belong to another account than the one connected through OAuth
         $credential->update([
             'name' => $request->validated('name'),
+            'account_id' => null,
             'credentials' => $request->validated('credentials'),
         ]);
 

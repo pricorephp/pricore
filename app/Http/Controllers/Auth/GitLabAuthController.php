@@ -107,7 +107,8 @@ class GitLabAuthController extends Controller
             user: $user,
             token: $gitlabUser->token,
             url: rtrim(config('services.gitlab.instance_uri'), '/'),
-            account: $gitlabUser->getNickname(),
+            accountId: (string) $gitlabUser->getId(),
+            accountName: $gitlabUser->getNickname(),
         );
 
         $message = $updated
