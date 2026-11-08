@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Composer;
 
+use App\Domains\Composer\Actions\ResolveBaseUrlFirstServedAction;
 use App\Http\Controllers\Controller;
 use App\Models\Organization;
 use Illuminate\Http\JsonResponse;
@@ -9,8 +10,11 @@ use Illuminate\Http\Request;
 
 class PackageController extends Controller
 {
-    public function index(Request $request, Organization $organization): JsonResponse
-    {
+    public function index(
+        Request $request,
+        Organization $organization,
+        ResolveBaseUrlFirstServedAction $resolveBaseUrlFirstServedAction,
+    ): JsonResponse {
         $baseUrl = url("/{$organization->slug}/p2");
         $notifyBatchUrl = url("/{$organization->slug}/notify-batch");
 
@@ -30,11 +34,15 @@ class PackageController extends Controller
             ],
         ]);
 
-        $lastModified = $organization->packages()->max('updated_at');
+        $packagesUpdatedAt = $organization->packages()->max('updated_at');
 
-        if ($lastModified) {
-            $response->setLastModified(new \DateTime($lastModified));
-        }
+        // The metadata URLs follow the base URL, which no package timestamp reflects.
+        $lastModified = collect([
+            $packagesUpdatedAt ? new \DateTimeImmutable($packagesUpdatedAt) : null,
+            $resolveBaseUrlFirstServedAction->handle(),
+        ])->filter()->max();
+
+        $response->setLastModified($lastModified);
 
         $response->setPrivate()
             ->setMaxAge(300);

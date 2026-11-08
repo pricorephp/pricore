@@ -48,6 +48,8 @@ it('moves stored Bitbucket SSH source urls to the SSH host', function () {
 });
 
 it('serves moved source urls to clients revalidating with If-Modified-Since', function () {
+    baseUrlServedSinceLongAgo();
+
     $organization = Organization::factory()->create(['slug' => 'acme']);
     $plainToken = 'test-token-'.uniqid();
     AccessToken::factory()

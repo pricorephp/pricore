@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Composer;
 
+use App\Domains\Composer\Actions\ResolveBaseUrlFirstServedAction;
 use App\Domains\Composer\Contracts\Data\VersionMetadataData;
 use App\Http\Controllers\Controller;
 use App\Models\Organization;
@@ -15,6 +16,10 @@ use Illuminate\Http\Request;
 
 class MetadataController extends Controller
 {
+    public function __construct(
+        protected ResolveBaseUrlFirstServedAction $resolveBaseUrlFirstServedAction,
+    ) {}
+
     /**
      * Return metadata for stable versions of a package.
      */
@@ -66,7 +71,9 @@ class MetadataController extends Controller
                 ->setMaxAge(300);
         }
 
-        $versions = $scopeFilter($package->versions())
+        $package->setRelation('organization', $organization);
+
+        $versions = $scopeFilter($package->versions()->chaperone())
             // A subdirectory version installs from its dist only (no source block),
             // so one without an archive yet would be offered but fail to install
             ->where(fn (Builder $query) => $query->whereNull('source_path')->orWhereNotNull('dist_url'))
@@ -82,8 +89,11 @@ class MetadataController extends Controller
         $minified = MetadataMinifier::minify($versionsMetadata);
 
         // The package is touched when a version is deleted, which the remaining
-        // versions' timestamps would not reflect.
-        $lastModified = $versions->pluck('updated_at')->push($package->updated_at)->max();
+        // versions' timestamps would not reflect. The dist URLs follow the base
+        // URL, which no stored timestamp reflects either.
+        $lastModified = $versions->pluck('updated_at')
+            ->push($package->updated_at, $this->resolveBaseUrlFirstServedAction->handle())
+            ->max();
 
         $response = response()
             ->json([
