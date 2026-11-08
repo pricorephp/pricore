@@ -39,7 +39,7 @@ Clicking a version opens the detail panel, which includes a **Security Advisorie
 
 ## Composer Audit
 
-Pricore implements the Packagist-compatible `security-advisories` endpoint, so `composer audit` works natively against your registry.
+Pricore implements the Packagist-compatible `security-advisories` endpoint and advertises it in your organization's `packages.json`, so `composer audit` works natively against your registry.
 
 To use it, configure Composer to use your Pricore registry:
 
@@ -53,7 +53,7 @@ Then run:
 composer audit
 ```
 
-Composer will check your project's installed packages against the advisories stored in Pricore. See the [API reference](/api/#security-advisories) for endpoint details.
+Composer will check the installed packages served by your Pricore registry against the advisories stored in Pricore. Packages installed from other repositories, such as Packagist, are audited against those repositories. See the [API reference](/api/#security-advisories) for endpoint details.
 
 ## Sync Schedule
 

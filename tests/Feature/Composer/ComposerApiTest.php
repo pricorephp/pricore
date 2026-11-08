@@ -357,6 +357,14 @@ it('includes available-packages and notify-batch in packages.json', function () 
         ->assertJsonPath('notify-batch', url("/{$this->organization->slug}/notify-batch"));
 });
 
+it('advertises the security advisories api in packages.json', function () {
+    $response = authenticatedGet("/{$this->organization->slug}/packages.json", $this->plainToken);
+
+    $response->assertOk()
+        ->assertJsonPath('security-advisories.api-url', url("/{$this->organization->slug}/api/security-advisories"))
+        ->assertJsonPath('security-advisories.metadata', false);
+});
+
 it('returns minified metadata for multiple versions', function () {
     $package = Package::factory()
         ->for($this->organization, 'organization')

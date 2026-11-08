@@ -24,6 +24,10 @@ class PackageController extends Controller
             'metadata-url' => "{$baseUrl}/%package%.json",
             'available-packages' => $availablePackages,
             'notify-batch' => $notifyBatchUrl,
+            'security-advisories' => [
+                'api-url' => route('composer.security-advisories', ['organization' => $organization->slug]),
+                'metadata' => false,
+            ],
         ]);
 
         $lastModified = $organization->packages()->max('updated_at');
