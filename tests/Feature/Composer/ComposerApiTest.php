@@ -21,6 +21,8 @@ beforeEach(function () {
         ->withPlainToken($this->plainToken)
         ->neverExpires()
         ->create();
+
+    baseUrlServedSinceLongAgo();
 });
 
 // Helper to make authenticated requests
@@ -310,14 +312,14 @@ it('includes dist information when available', function () {
             'version' => '1.0.0',
             'source_url' => 'https://github.com/acme/package.git',
             'source_reference' => 'abc123',
-            'dist_url' => 'https://example.com/dist/acme-package-1.0.0.zip',
+            'dist_url' => url('/acme/dists/acme/package/1.0.0/abc123.zip'),
         ]);
 
     $response = authenticatedGet("/{$this->organization->slug}/p2/acme/package.json", $this->plainToken);
 
     $response->assertOk()
         ->assertJsonPath('packages.acme/package.0.dist.type', 'zip')
-        ->assertJsonPath('packages.acme/package.0.dist.url', 'https://example.com/dist/acme-package-1.0.0.zip')
+        ->assertJsonPath('packages.acme/package.0.dist.url', url('/acme/dists/acme/package/1.0.0/abc123.zip'))
         ->assertJsonPath('packages.acme/package.0.dist.reference', 'abc123');
 });
 
