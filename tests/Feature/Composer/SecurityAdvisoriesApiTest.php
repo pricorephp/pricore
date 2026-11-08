@@ -52,6 +52,48 @@ it('returns advisories for requested packages', function () {
     expect($advisory['cve'])->toBe('CVE-2024-0001');
 });
 
+it('serves advisories to a form-encoded request the way composer audit sends it', function () {
+    SecurityAdvisory::factory()->create([
+        'advisory_id' => 'PKSA-002',
+        'package_name' => 'acme/library',
+        'title' => 'SQL injection',
+        'affected_versions' => '>=2.0,<2.3.1',
+        'reported_at' => '2026-01-15 10:00:00',
+        'sources' => [['name' => 'GitHub', 'remoteId' => 'GHSA-xxxx-yyyy-zzzz']],
+        'severity' => AdvisorySeverity::Critical,
+    ]);
+
+    $apiUrl = $this->withHeaders(['Authorization' => "Bearer {$this->plainToken}"])
+        ->getJson("/{$this->organization->slug}/packages.json")
+        ->json('security-advisories.api-url');
+
+    $response = $this->call(
+        'POST',
+        $apiUrl,
+        ['packages' => ['acme/library', 'acme/other']],
+        server: [
+            'CONTENT_TYPE' => 'application/x-www-form-urlencoded',
+            'HTTP_AUTHORIZATION' => 'Basic '.base64_encode("token:{$this->plainToken}"),
+        ],
+    );
+
+    $response->assertOk();
+
+    expect($response->json('advisories'))->toHaveKeys(['acme/library'])
+        ->not->toHaveKey('acme/other');
+
+    $advisory = $response->json('advisories.acme/library.0');
+    expect($advisory)->toMatchArray([
+        'advisoryId' => 'PKSA-002',
+        'packageName' => 'acme/library',
+        'title' => 'SQL injection',
+        'affectedVersions' => '>=2.0,<2.3.1',
+        'sources' => [['name' => 'GitHub', 'remoteId' => 'GHSA-xxxx-yyyy-zzzz']],
+        'severity' => 'critical',
+    ]);
+    expect($advisory['reportedAt'])->toStartWith('2026-01-15T10:00:00');
+});
+
 it('returns empty advisories for empty packages list', function () {
     $response = $this->withHeaders([
         'Authorization' => "Bearer {$this->plainToken}",
