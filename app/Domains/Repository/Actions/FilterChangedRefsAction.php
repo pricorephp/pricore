@@ -2,7 +2,6 @@
 
 namespace App\Domains\Repository\Actions;
 
-use App\Domains\Repository\Contracts\Data\ComposerMetadataData;
 use App\Domains\Repository\Contracts\Data\ExistingVersionData;
 use App\Domains\Repository\Contracts\Data\RefData;
 use App\Domains\Repository\Contracts\Data\RefsCollectionData;
@@ -134,7 +133,12 @@ class FilterChangedRefsAction
      */
     protected function hasChanged(RefData $ref, Collection $existingVersions, Collection $emptyRefs, ?TagFormat $format): bool
     {
-        $existing = $existingVersions->get($format !== null ? $ref->name : ComposerMetadataData::extractVersion($ref->name));
+        // A tag and a branch can share a name but never a version, and versions a
+        // ref was given under an earlier naming are gone, so only the version this
+        // ref releases now counts
+        $version = TagFormat::target($format, $ref)?->version;
+        $existing = $existingVersions->get($format !== null ? $ref->name : (string) $version)
+            ?->whereStrict('version', $version);
 
         if ($existing === null || $existing->isEmpty()) {
             return $emptyRefs->get($ref->name) !== $ref->commit;

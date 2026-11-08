@@ -47,7 +47,7 @@ it('syncs a single ref and creates a package version', function () {
         ->github()
         ->create();
 
-    $ref = new RefData(name: 'v1.0.0', commit: 'abc123');
+    $ref = new RefData(name: 'v1.0.0', commit: 'abc123', isTag: true);
 
     $job = new SyncRefJob($repository, $ref);
     $job->handle(app(SyncRefAction::class));
@@ -73,7 +73,7 @@ it('skips if batch is cancelled', function () {
         ->github()
         ->create();
 
-    $ref = new RefData(name: 'v1.0.0', commit: 'abc123');
+    $ref = new RefData(name: 'v1.0.0', commit: 'abc123', isTag: true);
 
     $job = new SyncRefJob($repository, $ref);
 
@@ -104,7 +104,7 @@ it('increments cache counters when part of a batch', function () {
         ->github()
         ->create();
 
-    $ref = new RefData(name: 'v1.0.0', commit: 'abc123');
+    $ref = new RefData(name: 'v1.0.0', commit: 'abc123', isTag: true);
 
     $job = new SyncRefJob($repository, $ref);
 
@@ -134,7 +134,7 @@ it('skips refs when composer.json is missing', function () {
     $mockProvider->shouldReceive('getFileContent')->andReturn(null);
     $mockProvider->shouldReceive('getRepositoryUrl')->andReturn('https://github.com/test/repo');
 
-    $ref = new RefData(name: 'v1.0.0', commit: 'abc123');
+    $ref = new RefData(name: 'v1.0.0', commit: 'abc123', isTag: true);
 
     $syncRefAction = app(SyncRefAction::class);
     $result = $syncRefAction->handle($mockProvider, $repository, $ref);

@@ -14,7 +14,7 @@ uses(RefreshDatabase::class);
 
 function makeRefs(array $tags = [], array $branches = []): RefsCollectionData
 {
-    $tagData = array_map(fn (array $ref) => RefData::from($ref), $tags);
+    $tagData = array_map(fn (array $ref) => RefData::from([...$ref, 'isTag' => true]), $tags);
     $branchData = array_map(fn (array $ref) => RefData::from($ref), $branches);
     $allData = array_merge($tagData, $branchData);
 

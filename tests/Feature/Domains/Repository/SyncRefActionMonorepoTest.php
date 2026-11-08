@@ -59,7 +59,7 @@ beforeEach(function () {
     ];
 
     $this->sync = fn (GitProviderInterface $provider, string $ref = 'main', string $commit = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa') => app(SyncRefAction::class)
-        ->handle($provider, $this->repository, new RefData(name: $ref, commit: $commit));
+        ->handle($provider, $this->repository, new RefData(name: $ref, commit: $commit, isTag: $ref !== 'main'));
 });
 
 it('syncs every package found under the configured paths and leaves the root alone', function () {
