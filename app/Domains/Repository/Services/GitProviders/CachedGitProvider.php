@@ -139,7 +139,7 @@ class CachedGitProvider implements GitProviderInterface
      * clone, an unknown ref or git failing outright must not pass for a removed
      * package, since the sync deletes versions whose composer.json is gone.
      */
-    protected function ensureRefResolves(string $ref): void
+    public function ensureRefResolves(string $ref): void
     {
         $result = $this->git(['rev-parse', '--verify', '--quiet', "{$ref}^{commit}"]);
 

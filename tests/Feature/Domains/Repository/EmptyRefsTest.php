@@ -36,6 +36,7 @@ function emptyRefsProvider(array $files = []): GitProviderInterface
     $provider->shouldReceive('getFileContent')
         ->andReturnUsing(fn (string $ref, string $path) => $files[$path] ?? null);
     $provider->shouldReceive('listDirectory')->andReturn([]);
+    $provider->shouldReceive('ensureRefResolves');
     $provider->shouldReceive('getRepositoryUrl')->andReturn('https://github.com/acme/app.git');
     $provider->shouldReceive('getRepositoryIdentifier')->andReturn('acme/app');
 

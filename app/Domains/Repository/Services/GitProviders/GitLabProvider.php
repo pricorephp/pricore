@@ -241,6 +241,11 @@ class GitLabProvider extends AbstractGitProvider
         $this->ensureApiAccess("/projects/{$this->getEncodedProjectPath()}", $this->accessFailureMessage(...));
     }
 
+    public function ensureRefResolves(string $ref): void
+    {
+        $this->ensureApiAccess("/projects/{$this->getEncodedProjectPath()}/repository/commits/".urlencode($ref), $this->accessFailureMessage(...));
+    }
+
     protected function accessFailureMessage(?int $status): string
     {
         $gitLab = "GitLab at {$this->getBaseUrl()}";

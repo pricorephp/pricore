@@ -132,6 +132,7 @@ it('skips refs when composer.json is missing', function () {
     // Use a mock provider that returns null for file content
     $mockProvider = Mockery::mock(GitProviderInterface::class);
     $mockProvider->shouldReceive('getFileContent')->andReturn(null);
+    $mockProvider->shouldReceive('ensureRefResolves');
     $mockProvider->shouldReceive('getRepositoryUrl')->andReturn('https://github.com/test/repo');
 
     $ref = new RefData(name: 'v1.0.0', commit: 'abc123', isTag: true);

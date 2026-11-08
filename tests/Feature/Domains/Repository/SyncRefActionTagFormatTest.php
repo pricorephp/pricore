@@ -25,6 +25,7 @@ function tagFormatProvider(array $files, array $directories = [], array &$reques
 
             return $files[$path] ?? null;
         });
+    $provider->shouldReceive('ensureRefResolves');
     $provider->shouldReceive('listDirectory')
         ->andReturnUsing(fn (string $ref, string $path) => $directories[trim($path, '/')] ?? []);
     $provider->shouldReceive('getRepositoryUrl')->andReturn('https://github.com/acme/monorepo.git');

@@ -23,6 +23,7 @@ function monorepoProvider(array $files, array $directories = []): GitProviderInt
         ->andReturnUsing(fn (string $ref, string $path) => $files[$path] ?? null);
     $provider->shouldReceive('listDirectory')
         ->andReturnUsing(fn (string $ref, string $path) => $directories[trim($path, '/')] ?? []);
+    $provider->shouldReceive('ensureRefResolves');
     $provider->shouldReceive('getRepositoryUrl')->andReturn('https://github.com/acme/monorepo.git');
     $provider->shouldReceive('getRepositoryIdentifier')->andReturn('acme/monorepo');
     $provider->shouldReceive('downloadArchive')

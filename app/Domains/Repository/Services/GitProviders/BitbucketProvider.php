@@ -221,6 +221,11 @@ class BitbucketProvider extends AbstractGitProvider
         $this->ensureApiAccess("/repositories/{$this->repositoryIdentifier}", $this->accessFailureMessage(...));
     }
 
+    public function ensureRefResolves(string $ref): void
+    {
+        $this->ensureApiAccess("/repositories/{$this->repositoryIdentifier}/commit/{$ref}", $this->accessFailureMessage(...));
+    }
+
     protected function accessFailureMessage(?int $status): string
     {
         $repository = $this->repositoryIdentifier;

@@ -101,7 +101,7 @@ abstract class AbstractGitProvider implements GitProviderInterface
     }
 
     /**
-     * Request the repository from the provider's API. The failure message ends up
+     * Request $path from the provider's API. The failure message ends up
      * in the sync log, where it is all a user has to go on, so it is left to the
      * provider to word: a null status means the provider could not be reached.
      *
