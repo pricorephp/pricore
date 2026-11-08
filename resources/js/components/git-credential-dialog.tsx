@@ -100,9 +100,11 @@ export default function GitCredentialDialog({
 }: GitCredentialDialogProps) {
     const isEditing = !!credential;
     const providerLabel = providers[provider] || provider;
-    const oauthUrl = isEditing
-        ? undefined
-        : { github: githubConnectUrl, gitlab: gitlabConnectUrl }[provider];
+    const oauthUrls: Record<string, string | undefined> = {
+        github: githubConnectUrl,
+        gitlab: gitlabConnectUrl,
+    };
+    const oauthUrl = isEditing ? undefined : oauthUrls[provider];
 
     return (
         <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
