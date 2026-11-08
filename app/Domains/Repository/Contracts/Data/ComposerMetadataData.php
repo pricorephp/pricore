@@ -21,13 +21,10 @@ class ComposerMetadataData extends Data
     ) {}
 
     /**
-     * Create instance from composer.json content.
-     */
-    /**
-     * The version comes from the ref name, unless the caller already derived it,
+     * The version comes from the ref, unless the caller already derived it,
      * such as from a tag that releases a single package of a monorepo.
      */
-    public static function fromComposerJson(string $composerJsonContent, string $ref, ?string $version = null): self
+    public static function fromComposerJson(string $composerJsonContent, RefData $ref, ?string $version = null): self
     {
         $data = self::decodeJson($composerJsonContent);
         self::validateRequiredFields($data);
@@ -101,19 +98,26 @@ class ComposerMetadataData extends Data
     }
 
     /**
-     * Extract version from reference (tag or branch name).
-     * Branch names are prefixed with "dev-" for Composer compatibility.
+     * Version tags are kept verbatim (v1.0.0 stays v1.0.0) so the pretty version
+     * matches the Git tag; other tags get a dev- prefix. Branches follow Composer:
+     * a numeric branch such as 1.2 or 1.2.x becomes 1.2.x-dev, any other dev-<name>,
+     * so a branch never poses as a release.
      */
-    public static function extractVersion(string $ref): string
+    public static function extractVersion(RefData $ref): string
     {
-        // Branch names need a dev- prefix for Composer compatibility. Version tags are
-        // kept verbatim (e.g. v1.0.0 stays v1.0.0) so the pretty version matches the
-        // original Git tag; Composer derives the normalized form separately.
-        if (! preg_match('/^v?\d+\.\d+/', $ref)) {
-            return "dev-{$ref}";
+        if ($ref->isTag) {
+            return preg_match('/^v?\d+\.\d+/', $ref->name) === 1 ? $ref->name : "dev-{$ref->name}";
         }
 
-        return $ref;
+        $normalizedBranch = (new VersionParser)->normalizeBranch($ref->name);
+
+        if (str_starts_with($normalizedBranch, 'dev-')) {
+            return "dev-{$ref->name}";
+        }
+
+        $prefix = str_starts_with($ref->name, 'v') ? 'v' : '';
+
+        return $prefix.preg_replace('/(\.9{7})+/', '.x', $normalizedBranch);
     }
 
     /**

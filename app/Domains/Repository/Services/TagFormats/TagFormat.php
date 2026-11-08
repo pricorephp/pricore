@@ -112,7 +112,7 @@ class TagFormat
      */
     public static function target(?self $format, RefData $ref): ?RefTargetData
     {
-        $sharedVersion = ComposerMetadataData::extractVersion($ref->name);
+        $sharedVersion = ComposerMetadataData::extractVersion($ref);
 
         if ($format === null || ! $ref->isTag || self::isPlainVersion($ref->name)) {
             return new RefTargetData($sharedVersion);
@@ -124,7 +124,7 @@ class TagFormat
 
     /**
      * Whether a version came from a tag of a single package that no longer exists.
-     * A branch can carry the same name, but its versions are dev-<name>, so the
+     * A branch can carry the same name, but its versions are dev versions, so the
      * version must be the one that tag releases.
      *
      * @param  array<int, string>  $tagNames

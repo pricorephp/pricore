@@ -66,7 +66,7 @@ class SyncRefAction
                 $composerJsonFound = $composerJsonFound || $target->isShared();
 
                 try {
-                    $metadata = ComposerMetadataData::fromComposerJson($composerJson, $ref->name, $target->version);
+                    $metadata = ComposerMetadataData::fromComposerJson($composerJson, $ref, $target->version);
                 } catch (ComposerMetadataException $e) {
                     Log::warning('Skipping package with invalid composer.json', [
                         'repository' => $repository->name,
