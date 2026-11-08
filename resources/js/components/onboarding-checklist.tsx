@@ -23,6 +23,7 @@ interface OnboardingChecklistProps {
     organization: { slug: string };
     onboarding: OnboardingChecklistData;
     configuredProviders?: string[];
+    gitCredentials?: App.Domains.Organization.Contracts.Data.GitCredentialData[];
     composerRepositoryUrl: string;
 }
 
@@ -68,6 +69,7 @@ export default function OnboardingChecklist({
     organization,
     onboarding,
     configuredProviders = [],
+    gitCredentials = [],
     composerRepositoryUrl,
 }: OnboardingChecklistProps) {
     const [isImportOpen, setIsImportOpen] = useState(false);
@@ -196,6 +198,7 @@ export default function OnboardingChecklist({
                     isOpen={isImportOpen}
                     onClose={() => setIsImportOpen(false)}
                     configuredProviders={configuredProviders}
+                    gitCredentials={gitCredentials}
                 />
             )}
         </Card>

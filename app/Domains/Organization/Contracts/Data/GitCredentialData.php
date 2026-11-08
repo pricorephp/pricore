@@ -13,7 +13,11 @@ class GitCredentialData extends Data
         public string $uuid,
         public string $provider,
         public string $providerLabel,
+        public ?string $name,
+        public string $label,
+        public ?string $baseUrl,
         public bool $isConfigured,
+        public int $repositoriesCount,
     ) {}
 
     public static function fromModel(UserGitCredential $credential): self
@@ -22,7 +26,11 @@ class GitCredentialData extends Data
             uuid: $credential->uuid,
             provider: $credential->provider->value,
             providerLabel: $credential->provider->label(),
+            name: $credential->name,
+            label: $credential->label(),
+            baseUrl: $credential->baseUrl(),
             isConfigured: ! empty($credential->credentials),
+            repositoriesCount: $credential->repositories_count ?? 0,
         );
     }
 }

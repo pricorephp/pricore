@@ -17,6 +17,13 @@ class BulkStoreRepositoryRequest extends FormRequest
     {
         return [
             'provider' => ['required', 'string', Rule::enum(GitProvider::class)],
+            'git_credential_uuid' => [
+                'nullable',
+                'uuid',
+                Rule::exists('user_git_credentials', 'uuid')
+                    ->where('user_uuid', $this->user()?->uuid)
+                    ->where('provider', (string) $this->input('provider')),
+            ],
             'repositories' => ['required', 'array', 'min:1', 'max:50'],
             'repositories.*.repo_identifier' => [
                 'required',

@@ -32,16 +32,30 @@ class GitProviderFactory
             return static::getSshCredentials($repository);
         }
 
-        $credential = UserGitCredential::query()
-            ->where('user_uuid', $repository->credential_user_uuid)
-            ->where('provider', $repository->provider)
-            ->first();
+        return static::resolveCredential($repository)->credentials ?? [];
+    }
 
-        if (! $credential) {
-            return [];
+    /**
+     * Repositories created before credentials were linked directly fall back to the
+     * connecting user's credential, but only when exactly one serves the repository's host.
+     */
+    public static function resolveCredential(Repository $repository): ?UserGitCredential
+    {
+        if ($repository->git_credential_uuid) {
+            return $repository->gitCredential;
         }
 
-        return $credential->credentials ?? [];
+        if (! $repository->credential_user_uuid) {
+            return null;
+        }
+
+        $candidates = UserGitCredential::query()
+            ->where('user_uuid', $repository->credential_user_uuid)
+            ->where('provider', $repository->provider)
+            ->get()
+            ->filter(fn (UserGitCredential $credential) => $credential->servesBaseUrl($repository->custom_base_url));
+
+        return $candidates->count() === 1 ? $candidates->first() : null;
     }
 
     /**

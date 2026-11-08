@@ -4,6 +4,7 @@ namespace App\Domains\Repository\Http\Controllers;
 
 use App\Domains\Activity\Actions\RecordActivityTask;
 use App\Domains\Activity\Contracts\Enums\ActivityType;
+use App\Domains\Organization\Contracts\Data\GitCredentialData;
 use App\Domains\Organization\Contracts\Data\OrganizationData;
 use App\Domains\Organization\Contracts\Data\OrganizationSshKeyData;
 use App\Domains\Package\Contracts\Data\PackageData;
@@ -25,6 +26,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Organization;
 use App\Models\Repository;
 use App\Models\User;
+use App\Models\UserGitCredential;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -56,9 +58,15 @@ class RepositoryController extends Controller
         /** @var User $user */
         $user = auth()->user();
 
-        $configuredProviders = $user->gitCredentials()
-            ->pluck('provider')
-            ->map(fn (GitProvider $provider) => $provider->value)
+        $gitCredentials = $user->gitCredentials()
+            ->orderBy('provider')
+            ->oldest()
+            ->get();
+
+        $configuredProviders = $gitCredentials
+            ->map(fn (UserGitCredential $credential) => $credential->provider->value)
+            ->unique()
+            ->values()
             ->toArray();
 
         $sshKeys = $organization->sshKeys()
@@ -70,6 +78,7 @@ class RepositoryController extends Controller
             'organization' => OrganizationData::fromModel($organization),
             'repositories' => $repositories,
             'configuredProviders' => $configuredProviders,
+            'gitCredentials' => $gitCredentials->map(fn (UserGitCredential $credential) => GitCredentialData::fromModel($credential)),
             'sshKeys' => $sshKeys,
         ]);
     }
@@ -90,6 +99,7 @@ class RepositoryController extends Controller
             defaultBranch: $request->default_branch,
             sshKeyUuid: $request->ssh_key_uuid,
             packagePaths: $request->packagePaths(),
+            gitCredentialUuid: $request->validated('git_credential_uuid'),
         );
 
         $message = 'Repository added successfully.';
@@ -116,7 +126,8 @@ class RepositoryController extends Controller
             organization: $organization,
             provider: GitProvider::from($request->validated('provider')),
             repositories: $request->validated('repositories'),
-            userUuid: $user->uuid,
+            user: $user,
+            gitCredentialUuid: $request->validated('git_credential_uuid'),
         );
 
         return redirect()

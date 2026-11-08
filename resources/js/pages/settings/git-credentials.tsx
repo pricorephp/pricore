@@ -28,6 +28,24 @@ interface GitCredentialsPageProps {
     gitlabConnectUrl: string;
 }
 
+function describeCredential(credential: GitCredentialData): string {
+    const parts = [credential.providerLabel];
+
+    if (credential.name && credential.baseUrl) {
+        parts.push(credential.baseUrl.replace(/^https?:\/\//, ''));
+    }
+
+    if (!credential.isConfigured) {
+        parts.push('No credentials set');
+    } else if (credential.repositoriesCount > 0) {
+        parts.push(
+            `${credential.repositoriesCount} ${credential.repositoriesCount === 1 ? 'repository' : 'repositories'}`,
+        );
+    }
+
+    return parts.join(' · ');
+}
+
 const breadcrumbs: BreadcrumbItem[] = [
     {
         title: 'Settings',
@@ -50,10 +68,7 @@ export default function GitCredentials({
         useState<GitCredentialData | null>(null);
     const [addingProvider, setAddingProvider] = useState<string | null>(null);
 
-    const configuredProviders = new Set(credentials.map((c) => c.provider));
-    const availableProviders = Object.entries(providers).filter(
-        ([provider]) => !configuredProviders.has(provider),
-    );
+    const availableProviders = Object.entries(providers);
 
     const handleAdd = (provider: string) => {
         setAddingProvider(provider);
@@ -70,7 +85,9 @@ export default function GitCredentials({
     const handleDelete = (credential: GitCredentialData) => {
         if (
             confirm(
-                `Are you sure you want to remove credentials for ${credential.providerLabel}? This will prevent syncing repositories using this provider.`,
+                credential.repositoriesCount > 0
+                    ? `Are you sure you want to remove ${credential.label}? ${credential.repositoriesCount} ${credential.repositoriesCount === 1 ? 'repository uses' : 'repositories use'} these credentials and will stop syncing.`
+                    : `Are you sure you want to remove ${credential.label}?`,
             )
         ) {
             router.delete(`/settings/git-credentials/${credential.uuid}`, {
@@ -121,7 +138,7 @@ export default function GitCredentials({
                         {credentials.length > 0 && (
                             <div className="space-y-3">
                                 <h4 className="font-medium">
-                                    Configured Providers
+                                    Configured Credentials
                                 </h4>
                                 {credentials.map((credential) => (
                                     <Card
@@ -139,14 +156,12 @@ export default function GitCredentials({
                                                     />
                                                     <div>
                                                         <CardTitle className="text-base">
-                                                            {
-                                                                credential.providerLabel
-                                                            }
+                                                            {credential.label}
                                                         </CardTitle>
                                                         <CardDescription>
-                                                            {credential.isConfigured
-                                                                ? 'Credentials configured'
-                                                                : 'No credentials set'}
+                                                            {describeCredential(
+                                                                credential,
+                                                            )}
                                                         </CardDescription>
                                                     </div>
                                                 </div>
@@ -183,9 +198,7 @@ export default function GitCredentials({
 
                         {availableProviders.length > 0 && (
                             <div className="space-y-3">
-                                <h4 className="font-medium">
-                                    Available Providers
-                                </h4>
+                                <h4 className="font-medium">Add Credentials</h4>
                                 <div className="grid gap-4 sm:grid-cols-2">
                                     {availableProviders.map(
                                         ([provider, label]) => (
@@ -227,22 +240,14 @@ export default function GitCredentials({
                                 </div>
                             </div>
                         )}
-
-                        {credentials.length === 0 &&
-                            availableProviders.length === 0 && (
-                                <div className="rounded-lg border border-dashed p-12 text-center">
-                                    <p className="text-muted-foreground">
-                                        All Git providers are configured.
-                                    </p>
-                                </div>
-                            )}
                     </div>
 
                     <InfoBox
                         title="About Git Providers"
                         description="Git provider credentials are required to sync packages from
- private repositories. Each provider requires different
- authentication methods. Credentials are encrypted and stored
+ private repositories. Add credentials more than once to use several
+ accounts or self-hosted instances of the same provider, and pick
+ one when adding a repository. Credentials are encrypted and stored
  securely."
                     />
 

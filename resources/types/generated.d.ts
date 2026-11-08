@@ -120,7 +120,11 @@ export type GitCredentialData = {
 uuid: string,
 provider: string,
 providerLabel: string,
+name: string | null,
+label: string,
+baseUrl: string | null,
 isConfigured: boolean,
+repositoriesCount: number,
 };
 export type OnboardingChecklistData = {
 hasGitProvider: boolean,

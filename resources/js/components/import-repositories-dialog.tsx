@@ -1,4 +1,5 @@
 import { bulkStore } from '@/actions/App/Domains/Repository/Http/Controllers/RepositoryController';
+import GitCredentialSelect from '@/components/git-credential-select';
 import GitProviderIcon from '@/components/git-provider-icon';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -23,6 +24,9 @@ import { Spinner } from '@/components/ui/spinner';
 import { router } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
 
+type GitCredentialData =
+    App.Domains.Organization.Contracts.Data.GitCredentialData;
+
 type RepositorySuggestion =
     App.Domains.Repository.Contracts.Data.RepositorySuggestionData;
 
@@ -37,6 +41,7 @@ interface ImportRepositoriesDialogProps {
     isOpen: boolean;
     onClose: () => void;
     configuredProviders: string[];
+    gitCredentials?: GitCredentialData[];
 }
 
 export default function ImportRepositoriesDialog({
@@ -44,6 +49,7 @@ export default function ImportRepositoriesDialog({
     isOpen,
     onClose,
     configuredProviders,
+    gitCredentials = [],
 }: ImportRepositoriesDialogProps) {
     return (
         <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
@@ -61,6 +67,7 @@ export default function ImportRepositoriesDialog({
                         organizationSlug={organizationSlug}
                         onClose={onClose}
                         configuredProviders={configuredProviders}
+                        gitCredentials={gitCredentials}
                     />
                 )}
             </DialogContent>
@@ -72,6 +79,7 @@ interface ImportRepositoriesDialogBodyProps {
     organizationSlug: string;
     onClose: () => void;
     configuredProviders: string[];
+    gitCredentials?: GitCredentialData[];
 }
 
 function readRememberedWorkspace(provider: string, storageKey: string): string {
@@ -85,6 +93,7 @@ function ImportRepositoriesDialogBody({
     organizationSlug,
     onClose,
     configuredProviders,
+    gitCredentials = [],
 }: ImportRepositoriesDialogBodyProps) {
     const supportedProviders = configuredProviders.filter(
         (p) => p in gitProviders,
@@ -97,6 +106,18 @@ function ImportRepositoriesDialogBody({
     );
 
     const [provider, setProvider] = useState(defaultProvider);
+    const firstCredentialUuid = (forProvider: string): string =>
+        gitCredentials.find((credential) => credential.provider === forProvider)
+            ?.uuid ?? '';
+    const [credentialUuid, setCredentialUuid] = useState<string>(
+        firstCredentialUuid(defaultProvider),
+    );
+    const providerCredentials = gitCredentials.filter(
+        (credential) => credential.provider === provider,
+    );
+    const credentialQuery = credentialUuid
+        ? `&credential=${encodeURIComponent(credentialUuid)}`
+        : '';
     const [owners, setOwners] = useState<string[]>([]);
     const [selectedOwner, setSelectedOwner] = useState(initialWorkspace);
     const [workspaceInput, setWorkspaceInput] = useState(initialWorkspace);
@@ -119,6 +140,7 @@ function ImportRepositoriesDialogBody({
             workspaceStorageKey,
         );
         setProvider(newProvider);
+        setCredentialUuid(firstCredentialUuid(newProvider));
         setOwners([]);
         setSelectedOwner(remembered);
         setWorkspaceInput(remembered);
@@ -140,7 +162,7 @@ function ImportRepositoriesDialogBody({
             setSelectedOwner('');
             setRepositories([]);
             try {
-                const url = `/organizations/${organizationSlug}/repositories/owners?provider=${encodeURIComponent(provider)}`;
+                const url = `/organizations/${organizationSlug}/repositories/owners?provider=${encodeURIComponent(provider)}${credentialQuery}`;
                 const response = await fetch(url, {
                     headers: { Accept: 'application/json' },
                     credentials: 'same-origin',
@@ -169,7 +191,7 @@ function ImportRepositoriesDialogBody({
         fetchOwners();
 
         return () => controller.abort();
-    }, [provider, organizationSlug, isManualOwnerEntry]);
+    }, [provider, credentialQuery, organizationSlug, isManualOwnerEntry]);
 
     useEffect(() => {
         if (!provider || !selectedOwner) {
@@ -183,7 +205,7 @@ function ImportRepositoriesDialogBody({
             setRepositories([]);
             setSelectedRepos(new Set());
             try {
-                const url = `/organizations/${organizationSlug}/repositories/suggest?provider=${encodeURIComponent(provider)}&owner=${encodeURIComponent(selectedOwner)}`;
+                const url = `/organizations/${organizationSlug}/repositories/suggest?provider=${encodeURIComponent(provider)}&owner=${encodeURIComponent(selectedOwner)}${credentialQuery}`;
                 const response = await fetch(url, {
                     headers: { Accept: 'application/json' },
                     credentials: 'same-origin',
@@ -225,6 +247,7 @@ function ImportRepositoriesDialogBody({
     }, [
         selectedOwner,
         provider,
+        credentialQuery,
         organizationSlug,
         isManualOwnerEntry,
         workspaceStorageKey,
@@ -288,6 +311,7 @@ function ImportRepositoriesDialogBody({
             bulkStore.url(organizationSlug),
             {
                 provider,
+                git_credential_uuid: credentialUuid || null,
                 repositories: repositoriesPayload,
             },
             {
@@ -317,6 +341,12 @@ function ImportRepositoriesDialogBody({
                         ))}
                     </SelectContent>
                 </Select>
+
+                <GitCredentialSelect
+                    credentials={providerCredentials}
+                    value={credentialUuid}
+                    onValueChange={setCredentialUuid}
+                />
 
                 {loadingOwners ? (
                     <div className="flex items-center gap-2 rounded-md border px-3 py-8">

@@ -7,13 +7,14 @@ use App\Domains\Repository\Contracts\Enums\GitProvider;
 use App\Domains\Repository\Jobs\SyncRepositoryJob;
 use App\Models\Organization;
 use App\Models\Repository;
-use App\Models\UserGitCredential;
+use App\Models\User;
 
 class BulkCreateRepositoriesAction
 {
     public function __construct(
         protected ExtractRepositoryNameAction $extractRepositoryName,
         protected RegisterWebhookAction $registerWebhook,
+        protected ResolveUserGitCredentialAction $resolveUserGitCredentialAction,
     ) {}
 
     /**
@@ -25,15 +26,19 @@ class BulkCreateRepositoriesAction
         Organization $organization,
         GitProvider $provider,
         array $repositories,
-        string $userUuid,
+        User $user,
+        ?string $gitCredentialUuid = null,
     ): BulkImportResultData {
+        $gitCredential = $this->resolveUserGitCredentialAction->handle($user, $provider, $gitCredentialUuid);
+
+        $baseUrl = $gitCredential?->baseUrl();
+
         $existingIdentifiers = Repository::query()
             ->where('organization_uuid', $organization->uuid)
             ->where('provider', $provider)
+            ->when($provider->supportsSelfHosted(), fn ($query) => $query->where('custom_base_url', $baseUrl))
             ->pluck('repo_identifier')
             ->toArray();
-
-        $baseUrl = $this->resolveBaseUrl($provider, $userUuid);
 
         $created = 0;
         $skipped = 0;
@@ -52,7 +57,8 @@ class BulkCreateRepositoriesAction
 
             $repository = Repository::create([
                 'organization_uuid' => $organization->uuid,
-                'credential_user_uuid' => $userUuid,
+                'credential_user_uuid' => $user->uuid,
+                'git_credential_uuid' => $gitCredential?->uuid,
                 'name' => $name,
                 'provider' => $provider,
                 'repo_identifier' => $identifier,
@@ -73,19 +79,5 @@ class BulkCreateRepositoriesAction
             skipped: $skipped,
             webhooksFailed: $webhooksFailed,
         );
-    }
-
-    private function resolveBaseUrl(GitProvider $provider, string $userUuid): ?string
-    {
-        if (! $provider->supportsSelfHosted()) {
-            return null;
-        }
-
-        $credential = UserGitCredential::query()
-            ->where('user_uuid', $userUuid)
-            ->where('provider', $provider)
-            ->first();
-
-        return $credential?->credentials['url'] ?? null;
     }
 }

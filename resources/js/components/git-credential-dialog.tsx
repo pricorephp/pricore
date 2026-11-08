@@ -196,6 +196,7 @@ export default function GitCredentialDialog({
                                 id="url"
                                 name="credentials[url]"
                                 type="url"
+                                defaultValue={credential?.baseUrl ?? ''}
                                 placeholder="https://gitlab.com"
                             />
                             <p className="text-sm text-muted-foreground">
@@ -299,9 +300,24 @@ export default function GitCredentialDialog({
                                 />
                             )}
 
+                            <div className="grid space-y-2">
+                                <Label htmlFor="name">Name (optional)</Label>
+                                <Input
+                                    id="name"
+                                    name="name"
+                                    defaultValue={credential?.name ?? ''}
+                                    placeholder={`e.g. Work ${providerLabel}`}
+                                />
+                                <p className="text-sm text-muted-foreground">
+                                    Tells credentials apart when you add more
+                                    than one for {providerLabel}.
+                                </p>
+                            </div>
+
                             {getFormFields()}
 
                             {(errors.provider ||
+                                errors.name ||
                                 errors['credentials.token'] ||
                                 errors['credentials.email'] ||
                                 errors['credentials.api_token'] ||
@@ -313,6 +329,9 @@ export default function GitCredentialDialog({
                                     <ul className="mt-1 list-inside list-disc text-destructive">
                                         {errors.provider && (
                                             <li>{errors.provider}</li>
+                                        )}
+                                        {errors.name && (
+                                            <li>Name: {errors.name}</li>
                                         )}
                                         {errors['credentials.token'] && (
                                             <li>

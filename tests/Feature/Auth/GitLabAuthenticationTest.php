@@ -257,6 +257,7 @@ test('connect callback updates existing credential', function () {
 
     UserGitCredential::factory()->gitlab()->create([
         'user_uuid' => $user->uuid,
+        'credentials' => ['token' => 'glpat-old', 'url' => config('services.gitlab.instance_uri')],
     ]);
 
     $socialiteUser = mockGitLabSocialiteUser(['id' => $user->gitlab_id, 'token' => 'glpat-elevated_token']);
@@ -274,6 +275,27 @@ test('connect callback updates existing credential', function () {
 
     expect($credential->credentials['token'])->toBe('glpat-elevated_token')
         ->and($credential->credentials['url'])->toBe($expectedUrl);
+});
+
+test('connect callback leaves credentials for other GitLab instances alone', function () {
+    config()->set('services.gitlab.instance_uri', 'https://gitlab.com');
+
+    $user = User::factory()->withGitLab()->create();
+
+    $selfHosted = UserGitCredential::factory()->gitlab()->create([
+        'user_uuid' => $user->uuid,
+        'credentials' => ['token' => 'glpat-self-hosted', 'url' => 'https://gitlab.acme.test'],
+    ]);
+
+    mockGitLabSocialiteCallback(mockGitLabSocialiteUser(['id' => $user->gitlab_id, 'token' => 'glpat-elevated_token']));
+
+    $this->actingAs($user)
+        ->withSession(['gitlab_oauth_intent' => GitLabOAuthIntent::Connect])
+        ->get(route('auth.gitlab.callback'))
+        ->assertSessionHas('status', 'GitLab credentials connected successfully.');
+
+    expect(UserGitCredential::where('user_uuid', $user->uuid)->count())->toBe(2)
+        ->and($selfHosted->fresh()->credentials['token'])->toBe('glpat-self-hosted');
 });
 
 test('connect callback persists configured GitLab instance URI', function () {
