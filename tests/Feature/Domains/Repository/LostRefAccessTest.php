@@ -16,13 +16,16 @@ use Illuminate\Support\Facades\Http;
 
 const LOST_ACCESS_COMMIT = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
 
-function lostAccessRepository(string $provider): Repository
+/**
+ * @param  array<string, string>  $credentials
+ */
+function lostAccessRepository(string $provider, array $credentials = ['token' => 'secret-token']): Repository
 {
     $user = User::factory()->create();
 
     UserGitCredential::factory()->for($user, 'user')->create([
         'provider' => $provider,
-        'credentials' => ['token' => 'secret-token'],
+        'credentials' => $credentials,
     ]);
 
     $repository = Repository::factory()
@@ -124,6 +127,35 @@ it('removes the versions of a GitLab ref whose composer.json is gone', function 
     Http::fake([
         'gitlab.com/api/v4/projects/acme%2Fapp/repository/files/*' => Http::response(['message' => '404 File Not Found'], 404),
         'gitlab.com/api/v4/projects/acme%2Fapp/repository/commits/'.LOST_ACCESS_COMMIT => Http::response(['id' => LOST_ACCESS_COMMIT]),
+    ]);
+
+    $result = syncLostAccessRef($repository);
+
+    expect($result->removed)->toBe(1)
+        ->and($result->empty)->toBeTrue()
+        ->and(PackageVersion::query()->count())->toBe(0);
+});
+
+it('keeps the versions of a ref Bitbucket no longer lets it read', function () {
+    $repository = lostAccessRepository('bitbucket', ['email' => 'dev@example.com', 'api_token' => 'secret-token']);
+
+    Http::fake([
+        'api.bitbucket.org/2.0/repositories/acme/app/src/*' => Http::response(['type' => 'error'], 404),
+        'api.bitbucket.org/2.0/repositories/acme/app/commit/'.LOST_ACCESS_COMMIT => Http::response(['type' => 'error'], 404),
+    ]);
+
+    expect(fn () => syncLostAccessRef($repository))->toThrow(GitProviderException::class, 'HTTP 404');
+
+    expect(PackageVersion::query()->where('version', 'v1.0.0')->exists())->toBeTrue()
+        ->and($repository->emptyRefs()->count())->toBe(0);
+});
+
+it('removes the versions of a Bitbucket ref whose composer.json is gone', function () {
+    $repository = lostAccessRepository('bitbucket', ['email' => 'dev@example.com', 'api_token' => 'secret-token']);
+
+    Http::fake([
+        'api.bitbucket.org/2.0/repositories/acme/app/src/*' => Http::response(['type' => 'error'], 404),
+        'api.bitbucket.org/2.0/repositories/acme/app/commit/'.LOST_ACCESS_COMMIT => Http::response(['hash' => LOST_ACCESS_COMMIT]),
     ]);
 
     $result = syncLostAccessRef($repository);
