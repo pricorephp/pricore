@@ -81,13 +81,10 @@ class MatchAdvisoriesForPackageVersionAction
 
         $allDependencies = array_merge($require, $requireDev);
 
-        // Filter out php and ext-* entries, keep name => constraint mapping
+        // Platform packages (php, ext-*, lib-*, composer-plugin-api) have no vendor prefix
         $dependencies = array_filter(
             array: $allDependencies,
-            callback: fn (mixed $constraint, string|int $name) => is_string($name)
-                && ! str_starts_with($name, 'php')
-                && ! str_starts_with($name, 'ext-')
-                && str_contains($name, '/'),
+            callback: fn (mixed $constraint, string|int $name) => is_string($name) && str_contains($name, '/'),
             mode: ARRAY_FILTER_USE_BOTH,
         );
 
