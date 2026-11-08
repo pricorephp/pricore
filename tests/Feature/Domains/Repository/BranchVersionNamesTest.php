@@ -93,24 +93,32 @@ it('publishes numeric branches as dev versions, apart from tags of the same name
     'with tag format' => ['{package}@{version}'],
 ]);
 
-it('renames a branch version stored under the old naming in a single sync', function (?string $tagFormat) {
+it('renames branch versions stored under the old naming in a single sync', function (?string $tagFormat) {
     $this->repository->update(['tag_format' => $tagFormat]);
     $package = Package::factory()->forOrganization($this->organization)->forRepository($this->repository)
         ->create(['name' => 'acme/app']);
+    // What the previous naming stored: numeric branches kept their name as version
     PackageVersion::factory()->forPackage($package)->create([
-        'version' => 'dev-1.2.x',
+        'version' => '1.2.x',
         'normalized_version' => 'dev-1.2.x',
         'source_reference' => 'wildcard-commit',
         'source_tag' => '1.2.x',
     ]);
-    $refs = branchVersionRefs(branches: ['1.2.x' => 'wildcard-commit']);
+    PackageVersion::factory()->forPackage($package)->create([
+        'version' => '2.0',
+        'normalized_version' => '2.0.0.0',
+        'source_reference' => 'branch-commit',
+        'source_tag' => '2.0',
+    ]);
+    $refs = branchVersionRefs(branches: ['1.2.x' => 'wildcard-commit', '2.0' => 'branch-commit']);
 
-    expect(syncBranchVersionRefs($this->repository, $refs))->toBe(['1.2.x'])
+    expect(syncBranchVersionRefs($this->repository, $refs))->toBe(['1.2.x', '2.0'])
         ->and(branchVersionRows($this->repository))->toBe([
             '1.2.x-dev' => ['normalized' => '1.2.9999999.9999999-dev', 'commit' => 'wildcard-commit'],
+            '2.0.x-dev' => ['normalized' => '2.0.9999999.9999999-dev', 'commit' => 'branch-commit'],
         ])
         ->and(syncBranchVersionRefs($this->repository, $refs))->toBe([])
-        ->and(branchVersionRows($this->repository))->toHaveKeys(['1.2.x-dev']);
+        ->and(branchVersionRows($this->repository))->toHaveKeys(['1.2.x-dev', '2.0.x-dev']);
 })->with([
     'without tag format' => [null],
     'with tag format' => ['{package}@{version}'],
