@@ -76,6 +76,8 @@ class RebuildDistArchiveJob implements ShouldBeUnique, ShouldQueue
             if ($dist === null) {
                 throw new \RuntimeException('The provider returned no archive');
             }
+
+            $this->record($archive, $dist, $repository);
         } catch (Throwable $e) {
             Log::warning('Failed to rebuild dist archive', [
                 'package' => $package->name,
@@ -90,8 +92,6 @@ class RebuildDistArchiveJob implements ShouldBeUnique, ShouldQueue
         } finally {
             $cleanupGitCloneAction->handle($clonePath);
         }
-
-        $this->record($archive, $dist, $repository);
     }
 
     protected function record(DistArchive $archive, DistArchiveData $dist, Repository $repository): void
@@ -109,6 +109,13 @@ class RebuildDistArchiveJob implements ShouldBeUnique, ShouldQueue
         }
 
         DB::transaction(function () use ($archive, $dist) {
+            // Version first, then archive: the order a sync takes its locks in,
+            // so the two never wait on each other
+            $version = PackageVersion::query()
+                ->whereKey($archive->package_version_uuid)
+                ->lockForUpdate()
+                ->first();
+
             $archive->update([
                 'path' => $dist->path,
                 'shasum' => $dist->shasum,
@@ -117,16 +124,15 @@ class RebuildDistArchiveJob implements ShouldBeUnique, ShouldQueue
                 'rebuild_failed_at' => null,
             ]);
 
-            // Conditional in the query: a sync may have moved the version to
-            // another commit while the archive was building
-            PackageVersion::query()
-                ->whereKey($archive->package_version_uuid)
-                ->where('source_reference', $archive->source_reference)
-                ->update([
+            // A sync may have moved the version to another commit while the
+            // archive was building
+            if ($version?->source_reference === $archive->source_reference) {
+                $version->update([
                     'dist_path' => $dist->path,
                     'dist_shasum' => $dist->shasum,
                     'dist_size' => $dist->size,
                 ]);
+            }
         });
     }
 }
