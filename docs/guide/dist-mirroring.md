@@ -26,6 +26,7 @@ When disabled, Pricore serves only `source` references and Composer falls back t
 | `DIST_DISK` | Storage disk for archives (`local` or `s3`) | `local` |
 | `DIST_SIGNED_URL_EXPIRY` | Signed URL expiry in minutes (S3 only) | `30` |
 | `DIST_KEEP_DETACHED_DAYS` | Days to keep archives a branch has moved past | unset (keep forever) |
+| `DIST_KEEP_DOWNLOADED_DAYS` | Days retention keeps an archive after its last download (`0` turns it off) | `90` |
 
 ### Local Storage
 
@@ -55,10 +56,13 @@ Dist archive creation depends on your Git provider's capabilities:
 | **GitHub** | Supported | Downloads zipball via GitHub API |
 | **GitLab** | Supported | Downloads archive via GitLab API |
 | **Bitbucket** | Supported | Downloads zip archive via Bitbucket API |
-| **Local Git** | Supported | Uses `git archive` command |
-| **Generic Git** | Not supported | Falls back to source-only |
+| **Generic Git** | Supported | Uses `git archive` on the local clone |
 
-When a provider does not support archive downloads, the sync continues normally — packages are served with `source` references only.
+A version is published, or moved to a new commit, only once its archive is stored. Otherwise a `composer.lock` resolved in between would pin the commit without a `dist` entry, and installs would need access to the Git repository. When an archive fails to build:
+
+- a new version is kept out of the Composer metadata;
+- a version already published stays on its previous commit and archive;
+- the failure is listed in the sync log, and the next sync retries it.
 
 ## Branch Versions and Lock Files
 
@@ -89,8 +93,31 @@ DIST_KEEP_DETACHED_DAYS=30
 The window is measured from when an archive **stopped being current**, not from when it was built — a long-lived branch archive superseded yesterday is kept for the full window regardless of its age.
 
 ::: warning
-Leaving this unset keeps every detached archive indefinitely, which is the safe default: any commit ever synced stays installable. Setting it trades that guarantee for disk space. Lock files pinning a commit older than the window will fail to install.
+Leaving this unset keeps every detached archive indefinitely. Setting it trades disk space for a rebuild on the next download of a pruned commit (see [Rebuilding removed archives](#rebuilding-removed-archives)).
 :::
+
+### Archives still in use
+
+Both settings above skip archives downloaded within the last `DIST_KEEP_DOWNLOADED_DAYS` days, so lock files still installing them keep working:
+
+```bash
+DIST_KEEP_DOWNLOADED_DAYS=90
+```
+
+Downloads are recorded at most once a day per archive. Installs served from Composer's local cache never reach Pricore, so they do not count.
+
+### Rebuilding removed archives
+
+For packages synced from a repository, retention removes only the archive file. The version keeps offering its `dist`, and the first download of a removed archive rebuilds it from the repository:
+
+1. Pricore answers `503 Service Unavailable` with `Retry-After: 60` and queues the rebuild.
+2. Composer waits and retries, up to three times, then downloads the rebuilt archive.
+
+If the rebuild fails, for example because the commit is no longer reachable, downloads answer `404` for 10 minutes and Composer falls back to `source`. The next download after that tries again.
+
+Lock files store the archive's SHA-1 checksum. When a rebuilt archive differs from the original, Pricore keeps the new one and logs a warning. Lock files resolved before then fail the checksum and fall back to `source`; run `composer update` on the package to refresh them.
+
+Mirrored and uploaded packages cannot be rebuilt: retention removes their archives for good.
 
 ### Running Cleanup
 
@@ -136,7 +163,7 @@ Composer prefers `dist` over `source` by default, so installs automatically use 
 
 - Verify `DIST_ENABLED=true` in your `.env`
 - Check that your Git provider supports archive downloads (see [Provider Support](#provider-support))
-- Review your application logs for download errors — dist failures are logged as warnings and do not fail the sync
+- Open the sync log on the repository page: archives that failed to build are listed with the provider's error
 
 ### Disk space growing
 
@@ -145,8 +172,8 @@ Composer prefers `dist` over `source` by default, so installs automatically use 
 - Schedule `php artisan dist:cleanup` to run daily — it is not scheduled by default
 - Consider using S3 storage for large registries
 
-### `composer install` fails with 404 on a branch version
+### `composer install` fails with 404 on a removed archive
 
-The lock file pins a commit whose archive is no longer stored. This happens when
-`DIST_KEEP_DETACHED_DAYS` is set and the commit fell outside the window. Either
-raise the window, or run `composer update` to move the lock to the current head.
+The archive was removed by retention and could not be rebuilt, or the package is
+mirrored. Check the logs for `Failed to rebuild dist archive`, or run
+`composer update` to move the lock to an archive that is still stored.

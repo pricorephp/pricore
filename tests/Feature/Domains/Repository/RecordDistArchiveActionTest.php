@@ -97,3 +97,22 @@ it('returns null when the version has no source reference', function () {
     expect(($this->record)($packageVersion, 'some/path.zip', 'sha'))->toBeNull()
         ->and(DistArchive::query()->count())->toBe(0);
 });
+
+it('clears the rebuild state of an archive recorded again', function () {
+    $packageVersion = PackageVersion::factory()->for($this->package)->atPath('packages/billing')->create([
+        'version' => 'dev-main',
+        'source_reference' => 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+    ]);
+
+    $archive = DistArchive::factory()->forPackageVersion($packageVersion)->create([
+        'file_removed_at' => now(),
+        'rebuild_failed_at' => now(),
+    ]);
+
+    ($this->record)($packageVersion, 'acme/acme/test-package/dev-main_aaaaaaaaaaaa.zip', 'sha-one');
+
+    expect($archive->fresh())
+        ->file_removed_at->toBeNull()
+        ->rebuild_failed_at->toBeNull()
+        ->source_path->toBe('packages/billing');
+});

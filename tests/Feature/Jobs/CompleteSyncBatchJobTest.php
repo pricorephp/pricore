@@ -59,6 +59,25 @@ it('adds versions removed per ref to the stale version count', function () {
         ->and(Cache::get("sync-batch:{$batch->id}:removed"))->toBeNull();
 });
 
+it('records dist archive failures on the sync log', function () {
+    $repository = Repository::factory()->create();
+    $syncLog = RepositorySyncLog::factory()->for($repository)->pending()->create();
+
+    $batch = Bus::batch([])->dispatch();
+    $failure = ['package' => 'acme/test', 'version' => '1.0.0', 'reference' => str_repeat('a', 40), 'error' => 'boom'];
+    Cache::put("sync-batch:{$batch->id}:added", 1);
+    Cache::put("sync-batch:{$batch->id}:dist_failures", [$failure]);
+
+    (new CompleteSyncBatchJob($syncLog->uuid, $repository->uuid, null, $batch->id))
+        ->handle(app(CleanupGitCloneAction::class), app(RecordActivityTask::class));
+
+    $syncLog->refresh();
+
+    expect($syncLog->versions_failed)->toBe(1)
+        ->and($syncLog->details['dist_failures'])->toBe([$failure])
+        ->and($syncLog->status->isSuccess())->toBeTrue();
+});
+
 it('starts a sync that was requested while the batch ran', function (?string $request) {
     Queue::fake();
 

@@ -3,6 +3,7 @@
 namespace App\Domains\Repository\Actions;
 
 use App\Domains\Repository\Contracts\Data\ComposerMetadataData;
+use App\Domains\Repository\Contracts\Data\DistArchiveData;
 use App\Domains\Repository\Contracts\Data\RefData;
 use App\Domains\Repository\Contracts\Data\RefTargetData;
 use App\Domains\Repository\Contracts\Data\SyncRefResultData;
@@ -116,9 +117,10 @@ class SyncRefAction
 
                 $syncedPackageUuids[] = $package->uuid;
 
-                match ($this->syncVersion($provider, $repository, $ref, $package, $metadata, $path, $format, $target)) {
+                match ($this->syncVersion($provider, $repository, $ref, $package, $metadata, $path, $format, $target, $result)) {
                     'added' => $result->added++,
                     'updated' => $result->updated++,
+                    'failed' => null,
                     default => $result->skipped++,
                 };
             }
@@ -183,7 +185,13 @@ class SyncRefAction
     }
 
     /**
-     * @return 'added'|'updated'|'skipped'
+     * With dist archives enabled, a version is published or moved only once its
+     * archive is stored. Otherwise a lock file resolved in between would pin the
+     * commit without a dist and install from source only. A version not published
+     * yet is still written, marked failed and hidden from the metadata, so the
+     * next sync retries it even when its ref released other packages fine.
+     *
+     * @return 'added'|'updated'|'skipped'|'failed'
      */
     protected function syncVersion(
         GitProviderInterface $provider,
@@ -194,6 +202,7 @@ class SyncRefAction
         string $path,
         ?TagFormat $format,
         RefTargetData $target,
+        SyncRefResultData $result,
     ): string {
         $sourcePath = $path === '' ? null : $path;
 
@@ -225,21 +234,43 @@ class SyncRefAction
 
             // Retry an archive that failed to build. One removed on purpose,
             // such as by release retention, is not marked and stays removed.
+            // Its first appearance in the metadata counts as added, so the
+            // version gets scanned for vulnerabilities.
             if (config('pricore.dist.enabled') && $existingVersion->dist_failed_at) {
-                $this->createDistForVersion($provider, $existingVersion, $package, $repository);
+                return $this->retryFailedDist($provider, $repository, $package, $existingVersion, $result) ? 'added' : 'failed';
             }
 
             return 'skipped';
         }
 
+        $distEnabled = (bool) config('pricore.dist.enabled');
+        $dist = $distEnabled
+            ? $this->buildDist($provider, $repository, $package, $metadata->version, $ref->commit, $sourcePath, $result)
+            : null;
+        $distFailedAt = $distEnabled && $dist === null ? now() : null;
+
         $readme = $this->fetchReadmeAction->handle($provider, $ref->name, $path);
         $sourceUrl = $provider->getRepositoryUrl();
 
-        $result = DB::transaction(function () use ($metadata, $ref, $package, $sourceUrl, $sourcePath, $readme): array {
+        $organizationSlug = $repository->organization->slug;
+
+        $status = DB::transaction(function () use ($metadata, $ref, $package, $sourceUrl, $sourcePath, $readme, $dist, $distFailedAt, $organizationSlug, $packageTag): string {
+            // Re-read under a lock: another ref of the same version may have
+            // published it while the archive was downloading
             $version = PackageVersion::query()
                 ->where('package_uuid', $package->uuid)
                 ->where('version', $metadata->version)
+                ->lockForUpdate()
                 ->first();
+
+            if ($version && $packageTag !== null && $version->source_tag === $packageTag) {
+                return 'skipped';
+            }
+
+            // A published version keeps its previous commit and archive
+            if ($version && $distFailedAt !== null && $version->dist_failed_at === null) {
+                return 'failed';
+            }
 
             if ($version) {
                 // The archive still describes the old commit, so release it
@@ -255,9 +286,12 @@ class SyncRefAction
                     'source_reference' => $ref->commit,
                     'source_tag' => $ref->name,
                     'source_path' => $sourcePath,
+                    'dist_failed_at' => $distFailedAt,
                 ]);
 
-                return ['status' => 'updated', 'version' => $version];
+                $this->recordDist($version, $dist, $organizationSlug);
+
+                return 'updated';
             }
 
             $version = PackageVersion::create([
@@ -271,44 +305,90 @@ class SyncRefAction
                 'source_tag' => $ref->name,
                 'source_path' => $sourcePath,
                 'released_at' => now(),
+                'dist_failed_at' => $distFailedAt,
             ]);
 
-            return ['status' => 'added', 'version' => $version];
+            $this->recordDist($version, $dist, $organizationSlug);
+
+            return 'added';
         });
 
-        if (config('pricore.dist.enabled')) {
-            $this->createDistForVersion($provider, $result['version'], $package, $repository);
-        }
-
-        return $result['status'];
+        return $distFailedAt !== null && $status !== 'skipped' ? 'failed' : $status;
     }
 
-    protected function createDistForVersion(
+    protected function recordDist(PackageVersion $version, ?DistArchiveData $dist, string $organizationSlug): void
+    {
+        if ($dist !== null) {
+            $this->recordDistArchiveAction->handle($version, $dist, $organizationSlug);
+        }
+    }
+
+    /**
+     * A version marked failed is hidden from the metadata until its archive
+     * builds here. Returns whether it did.
+     */
+    protected function retryFailedDist(
         GitProviderInterface $provider,
-        PackageVersion $version,
-        Package $package,
         Repository $repository,
-    ): void {
-        try {
-            $organizationSlug = $repository->organization->slug;
+        Package $package,
+        PackageVersion $version,
+        SyncRefResultData $result,
+    ): bool {
+        $dist = $this->buildDist($provider, $repository, $package, $version->version, (string) $version->source_reference, $version->source_path, $result);
 
-            $dist = $this->createDistArchiveAction->handle($provider, $version, $organizationSlug);
+        if ($dist === null) {
+            $version->update(['dist_failed_at' => now()]);
 
-            if ($dist) {
-                $this->recordDistArchiveAction->handle($version, $dist, $organizationSlug);
-
-                return;
-            }
-        } catch (\Throwable $e) {
-            Log::warning('Failed to create dist archive', [
-                'package' => $package->name,
-                'version' => $version->version,
-                'error' => $e->getMessage(),
-            ]);
+            return false;
         }
 
-        // Marks the version for a retry on the next sync.
-        $version->update(['dist_failed_at' => now()]);
+        $this->recordDistArchiveAction->handle($version, $dist, $repository->organization->slug);
+
+        return true;
+    }
+
+    protected function buildDist(
+        GitProviderInterface $provider,
+        Repository $repository,
+        Package $package,
+        string $version,
+        string $reference,
+        ?string $sourcePath,
+        SyncRefResultData $result,
+    ): ?DistArchiveData {
+        try {
+            $dist = $this->createDistArchiveAction->handle(
+                provider: $provider,
+                organizationSlug: $repository->organization->slug,
+                packageName: $package->name,
+                version: $version,
+                reference: $reference,
+                sourcePath: $sourcePath,
+            );
+
+            $error = $dist === null ? 'The provider returned no archive' : null;
+        } catch (\Throwable $e) {
+            $dist = null;
+            $error = $e->getMessage();
+        }
+
+        if ($error !== null) {
+            Log::warning('Failed to create dist archive', [
+                'package' => $package->name,
+                'version' => $version,
+                'reference' => $reference,
+                'error' => $error,
+            ]);
+
+            $result->distFailures[] = [
+                'package' => $package->name,
+                'version' => $version,
+                'reference' => $reference,
+                'error' => $error,
+            ];
+        }
+
+        return $dist;
     }
 
     /**

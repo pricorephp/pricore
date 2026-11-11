@@ -2,6 +2,7 @@
 
 use App\Domains\Repository\Actions\SyncRefAction;
 use App\Domains\Repository\Contracts\Data\RefData;
+use App\Domains\Repository\Contracts\Data\SyncRefResultData;
 use App\Domains\Repository\Contracts\Interfaces\GitProviderInterface;
 use App\Domains\Repository\Jobs\SyncRefJob;
 use App\Models\Organization;
@@ -143,4 +144,24 @@ it('skips refs when composer.json is missing', function () {
     expect($result->skipped)->toBe(1);
     expect(Package::count())->toBe(0);
     expect(PackageVersion::count())->toBe(0);
+});
+
+it('collects dist archive failures of every ref in the batch', function () {
+    $repository = Repository::factory()->github()->create();
+    $batch = Bus::batch([])->dispatch();
+
+    foreach (['1.0.0', '1.1.0'] as $version) {
+        $failure = ['package' => 'vendor/package', 'version' => $version, 'reference' => 'abc123', 'error' => 'boom'];
+
+        $syncRefAction = Mockery::mock(SyncRefAction::class);
+        $syncRefAction->shouldReceive('handle')->andReturn(new SyncRefResultData(distFailures: [$failure]));
+
+        $job = new SyncRefJob($repository, new RefData(name: "v{$version}", commit: 'abc123', isTag: true));
+        (new ReflectionProperty($job, 'batchId'))->setValue($job, $batch->id);
+
+        $job->handle($syncRefAction);
+    }
+
+    expect(collect(Cache::get("sync-batch:{$batch->id}:dist_failures"))->pluck('version')->all())
+        ->toBe(['1.0.0', '1.1.0']);
 });

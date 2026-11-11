@@ -5,6 +5,7 @@ namespace App\Domains\Repository\Actions;
 use App\Models\DistArchive;
 use App\Models\Package;
 use App\Models\PackageVersion;
+use Carbon\CarbonInterface;
 use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Support\Facades\Storage;
 
@@ -87,6 +88,8 @@ class CleanupDistArchivesAction
             ->each(function (Package $package) use (&$packagesProcessed, &$archivesRemoved) {
                 $keepCount = $package->dist_keep_last_releases;
 
+                $downloadedAfter = $this->downloadedAfter();
+
                 $versionsToClean = PackageVersion::query()
                     ->where('package_uuid', $package->uuid)
                     ->whereNotNull('dist_path')
@@ -94,7 +97,21 @@ class CleanupDistArchivesAction
                     ->orderBySemanticVersion('desc')
                     ->skip($keepCount)
                     ->take(PHP_INT_MAX)
-                    ->get();
+                    ->withMax('archives', 'last_downloaded_at')
+                    ->withCount(['archives as stored_archives_count' => fn ($query) => $query->whereNull('file_removed_at')])
+                    ->get()
+                    // Files already removed, from a package that keeps its rows
+                    ->reject(fn (PackageVersion $version): bool => $package->hasRebuildableDists()
+                        && (int) $version->getAttribute('stored_archives_count') === 0)
+                    // Filtered after skipping, so a recent download never shifts
+                    // which releases count as the latest ones
+                    ->reject(function (PackageVersion $version) use ($downloadedAfter): bool {
+                        $lastDownloadedAt = $version->getAttribute('archives_max_last_downloaded_at');
+
+                        return $downloadedAfter !== null
+                            && $lastDownloadedAt !== null
+                            && $downloadedAfter->lessThan($lastDownloadedAt);
+                    });
 
                 foreach ($versionsToClean as $version) {
                     $this->removeDistArchive->handle($version);
@@ -127,17 +144,47 @@ class CleanupDistArchivesAction
         $cutoff = now()->subDays($keepDays);
         $removed = 0;
 
+        $downloadedAfter = $this->downloadedAfter();
+
         DistArchive::query()
             ->detached()
+            ->whereNull('file_removed_at')
             ->where('detached_at', '<', $cutoff)
+            ->when($downloadedAfter, fn ($query) => $query->where(fn ($query) => $query
+                ->whereNull('last_downloaded_at')
+                ->orWhere('last_downloaded_at', '<=', $downloadedAfter)))
+            ->with('package:uuid,repository_uuid,is_artifact')
             ->lazyById(500, 'uuid')
             ->each(function (DistArchive $archive) use ($disk, &$removed) {
                 $disk->delete($archive->path);
-                $archive->delete();
+
+                // The row keeps the commit known, so a lock file pinning it can
+                // have the archive built again
+                $archive->package->hasRebuildableDists()
+                    ? $archive->update(['file_removed_at' => now()])
+                    : $archive->delete();
+
                 $removed++;
             });
 
         return $removed;
+    }
+
+    /**
+     * Archives downloaded after this moment are still in use. Null when the
+     * protection is turned off.
+     */
+    protected function downloadedAfter(): ?CarbonInterface
+    {
+        $keepDays = config('pricore.dist.keep_downloaded_days');
+
+        if (! is_numeric($keepDays) || (int) $keepDays <= 0) {
+            return null;
+        }
+
+        // One day more: downloads are recorded at most once a day, so the last
+        // one can be up to a day older than the latest download
+        return now()->subDays((int) $keepDays + 1);
     }
 
     protected function keepDetachedDays(): int

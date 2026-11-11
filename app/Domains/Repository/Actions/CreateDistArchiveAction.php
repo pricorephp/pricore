@@ -4,25 +4,26 @@ namespace App\Domains\Repository\Actions;
 
 use App\Domains\Repository\Contracts\Data\DistArchiveData;
 use App\Domains\Repository\Contracts\Interfaces\GitProviderInterface;
-use App\Models\PackageVersion;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class CreateDistArchiveAction
 {
+    /**
+     * Build the archive of a package at a commit, before any version points at it.
+     */
     public function handle(
         GitProviderInterface $provider,
-        PackageVersion $version,
         string $organizationSlug,
+        string $packageName,
+        string $version,
+        string $reference,
+        ?string $sourcePath,
     ): ?DistArchiveData {
-        if (! $version->source_reference) {
-            return null;
-        }
-
         $tempPath = sys_get_temp_dir().'/pricore-dist-'.Str::random(16).'.zip';
 
         try {
-            if (! $provider->downloadArchive($version->source_reference, $tempPath, $version->source_path)) {
+            if (! $provider->downloadArchive($reference, $tempPath, $sourcePath)) {
                 return null;
             }
 
@@ -35,9 +36,9 @@ class CreateDistArchiveAction
 
             $storagePath = DistArchiveData::pathFor(
                 organizationSlug: $organizationSlug,
-                packageName: $version->package->name,
-                version: $version->version,
-                reference: $version->source_reference,
+                packageName: $packageName,
+                version: $version,
+                reference: $reference,
             );
 
             $disk = Storage::disk(config('pricore.dist.disk'));
@@ -47,8 +48,11 @@ class CreateDistArchiveAction
                 return null;
             }
 
+            // Disks with `throw` disabled report a failed write as false
             try {
-                $disk->put($storagePath, $stream);
+                if (! $disk->put($storagePath, $stream)) {
+                    return null;
+                }
             } finally {
                 fclose($stream);
             }
