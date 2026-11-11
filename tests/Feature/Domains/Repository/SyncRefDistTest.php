@@ -6,9 +6,12 @@ use App\Domains\Repository\Contracts\Data\RefData;
 use App\Domains\Repository\Contracts\Data\SyncRefResultData;
 use App\Domains\Repository\Contracts\Interfaces\GitProviderInterface;
 use App\Models\Organization;
+use App\Models\Package;
 use App\Models\PackageVersion;
 use App\Models\Repository;
+use Illuminate\Contracts\Filesystem\Filesystem;
 use Illuminate\Support\Facades\Storage;
+use League\Flysystem\UnableToWriteFile;
 
 beforeEach(function () {
     Storage::fake('local');
@@ -19,7 +22,7 @@ beforeEach(function () {
         ->forOrganization($this->organization)
         ->create();
 
-    $this->syncBranch = function (string $commit, bool $archiveSucceeds = true): SyncRefResultData {
+    $this->syncBranch = function (string $commit, bool $archiveSucceeds = true, ?Closure $whileDownloading = null): SyncRefResultData {
         $provider = Mockery::mock(GitProviderInterface::class);
         $provider->shouldReceive('listDirectory')->andReturn([]);
 
@@ -32,7 +35,9 @@ beforeEach(function () {
         $provider->shouldReceive('getRepositoryIdentifier')
             ->andReturn('acme/test-package');
         $provider->shouldReceive('downloadArchive')
-            ->andReturnUsing(function (string $ref, string $outputPath) use ($commit, $archiveSucceeds) {
+            ->andReturnUsing(function (string $ref, string $outputPath) use ($commit, $archiveSucceeds, $whileDownloading) {
+                $whileDownloading?->__invoke();
+
                 if (! $archiveSucceeds) {
                     return false;
                 }
@@ -91,7 +96,7 @@ it('hides a new version from the metadata until its archive builds', function ()
         ->and($result->added)->toBe(0)
         ->and($result->distFailures)->toHaveCount(1);
 
-    expect(($this->syncBranch)($commit)->skipped)->toBe(1);
+    expect(($this->syncBranch)($commit)->added)->toBe(1);
 
     $packageVersion->refresh();
 
@@ -128,7 +133,7 @@ it('rebuilds the archive of a version published before archives gated publishing
     config(['pricore.dist.enabled' => true]);
     PackageVersion::query()->sole()->update(['dist_failed_at' => now()]);
 
-    expect(($this->syncBranch)($commit)->skipped)->toBe(1);
+    expect(($this->syncBranch)($commit)->added)->toBe(1);
 
     $packageVersion = PackageVersion::query()->sole();
 
@@ -175,4 +180,35 @@ it('skips an unchanged commit that already has a dist archive', function () {
 
     expect(($this->syncBranch)($commit, archiveSucceeds: false)->skipped)->toBe(1)
         ->and(PackageVersion::query()->sole()->dist_shasum)->toBe(sha1("zip-for-{$commit}"));
+});
+
+it('keeps a version hidden when its archive cannot be stored', function (Closure $put) {
+    $disk = Mockery::mock(Filesystem::class);
+    $disk->shouldReceive('put')->andReturnUsing($put);
+    Storage::set('local', $disk);
+
+    $result = ($this->syncBranch)('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa');
+
+    expect(PackageVersion::query()->sole()->dist_failed_at)->not->toBeNull()
+        ->and($result->added)->toBe(0)
+        ->and($result->distFailures)->toHaveCount(1);
+})->with([
+    'disk without throw' => [fn () => false],
+    'disk with throw' => [fn () => throw UnableToWriteFile::atLocation('archive.zip')],
+]);
+
+it('leaves a version alone that another ref published while its archive failed', function () {
+    $otherCommit = 'cccccccccccccccccccccccccccccccccccccccc';
+
+    ($this->syncBranch)('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', archiveSucceeds: false, whileDownloading: fn () => PackageVersion::factory()->create([
+        'package_uuid' => Package::query()->sole()->uuid,
+        'version' => 'dev-main',
+        'source_reference' => $otherCommit,
+    ]));
+
+    $packageVersion = PackageVersion::query()->sole();
+
+    expect($packageVersion->source_reference)->toBe($otherCommit)
+        ->and($packageVersion->dist_url)->not->toBeNull()
+        ->and($packageVersion->dist_failed_at)->toBeNull();
 });

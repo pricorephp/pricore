@@ -234,8 +234,10 @@ class SyncRefAction
 
             // Retry an archive that failed to build. One removed on purpose,
             // such as by release retention, is not marked and stays removed.
+            // Its first appearance in the metadata counts as added, so the
+            // version gets scanned for vulnerabilities.
             if (config('pricore.dist.enabled') && $existingVersion->dist_failed_at) {
-                $this->retryFailedDist($provider, $repository, $package, $existingVersion, $result);
+                return $this->retryFailedDist($provider, $repository, $package, $existingVersion, $result) ? 'added' : 'failed';
             }
 
             return 'skipped';
@@ -247,21 +249,28 @@ class SyncRefAction
             : null;
         $distFailedAt = $distEnabled && $dist === null ? now() : null;
 
-        // A published version keeps its previous commit and archive
-        if ($distFailedAt !== null && $existingVersion !== null && $existingVersion->dist_failed_at === null) {
-            return 'failed';
-        }
-
         $readme = $this->fetchReadmeAction->handle($provider, $ref->name, $path);
         $sourceUrl = $provider->getRepositoryUrl();
 
         $organizationSlug = $repository->organization->slug;
 
-        $status = DB::transaction(function () use ($metadata, $ref, $package, $sourceUrl, $sourcePath, $readme, $dist, $distFailedAt, $organizationSlug): string {
+        $status = DB::transaction(function () use ($metadata, $ref, $package, $sourceUrl, $sourcePath, $readme, $dist, $distFailedAt, $organizationSlug, $packageTag): string {
+            // Re-read under a lock: another ref of the same version may have
+            // published it while the archive was downloading
             $version = PackageVersion::query()
                 ->where('package_uuid', $package->uuid)
                 ->where('version', $metadata->version)
+                ->lockForUpdate()
                 ->first();
+
+            if ($version && $packageTag !== null && $version->source_tag === $packageTag) {
+                return 'skipped';
+            }
+
+            // A published version keeps its previous commit and archive
+            if ($version && $distFailedAt !== null && $version->dist_failed_at === null) {
+                return 'failed';
+            }
 
             if ($version) {
                 // The archive still describes the old commit, so release it
@@ -304,7 +313,7 @@ class SyncRefAction
             return 'added';
         });
 
-        return $distFailedAt !== null ? 'failed' : $status;
+        return $distFailedAt !== null && $status !== 'skipped' ? 'failed' : $status;
     }
 
     protected function recordDist(PackageVersion $version, ?DistArchiveData $dist, string $organizationSlug): void
@@ -316,7 +325,7 @@ class SyncRefAction
 
     /**
      * A version marked failed is hidden from the metadata until its archive
-     * builds here.
+     * builds here. Returns whether it did.
      */
     protected function retryFailedDist(
         GitProviderInterface $provider,
@@ -324,16 +333,18 @@ class SyncRefAction
         Package $package,
         PackageVersion $version,
         SyncRefResultData $result,
-    ): void {
+    ): bool {
         $dist = $this->buildDist($provider, $repository, $package, $version->version, (string) $version->source_reference, $version->source_path, $result);
 
         if ($dist === null) {
             $version->update(['dist_failed_at' => now()]);
 
-            return;
+            return false;
         }
 
         $this->recordDistArchiveAction->handle($version, $dist, $repository->organization->slug);
+
+        return true;
     }
 
     protected function buildDist(

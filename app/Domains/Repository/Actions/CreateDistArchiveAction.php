@@ -48,8 +48,11 @@ class CreateDistArchiveAction
                 return null;
             }
 
+            // Disks with `throw` disabled report a failed write as false
             try {
-                $disk->put($storagePath, $stream);
+                if (! $disk->put($storagePath, $stream)) {
+                    return null;
+                }
             } finally {
                 fclose($stream);
             }
