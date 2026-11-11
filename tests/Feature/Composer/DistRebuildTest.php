@@ -50,9 +50,11 @@ beforeEach(function () {
     $this->download = fn () => $this->withHeaders(['Authorization' => "Bearer {$this->plainToken}"])
         ->get("/acme/dists/acme/test-package/1.0.0/{$this->reference}.zip");
 
-    $this->rebuildWith = function (?string $content) {
+    $this->rebuildWith = function (?string $content, ?Closure $whileBuilding = null) {
         $createDistArchive = Mockery::mock(CreateDistArchiveAction::class);
-        $createDistArchive->shouldReceive('handle')->andReturnUsing(function () use ($content) {
+        $createDistArchive->shouldReceive('handle')->andReturnUsing(function (...$arguments) use ($content, $whileBuilding) {
+            $whileBuilding && $whileBuilding(...$arguments);
+
             if ($content === null) {
                 return null;
             }
@@ -133,4 +135,26 @@ it('records a failed rebuild', function () {
     expect($this->archive->fresh())
         ->rebuild_failed_at->not->toBeNull()
         ->file_removed_at->not->toBeNull();
+});
+
+it('rebuilds from the directory the package had at the archived commit', function () {
+    $this->archive->update(['source_path' => 'packages/old']);
+    $this->packageVersion->update(['source_path' => 'packages/new']);
+
+    $requestedPath = null;
+    ($this->rebuildWith)('original', function ($provider, $organizationSlug, $packageName, $version, $reference, $sourcePath) use (&$requestedPath) {
+        $requestedPath = $sourcePath;
+    });
+
+    expect($requestedPath)->toBe('packages/old');
+});
+
+it('leaves the checksum of a version that moved on while the archive was building', function () {
+    ($this->rebuildWith)('rebuilt', fn () => $this->packageVersion->update([
+        'source_reference' => str_repeat('b', 40),
+        'dist_shasum' => sha1('newer'),
+    ]));
+
+    expect($this->packageVersion->fresh()->dist_shasum)->toBe(sha1('newer'))
+        ->and($this->archive->fresh()->shasum)->toBe(sha1('rebuilt'));
 });

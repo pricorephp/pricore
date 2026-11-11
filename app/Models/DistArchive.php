@@ -21,6 +21,7 @@ use Illuminate\Support\Carbon;
  * @property string $package_uuid
  * @property string $package_version_uuid
  * @property string $source_reference
+ * @property string|null $source_path
  * @property string $path
  * @property string|null $shasum
  * @property int|null $size

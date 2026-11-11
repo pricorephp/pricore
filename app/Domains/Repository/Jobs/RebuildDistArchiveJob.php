@@ -10,6 +10,7 @@ use App\Domains\Repository\Contracts\Enums\GitProvider;
 use App\Domains\Repository\Services\GitProviders\CachedGitProvider;
 use App\Domains\Repository\Services\GitProviders\GitProviderFactory;
 use App\Models\DistArchive;
+use App\Models\PackageVersion;
 use App\Models\Repository;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -69,7 +70,7 @@ class RebuildDistArchiveJob implements ShouldBeUnique, ShouldQueue
                 packageName: $package->name,
                 version: $version->version,
                 reference: $archive->source_reference,
-                sourcePath: $version->source_path,
+                sourcePath: $archive->source_path,
             );
 
             if ($dist === null) {
@@ -116,15 +117,16 @@ class RebuildDistArchiveJob implements ShouldBeUnique, ShouldQueue
                 'rebuild_failed_at' => null,
             ]);
 
-            $version = $archive->packageVersion;
-
-            if ($version->source_reference === $archive->source_reference) {
-                $version->update([
+            // Conditional in the query: a sync may have moved the version to
+            // another commit while the archive was building
+            PackageVersion::query()
+                ->whereKey($archive->package_version_uuid)
+                ->where('source_reference', $archive->source_reference)
+                ->update([
                     'dist_path' => $dist->path,
                     'dist_shasum' => $dist->shasum,
                     'dist_size' => $dist->size,
                 ]);
-            }
         });
     }
 }

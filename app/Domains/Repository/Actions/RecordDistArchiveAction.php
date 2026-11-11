@@ -45,7 +45,10 @@ class RecordDistArchiveAction
                     'path' => $archive->path,
                     'shasum' => $archive->shasum,
                     'size' => $archive->size,
+                    'source_path' => $version->source_path,
                     'detached_at' => null,
+                    'file_removed_at' => null,
+                    'rebuild_failed_at' => null,
                 ],
             );
 
