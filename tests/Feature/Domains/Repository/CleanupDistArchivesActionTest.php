@@ -274,3 +274,34 @@ it('drops rows and pointers of archives that cannot be rebuilt', function () {
     Storage::disk('local')->assertMissing('acme/old.zip');
     Storage::disk('local')->assertMissing('acme/1.0.0.zip');
 });
+
+it('keeps an archive downloaded since its last recorded download', function () {
+    config([
+        'pricore.dist.keep_detached_days' => 30,
+        'pricore.dist.keep_downloaded_days' => 1,
+    ]);
+
+    $packageVersion = PackageVersion::factory()->for($this->package)->create([
+        'version' => 'dev-main',
+        'source_reference' => 'cccccccccccc',
+    ]);
+
+    $archive = ($this->archiveFor)($packageVersion, 'acme/old.zip', now()->subDays(45));
+    $archive->update(['source_reference' => 'aaaaaaaaaaaa']);
+
+    $archive->markDownloaded();
+
+    // Not recorded, as the last record is less than a day old
+    $this->travel(20)->hours();
+    $archive->fresh()->markDownloaded();
+
+    $this->travel(10)->hours();
+    ($this->cleanup)();
+
+    expect($archive->fresh()->file_removed_at)->toBeNull();
+
+    $this->travel(2)->days();
+    ($this->cleanup)();
+
+    expect($archive->fresh()->file_removed_at)->not->toBeNull();
+});
