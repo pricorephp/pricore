@@ -78,6 +78,15 @@ class Package extends Model
     }
 
     /**
+     * Archives of a package synced from a repository can be built again from it,
+     * so retention may drop their files and keep the rows to rebuild them from.
+     */
+    public function hasRebuildableDists(): bool
+    {
+        return $this->repository_uuid !== null && ! $this->is_artifact;
+    }
+
+    /**
      * @return BelongsTo<Repository, $this>
      */
     public function repository(): BelongsTo

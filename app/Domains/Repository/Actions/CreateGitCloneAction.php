@@ -12,7 +12,11 @@ use Illuminate\Support\Str;
 
 class CreateGitCloneAction
 {
-    public function handle(Repository $repository): ?string
+    /**
+     * Without a path, the clone lives at the repository's own location, shared
+     * across syncs.
+     */
+    public function handle(Repository $repository, ?string $clonePath = null): ?string
     {
         if ($repository->provider !== GitProvider::Git) {
             return null;
@@ -24,7 +28,7 @@ class CreateGitCloneAction
             throw new GitProviderException('Refusing to clone an unsupported repository URL.');
         }
 
-        $clonePath = storage_path("app/git-clones/{$repository->uuid}");
+        $clonePath ??= storage_path("app/git-clones/{$repository->uuid}");
 
         if (is_dir($clonePath)) {
             $this->updateClone($repository, $clonePath);

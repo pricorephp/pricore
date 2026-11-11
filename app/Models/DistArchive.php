@@ -26,6 +26,8 @@ use Illuminate\Support\Carbon;
  * @property int|null $size
  * @property Carbon|null $detached_at
  * @property Carbon|null $last_downloaded_at
+ * @property Carbon|null $file_removed_at
+ * @property Carbon|null $rebuild_failed_at
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property-read Package $package
@@ -52,6 +54,8 @@ class DistArchive extends Model
         return [
             'detached_at' => 'datetime',
             'last_downloaded_at' => 'datetime',
+            'file_removed_at' => 'datetime',
+            'rebuild_failed_at' => 'datetime',
             'size' => 'integer',
         ];
     }

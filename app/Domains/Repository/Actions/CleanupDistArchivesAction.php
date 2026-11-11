@@ -98,7 +98,11 @@ class CleanupDistArchivesAction
                     ->skip($keepCount)
                     ->take(PHP_INT_MAX)
                     ->withMax('archives', 'last_downloaded_at')
+                    ->withCount(['archives as stored_archives_count' => fn ($query) => $query->whereNull('file_removed_at')])
                     ->get()
+                    // Files already removed, from a package that keeps its rows
+                    ->reject(fn (PackageVersion $version): bool => $package->hasRebuildableDists()
+                        && (int) $version->getAttribute('stored_archives_count') === 0)
                     // Filtered after skipping, so a recent download never shifts
                     // which releases count as the latest ones
                     ->reject(function (PackageVersion $version) use ($downloadedAfter): bool {
@@ -144,14 +148,22 @@ class CleanupDistArchivesAction
 
         DistArchive::query()
             ->detached()
+            ->whereNull('file_removed_at')
             ->where('detached_at', '<', $cutoff)
             ->when($downloadedAfter, fn ($query) => $query->where(fn ($query) => $query
                 ->whereNull('last_downloaded_at')
                 ->orWhere('last_downloaded_at', '<=', $downloadedAfter)))
+            ->with('package:uuid,repository_uuid,is_artifact')
             ->lazyById(500, 'uuid')
             ->each(function (DistArchive $archive) use ($disk, &$removed) {
                 $disk->delete($archive->path);
-                $archive->delete();
+
+                // The row keeps the commit known, so a lock file pinning it can
+                // have the archive built again
+                $archive->package->hasRebuildableDists()
+                    ? $archive->update(['file_removed_at' => now()])
+                    : $archive->delete();
+
                 $removed++;
             });
 

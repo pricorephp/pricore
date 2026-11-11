@@ -164,7 +164,8 @@ it('does not rebuild a dist archive that was removed on purpose', function () {
 
     $packageVersion = PackageVersion::query()->sole();
 
-    expect($packageVersion->dist_url)->toBeNull()
+    // Left for the first download to rebuild, not the sync
+    expect($packageVersion->archives()->sole()->file_removed_at)->not->toBeNull()
         ->and($packageVersion->dist_failed_at)->toBeNull();
 });
 

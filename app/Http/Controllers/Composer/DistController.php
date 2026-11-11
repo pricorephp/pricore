@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Composer;
 
+use App\Domains\Composer\Actions\RequestDistArchiveRebuildAction;
 use App\Domains\Composer\Actions\ResolveDistArchiveAction;
 use App\Http\Controllers\Controller;
 use App\Models\Organization;
@@ -19,6 +20,7 @@ class DistController extends Controller
         string $version,
         string $reference,
         ResolveDistArchiveAction $resolveDistArchiveAction,
+        RequestDistArchiveRebuildAction $requestDistArchiveRebuildAction,
     ): Response {
         $distPath = $resolveDistArchiveAction->handle(
             organization: $organization,
@@ -26,6 +28,15 @@ class DistController extends Controller
             version: $version,
             reference: $reference,
         );
+
+        if (! $distPath && $requestDistArchiveRebuildAction->handle($organization, "{$vendor}/{$package}", $version, $reference)) {
+            // Composer retries a 503 up to three times, waiting as long as
+            // Retry-After asks (60 seconds at most), before falling back to source
+            return response()->json(['error' => 'The archive is being built, retry shortly'], 503, [
+                'Retry-After' => '60',
+                'Cache-Control' => 'no-store',
+            ]);
+        }
 
         if (! $distPath) {
             return response()->json(['error' => 'Not found'], 404);

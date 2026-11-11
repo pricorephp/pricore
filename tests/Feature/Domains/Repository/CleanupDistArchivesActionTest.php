@@ -71,8 +71,8 @@ it('removes detached archives past the retention window', function () {
     $result = ($this->cleanup)();
 
     expect($result['detached_removed'])->toBe(1)
-        ->and(DistArchive::query()->whereKey($stale->uuid)->exists())->toBeFalse()
-        ->and(DistArchive::query()->whereKey($recent->uuid)->exists())->toBeTrue();
+        ->and($stale->fresh()->file_removed_at)->not->toBeNull()
+        ->and($recent->fresh()->file_removed_at)->toBeNull();
 
     Storage::disk('local')->assertMissing('acme/old.zip');
     Storage::disk('local')->assertExists('acme/recent.zip');
@@ -153,7 +153,10 @@ it('still prunes stable releases beyond the per-package keep count', function ()
 
     Storage::disk('local')->assertExists('acme/2.0.0.zip');
     Storage::disk('local')->assertMissing('acme/1.0.0.zip');
-    expect(DistArchive::query()->count())->toBe(1);
+    expect(DistArchive::query()->whereNotNull('file_removed_at')->count())->toBe(1);
+
+    // Rows whose files are gone are not removed again
+    expect(($this->cleanup)()['archives_removed'])->toBe(0);
 });
 
 it('never prunes releases of uploaded packages, whose archives are the only copy', function () {
@@ -196,7 +199,7 @@ it('keeps detached archives downloaded within the protection window', function (
 
     ($this->cleanup)();
 
-    expect(DistArchive::query()->whereKey($archive->uuid)->exists())->toBe($kept);
+    expect($archive->fresh()->file_removed_at === null)->toBe($kept);
 })->with([
     'within the window' => [90, true],
     'outside the window' => [7, false],
@@ -233,4 +236,41 @@ it('keeps older releases downloaded within the protection window', function () {
     Storage::disk('local')->assertExists('acme/3.0.0.zip');
     Storage::disk('local')->assertMissing('acme/2.0.0.zip');
     Storage::disk('local')->assertExists('acme/1.0.0.zip');
+});
+
+it('drops rows and pointers of archives that cannot be rebuilt', function () {
+    config(['pricore.dist.keep_detached_days' => 30]);
+
+    $package = Package::factory()
+        ->for($this->organization, 'organization')
+        ->withoutRepository()
+        ->create(['name' => 'acme/mirrored', 'dist_keep_last_releases' => 1]);
+
+    $packageVersions = collect([['1.0.0', '1.0.0.0'], ['2.0.0', '2.0.0.0']])->map(function (array $versions) use ($package) {
+        [$version, $normalized] = $versions;
+
+        $packageVersion = PackageVersion::factory()->for($package)->create([
+            'version' => $version,
+            'normalized_version' => $normalized,
+            'source_reference' => "ref-{$version}",
+            'dist_path' => "acme/{$version}.zip",
+        ]);
+
+        ($this->archiveFor)($packageVersion, "acme/{$version}.zip");
+
+        return $packageVersion;
+    });
+
+    $branch = PackageVersion::factory()->for($package)->create(['version' => 'dev-main', 'source_reference' => 'bbbbbbbbbbbb']);
+    $detached = ($this->archiveFor)($branch, 'acme/old.zip', now()->subDays(45));
+    $detached->update(['source_reference' => 'aaaaaaaaaaaa']);
+
+    ($this->cleanup)();
+
+    expect(DistArchive::query()->whereKey($detached->uuid)->exists())->toBeFalse()
+        ->and($packageVersions[0]->archives()->exists())->toBeFalse()
+        ->and($packageVersions[0]->fresh()->dist_url)->toBeNull();
+
+    Storage::disk('local')->assertMissing('acme/old.zip');
+    Storage::disk('local')->assertMissing('acme/1.0.0.zip');
 });

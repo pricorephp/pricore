@@ -93,7 +93,7 @@ DIST_KEEP_DETACHED_DAYS=30
 The window is measured from when an archive **stopped being current**, not from when it was built — a long-lived branch archive superseded yesterday is kept for the full window regardless of its age.
 
 ::: warning
-Leaving this unset keeps every detached archive indefinitely, which is the safe default: any commit ever synced stays installable. Setting it trades that guarantee for disk space. Lock files pinning a commit older than the window will fail to install.
+Leaving this unset keeps every detached archive indefinitely. Setting it trades disk space for a rebuild on the next download of a pruned commit (see [Rebuilding removed archives](#rebuilding-removed-archives)).
 :::
 
 ### Archives still in use
@@ -105,6 +105,19 @@ DIST_KEEP_DOWNLOADED_DAYS=90
 ```
 
 Downloads are recorded at most once a day per archive. Installs served from Composer's local cache never reach Pricore, so they do not count.
+
+### Rebuilding removed archives
+
+For packages synced from a repository, retention removes only the archive file. The version keeps offering its `dist`, and the first download of a removed archive rebuilds it from the repository:
+
+1. Pricore answers `503 Service Unavailable` with `Retry-After: 60` and queues the rebuild.
+2. Composer waits and retries, up to three times, then downloads the rebuilt archive.
+
+If the rebuild fails, for example because the commit is no longer reachable, downloads answer `404` for 10 minutes and Composer falls back to `source`. The next download after that tries again.
+
+Lock files store the archive's SHA-1 checksum. When a rebuilt archive differs from the original, Pricore keeps the new one and logs a warning. Lock files resolved before then fail the checksum and fall back to `source`; run `composer update` on the package to refresh them.
+
+Mirrored and uploaded packages cannot be rebuilt: retention removes their archives for good.
 
 ### Running Cleanup
 
@@ -159,9 +172,8 @@ Composer prefers `dist` over `source` by default, so installs automatically use 
 - Schedule `php artisan dist:cleanup` to run daily — it is not scheduled by default
 - Consider using S3 storage for large registries
 
-### `composer install` fails with 404 on a branch version
+### `composer install` fails with 404 on a removed archive
 
-The lock file pins a commit whose archive is no longer stored. This happens when
-`DIST_KEEP_DETACHED_DAYS` is set and the commit fell outside the window, without
-being downloaded for `DIST_KEEP_DOWNLOADED_DAYS`. Either raise the windows, or run
-`composer update` to move the lock to the current head.
+The archive was removed by retention and could not be rebuilt, or the package is
+mirrored. Check the logs for `Failed to rebuild dist archive`, or run
+`composer update` to move the lock to an archive that is still stored.
