@@ -14,5 +14,7 @@ class SyncRefResultData extends Data
         public int $packagesFound = 0,
         /** No package path held a composer.json at the ref */
         public bool $empty = false,
+        /** @var array<int, array{package: string, version: string, reference: string, error: string}> */
+        public array $distFailures = [],
     ) {}
 }
