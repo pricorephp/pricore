@@ -170,7 +170,9 @@ class CleanupDistArchivesAction
             return null;
         }
 
-        return now()->subDays((int) $keepDays);
+        // One day more: downloads are recorded at most once a day, so the last
+        // one can be up to a day older than the latest download
+        return now()->subDays((int) $keepDays + 1);
     }
 
     protected function keepDetachedDays(): int
