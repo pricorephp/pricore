@@ -18,7 +18,8 @@ class ResolveDistArchiveAction
      * A branch keeps a single version row that every sync moves to the new head,
      * so the requested commit is often one the row has already moved past. Every
      * archive is recorded against its own commit, which keeps those lock files
-     * installable.
+     * installable. The archive served is marked downloaded, which keeps it
+     * out of retention while lock files still use it.
      */
     public function handle(
         Organization $organization,
@@ -55,6 +56,8 @@ class ResolveDistArchiveAction
             $archive = $candidate->archives->first();
 
             if ($archive && $disk->exists($archive->path)) {
+                $archive->markDownloaded();
+
                 return $archive->path;
             }
         }

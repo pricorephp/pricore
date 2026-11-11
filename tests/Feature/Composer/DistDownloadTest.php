@@ -359,3 +359,34 @@ it('returns 404 when dist file is missing from disk', function () {
 
     $response->assertNotFound();
 });
+
+it('marks an archive downloaded at most once a day', function () {
+    $package = Package::factory()
+        ->for($this->organization, 'organization')
+        ->create(['name' => 'acme/test-package']);
+
+    $packageVersion = PackageVersion::factory()->for($package)->create([
+        'version' => '1.0.0',
+        'source_reference' => 'abc123def456',
+    ]);
+
+    $archive = DistArchive::factory()->forPackageVersion($packageVersion)->create([
+        'source_reference' => 'abc123def456',
+        'path' => 'acme/acme/test-package/1.0.0_abc123def456.zip',
+    ]);
+    Storage::disk('local')->put($archive->path, 'zip');
+
+    $download = fn () => distGet('/acme/dists/acme/test-package/1.0.0/abc123def456.zip', $this->plainToken)->assertOk();
+
+    $this->travelTo(now()->startOfMinute());
+    $download();
+    $firstDownload = $archive->fresh()->last_downloaded_at;
+
+    $this->travel(12)->hours();
+    $download();
+    expect($archive->fresh()->last_downloaded_at->equalTo($firstDownload))->toBeTrue();
+
+    $this->travel(13)->hours();
+    $download();
+    expect($archive->fresh()->last_downloaded_at->equalTo(now()))->toBeTrue();
+});
