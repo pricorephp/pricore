@@ -1,6 +1,5 @@
 <?php
 
-use App\Domains\Composer\Contracts\Data\VersionMetadataData;
 use App\Domains\Repository\Actions\RemoveDistArchiveTask;
 use App\Domains\Repository\Actions\SyncRefAction;
 use App\Domains\Repository\Contracts\Data\RefData;
@@ -51,45 +50,87 @@ beforeEach(function () {
     };
 });
 
-it('clears the dist pointer when the branch moves but the archive cannot be built', function () {
+it('keeps the branch on its previous commit until the new archive builds', function () {
     $firstCommit = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
     $secondCommit = 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
 
     ($this->syncBranch)($firstCommit);
 
-    $packageVersion = PackageVersion::query()->sole();
-    expect($packageVersion->dist_shasum)->toBe(sha1("zip-for-{$firstCommit}"));
+    $result = ($this->syncBranch)($secondCommit, archiveSucceeds: false);
 
-    // The branch moves, but the provider cannot produce an archive this time.
-    ($this->syncBranch)($secondCommit, archiveSucceeds: false);
+    $packageVersion = PackageVersion::query()->sole();
+
+    expect($packageVersion->source_reference)->toBe($firstCommit)
+        ->and($packageVersion->dist_shasum)->toBe(sha1("zip-for-{$firstCommit}"))
+        ->and($packageVersion->dist_failed_at)->toBeNull()
+        ->and($result->updated)->toBe(0)
+        ->and($result->distFailures)->toHaveCount(1)
+        ->and($result->distFailures[0])->toMatchArray([
+            'package' => 'acme/test-package',
+            'version' => 'dev-main',
+            'reference' => $secondCommit,
+        ]);
+
+    ($this->syncBranch)($secondCommit);
 
     $packageVersion->refresh();
 
     expect($packageVersion->source_reference)->toBe($secondCommit)
-        ->and($packageVersion->dist_url)->toBeNull()
-        ->and($packageVersion->dist_path)->toBeNull()
-        ->and($packageVersion->dist_shasum)->toBeNull()
-        ->and($packageVersion->dist_size)->toBeNull();
-
-    // Composer must fall back to source rather than being handed the previous
-    // commit's archive under the new reference.
-    expect(VersionMetadataData::fromPackageVersion($packageVersion)->toArray())
-        ->not->toHaveKey('dist');
+        ->and($packageVersion->dist_shasum)->toBe(sha1("zip-for-{$secondCommit}"));
 });
 
-it('rebuilds a dist archive that failed to build when the commit is unchanged', function () {
+it('hides a new version from the metadata until its archive builds', function () {
     $commit = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
 
-    ($this->syncBranch)($commit, archiveSucceeds: false);
+    $result = ($this->syncBranch)($commit, archiveSucceeds: false);
 
     $packageVersion = PackageVersion::query()->sole();
 
-    expect($packageVersion->dist_url)->toBeNull()
-        ->and($packageVersion->dist_failed_at)->not->toBeNull();
+    expect($packageVersion->dist_failed_at)->not->toBeNull()
+        ->and($packageVersion->dist_url)->toBeNull()
+        ->and($result->added)->toBe(0)
+        ->and($result->distFailures)->toHaveCount(1);
 
     expect(($this->syncBranch)($commit)->skipped)->toBe(1);
 
     $packageVersion->refresh();
+
+    expect($packageVersion->dist_failed_at)->toBeNull()
+        ->and($packageVersion->dist_shasum)->toBe(sha1("zip-for-{$commit}"));
+});
+
+it('moves a version not published yet to the new commit', function () {
+    $firstCommit = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
+    $secondCommit = 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
+
+    ($this->syncBranch)($firstCommit, archiveSucceeds: false);
+    ($this->syncBranch)($secondCommit, archiveSucceeds: false);
+
+    $packageVersion = PackageVersion::query()->sole();
+
+    expect($packageVersion->source_reference)->toBe($secondCommit)
+        ->and($packageVersion->dist_failed_at)->not->toBeNull();
+});
+
+it('publishes versions without an archive when dist archives are disabled', function () {
+    config(['pricore.dist.enabled' => false]);
+
+    expect(($this->syncBranch)('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', archiveSucceeds: false)->added)->toBe(1)
+        ->and(PackageVersion::query()->sole()->dist_url)->toBeNull();
+});
+
+it('rebuilds the archive of a version published before archives gated publishing', function () {
+    $commit = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
+
+    // Syncs published versions first and marked their archive failed afterwards
+    config(['pricore.dist.enabled' => false]);
+    ($this->syncBranch)($commit);
+    config(['pricore.dist.enabled' => true]);
+    PackageVersion::query()->sole()->update(['dist_failed_at' => now()]);
+
+    expect(($this->syncBranch)($commit)->skipped)->toBe(1);
+
+    $packageVersion = PackageVersion::query()->sole();
 
     expect($packageVersion->source_reference)->toBe($commit)
         ->and($packageVersion->dist_url)->not->toBeNull()
@@ -97,16 +138,18 @@ it('rebuilds a dist archive that failed to build when the commit is unchanged', 
         ->and($packageVersion->dist_failed_at)->toBeNull();
 });
 
-it('keeps retrying a dist archive that fails again', function () {
+it('keeps retrying an archive that fails again', function () {
     $commit = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
 
     ($this->syncBranch)($commit, archiveSucceeds: false);
-    ($this->syncBranch)($commit, archiveSucceeds: false);
+
+    $result = ($this->syncBranch)($commit, archiveSucceeds: false);
 
     $packageVersion = PackageVersion::query()->sole();
 
     expect($packageVersion->dist_url)->toBeNull()
-        ->and($packageVersion->dist_failed_at)->not->toBeNull();
+        ->and($packageVersion->dist_failed_at)->not->toBeNull()
+        ->and($result->distFailures)->toHaveCount(1);
 });
 
 it('does not rebuild a dist archive that was removed on purpose', function () {

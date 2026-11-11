@@ -55,10 +55,13 @@ Dist archive creation depends on your Git provider's capabilities:
 | **GitHub** | Supported | Downloads zipball via GitHub API |
 | **GitLab** | Supported | Downloads archive via GitLab API |
 | **Bitbucket** | Supported | Downloads zip archive via Bitbucket API |
-| **Local Git** | Supported | Uses `git archive` command |
-| **Generic Git** | Not supported | Falls back to source-only |
+| **Generic Git** | Supported | Uses `git archive` on the local clone |
 
-When a provider does not support archive downloads, the sync continues normally — packages are served with `source` references only.
+A version is published, or moved to a new commit, only once its archive is stored. Otherwise a `composer.lock` resolved in between would pin the commit without a `dist` entry, and installs would need access to the Git repository. When an archive fails to build:
+
+- a new version is kept out of the Composer metadata;
+- a version already published stays on its previous commit and archive;
+- the failure is listed in the sync log, and the next sync retries it.
 
 ## Branch Versions and Lock Files
 
@@ -136,7 +139,7 @@ Composer prefers `dist` over `source` by default, so installs automatically use 
 
 - Verify `DIST_ENABLED=true` in your `.env`
 - Check that your Git provider supports archive downloads (see [Provider Support](#provider-support))
-- Review your application logs for download errors — dist failures are logged as warnings and do not fail the sync
+- Open the sync log on the repository page: archives that failed to build are listed with the provider's error
 
 ### Disk space growing
 
