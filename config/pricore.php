@@ -9,6 +9,13 @@ return [
         ))),
     ],
 
+    'git' => [
+        'allowed_private_hosts' => array_values(array_filter(array_map(
+            static fn (string $host): string => trim($host),
+            explode(',', (string) env('GIT_ALLOWED_PRIVATE_HOSTS', '')),
+        ))),
+    ],
+
     'uploads' => [
         // Megabytes. PHP's upload_max_filesize and post_max_size, and any proxy
         // body limit in front of Pricore, must allow at least this much.

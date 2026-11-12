@@ -65,6 +65,14 @@ class DnsHostResolver implements HostResolverInterface
      */
     protected function lookup(string $host): array|false
     {
-        return dns_get_record($host, DNS_A | DNS_AAAA | DNS_CNAME);
+        // Fully qualified first: with a search domain configured, a name without
+        // one of the record types is otherwise retried under every search domain.
+        $records = @dns_get_record("{$host}.", DNS_A | DNS_AAAA | DNS_CNAME);
+
+        if ($records === false || $records === []) {
+            $records = @dns_get_record($host, DNS_A | DNS_AAAA | DNS_CNAME);
+        }
+
+        return $records;
     }
 }

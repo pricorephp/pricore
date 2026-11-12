@@ -53,6 +53,22 @@ Create a scoped API token at [Atlassian Account Settings > API tokens](https://i
 Public repositories accessible over HTTPS don't require an SSH key. Just enter the HTTPS URL and leave the SSH key unselected.
 :::
 
+#### Git servers on a private network
+
+A Generic Git URL has to resolve entirely to public IP addresses. Private, loopback, link-local and reserved addresses are rejected, both when the repository is added and on every sync, and so is a redirect to one.
+
+If your Git server is on a private network, add its exact hostname or IP address to `GIT_ALLOWED_PRIVATE_HOSTS`:
+
+```bash
+GIT_ALLOWED_PRIVATE_HOSTS=git.internal,10.20.30.40
+```
+
+Wildcards and CIDR ranges are not supported. Use the name exactly as it appears in the repository URL.
+
+::: warning
+Allowlisting a host lets organization administrators reach every port on it through the Generic Git provider. Only allowlist hosts that serve Git repositories.
+:::
+
 ## Monorepos
 
 A single repository can hold several Composer packages, each with its own `composer.json` in a subdirectory. Tell Pricore where to look with **package paths**, either when connecting the repository or later from the repository's **Edit** page.

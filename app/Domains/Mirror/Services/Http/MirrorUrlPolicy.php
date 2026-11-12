@@ -4,44 +4,14 @@ namespace App\Domains\Mirror\Services\Http;
 
 use App\Domains\Mirror\Contracts\Interfaces\HostResolverInterface;
 use App\Domains\Mirror\Exceptions\UnsafeMirrorUrlException;
+use App\Services\Network\IpAddressClassifier;
 use GuzzleHttp\Psr7\Uri;
 use GuzzleHttp\Psr7\UriComparator;
 use Psr\Http\Message\UriInterface;
-use Symfony\Component\HttpFoundation\IpUtils;
 use Throwable;
 
 class MirrorUrlPolicy
 {
-    private const BLOCKED_IPV4_RANGES = [
-        '0.0.0.0/8',
-        '10.0.0.0/8',
-        '100.64.0.0/10',
-        '127.0.0.0/8',
-        '169.254.0.0/16',
-        '172.16.0.0/12',
-        '192.0.0.0/24',
-        '192.0.2.0/24',
-        '192.88.99.0/24',
-        '192.168.0.0/16',
-        '198.18.0.0/15',
-        '198.51.100.0/24',
-        '203.0.113.0/24',
-        '224.0.0.0/4',
-        '240.0.0.0/4',
-    ];
-
-    private const BLOCKED_IPV6_RANGES = [
-        '::/96',
-        '100::/64',
-        '2001::/23',
-        '2001:db8::/32',
-        '2002::/16',
-        'fc00::/7',
-        'fe80::/10',
-        'fec0::/10',
-        'ff00::/8',
-    ];
-
     public function __construct(
         private readonly HostResolverInterface $hostResolver,
     ) {}
@@ -150,35 +120,13 @@ class MirrorUrlPolicy
 
     private function canonicalIp(string $address): string
     {
-        $address = trim($address, '[]');
-        $packed = @inet_pton($address);
-
-        if ($packed === false) {
-            throw new UnsafeMirrorUrlException('The mirror hostname resolved to an invalid address.');
-        }
-
-        if (strlen($packed) === 16 && substr($packed, 0, 12) === str_repeat("\0", 10)."\xff\xff") {
-            return (string) inet_ntop(substr($packed, 12));
-        }
-
-        return (string) inet_ntop($packed);
+        return IpAddressClassifier::canonical($address)
+            ?? throw new UnsafeMirrorUrlException('The mirror hostname resolved to an invalid address.');
     }
 
     private function isPublicIp(string $address): bool
     {
-        if (filter_var(
-            $address,
-            FILTER_VALIDATE_IP,
-            FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE,
-        ) === false) {
-            return false;
-        }
-
-        $ranges = str_contains($address, ':')
-            ? self::BLOCKED_IPV6_RANGES
-            : self::BLOCKED_IPV4_RANGES;
-
-        return ! IpUtils::checkIp($address, $ranges);
+        return IpAddressClassifier::isPublic($address);
     }
 
     private function isAllowedPrivateHost(string $host): bool
