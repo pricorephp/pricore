@@ -3,6 +3,8 @@
 namespace App\Domains\Repository\Rules;
 
 use App\Domains\Repository\Contracts\Enums\GitProvider;
+use App\Domains\Repository\Exceptions\UnsafeGitRemoteException;
+use App\Domains\Repository\Services\GitRemotes\GitRemotePolicy;
 use Closure;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Support\Str;
@@ -41,6 +43,8 @@ class ValidRepositoryIdentifier implements ValidationRule
         }
 
         if (static::passes($value, $this->provider)) {
+            $this->validateGitRemote($value, $fail);
+
             return;
         }
 
@@ -49,6 +53,23 @@ class ValidRepositoryIdentifier implements ValidationRule
             : 'The :attribute must be in "owner/repository" format.');
     }
 
+    private function validateGitRemote(string $value, Closure $fail): void
+    {
+        if ($this->provider !== GitProvider::Git) {
+            return;
+        }
+
+        try {
+            app(GitRemotePolicy::class)->check($value);
+        } catch (UnsafeGitRemoteException $unsafeGitRemoteException) {
+            $fail($unsafeGitRemoteException->getMessage());
+        }
+    }
+
+    /**
+     * Whether the identifier has a shape the provider can use. Says nothing
+     * about the host a Git URL names; GitRemotePolicy decides that.
+     */
     public static function passes(string $value, GitProvider $provider): bool
     {
         return $provider === GitProvider::Git
@@ -57,7 +78,7 @@ class ValidRepositoryIdentifier implements ValidationRule
     }
 
     /**
-     * A URL git may be pointed at without handing control of the host to the caller.
+     * A URL git reads as a network address, not as a command, an option or a local path.
      */
     public static function isSafeGitUrl(string $value): bool
     {

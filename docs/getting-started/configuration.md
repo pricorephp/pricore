@@ -199,6 +199,24 @@ Private access applies only to same-origin requests from the configured mirror. 
 
 Mirror requests do not use process-level HTTP proxy variables because direct connections are required to pin validated DNS results.
 
+## Generic Git Network Access
+
+Generic Git repositories may use public `https`, `http`, `ssh` and `git` URLs by default. URLs that resolve to private, loopback, link-local, multicast, unspecified, or reserved IP addresses are blocked, including when a public URL redirects to one.
+
+Git servers on private networks must be explicitly allowlisted:
+
+```bash
+GIT_ALLOWED_PRIVATE_HOSTS=git.internal,10.20.30.40
+```
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `GIT_ALLOWED_PRIVATE_HOSTS` | Comma-separated exact hostnames or IP addresses of Generic Git servers that may be on a private network. Wildcards and CIDRs are not accepted. | `''` (empty) |
+
+Repositories that already point at a private host stop syncing until the host is added to this list. The GitHub, GitLab and Bitbucket providers are not affected.
+
+When git reaches a remote through an HTTP proxy, the proxy resolves the hostname itself, so the validated DNS result is only pinned on direct connections.
+
 ## Package Uploads
 
 Packages can also be [published by uploading zip archives](/guide/packages#from-an-archive-upload). Uploads are stored on the same disk as dist archives.
