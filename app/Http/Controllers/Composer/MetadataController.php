@@ -77,6 +77,9 @@ class MetadataController extends Controller
             // A subdirectory version installs from its dist only (no source block),
             // so one without an archive yet would be offered but fail to install
             ->where(fn (Builder $query) => $query->whereNull('source_path')->orWhereNotNull('dist_url'))
+            // A lock file resolved against a version still waiting for its
+            // archive would pin it without a dist
+            ->when(config('pricore.dist.enabled'), fn (Builder $query) => $query->whereNull('dist_failed_at'))
             ->orderBy('released_at', 'desc')
             ->get();
 
