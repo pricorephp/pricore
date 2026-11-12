@@ -88,6 +88,13 @@ it('holds ssh to the checked address', function () {
         && str_ends_with($process->environment['GIT_SSH_COMMAND'], " -o 'HostName=93.184.216.34' -o 'HostKeyAlias=git.example.com'"));
 });
 
+it('connects to the checked address of a git server under its hostname', function () {
+    (new GenericGitProvider('git://git.example.com/widgets.git', []))->getBranches();
+
+    Process::assertRan(fn (PendingProcess $process) => $process->command === ['git', 'ls-remote', '--heads', '--', 'git://93.184.216.34/widgets.git']
+        && $process->environment['GIT_OVERRIDE_VIRTUAL_HOST'] === 'git.example.com');
+});
+
 it('clones from the checked addresses with redirects turned off', function () {
     $repository = Repository::factory()->create([
         'provider' => 'git',

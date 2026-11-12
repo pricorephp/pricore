@@ -180,10 +180,10 @@ it('does not probe remotes that cannot redirect', function (string $url) {
     'git scheme' => 'git://git.example.com/widgets.git',
 ]);
 
-it('reads where a remote redirects to without following it or sending credentials', function () {
+it('reads where a remote redirects to without following it', function () {
     Http::fake(['git.example.com/*' => Http::response('', 301, ['Location' => 'https://git.example.com/widgets.git/info/refs?service=git-upload-pack'])]);
 
-    $gitRemote = new ResolvedGitRemote('https://dev:hunter2@git.example.com/widgets', 'https', 'git.example.com', addresses: ['93.184.216.34']);
+    $gitRemote = new ResolvedGitRemote('https://git.example.com/widgets', 'https', 'git.example.com', addresses: ['93.184.216.34']);
 
     expect((new HttpGitRemoteProbe)->redirectLocation($gitRemote))
         ->toBe('https://git.example.com/widgets.git/info/refs?service=git-upload-pack');
@@ -191,6 +191,28 @@ it('reads where a remote redirects to without following it or sending credential
     Http::assertSentCount(1);
     Http::assertSent(fn (Request $request) => $request->url() === 'https://git.example.com/widgets/info/refs?service=git-upload-pack'
         && ! $request->hasHeader('Authorization'));
+});
+
+it('asks with the credentials the URL carries for that origin', function (string $url, string $credentials) {
+    Http::fake(['git.example.com/*' => Http::response('', 401)]);
+
+    (new HttpGitRemoteProbe)->redirectLocation(app(GitRemotePolicy::class)->check($url));
+
+    Http::assertSent(fn (Request $request) => $request->url() === 'https://git.example.com/widgets.git/info/refs?service=git-upload-pack'
+        && $request->header('Authorization') === ['Basic '.base64_encode($credentials)]);
+})->with([
+    'username and password' => ['https://dev:hun%40ter2@git.example.com/widgets.git', 'dev:hun@ter2'],
+    'token as username' => ['https://glpat-secret@git.example.com/widgets.git', 'glpat-secret:'],
+]);
+
+it('tells a git server which hostname was asked for', function () {
+    $gitRemotePolicy = app(GitRemotePolicy::class);
+
+    expect($gitRemotePolicy->check('git://git.example.com/widgets.git')->environment())
+        ->toBe(['GIT_OVERRIDE_VIRTUAL_HOST' => 'git.example.com'])
+        ->and($gitRemotePolicy->check('git://git.example.com:9419/widgets.git')->environment())
+        ->toBe(['GIT_OVERRIDE_VIRTUAL_HOST' => 'git.example.com:9419'])
+        ->and($gitRemotePolicy->check('https://git.example.com/widgets.git')->environment())->toBe([]);
 });
 
 it('reports no redirect when a remote answers or cannot be reached', function (Closure $fake) {

@@ -34,6 +34,22 @@ readonly class ResolvedGitRemote
     }
 
     /**
+     * The credentials an HTTP URL carries, decoded.
+     *
+     * @return array{0: string, 1: string}|null
+     */
+    public function httpCredentials(): ?array
+    {
+        if (! $this->isHttp() || preg_match('#^https?://([^/?\#@]*)@#i', $this->url, $matches) !== 1) {
+            return null;
+        }
+
+        [$username, $password] = array_pad(explode(':', $matches[1], 2), 2, '');
+
+        return [rawurldecode($username), rawurldecode($password)];
+    }
+
+    /**
      * Options that go between `git` and the subcommand. The redirect target is
      * settled before git runs, so git must not follow one on its own.
      *
@@ -73,6 +89,21 @@ readonly class ResolvedGitRemote
         );
 
         return "{$this->host}:{$port}:".implode(',', $addresses);
+    }
+
+    /**
+     * Environment for the git process. A git:// URL names the checked address,
+     * so the server is still told which hostname was asked for.
+     *
+     * @return array<string, string>
+     */
+    public function environment(): array
+    {
+        if ($this->scheme !== 'git' || $this->addresses === []) {
+            return [];
+        }
+
+        return ['GIT_OVERRIDE_VIRTUAL_HOST' => $this->port === null ? $this->host : "{$this->host}:{$this->port}"];
     }
 
     /**

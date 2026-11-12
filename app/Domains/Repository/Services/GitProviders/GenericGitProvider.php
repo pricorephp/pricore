@@ -246,11 +246,13 @@ class GenericGitProvider extends AbstractGitProvider
      */
     protected function runGitCommand(array $command): string
     {
+        $gitRemote = $this->gitRemote();
+
         $env = [
             'GIT_TERMINAL_PROMPT' => '0',
+            ...$gitRemote->environment(),
         ];
 
-        $gitRemote = $this->gitRemote();
         $tempKeyFile = null;
 
         if ($this->hasCredential('ssh_key')) {

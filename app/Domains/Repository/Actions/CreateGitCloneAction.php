@@ -91,6 +91,7 @@ class CreateGitCloneAction
     {
         $env = [
             'GIT_TERMINAL_PROMPT' => '0',
+            ...$gitRemote->environment(),
         ];
 
         $sshKey = $repository->sshKey;
