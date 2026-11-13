@@ -33,6 +33,10 @@ return [
         // stopped being current. Unset keeps them indefinitely, so lock files
         // pinning older commits stay installable.
         'keep_detached_days' => env('DIST_KEEP_DETACHED_DAYS'),
+
+        // Days an archive is kept by retention after it was last downloaded, so
+        // lock files still in use stay installable. 0 turns the protection off.
+        'keep_downloaded_days' => env('DIST_KEEP_DOWNLOADED_DAYS', 90),
     ],
 
     'mcp' => [
