@@ -33,6 +33,7 @@
         "spatie/laravel-typescript-transformer": "^3.3"
     },
     "require-dev": {
+        "baer-software/larabeacon": "^3.4",
         "barryvdh/laravel-ide-helper": "^3.6",
         "fakerphp/faker": "^1.23",
         "larastan/larastan": "^3.0",
