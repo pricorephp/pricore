@@ -4,7 +4,7 @@ layout: home
 hero:
   name: Pricore
   text: Private Composer Registry
-  tagline: Self-hosted package management for PHP teams
+  tagline: Host your team's private PHP packages on your own server.
   actions:
     - theme: brand
       text: Get Started
@@ -14,25 +14,27 @@ hero:
       link: https://github.com/pricorephp/pricore
 
 features:
-  - title: Private Package Hosting
-    details: Host and serve private Composer packages with fine-grained access control and organization-level isolation.
-  - title: Multi-Provider Git Integration
-    details: Automatically sync packages from GitHub, GitLab, or Bitbucket repositories via webhooks.
-  - title: Organization Management
-    details: Multi-tenant architecture with organizations, teams, and role-based access control for your packages.
-  - title: Token-Based Authentication
-    details: Secure API tokens with package-level permissions that integrate seamlessly with Composer.
-  - title: Automatic Package Discovery
-    details: Webhooks and automated sync detect new versions from your connected repositories automatically.
-  - title: Composer-Compatible API
-    details: Drop-in replacement for Packagist with full composer.json metadata support.
+  - title: Packages from Git
+    details: Connect GitHub, GitLab, Bitbucket or any Git server. Tags become releases, branches become dev versions, and webhooks keep them current.
+  - title: Monorepos
+    details: Publish several packages from one repository, released together or with their own tags.
+  - title: Uploads and mirrors
+    details: Upload zip archives from CI, or import packages from another Composer registry such as Satis.
+  - title: Organizations and tokens
+    details: Each organization is its own Composer repository with its own members and access tokens.
+  - title: composer audit
+    details: Advisories from Packagist are matched against your packages, and composer audit works against your registry.
+  - title: REST API and MCP
+    details: Automate Pricore through a REST API, or let AI assistants look up packages through the built-in MCP server.
 ---
 
-## Why Pricore?
+## What Pricore does
 
-Pricore is an open-source private Composer registry designed to help teams securely manage and distribute their PHP packages. Built with modern technologies and designed for self-hosting, Pricore gives you full ownership of your package ecosystem.
+Pricore is an open-source alternative to Private Packagist, Satis and Repman. You run it yourself, point it at your Git repositories, and your projects install private packages with a normal `composer require`:
 
-- **Self-hosted** - Keep your packages on your own infrastructure
-- **Open Source** - Apache 2.0 licensed, fully transparent, no vendor lock-in
-- **Modern Stack** - Built with Laravel 13, React 19, and Inertia.js
-- **Production Ready** - Docker support with FrankenPHP for high performance
+```bash
+composer config repositories.acme composer https://pricore.example.com/acme
+composer require acme/billing
+```
+
+Pricore is a Laravel application licensed under Apache 2.0. The quickest way to run it is the [Docker image](/self-hosting/docker). If you'd rather not host it yourself, [Pricore Cloud](https://pricore.dev) runs it for you.

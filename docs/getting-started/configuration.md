@@ -1,40 +1,21 @@
 # Configuration
 
-Pricore is configured through environment variables in your `.env` file.
+Pricore is configured with environment variables, either in `.env` or in the environment of your containers. This page lists the variables specific to Pricore and the Laravel settings you are most likely to change. Everything else follows the [Laravel defaults](https://laravel.com/docs/configuration).
 
-## Essential Configuration
-
-### Application Settings
-
-```bash
-APP_NAME=Pricore
-APP_ENV=production
-APP_DEBUG=false
-APP_URL=https://pricore.yourcompany.com
-```
+## Application
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `APP_NAME` | Application name displayed in UI | `Pricore` |
-| `APP_ENV` | Environment (`local`, `production`) | `production` |
-| `APP_DEBUG` | Enable debug mode (disable in production) | `false` |
-| `APP_URL` | Public URL of your Pricore instance. When set to an `https://` URL, all generated URLs are forced to HTTPS — important when running behind a reverse proxy that terminates SSL. | - |
+| `APP_URL` | The public URL of Pricore. Composer URLs, webhook URLs, OAuth callbacks and passkeys are all built from it. With an `https://` URL, all generated URLs use HTTPS, even behind a proxy that terminates TLS. | - |
+| `APP_KEY` | Encryption key. Pricore encrypts SSH keys and Git credentials with it, so keep it stable and back it up. | - |
+| `APP_ENV` | `production` or `local` | `production` |
+| `APP_DEBUG` | Show detailed errors. Keep this off in production. | `false` |
+| `SIGN_UP_ENABLED` | Let anyone create an account. When off, only invited users can sign up. | `false` |
+| `TRUSTED_PROXIES` | Comma-separated IPs or CIDR ranges of your load balancer or reverse proxy, or `*` to trust any. Needed so Pricore sees the real client IP and scheme. | - |
 
-### Registration
+## Database
 
-```bash
-SIGN_UP_ENABLED=false
-```
-
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `SIGN_UP_ENABLED` | Allow public registration without an invitation | `false` |
-
-By default, registration is invite-only. Users can only create accounts after receiving an organization invitation. Set `SIGN_UP_ENABLED=true` to allow anyone to register.
-
-### Database Configuration
-
-Pricore supports SQLite, MySQL, and PostgreSQL:
+SQLite works well for most installations. MySQL 8 and PostgreSQL 14 or newer are also supported.
 
 ::: code-group
 
@@ -63,9 +44,9 @@ DB_PASSWORD=secret
 
 :::
 
-### Redis Configuration
+## Redis
 
-Redis is required for queues, caching, and sessions:
+Horizon runs the queue on Redis, so Redis is required. Use it for the cache and sessions too:
 
 ```bash
 REDIS_HOST=127.0.0.1
@@ -77,392 +58,213 @@ CACHE_STORE=redis
 SESSION_DRIVER=redis
 ```
 
-### Realtime Updates (Reverb)
+## Mail
 
-Pricore uses [Laravel Reverb](https://laravel.com/docs/reverb) as a WebSocket server to push realtime sync status updates to the browser. When a repository sync starts, completes, or fails, all connected users see the status change immediately.
+Pricore sends invitations, password resets and vulnerability notifications by email. Any [Laravel mail driver](https://laravel.com/docs/mail) works:
+
+```bash
+MAIL_MAILER=smtp
+MAIL_HOST=smtp.example.com
+MAIL_PORT=587
+MAIL_USERNAME=your-username
+MAIL_PASSWORD=your-password
+MAIL_FROM_ADDRESS=pricore@example.com
+MAIL_FROM_NAME=Pricore
+```
+
+Without working mail, invited users can't receive their invitation link.
+
+## Realtime updates (Reverb)
+
+Pricore uses [Laravel Reverb](https://laravel.com/docs/reverb) to push sync progress and new vulnerabilities to open browser tabs. It is optional: without it, pages update when you reload them.
 
 ```bash
 BROADCAST_CONNECTION=reverb
 
-REVERB_APP_ID=your-app-id
-REVERB_APP_KEY=your-app-key
-REVERB_APP_SECRET=your-app-secret
+REVERB_APP_ID=pricore
+REVERB_APP_KEY=a-random-key
+REVERB_APP_SECRET=a-random-secret
 REVERB_HOST=localhost
 REVERB_PORT=8080
 REVERB_SCHEME=http
 ```
 
-The Reverb config is automatically injected into the frontend at runtime via meta tags — no Vite build-time variables are needed.
-
-The `REVERB_*` variables configure the **server-side** Reverb process (what it binds to). The `REVERB_ECHO_*` variables configure the **client-side** WebSocket connection (what the browser connects to). When deployed behind a reverse proxy or gateway that terminates TLS, these will differ — Reverb binds to an internal port (e.g., 8080 over HTTP), while the browser connects to the external port (e.g., 443 over HTTPS).
+There are two sets of variables, because the Reverb server and the browser usually see different addresses. `REVERB_HOST`, `REVERB_PORT` and `REVERB_SCHEME` are where Reverb itself listens, for example `http` on port 8080 inside your network. `REVERB_ECHO_*` is what the browser connects to, typically your public domain on port 443 through the reverse proxy.
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `BROADCAST_CONNECTION` | Broadcasting driver (`reverb`, `log`, `null`) | `null` |
-| `REVERB_APP_ID` | Reverb application ID | - |
-| `REVERB_APP_KEY` | Reverb application key | - |
-| `REVERB_APP_SECRET` | Reverb application secret | - |
-| `REVERB_HOST` | Reverb server hostname | `localhost` |
-| `REVERB_PORT` | Reverb server port (internal) | `8080` |
-| `REVERB_SCHEME` | Reverb connection scheme (internal) | `http` |
-| `REVERB_ECHO_HOST` | Client-facing WebSocket hostname | `window.location.hostname` |
-| `REVERB_ECHO_PORT` | Client-facing WebSocket port | `443` |
-| `REVERB_ECHO_SCHEME` | Client-facing WebSocket scheme | `https` |
+| `BROADCAST_CONNECTION` | `reverb` to enable realtime updates, `log` or `null` to disable them | `null` |
+| `REVERB_APP_ID`, `REVERB_APP_KEY`, `REVERB_APP_SECRET` | Credentials shared by Pricore and Reverb. Pick any random values. | - |
+| `REVERB_HOST` / `REVERB_PORT` / `REVERB_SCHEME` | Where the Reverb server listens | `localhost` / `8080` / `http` |
+| `REVERB_ECHO_HOST` | Host the browser connects to | The page's hostname |
+| `REVERB_ECHO_PORT` | Port the browser connects to | `443` |
+| `REVERB_ECHO_SCHEME` | Scheme the browser connects with | `https` |
 
-> **Note:** Realtime updates are optional. Without Reverb configured, the application works normally — pages update on navigation or manual refresh.
+The browser receives these values at runtime, so changing them doesn't require a frontend rebuild.
 
-## Git Provider Configuration
+## Sign in with GitHub or GitLab
 
-To sync packages from Git repositories, configure your provider credentials.
+GitHub and GitLab OAuth apps serve two purposes: users can sign in with them, and they can connect their account under **Settings** > **Git Providers** so Pricore can list and sync their repositories. Without an OAuth app, users can still add a personal access token as a Git credential.
 
 ### GitHub
 
+Create an OAuth App under GitHub **Settings** > **Developer settings** > **OAuth Apps**, with `{APP_URL}/auth/github/callback` as the callback URL.
+
 ```bash
-GITHUB_CLIENT_ID=your-github-client-id
-GITHUB_CLIENT_SECRET=your-github-client-secret
-GITHUB_REDIRECT_URI=${APP_URL}/auth/github/callback
+GITHUB_CLIENT_ID=your-client-id
+GITHUB_CLIENT_SECRET=your-client-secret
 ```
-
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `GITHUB_CLIENT_ID` | GitHub OAuth App client ID | - |
-| `GITHUB_CLIENT_SECRET` | GitHub OAuth App client secret | - |
-| `GITHUB_REDIRECT_URI` | OAuth callback URL | `{APP_URL}/auth/github/callback` |
-
-Create a GitHub OAuth App:
-1. Go to GitHub Settings > Developer settings > OAuth Apps
-2. Click "New OAuth App"
-3. Set the callback URL to `{APP_URL}/auth/github/callback`
 
 ### GitLab
 
+Create an application under [GitLab **User Settings** > **Applications**](https://gitlab.com/-/user_settings/applications), or the same page on your own GitLab instance:
+
+- **Redirect URI:** `{APP_URL}/auth/gitlab/callback`
+- **Scopes:** `read_user` for signing in, and `api` for reading repositories and registering webhooks. GitLab has no narrower scope that allows managing webhooks.
+
 ```bash
-GITLAB_CLIENT_ID=your-gitlab-client-id
-GITLAB_CLIENT_SECRET=your-gitlab-client-secret
-GITLAB_REDIRECT_URI=${APP_URL}/auth/gitlab/callback
-GITLAB_INSTANCE_URI=https://gitlab.com  # or your self-hosted GitLab URL
+GITLAB_CLIENT_ID=your-application-id
+GITLAB_CLIENT_SECRET=your-secret
+GITLAB_INSTANCE_URI=https://gitlab.example.com   # only for self-hosted GitLab
 ```
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `GITLAB_CLIENT_ID` | GitLab OAuth Application ID | - |
-| `GITLAB_CLIENT_SECRET` | GitLab OAuth Application secret | - |
-| `GITLAB_REDIRECT_URI` | OAuth callback URL | `{APP_URL}/auth/gitlab/callback` |
-| `GITLAB_INSTANCE_URI` | GitLab instance URL (for self-hosted) | `https://gitlab.com` |
-
-Create a GitLab OAuth Application:
-
-**GitLab.com:**
-1. Go to [GitLab User Settings > Applications](https://gitlab.com/-/user_settings/applications)
-2. Click "Add new application"
-3. Set the **Redirect URI** to `{APP_URL}/auth/gitlab/callback`
-4. Select scopes: `read_user` and `api`
-   - `read_user` — used for login/sign-up (reading user profile and email)
-   - `api` — used when connecting GitLab as a git credential (reading repositories, file content, and managing webhooks). GitLab does not offer a narrower scope for webhook management.
-5. Click "Save application" and copy the Application ID and Secret
-
-**Self-hosted GitLab:**
-1. Go to your GitLab instance > User Settings > Applications
-2. Follow the same steps as above
-3. Set `GITLAB_INSTANCE_URI` to your instance URL (e.g., `https://gitlab.example.com/`)
+The callback URLs default to `/auth/{provider}/callback` on `APP_URL`. Set `GITHUB_REDIRECT_URI` or `GITLAB_REDIRECT_URI` only if you need something else.
 
 ### Bitbucket
 
-Bitbucket uses API token authentication instead of OAuth — no environment variables are needed. Credentials are configured per user in **Settings** > **Git Providers**.
+Bitbucket has no OAuth sign-in. Each user adds an API token under **Settings** > **Git Providers**; see [Repositories](/guide/repositories#github-gitlab-and-bitbucket) for the scopes it needs.
 
-1. Go to [Atlassian Account Settings > API tokens](https://id.atlassian.com/manage-profile/security/api-tokens)
-2. Click **Create API token with scopes**
-3. Select **Bitbucket** as the app and enable the following scopes:
-   - `read:user:bitbucket`
-   - `read:repository:bitbucket`
-   - `read:workspace:bitbucket`
-   - `read:webhook:bitbucket`
-   - `write:webhook:bitbucket`
-4. In Pricore, go to **Settings** > **Git Providers** > **Add Bitbucket**
-5. Enter your Atlassian account email and the API token
+## Package storage
 
-## Registry Mirror Network Access
-
-Registry mirrors may fetch public HTTP and HTTPS endpoints by default. Requests to private, loopback, link-local, multicast, unspecified, and reserved IP addresses are blocked, including destinations reached through metadata URLs, dist URLs, or redirects.
-
-Self-hosted registries on private networks must be explicitly allowlisted:
+Dist archives and uploaded packages are stored on the `local` disk by default, in `storage/app/private`. When you run more than one server, use S3 or an S3-compatible service so every server sees the same files:
 
 ```bash
-MIRROR_ALLOWED_PRIVATE_HOSTS=satis.internal,10.20.30.40
+DIST_DISK=s3
 ```
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `MIRROR_ALLOWED_PRIVATE_HOSTS` | Comma-separated exact hostnames or IP addresses that may be used as private mirror origins. Wildcards and CIDRs are not accepted. | `''` (empty) |
+| `DIST_ENABLED` | Build zip archives for package versions. See [Dist archives](/guide/dist-mirroring). | `true` |
+| `DIST_DISK` | `local` or `s3` | `local` |
+| `DIST_SIGNED_URL_EXPIRY` | Lifetime in minutes of the S3 download links Composer is redirected to | `30` |
+| `DIST_KEEP_DETACHED_DAYS` | Days to keep archives of commits a branch has moved past. Unset keeps them forever. | - |
+| `ARTIFACT_MAX_SIZE` | Maximum size of an uploaded package archive, in megabytes | `64` |
+| `ARTIFACT_UPLOAD_RATE_LIMIT` | Uploads per minute per token | `30` |
 
-Private access applies only to same-origin requests from the configured mirror. Cross-origin metadata, dist, and redirect targets must still resolve entirely to public addresses. Mirror authentication credentials are never forwarded across origins.
+When you raise `ARTIFACT_MAX_SIZE`, also raise PHP's `upload_max_filesize` and `post_max_size`, and the body size limit of your reverse proxy (`client_max_body_size` in nginx). The Docker image allows 64 MB.
 
-Mirror requests do not use process-level HTTP proxy variables because direct connections are required to pin validated DNS results.
+### S3 credentials
 
-## Generic Git Network Access
-
-Generic Git repositories may use public `https`, `http`, `ssh` and `git` URLs by default. URLs that resolve to private, loopback, link-local, multicast, unspecified, or reserved IP addresses are blocked, including when a public URL redirects to one.
-
-Git servers on private networks must be explicitly allowlisted:
-
-```bash
-GIT_ALLOWED_PRIVATE_HOSTS=git.internal,10.20.30.40
-```
-
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `GIT_ALLOWED_PRIVATE_HOSTS` | Comma-separated exact hostnames or IP addresses of Generic Git servers that may be on a private network. Wildcards and CIDRs are not accepted. | `''` (empty) |
-
-Repositories that already point at a private host stop syncing until the host is added to this list. The GitHub, GitLab and Bitbucket providers are not affected.
-
-When git reaches a remote through an HTTP proxy, the proxy resolves the hostname itself, so the validated DNS result is only pinned on direct connections.
-
-## Package Uploads
-
-Packages can also be [published by uploading zip archives](/guide/packages#from-an-archive-upload). Uploads are stored on the same disk as dist archives.
-
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `ARTIFACT_MAX_SIZE` | Maximum archive size in megabytes | `64` |
-| `ARTIFACT_UPLOAD_RATE_LIMIT` | Uploads per minute allowed for each token | `30` |
-
-PHP's `upload_max_filesize` and `post_max_size`, and the body size limit of any reverse proxy in front of Pricore (such as nginx's `client_max_body_size`), must be at least `ARTIFACT_MAX_SIZE`. The Docker image allows 64 MB.
-
-## MCP Server
-
-Pricore serves an [MCP server](/guide/mcp) at `/mcp` for AI assistants. Clients register themselves and sign in through OAuth 2.1, with Pricore acting as the authorization server.
-
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `MCP_ENABLED` | Serve `/mcp` and the OAuth endpoints (`/oauth/*`, `/.well-known/oauth-*`) | `true` |
-| `MCP_REDIRECT_DOMAINS` | Comma-separated prefixes (scheme and host, e.g. `https://claude.ai`) that registered clients may redirect to. `*` allows any; every client still needs the user's approval. Include `http://localhost` when restricting it, so CLI clients such as Claude Code keep working. The `claude://`, `cursor://` and `vscode://` schemes are always allowed. | `*` |
-| `MCP_RATE_LIMIT` | MCP requests per minute allowed for each user | `120` |
-| `PASSPORT_PRIVATE_KEY` | PEM private key used to sign OAuth tokens | Read from `storage/oauth-private.key` |
-| `PASSPORT_PUBLIC_KEY` | PEM public key used to verify OAuth tokens | Read from `storage/oauth-public.key` |
-
-Generate the key files with `php artisan passport:keys`. The Docker image does this on first boot. Every instance behind a load balancer must use the same keys.
-
-`APP_URL` must be the public URL of Pricore, and `TRUSTED_PROXIES` must be set when it runs behind a proxy. Clients find the OAuth endpoints through metadata built from these values.
-
-## Storage Configuration
-
-By default, Pricore stores package distribution files on the local filesystem. To use S3 or an S3-compatible storage provider (like MinIO, DigitalOcean Spaces, or Cloudflare R2), set the filesystem disk to `s3`:
-
-```bash
-FILESYSTEM_DISK=s3
-```
-
-### AWS S3
-
-If you only use AWS, configure the standard `AWS_*` variables:
+For AWS, the standard variables are enough:
 
 ```bash
 AWS_ACCESS_KEY_ID=your-access-key
 AWS_SECRET_ACCESS_KEY=your-secret-key
-AWS_DEFAULT_REGION=us-east-1
-AWS_BUCKET=your-bucket
+AWS_DEFAULT_REGION=eu-west-1
+AWS_BUCKET=pricore
 ```
 
-### S3-Compatible Storage
-
-If you want to use an S3-compatible provider for storage while keeping the `AWS_*` variables for other AWS services, you can set `S3_*` variables that take precedence over their `AWS_*` counterparts:
+For an S3-compatible service such as Cloudflare R2, MinIO or DigitalOcean Spaces, use the `S3_*` variables. Each one overrides its `AWS_*` counterpart, so you can store packages elsewhere while other AWS integrations keep their own credentials:
 
 ```bash
-# S3-compatible provider for filesystem storage
-S3_ACCESS_KEY_ID=your-s3-compatible-key
-S3_SECRET_ACCESS_KEY=your-s3-compatible-secret
-S3_DEFAULT_REGION=us-east-1
-S3_BUCKET=your-bucket
-S3_ENDPOINT=https://s3.example.com
-S3_URL=https://your-bucket.s3.example.com
+S3_ACCESS_KEY_ID=your-key
+S3_SECRET_ACCESS_KEY=your-secret
+S3_DEFAULT_REGION=auto
+S3_BUCKET=pricore
+S3_ENDPOINT=https://<account-id>.r2.cloudflarestorage.com
 S3_USE_PATH_STYLE_ENDPOINT=true
-
-# AWS credentials (used by other AWS services, and as fallback for S3)
-AWS_ACCESS_KEY_ID=your-aws-key
-AWS_SECRET_ACCESS_KEY=your-aws-secret
-AWS_DEFAULT_REGION=us-east-1
 ```
 
-| Variable | Description | Fallback |
-|----------|-------------|----------|
-| `S3_ACCESS_KEY_ID` | Access key for S3-compatible storage | `AWS_ACCESS_KEY_ID` |
-| `S3_SECRET_ACCESS_KEY` | Secret key for S3-compatible storage | `AWS_SECRET_ACCESS_KEY` |
-| `S3_DEFAULT_REGION` | Storage region | `AWS_DEFAULT_REGION` |
-| `S3_BUCKET` | Bucket name | `AWS_BUCKET` |
-| `S3_URL` | Custom URL for the storage service | `AWS_URL` |
-| `S3_ENDPOINT` | Custom endpoint URL | `AWS_ENDPOINT` |
-| `S3_USE_PATH_STYLE_ENDPOINT` | Use path-style endpoints (required by most S3-compatible providers) | `AWS_USE_PATH_STYLE_ENDPOINT` |
+`S3_URL` overrides `AWS_URL` in the same way.
 
-If no `S3_*` variables are set, the configuration falls back to the `AWS_*` variables — so existing setups continue to work without changes.
+## Private networks
 
-## Mail Configuration
+Organization admins can enter any URL as a Generic Git repository or a registry mirror. To stop them from reaching internal services, Pricore refuses URLs that resolve to private, loopback, link-local or other reserved IP addresses, including through redirects. If your Git server or Satis instance is on a private network, allow its exact hostname or IP:
 
-Configure mail for password resets and notifications:
+| Variable | Description |
+|----------|-------------|
+| `GIT_ALLOWED_PRIVATE_HOSTS` | Hosts allowed for [Generic Git repositories](/guide/repositories#git-servers-on-a-private-network) |
+| `MIRROR_ALLOWED_PRIVATE_HOSTS` | Hosts allowed for [registry mirrors](/guide/registry-mirrors#private-networks) |
 
-```bash
-MAIL_MAILER=smtp
-MAIL_HOST=smtp.mailgun.org
-MAIL_PORT=587
-MAIL_USERNAME=your-username
-MAIL_PASSWORD=your-password
-MAIL_ENCRYPTION=tls
-MAIL_FROM_ADDRESS=noreply@yourcompany.com
-MAIL_FROM_NAME="${APP_NAME}"
-```
+Both take a comma-separated list such as `git.internal,10.20.30.40`. Wildcards and CIDR ranges are not accepted. GitHub, GitLab and Bitbucket repositories are not affected.
 
-## Horizon (Queue Dashboard)
+Pricore pins the IP address it validated when it connects. Mirror requests therefore ignore `HTTP_PROXY` and connect directly. Git does use a configured proxy, but then the proxy resolves the hostname and the pinning doesn't apply.
 
-Pricore uses [Laravel Horizon](https://laravel.com/docs/horizon) to manage queue workers. The following variables configure the Horizon dashboard:
+## MCP server
 
-```bash
-HORIZON_ALLOWED_EMAILS=admin@yourcompany.com,ops@yourcompany.com
-HORIZON_PATH=horizon
-```
+Pricore serves an [MCP server](/guide/mcp) at `/mcp`. Clients register themselves and sign in with OAuth, with Pricore as the authorization server.
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `HORIZON_ALLOWED_EMAILS` | Comma-separated list of emails allowed to access the Horizon dashboard (in non-local environments) | `''` (empty) |
-| `HORIZON_NAME` | Name displayed in the Horizon UI and notifications | - |
-| `HORIZON_DOMAIN` | Subdomain to serve Horizon from (e.g., `horizon.yourcompany.com`) | `null` (same domain) |
-| `HORIZON_PATH` | URI path for the Horizon dashboard | `horizon` |
-| `HORIZON_PREFIX` | Redis key prefix for Horizon data | `{app_name}_horizon:` |
+| `MCP_ENABLED` | Serve `/mcp` and the OAuth endpoints (`/oauth/*`, `/.well-known/oauth-*`) | `true` |
+| `MCP_REDIRECT_DOMAINS` | Comma-separated prefixes such as `https://claude.ai` that clients may redirect to after sign-in. `*` allows any; the user still approves every client. When you restrict it, include `http://localhost` for CLI clients such as Claude Code. `claude://`, `cursor://` and `vscode://` are always allowed. | `*` |
+| `MCP_RATE_LIMIT` | Requests per minute per user | `120` |
+| `PASSPORT_PRIVATE_KEY` / `PASSPORT_PUBLIC_KEY` | PEM keys that sign OAuth tokens | `storage/oauth-private.key` / `storage/oauth-public.key` |
 
-## Slack Notifications
+Generate the key files with `php artisan passport:keys`; the Docker image does this on first boot. All servers behind a load balancer need the same keys.
 
-To send notifications to Slack, configure a bot token:
+Clients discover the OAuth endpoints from `APP_URL`, so it must be the public URL, and `TRUSTED_PROXIES` must be set when Pricore runs behind a proxy.
 
-```bash
-SLACK_BOT_USER_OAUTH_TOKEN=xoxb-your-bot-token
-SLACK_BOT_USER_DEFAULT_CHANNEL=#packages
-```
+## Horizon
+
+[Horizon](https://laravel.com/docs/horizon) runs the background jobs: repository syncs, archive builds, mirror imports and advisory scans. Its dashboard is at `/horizon`.
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `SLACK_BOT_USER_OAUTH_TOKEN` | Slack bot user OAuth token | - |
-| `SLACK_BOT_USER_DEFAULT_CHANNEL` | Default Slack channel for notifications | - |
+| `HORIZON_ALLOWED_EMAILS` | Comma-separated emails of users who may open the dashboard outside the `local` environment | - |
+| `HORIZON_PATH` | Dashboard path | `horizon` |
+| `HORIZON_DOMAIN` | Serve the dashboard on a separate domain | - |
 
-## Error Tracking (Sentry)
+## Sentry
 
-Pricore supports [Sentry](https://sentry.io/) for error tracking and performance monitoring:
+Set a DSN to report errors to [Sentry](https://sentry.io/):
 
 ```bash
 SENTRY_LARAVEL_DSN=https://examplePublicKey@o0.ingest.sentry.io/0
-SENTRY_ENVIRONMENT=production
-SENTRY_TRACES_SAMPLE_RATE=0.2
+SENTRY_TRACES_SAMPLE_RATE=0.1
 ```
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `SENTRY_LARAVEL_DSN` | Sentry DSN URL (falls back to `SENTRY_DSN`) | - |
-| `SENTRY_RELEASE` | Release version tag sent to Sentry | - |
-| `SENTRY_ENVIRONMENT` | Environment name in Sentry | `APP_ENV` value |
-| `SENTRY_SAMPLE_RATE` | Error event sample rate (`0.0` to `1.0`) | `1.0` |
-| `SENTRY_TRACES_SAMPLE_RATE` | Performance traces sample rate (`0.0` to `1.0`) | `null` (disabled) |
-| `SENTRY_PROFILES_SAMPLE_RATE` | Profiling sample rate (`0.0` to `1.0`) | `null` (disabled) |
-| `SENTRY_ENABLE_LOGS` | Send logs to Sentry | `false` |
-| `SENTRY_LOG_LEVEL` | Minimum log level sent to Sentry | `debug` |
-| `SENTRY_SEND_DEFAULT_PII` | Include personally identifiable information | `false` |
+`SENTRY_ENVIRONMENT`, `SENTRY_RELEASE`, `SENTRY_SAMPLE_RATE` and `SENTRY_PROFILES_SAMPLE_RATE` work as described in the [Sentry Laravel docs](https://docs.sentry.io/platforms/php/guides/laravel/).
 
-## Security Settings
+## Example
 
-### Trusted Proxies
-
-When running behind a load balancer or reverse proxy, configure trusted proxies:
+A production `.env` for a single server with PostgreSQL, behind a reverse proxy:
 
 ```bash
-TRUSTED_PROXIES=192.168.1.0/24,10.0.0.0/8
-```
-
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `TRUSTED_PROXIES` | Comma-separated list of trusted proxy IP addresses or CIDR ranges. Use `*` to trust all proxies. | `''` (empty) |
-
-### Two-Factor Authentication
-
-Two-factor authentication is enabled by default. Users can enable it in their account settings.
-
-### Session Security
-
-```bash
-SESSION_LIFETIME=120  # minutes
-SESSION_SECURE_COOKIE=true  # require HTTPS
-```
-
-## Performance Tuning
-
-### Queue Workers
-
-For production, use Laravel Horizon to manage queue workers:
-
-```bash
-# Horizon is included and configured by default
-php artisan horizon
-```
-
-### Caching
-
-Enable config and route caching for production:
-
-```bash
-php artisan config:cache
-php artisan route:cache
-php artisan view:cache
-```
-
-## Complete Example
-
-Here's a complete production `.env` example:
-
-```bash
-APP_NAME=Pricore
+APP_URL=https://pricore.example.com
+APP_KEY=base64:...
 APP_ENV=production
-APP_KEY=base64:your-generated-key
 APP_DEBUG=false
-APP_URL=https://pricore.yourcompany.com
-
-SIGN_UP_ENABLED=false
+TRUSTED_PROXIES=127.0.0.1
 
 DB_CONNECTION=pgsql
 DB_HOST=127.0.0.1
-DB_PORT=5432
 DB_DATABASE=pricore
 DB_USERNAME=pricore
-DB_PASSWORD=secure-password
+DB_PASSWORD=...
 
 REDIS_HOST=127.0.0.1
-REDIS_PORT=6379
-
+QUEUE_CONNECTION=redis
 CACHE_STORE=redis
 SESSION_DRIVER=redis
-QUEUE_CONNECTION=redis
-BROADCAST_CONNECTION=reverb
 
-REVERB_APP_ID=your-app-id
-REVERB_APP_KEY=your-app-key
-REVERB_APP_SECRET=your-app-secret
-REVERB_HOST=pricore.yourcompany.com
+BROADCAST_CONNECTION=reverb
+REVERB_APP_ID=pricore
+REVERB_APP_KEY=...
+REVERB_APP_SECRET=...
+REVERB_HOST=127.0.0.1
 REVERB_PORT=8080
-REVERB_SCHEME=https
+REVERB_SCHEME=http
 
 MAIL_MAILER=smtp
-MAIL_HOST=smtp.mailgun.org
+MAIL_HOST=smtp.example.com
 MAIL_PORT=587
-MAIL_USERNAME=postmaster@yourcompany.com
-MAIL_PASSWORD=your-mail-password
-MAIL_ENCRYPTION=tls
-MAIL_FROM_ADDRESS=packages@yourcompany.com
-MAIL_FROM_NAME="${APP_NAME}"
+MAIL_USERNAME=...
+MAIL_PASSWORD=...
+MAIL_FROM_ADDRESS=pricore@example.com
 
-GITHUB_CLIENT_ID=your-github-client-id
-GITHUB_CLIENT_SECRET=your-github-client-secret
+GITHUB_CLIENT_ID=...
+GITHUB_CLIENT_SECRET=...
 
-GITLAB_CLIENT_ID=your-gitlab-client-id
-GITLAB_CLIENT_SECRET=your-gitlab-client-secret
-# GITLAB_INSTANCE_URI=https://gitlab.example.com  # uncomment for self-hosted
-
-HORIZON_ALLOWED_EMAILS=admin@yourcompany.com
-
-SENTRY_LARAVEL_DSN=https://examplePublicKey@o0.ingest.sentry.io/0
-
-TRUSTED_PROXIES=
+HORIZON_ALLOWED_EMAILS=you@example.com
 ```

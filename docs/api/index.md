@@ -10,7 +10,7 @@ Pricore exposes three HTTP interfaces:
 
 The Management API lets you automate Pricore — for example, an installer can mint a Composer token and connect a repository without anyone touching the UI.
 
-- **Base URL:** `https://pricore.yourcompany.com/api/v1`
+- **Base URL:** `https://pricore.example.com/api/v1`
 - **Format:** JSON. Send `Accept: application/json`.
 - **Interactive docs:** browse and try endpoints at `/docs/api`. The full OpenAPI 3.1 specification is published at [`/openapi.json`](/openapi.json).
 - **Rate limit:** 120 requests/minute per token.
@@ -22,7 +22,7 @@ Send an access token as a Bearer token:
 ```bash
 curl -H "Authorization: Bearer YOUR_TOKEN" \
      -H "Accept: application/json" \
-     https://pricore.yourcompany.com/api/v1/user
+     https://pricore.example.com/api/v1/user
 ```
 
 Two kinds of token work:
@@ -80,7 +80,7 @@ The Composer API requires authentication via an access token that carries the `c
 Use `token` as the username and your access token as the password:
 
 ```bash
-curl -u "token:YOUR_ACCESS_TOKEN" https://pricore.yourcompany.com/your-org/packages.json
+curl -u "token:YOUR_ACCESS_TOKEN" https://pricore.example.com/acme/packages.json
 ```
 
 ### Authorization Header
@@ -88,7 +88,7 @@ curl -u "token:YOUR_ACCESS_TOKEN" https://pricore.yourcompany.com/your-org/packa
 Alternatively, use the Bearer token format:
 
 ```bash
-curl -H "Authorization: Bearer YOUR_ACCESS_TOKEN" https://pricore.yourcompany.com/your-org/packages.json
+curl -H "Authorization: Bearer YOUR_ACCESS_TOKEN" https://pricore.example.com/acme/packages.json
 ```
 
 ## Composer Repository API
@@ -107,9 +107,9 @@ GET /{organization}/packages.json
 
 ```json
 {
-    "metadata-url": "https://pricore.yourcompany.com/your-org/p2/%package%.json",
+    "metadata-url": "https://pricore.example.com/acme/p2/%package%.json",
     "available-packages": ["acme/billing", "acme/utils"],
-    "notify-batch": "https://pricore.yourcompany.com/your-org/notify-batch"
+    "notify-batch": "https://pricore.example.com/acme/notify-batch"
 }
 ```
 
@@ -250,7 +250,7 @@ Packages with advisories are included in the response with their advisory list. 
 
 ### Upload a Package Version
 
-Publishes a zip archive as a version of an existing [uploaded package](/guide/packages#from-an-archive-upload). Requires a token with the `composer` and `write:packages` scopes (**Allow publishing packages**); personal tokens also require their owner to be an owner or admin of the organization.
+Publishes a zip archive as a version of an existing [uploaded package](/guide/packages#uploading-packages). Requires a token with the `composer` and `write:packages` scopes (**Allow publishing packages**); personal tokens also require their owner to be an owner or admin of the organization.
 
 ```
 POST /{organization}/api/packages/upload
@@ -267,7 +267,7 @@ POST /{organization}/api/packages/upload
 curl -H "Authorization: Bearer YOUR_TOKEN" \
   -F archive=@package.zip \
   -F version=1.4.0 \
-  https://pricore.yourcompany.com/{organization}/api/packages/upload
+  https://pricore.example.com/{organization}/api/packages/upload
 ```
 
 **Response** (`201 Created`, or `200 OK` when the identical archive was already published as this version):
@@ -279,7 +279,7 @@ curl -H "Authorization: Bearer YOUR_TOKEN" \
     "version": "1.4.0",
     "version_normalized": "1.4.0.0",
     "dist": {
-        "url": "https://pricore.yourcompany.com/acme/dists/acme/moodle-plugin/1.4.0/3f7a...e1.zip",
+        "url": "https://pricore.example.com/acme/dists/acme/moodle-plugin/1.4.0/3f7a...e1.zip",
         "shasum": "3f7a...e1",
         "size": 48213
     }
@@ -306,7 +306,7 @@ curl -H "Authorization: Bearer YOUR_TOKEN" \
 POST /webhooks/github/{repository-uuid}
 ```
 
-Receives push, release, and ping events from GitHub. Triggers an automatic repository sync when new commits or tags are pushed.
+Receives `push`, `release`, `delete` and `ping` events from GitHub. Pricore registers this webhook when the repository is added.
 
 Requires webhook signature verification via the `X-Hub-Signature-256` header.
 
@@ -317,6 +317,7 @@ Requires webhook signature verification via the `X-Hub-Signature-256` header.
 | `ping` | Returns 200 OK |
 | `push` | Triggers repository sync |
 | `release` | Triggers repository sync |
+| `delete` | Triggers repository sync, which removes versions of deleted tags and branches |
 
 ### GitLab Webhook
 
@@ -358,9 +359,7 @@ Requires webhook signature verification via the `X-Hub-Signature` header (HMAC-S
 POST /webhooks/git/{repository-uuid}
 ```
 
-Triggers a repository sync for Generic Git repositories. Unlike GitHub and GitLab webhooks, this endpoint must be configured manually on your Git server.
-
-Activate the webhook from the repository page in Pricore to get the URL and secret, then configure your Git server to POST to this URL on push events.
+Triggers a repository sync for Generic Git repositories. Unlike the other providers, this webhook has to be configured by hand on your Git server; see [Generic Git webhooks](/guide/repositories#generic-git-webhooks).
 
 **Authentication** — include the secret using one of these methods:
 
@@ -376,20 +375,6 @@ Activate the webhook from the repository page in Pricore to get the URL and secr
 {
     "message": "Sync dispatched."
 }
-```
-
-## Configuring Composer
-
-Add Pricore as a Composer repository:
-
-```bash
-composer config repositories.your-org composer https://pricore.yourcompany.com/your-org
-```
-
-Then authenticate:
-
-```bash
-composer config --global --auth http-basic.pricore.yourcompany.com token YOUR_ACCESS_TOKEN
 ```
 
 ## Error Responses

@@ -1,84 +1,40 @@
 # Organizations
 
-Organizations are the foundation of Pricore's multi-tenant architecture. Each organization has its own packages, repositories, and access tokens, providing complete isolation between teams.
+An organization is a Composer repository with its own packages, repositories, members and access tokens. Nothing is shared between organizations: a token for one organization can't install packages from another.
 
-## Creating an Organization
+Most teams need a single organization. Create more when groups should not see each other's packages, for example separate clients.
 
-After logging in, you can create a new organization:
+## Creating an organization
 
-1. Click **Create Organization** from the dashboard
-2. Enter a name and unique slug (used in URLs)
-3. The slug becomes part of your Composer repository URL: `https://pricore.yourcompany.com/org/{slug}`
+Click **Create Organization** on the dashboard and pick a name. The slug derived from it is part of every URL, including the Composer repository URL:
 
-## Organization Structure
+```
+https://pricore.example.com/{slug}
+```
 
-Each organization contains:
+The owner can change the slug later under **Organization Settings** > **General**. Every project that uses the old URL in its `composer.json` has to be updated, so pick it with care.
 
-- **Packages** - Your private Composer packages
-- **Repositories** - Connected Git repositories for automatic syncing
-- **Access Tokens** - Authentication tokens for Composer clients
-- **Members** - Team members with role-based permissions
+## Roles
 
-## Member Roles
+| | Member | Admin | Owner |
+|---|:---:|:---:|:---:|
+| View packages, repositories and the security overview | ✓ | ✓ | ✓ |
+| Install packages with a personal token | ✓ | ✓ | ✓ |
+| Add, sync and delete repositories, packages and versions | | ✓ | ✓ |
+| Upload packages | | ✓ | ✓ |
+| Manage members, access tokens, SSH keys, mirrors and security settings | | ✓ | ✓ |
+| Change the slug or delete the organization | | | ✓ |
 
-Organizations support role-based access control:
+Each organization has one owner, the user who created it. Ownership can't be transferred.
 
-| Role | Permissions |
-|------|-------------|
-| **Owner** | Full control including organization deletion |
-| **Admin** | Manage packages, repositories, tokens, and members |
-| **Member** | View packages and create personal access tokens |
+## Members
 
-## Managing Members
+To invite someone, go to **Organization Settings** > **Members**, click **Invite Member**, enter their email address and choose Admin or Member. They receive a link that is valid for 7 days. If they don't have an account yet, they create one through the link, even when sign-up is disabled.
 
-### Inviting Members
+Admins and the owner can change roles and remove members from the same page. Members can leave an organization themselves under **Settings** > **Organizations**.
 
-1. Navigate to **Organization Settings** > **Members**
-2. Click **Invite Member**
-3. Enter the user's email address
-4. Select a role
-5. The user receives an invitation email
+When someone is removed, their personal access tokens stop working for the organization immediately. Organization tokens they created keep working, because they belong to the organization. Review those under **Access Tokens** and revoke what they had access to.
 
-### Changing Roles
+## Deleting an organization
 
-Admins and owners can change member roles:
-
-1. Go to **Organization Settings** > **Members**
-2. Find the member and click the role dropdown
-3. Select the new role
-
-### Removing Members
-
-1. Go to **Organization Settings** > **Members**
-2. Click **Remove** next to the member
-3. Confirm the removal
-
-::: warning
-Removing a member does not revoke their personal access tokens. You should audit and revoke any tokens they created.
-:::
-
-## Organization Settings
-
-### General Settings
-
-- **Name** - Display name for the organization
-- **Slug** - URL-friendly identifier (cannot be changed after creation)
-- **Description** - Optional description shown on the organization page
-
-### Danger Zone
-
-The organization owner can:
-
-- **Transfer Ownership** - Transfer to another admin
-- **Delete Organization** - Permanently delete the organization and all its data
-
-::: danger
-Deleting an organization removes all packages, repositories, tokens, and member associations. This action cannot be undone.
-:::
-
-## Best Practices
-
-1. **Use descriptive slugs** - Choose slugs that clearly identify your team or project
-2. **Minimize owners** - Keep the number of owners small for security
-3. **Audit tokens regularly** - Review access tokens and remove unused ones
-4. **Use team accounts wisely** - Create separate organizations for different teams or projects
+The owner can delete the organization under **Organization Settings** > **General**. This removes all its packages, versions, archives, repositories and tokens, and can't be undone.
