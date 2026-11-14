@@ -37,7 +37,7 @@ export default defineConfig({
             { text: 'SSH Keys', link: '/guide/ssh-keys' },
             { text: 'Access Tokens', link: '/guide/tokens' },
             { text: 'Registry Mirrors', link: '/guide/registry-mirrors' },
-            { text: 'Distribution Mirroring', link: '/guide/dist-mirroring' },
+            { text: 'Dist Archives', link: '/guide/dist-mirroring' },
             { text: 'Security Auditing', link: '/guide/security-auditing' },
             { text: 'MCP Server', link: '/guide/mcp' },
           ],

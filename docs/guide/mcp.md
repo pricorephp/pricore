@@ -2,14 +2,14 @@
 
 Pricore includes a [Model Context Protocol](https://modelcontextprotocol.io) (MCP) server, so AI assistants such as Claude, Cursor and VS Code can look up your packages, versions and vulnerabilities, and handle routine registry tasks for you.
 
-The server is available at `https://pricore.yourcompany.com/mcp`. Clients sign in with your Pricore account through OAuth, so there is no token to create or paste.
+The server is available at `https://pricore.example.com/mcp`. Clients sign in with your Pricore account through OAuth, so there is no token to create or paste.
 
 ## Connecting a Client
 
 ### Claude Code
 
 ```bash
-claude mcp add --transport http pricore https://pricore.yourcompany.com/mcp
+claude mcp add --transport http pricore https://pricore.example.com/mcp
 ```
 
 Run `/mcp` in Claude Code and choose **Authenticate** to sign in.
@@ -27,7 +27,7 @@ Add Pricore as a remote MCP server using the `/mcp` URL. For example, in `.curso
   "servers": {
     "pricore": {
       "type": "http",
-      "url": "https://pricore.yourcompany.com/mcp"
+      "url": "https://pricore.example.com/mcp"
     }
   }
 }

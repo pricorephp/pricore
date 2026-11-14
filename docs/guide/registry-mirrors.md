@@ -1,100 +1,52 @@
 # Registry Mirrors
 
-Registry mirrors let you import packages from external Composer registries into your Pricore organization. This is useful when you want to centralize packages from multiple sources — such as internal Satis repositories or third-party registries — so all organization members can install them from a single Composer endpoint.
+A registry mirror imports the packages of another Composer registry into your organization. Use it to bring packages from an existing Satis instance or a vendor's private registry into Pricore, so your projects need only one repository and one token.
 
-## How It Works
+Mirrors are managed by admins and the owner under **Organization Settings** > **Registry Mirrors**.
 
-A registry mirror connects to an external Composer registry, fetches all available packages and their version metadata, and imports them into your organization. Mirrored packages are served alongside your repository-synced packages through the same Composer API.
+## Adding a mirror
 
-When dist mirroring is enabled, Pricore also downloads the zip archives from the upstream registry and stores them locally. This means your team members don't need credentials to the original registry — they install everything through Pricore.
+Click **Add Mirror** and fill in:
 
-Mirrors are synced automatically every 4 hours. You can also trigger a sync manually at any time.
+- **Name**, such as "Internal Satis".
+- **Registry URL**: the URL Composer would use, where `packages.json` lives.
+- **Authentication**: none, HTTP Basic (username and password), or a Bearer token.
+- **Mirror dist archives**: download every archive into Pricore. Leave this on unless you have a reason not to; without it, Composer downloads from the upstream registry and every developer needs credentials for it.
 
-## Adding a Mirror
+The first sync starts right away. Mirrored packages appear in the package list and install like any other package. Their page says which mirror they come from.
 
-1. Navigate to **Organization Settings** > **Registry Mirrors**
-2. Click **Add Mirror**
-3. Fill in the details:
-   - **Name** — A label for the mirror (e.g., "Internal Satis")
-   - **Registry URL** — The base URL of the external registry (must serve a `packages.json` endpoint)
-   - **Authentication** — Choose the appropriate method:
-     - **None** — For public registries
-     - **HTTP Basic** — Username and password
-     - **Bearer Token** — Token-based authentication
-   - **Mirror dist archives** — When enabled, Pricore downloads and stores zip archives locally (recommended)
-4. Click **Add Mirror**
+## Supported registries
 
-Pricore immediately starts syncing packages from the registry.
+Pricore reads registries that serve a `packages.json` in one of these forms:
 
-## Network Security
+- Packages listed inline in `packages.json`, as Satis does by default.
+- Packages split over `includes` files.
+- Composer v2 metadata with a `metadata-url`, if the registry also lists its packages under `available-packages`.
 
-Pricore validates every URL fetched during a mirror sync, including `packages.json`, include files, Composer v2 metadata, dist archives, and redirects. Only HTTP and HTTPS URLs that resolve entirely to public IP addresses are accepted by default. Private, loopback, link-local, multicast, unspecified, and reserved addresses are rejected.
+Packagist.org itself can't be mirrored: it doesn't publish a list of its packages in this way, and mirroring all of it wouldn't be useful anyway.
 
-If a registry is intentionally hosted on a private network, add its exact hostname or IP address to `MIRROR_ALLOWED_PRIVATE_HOSTS`:
+## Syncing
+
+Every mirror is synced every 4 hours by the scheduler. Open a mirror and click **Sync Now** to sync it immediately, or use the command line:
+
+```bash
+php artisan sync:mirror {uuid}
+php artisan sync:mirror --organization=acme
+php artisan sync:mirror --all
+```
+
+A sync adds new versions, updates changed ones and removes versions that are gone upstream. If downloading archives fails, for example because the credentials lack download access, the error is shown in the mirror's **Sync History**.
+
+## Private networks
+
+Pricore only connects to public IP addresses for mirrors, including for include files, metadata, archives and redirects. If the registry is on a private network, add its exact hostname or IP to `MIRROR_ALLOWED_PRIVATE_HOSTS`:
 
 ```bash
 MIRROR_ALLOWED_PRIVATE_HOSTS=satis.internal,10.20.30.40
 ```
 
-Wildcards and CIDR ranges are not supported. An allowlisted private host is permitted only when it is the configured mirror origin; an upstream registry cannot redirect or point metadata or dist downloads at a different private host. Mirror credentials are likewise sent only to the configured origin and are removed from cross-origin requests.
-
-Mirror HTTP traffic connects directly instead of using process-level HTTP proxy variables. This is required so Pricore can pin the validated DNS addresses for the connection.
+The exception only applies to the mirror's own host. The registry can't redirect Pricore, or point archive downloads, to another private address. Credentials are only sent to the mirror's own host as well.
 
 ::: warning
-Allowlisting a hostname gives organization administrators access to all ports and paths on that host through the mirror feature. Only allowlist hosts dedicated to serving trusted Composer registries.
+Every organization admin can reach every port and path on an allowed host through a mirror. Only allow hosts that serve a Composer registry.
 :::
-
-## Supported Registry Formats
-
-Pricore supports registries that serve a standard Composer `packages.json` file:
-
-| Format | Description | Support |
-|--------|-------------|---------|
-| **Inline** | All package data directly in `packages.json` | Supported |
-| **Includes** | Package data split into referenced include files | Supported |
-
-These formats cover most Satis repositories and Composer-compatible registries.
-
-## Sync Behavior
-
-- **Automatic sync** — All mirrors are synced every 4 hours
-- **Manual sync** — Click the **Sync** button on any mirror to trigger an immediate sync
-- **Incremental** — Only new or changed versions are processed; unchanged versions are skipped
-- **Stale removal** — Versions that no longer exist in the upstream registry are automatically removed
-
-Each version is processed as an independent job, so syncs are parallelized across your queue workers.
-
-## Dist Mirroring
-
-When **Mirror dist archives** is enabled on a mirror, Pricore downloads zip archives for each package version from the upstream registry and stores them on your configured dist disk (local or S3).
-
-This requires:
-- `DIST_ENABLED=true` in your environment (enabled by default)
-- The upstream registry credentials must have permission to download dist archives
-
-If dist downloads fail (e.g., due to a 403 error), the error is displayed on the mirror card in the settings page.
-
-::: tip
-For multi-node deployments (e.g., Kubernetes), set `DIST_DISK=s3` so dist archives are accessible from all nodes. See [Distribution Mirroring](/guide/dist-mirroring) for storage configuration.
-:::
-
-## CLI
-
-You can also sync mirrors from the command line:
-
-```bash
-# Sync a specific mirror by UUID
-php artisan sync:mirror {uuid}
-
-# Sync all mirrors for an organization
-php artisan sync:mirror --organization={slug-or-uuid}
-
-# Sync all mirrors
-php artisan sync:mirror --all
-```
-
-## Mirrored Packages
-
-Packages imported from a mirror appear in your organization's package list like any other package. On the package detail page, a **Mirror** label indicates which mirror the package was imported from, linking back to the mirrors settings page.
-
-Mirrored packages are fully compatible with the Composer API — your team installs them the same way as repository-synced packages, using your organization's Composer endpoint and access token.

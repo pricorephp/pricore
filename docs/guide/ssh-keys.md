@@ -1,87 +1,21 @@
 # SSH Keys
 
-SSH keys let Pricore authenticate with private Git repositories over SSH. Each organization can manage multiple SSH keys and assign them to specific repositories.
+[Generic Git repositories](/guide/repositories#generic-git) that aren't public need an SSH key. Pricore generates the key pair; you add the public key to your Git server as a deploy key.
 
-## Generating an SSH Key
+SSH keys belong to the organization and are managed by admins and the owner under **Organization Settings** > **SSH Keys**. GitHub, GitLab and Bitbucket repositories don't use them; they use the [Git credentials](/guide/repositories#github-gitlab-and-bitbucket) of the person who added them.
 
-1. Navigate to **Organization Settings** > **SSH Keys**
-2. Click **Generate SSH Key**
-3. Enter a name for the key (e.g., "Gitea Deploy Key" or "Internal GitLab")
-4. Pricore generates an Ed25519 key pair
+## Generating a key
 
-The public key is displayed immediately — copy it and add it as a deploy key on your Git server.
+Click **Generate SSH Key** and give it a name that says where it is used, such as "Gitea". Pricore creates an Ed25519 key pair and shows the public key with its fingerprint.
 
-## Adding the Deploy Key
+Add the public key as a read-only deploy key on each repository Pricore should read. Pricore never writes to repositories, so don't grant write access. On most servers the setting is under the repository's **Settings** > **Deploy Keys**; on Bitbucket it's called **Access keys**.
 
-After generating an SSH key, add the public key as a read-only deploy key on your Git server:
+When you [add the repository](/guide/repositories#generic-git), select the key.
 
-### Gitea / Forgejo
+## Deleting a key
 
-1. Go to your repository **Settings** > **Deploy Keys**
-2. Click **Add Deploy Key**
-3. Paste the public key
-4. Save
+Deleting a key removes it from every repository that uses it, and those repositories stop syncing. An existing repository can't be switched to another key, so check which repositories use a key before you delete it.
 
-### GitHub
+## How keys are stored
 
-1. Go to your repository **Settings** > **Deploy keys**
-2. Click **Add deploy key**
-3. Paste the public key
-4. Leave "Allow write access" unchecked
-5. Click **Add key**
-
-### GitLab
-
-1. Go to your project **Settings** > **Repository** > **Deploy keys**
-2. Click **Expand**
-3. Paste the public key
-4. Ensure "Grant write permissions" is unchecked
-5. Click **Add key**
-
-### Bitbucket
-
-1. Go to your repository **Settings** > **Access keys**
-2. Click **Add key**
-3. Paste the public key
-4. Click **Add key**
-
-::: tip
-Deploy keys grant read-only access to a single repository. If you need to access multiple repositories on the same server, add the same public key to each one.
-:::
-
-## Using SSH Keys with Repositories
-
-When [adding a Generic Git repository](/guide/repositories#generic-git), you can select which SSH key to use from a dropdown. The key is used for all git operations: listing tags and branches, cloning, and fetching updates.
-
-- **Private repositories** require an SSH key — select one when adding the repo
-- **Public repositories** over HTTPS don't need a key — leave the dropdown unselected
-
-## Managing Keys
-
-### Viewing Keys
-
-The SSH Keys settings page shows all keys for your organization:
-
-- **Name** — the label you gave the key
-- **Fingerprint** — the SHA256 fingerprint for identification
-- **Public key** — click "Show Public Key" to reveal and copy
-
-### Deleting a Key
-
-1. Click the delete icon on the key card
-2. Confirm the deletion
-
-::: warning
-Deleting an SSH key disconnects it from all repositories that use it. Those repositories will fail to sync until you assign a new key or the repository is made publicly accessible.
-:::
-
-## Permissions
-
-SSH key management requires the **Admin** or **Owner** role in the organization. Regular members can view repositories but cannot generate or delete SSH keys.
-
-## Security
-
-- Private keys are encrypted at rest in the database using Laravel's encryption
-- Private keys are never displayed in the UI — only the public key and fingerprint are shown
-- During git operations, the private key is written to a temporary file, used, and immediately deleted
-- Keys use the Ed25519 algorithm, which provides strong security with small key sizes
+Private keys are encrypted with `APP_KEY` and never shown in the interface. During a sync, the key is written to a temporary file for the `git` command and deleted afterwards.
