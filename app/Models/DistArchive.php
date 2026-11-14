@@ -25,6 +25,7 @@ use Illuminate\Support\Carbon;
  * @property string|null $shasum
  * @property int|null $size
  * @property Carbon|null $detached_at
+ * @property Carbon|null $last_downloaded_at
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property-read Package $package
@@ -50,8 +51,22 @@ class DistArchive extends Model
     {
         return [
             'detached_at' => 'datetime',
+            'last_downloaded_at' => 'datetime',
             'size' => 'integer',
         ];
+    }
+
+    /**
+     * Recorded at most once a day: retention counts in days, and a write per
+     * install would add up on busy CI pipelines.
+     */
+    public function markDownloaded(): void
+    {
+        if ($this->last_downloaded_at?->isAfter(now()->subDay())) {
+            return;
+        }
+
+        $this->update(['last_downloaded_at' => now()]);
     }
 
     /**

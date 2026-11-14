@@ -26,6 +26,7 @@ When disabled, Pricore serves only `source` references and Composer falls back t
 | `DIST_DISK` | Storage disk for archives (`local` or `s3`) | `local` |
 | `DIST_SIGNED_URL_EXPIRY` | Signed URL expiry in minutes (S3 only) | `30` |
 | `DIST_KEEP_DETACHED_DAYS` | Days to keep archives a branch has moved past | unset (keep forever) |
+| `DIST_KEEP_DOWNLOADED_DAYS` | Days retention keeps an archive after its last download (`0` turns it off) | `90` |
 
 ### Local Storage
 
@@ -92,6 +93,16 @@ The window is measured from when an archive **stopped being current**, not from 
 Leaving this unset keeps every detached archive indefinitely, which is the safe default: any commit ever synced stays installable. Setting it trades that guarantee for disk space. Lock files pinning a commit older than the window will fail to install.
 :::
 
+### Archives still in use
+
+Both settings above skip archives downloaded within the last `DIST_KEEP_DOWNLOADED_DAYS` days, so lock files still installing them keep working:
+
+```bash
+DIST_KEEP_DOWNLOADED_DAYS=90
+```
+
+Downloads are recorded at most once a day per archive. Installs served from Composer's local cache never reach Pricore, so they do not count.
+
 ### Running Cleanup
 
 Run the cleanup command manually:
@@ -148,5 +159,6 @@ Composer prefers `dist` over `source` by default, so installs automatically use 
 ### `composer install` fails with 404 on a branch version
 
 The lock file pins a commit whose archive is no longer stored. This happens when
-`DIST_KEEP_DETACHED_DAYS` is set and the commit fell outside the window. Either
-raise the window, or run `composer update` to move the lock to the current head.
+`DIST_KEEP_DETACHED_DAYS` is set and the commit fell outside the window, without
+being downloaded for `DIST_KEEP_DOWNLOADED_DAYS`. Either raise the windows, or run
+`composer update` to move the lock to the current head.

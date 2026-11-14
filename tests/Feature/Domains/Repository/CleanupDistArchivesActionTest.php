@@ -179,3 +179,89 @@ it('never prunes releases of uploaded packages, whose archives are the only copy
     Storage::disk('local')->assertExists('acme/1.0.0.zip');
     Storage::disk('local')->assertExists('acme/2.0.0.zip');
 });
+
+it('keeps detached archives downloaded within the protection window', function (?int $keepDownloadedDays, bool $kept) {
+    config([
+        'pricore.dist.keep_detached_days' => 30,
+        'pricore.dist.keep_downloaded_days' => $keepDownloadedDays,
+    ]);
+
+    $packageVersion = PackageVersion::factory()->for($this->package)->create([
+        'version' => 'dev-main',
+        'source_reference' => 'cccccccccccc',
+    ]);
+
+    $archive = ($this->archiveFor)($packageVersion, 'acme/old.zip', now()->subDays(45));
+    $archive->update(['source_reference' => 'aaaaaaaaaaaa', 'last_downloaded_at' => now()->subDays(10)]);
+
+    ($this->cleanup)();
+
+    expect(DistArchive::query()->whereKey($archive->uuid)->exists())->toBe($kept);
+})->with([
+    'within the window' => [90, true],
+    'outside the window' => [7, false],
+    'protection off' => [0, false],
+]);
+
+it('keeps older releases downloaded within the protection window', function () {
+    config([
+        'pricore.dist.keep_detached_days' => null,
+        'pricore.dist.keep_downloaded_days' => 90,
+    ]);
+
+    $this->package->update(['dist_keep_last_releases' => 1]);
+
+    $archives = [];
+
+    foreach ([['1.0.0', '1.0.0.0'], ['2.0.0', '2.0.0.0'], ['3.0.0', '3.0.0.0']] as [$version, $normalized]) {
+        $packageVersion = PackageVersion::factory()->for($this->package)->create([
+            'version' => $version,
+            'normalized_version' => $normalized,
+            'source_reference' => "ref-{$version}",
+            'dist_path' => "acme/{$version}.zip",
+        ]);
+
+        $archives[$version] = ($this->archiveFor)($packageVersion, "acme/{$version}.zip");
+    }
+
+    // The latest release downloaded recently must not let an older one slip into the keep count
+    $archives['3.0.0']->update(['last_downloaded_at' => now()->subDay()]);
+    $archives['1.0.0']->update(['last_downloaded_at' => now()->subDays(10)]);
+
+    expect(($this->cleanup)()['archives_removed'])->toBe(1);
+
+    Storage::disk('local')->assertExists('acme/3.0.0.zip');
+    Storage::disk('local')->assertMissing('acme/2.0.0.zip');
+    Storage::disk('local')->assertExists('acme/1.0.0.zip');
+});
+
+it('keeps an archive downloaded since its last recorded download', function () {
+    config([
+        'pricore.dist.keep_detached_days' => 30,
+        'pricore.dist.keep_downloaded_days' => 1,
+    ]);
+
+    $packageVersion = PackageVersion::factory()->for($this->package)->create([
+        'version' => 'dev-main',
+        'source_reference' => 'cccccccccccc',
+    ]);
+
+    $archive = ($this->archiveFor)($packageVersion, 'acme/old.zip', now()->subDays(45));
+    $archive->update(['source_reference' => 'aaaaaaaaaaaa']);
+
+    $archive->markDownloaded();
+
+    // Not recorded, as the last record is less than a day old
+    $this->travel(20)->hours();
+    $archive->fresh()->markDownloaded();
+
+    $this->travel(10)->hours();
+    ($this->cleanup)();
+
+    expect(DistArchive::query()->whereKey($archive->uuid)->exists())->toBeTrue();
+
+    $this->travel(2)->days();
+    ($this->cleanup)();
+
+    expect(DistArchive::query()->whereKey($archive->uuid)->exists())->toBeFalse();
+});
