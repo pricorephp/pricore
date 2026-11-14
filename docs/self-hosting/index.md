@@ -38,7 +38,7 @@ Either way, create the first account with `php artisan pricore:install`. Sign-up
 Back up these, together:
 
 - **The database.** All organizations, packages, versions and tokens.
-- **Package archives.** `storage/app/private` on the local disk, or your S3 bucket. Archives built from Git can be rebuilt with a sync, but uploaded packages exist nowhere else.
+- **Package archives.** `storage/app/private` on the local disk, or your S3 bucket. A sync doesn't rebuild missing archives, and archives of older branch commits are still needed by existing lock files. Uploaded packages exist nowhere else.
 - **`APP_KEY`**, and in Docker the `storage/app_key` file it was generated into.
 - **The OAuth keys** `storage/oauth-private.key` and `storage/oauth-public.key`, if you use the MCP server. Without them, connected AI clients have to sign in again.
 
