@@ -83,6 +83,7 @@ export type MirrorData = {
 uuid: string,
 name: string,
 url: string,
+syncMode: App.Domains.Mirror.Contracts.Enums.MirrorSyncMode,
 authType: App.Domains.Mirror.Contracts.Enums.MirrorAuthType,
 mirrorDist: boolean,
 lazyDist: boolean,
@@ -106,6 +107,7 @@ details: Record<string, any> | null,
 }
 namespace Enums {
 export type MirrorAuthType = 'none' | 'basic' | 'bearer';
+export type MirrorSyncMode = 'full' | 'on_demand';
 export type SyncVersionResult = 'added' | 'updated' | 'skipped' | 'failed' | 'dist_failed';
 }
 }

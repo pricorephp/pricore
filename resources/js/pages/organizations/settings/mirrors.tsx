@@ -33,6 +33,7 @@ import { useState } from 'react';
 type OrganizationData =
     App.Domains.Organization.Contracts.Data.OrganizationData;
 type MirrorData = App.Domains.Mirror.Contracts.Data.MirrorData;
+type MirrorSyncMode = App.Domains.Mirror.Contracts.Enums.MirrorSyncMode;
 type RepositorySyncStatus =
     App.Domains.Repository.Contracts.Enums.RepositorySyncStatus;
 
@@ -164,6 +165,7 @@ function AddMirrorDialog({
 }) {
     const [authType, setAuthType] = useState('none');
     const [mirrorDist, setMirrorDist] = useState(true);
+    const [syncMode, setSyncMode] = useState<MirrorSyncMode>('full');
 
     return (
         <Dialog
@@ -173,6 +175,7 @@ function AddMirrorDialog({
                     onClose();
                     setAuthType('none');
                     setMirrorDist(true);
+                    setSyncMode('full');
                 }
             }}
         >
@@ -190,6 +193,7 @@ function AddMirrorDialog({
                         onClose();
                         setAuthType('none');
                         setMirrorDist(true);
+                        setSyncMode('full');
                     }}
                     resetOnSuccess
                     className="space-y-4"
@@ -227,6 +231,39 @@ function AddMirrorDialog({
                                 {errors.url && (
                                     <p className="text-destructive">
                                         {errors.url}
+                                    </p>
+                                )}
+                            </div>
+
+                            <div className="grid space-y-2">
+                                <Label htmlFor="sync_mode">Packages</Label>
+                                <Select
+                                    name="sync_mode"
+                                    value={syncMode}
+                                    onValueChange={(value) =>
+                                        setSyncMode(value as MirrorSyncMode)
+                                    }
+                                >
+                                    <SelectTrigger id="sync_mode">
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="full">
+                                            All packages
+                                        </SelectItem>
+                                        <SelectItem value="on_demand">
+                                            On demand
+                                        </SelectItem>
+                                    </SelectContent>
+                                </Select>
+                                <p className="text-muted-foreground">
+                                    {syncMode === 'on_demand'
+                                        ? 'Packages are imported when Composer first asks for them. Use this for large registries such as Packagist (https://repo.packagist.org).'
+                                        : 'Every package the registry lists is imported on each sync.'}
+                                </p>
+                                {errors.sync_mode && (
+                                    <p className="text-destructive">
+                                        {errors.sync_mode}
                                     </p>
                                 )}
                             </div>
@@ -347,7 +384,7 @@ function AddMirrorDialog({
                                 </Label>
                             </div>
 
-                            {mirrorDist && (
+                            {mirrorDist && syncMode === 'full' && (
                                 <div className="flex items-start space-x-2 pl-6">
                                     <input
                                         type="hidden"
@@ -385,6 +422,7 @@ function AddMirrorDialog({
                                         onClose();
                                         setAuthType('none');
                                         setMirrorDist(true);
+                                        setSyncMode('full');
                                     }}
                                 >
                                     Cancel

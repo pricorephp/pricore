@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Composer;
 
 use App\Domains\Composer\Actions\ResolveBaseUrlFirstServedAction;
+use App\Domains\Mirror\Contracts\Enums\MirrorSyncMode;
 use App\Http\Controllers\Controller;
 use App\Models\Organization;
 use Illuminate\Http\JsonResponse;
@@ -24,7 +25,7 @@ class PackageController extends Controller
             ->values()
             ->all();
 
-        $response = response()->json([
+        $rootMetadata = [
             'metadata-url' => "{$baseUrl}/%package%.json",
             'available-packages' => $availablePackages,
             'notify-batch' => $notifyBatchUrl,
@@ -32,7 +33,15 @@ class PackageController extends Controller
                 'api-url' => route('composer.security-advisories', ['organization' => $organization->slug]),
                 'metadata' => false,
             ],
-        ]);
+        ];
+
+        // Composer only asks for listed packages, so with an on-demand mirror
+        // the list is left out and every dependency is requested here.
+        if ($organization->mirrors()->where('sync_mode', MirrorSyncMode::OnDemand)->exists()) {
+            unset($rootMetadata['available-packages']);
+        }
+
+        $response = response()->json($rootMetadata);
 
         $packagesUpdatedAt = $organization->packages()->max('updated_at');
 

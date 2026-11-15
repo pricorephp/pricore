@@ -3,6 +3,7 @@
 namespace App\Domains\Mirror\Contracts\Data;
 
 use App\Domains\Mirror\Contracts\Enums\MirrorAuthType;
+use App\Domains\Mirror\Contracts\Enums\MirrorSyncMode;
 use App\Domains\Repository\Contracts\Enums\RepositorySyncStatus;
 use App\Models\Mirror;
 use Spatie\LaravelData\Data;
@@ -15,6 +16,7 @@ class MirrorData extends Data
         public string $uuid,
         public string $name,
         public string $url,
+        public MirrorSyncMode $syncMode,
         public MirrorAuthType $authType,
         public bool $mirrorDist,
         public bool $lazyDist,
@@ -30,6 +32,7 @@ class MirrorData extends Data
             uuid: $mirror->uuid,
             name: $mirror->name,
             url: $mirror->url,
+            syncMode: $mirror->sync_mode,
             authType: $mirror->auth_type,
             mirrorDist: $mirror->mirror_dist,
             lazyDist: $mirror->lazy_dist,

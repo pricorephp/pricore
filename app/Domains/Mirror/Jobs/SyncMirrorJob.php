@@ -56,7 +56,10 @@ class SyncMirrorJob implements ShouldBeUnique, ShouldQueue
         try {
             $registryClient = RegistryClientFactory::make($this->mirror);
 
-            $availablePackages = $registryClient->getAvailablePackages();
+            // An on-demand mirror keeps the packages Composer asked for up to date.
+            $availablePackages = $this->mirror->isOnDemand()
+                ? $this->mirror->packages()->orderBy('name')->pluck('name')->all()
+                : $registryClient->getAvailablePackages();
 
             if (empty($availablePackages)) {
                 $this->completeSyncLogEmpty($syncLog);

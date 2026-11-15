@@ -153,9 +153,13 @@ export default function MirrorShow({
                                           : 'Pending'}
                                 </Badge>
                             )}
+                            {mirror.syncMode === 'on_demand' && (
+                                <Badge variant="outline">On demand</Badge>
+                            )}
                             {mirror.mirrorDist && (
                                 <Badge variant="outline">
-                                    {mirror.lazyDist
+                                    {mirror.lazyDist ||
+                                    mirror.syncMode === 'on_demand'
                                         ? 'Dist on demand'
                                         : 'Dist mirroring'}
                                 </Badge>
