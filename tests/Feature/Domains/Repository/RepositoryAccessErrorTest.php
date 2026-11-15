@@ -15,6 +15,10 @@ use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Process;
 
+beforeEach(function () {
+    Http::preventStrayRequests();
+});
+
 function selfHostedGitLabProvider(): GitLabProvider
 {
     return new GitLabProvider('acme/group/package', ['token' => 'glpat-secret', 'url' => 'https://gitlab.acme.test/']);
@@ -64,15 +68,19 @@ it('says when a GitLab instance cannot be reached', function () {
         ->toThrow(GitProviderException::class, 'Could not connect to GitLab at https://gitlab.acme.test. Check the GitLab URL');
 });
 
-it('says when the credentials are missing', function (GitLabProvider|GitHubProvider|BitbucketProvider $provider, string $url, string $message) {
+it('says when the credentials are missing', function (Closure $makeProvider, string $url, string $message) {
     Http::fake([$url => Http::response([], 401)]);
+
+    // Built after faking: a provider creates its HTTP client in its constructor,
+    // and a client created before Http::fake() would reach the real API.
+    $provider = $makeProvider();
 
     expect(fn () => $provider->ensureRepositoryAccess())
         ->toThrow(GitProviderException::class, $message);
 })->with([
-    'gitlab' => fn () => [new GitLabProvider('acme/package', []), 'gitlab.com/*', 'No GitLab token is available'],
-    'github' => fn () => [new GitHubProvider('acme/package', []), 'api.github.com/*', 'No GitHub token is available'],
-    'bitbucket' => fn () => [new BitbucketProvider('acme/package', []), 'api.bitbucket.org/*', 'No Bitbucket API token is available'],
+    'gitlab' => [fn () => new GitLabProvider('acme/package', []), 'gitlab.com/*', 'No GitLab token is available'],
+    'github' => [fn () => new GitHubProvider('acme/package', []), 'api.github.com/*', 'No GitHub token is available'],
+    'bitbucket' => [fn () => new BitbucketProvider('acme/package', []), 'api.bitbucket.org/*', 'No Bitbucket API token is available'],
 ]);
 
 it('explains why GitHub refused access', function (int $status, string $message) {
