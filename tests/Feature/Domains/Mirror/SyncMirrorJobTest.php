@@ -191,6 +191,9 @@ it('removes stale versions during sync', function () {
         ]),
     ]);
 
+    // Versions written in the same second as the sync starts are kept.
+    $this->travel(1)->second();
+
     SyncMirrorJob::dispatchSync($this->mirror);
 
     $this->assertDatabaseMissing('package_versions', ['uuid' => $staleVersion->uuid]);
@@ -337,6 +340,9 @@ it('keeps versions of a package whose metadata fails to load and syncs the other
             ],
         ]),
     ]);
+
+    // Versions written in the same second as the sync starts are kept.
+    $this->travel(1)->second();
 
     SyncMirrorJob::dispatchSync($this->mirror);
 

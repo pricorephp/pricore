@@ -2,9 +2,11 @@
 
 namespace App\Domains\Mirror\Actions;
 
+use App\Domains\Mirror\Contracts\Enums\SyncVersionResult;
 use App\Domains\Mirror\Exceptions\MirrorPackageNotFoundException;
 use App\Domains\Mirror\Exceptions\MirrorSyncException;
 use App\Domains\Mirror\Services\RegistryClient\RegistryClientFactory;
+use App\Domains\Security\Jobs\ScanPackageVersionsJob;
 use App\Models\Mirror;
 use App\Models\Package;
 use Illuminate\Http\Client\ConnectionException;
@@ -29,6 +31,10 @@ class ImportMirrorPackageAction
      */
     public function handle(Mirror $mirror, string $packageName): ?Package
     {
+        // Taken before the list is read, so removing stale versions cannot
+        // delete one that a concurrent sync writes after this read.
+        $listedAt = now();
+
         try {
             $versions = RegistryClientFactory::make($mirror)->getPackageVersions($packageName);
         } catch (MirrorPackageNotFoundException) {
@@ -44,9 +50,11 @@ class ImportMirrorPackageAction
             return null;
         }
 
+        $changed = false;
+
         // Other requests must not see the package until all of its versions
         // are written, or Composer could cache an incomplete version list.
-        return DB::transaction(function () use ($mirror, $packageName, $versions): ?Package {
+        $package = DB::transaction(function () use ($mirror, $packageName, $versions, $listedAt, &$changed): ?Package {
             $package = $this->findOrCreateMirrorPackageAction->handle($mirror, $packageName);
 
             if (! $package || $package->mirror_uuid !== $mirror->uuid) {
@@ -54,14 +62,24 @@ class ImportMirrorPackageAction
             }
 
             foreach ($versions as $version => $composerJson) {
-                $this->syncMirrorPackageVersionAction->handle($package, (string) $version, $composerJson);
+                $result = $this->syncMirrorPackageVersionAction->handle($package, (string) $version, $composerJson);
+
+                $changed = $changed || $result !== SyncVersionResult::Skipped;
             }
 
-            $this->removeStaleMirrorVersionsAction->handle($mirror, [$packageName => $versions]);
+            $this->removeStaleMirrorVersionsAction->handle($mirror, [$packageName => $versions], $listedAt);
 
             $package->touch();
 
             return $package;
         });
+
+        // Scheduled advisory checks only look at packages again when the
+        // advisory feed changes, so new versions are scanned right away.
+        if ($package && $changed) {
+            ScanPackageVersionsJob::dispatch($package);
+        }
+
+        return $package;
     }
 }

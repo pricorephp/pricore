@@ -54,6 +54,10 @@ class SyncMirrorJob implements ShouldBeUnique, ShouldQueue
         ));
 
         try {
+            // Taken before upstream is read, so stale-version removal cannot
+            // delete a release an on-demand refresh writes during this sync.
+            $listedAt = now();
+
             $registryClient = RegistryClientFactory::make($this->mirror);
 
             // An on-demand mirror keeps the packages Composer asked for up to date.
@@ -97,7 +101,7 @@ class SyncMirrorJob implements ShouldBeUnique, ShouldQueue
                 throw reset($failedPackageExceptions);
             }
 
-            $staleVersionsRemoved = $removeStaleMirrorVersionsAction->handle($this->mirror, $allPackageVersions);
+            $staleVersionsRemoved = $removeStaleMirrorVersionsAction->handle($this->mirror, $allPackageVersions, $listedAt);
 
             $totalVersions = array_sum(array_map('count', $allPackageVersions));
 

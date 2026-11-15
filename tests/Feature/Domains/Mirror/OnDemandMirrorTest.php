@@ -1,11 +1,13 @@
 <?php
 
 use App\Domains\Mirror\Actions\ImportMirrorPackageAction;
+use App\Domains\Mirror\Actions\RemoveStaleMirrorVersionsAction;
 use App\Domains\Mirror\Contracts\Enums\MirrorSyncMode;
 use App\Domains\Mirror\Jobs\RefreshMirrorPackageJob;
 use App\Domains\Mirror\Jobs\SyncMirrorJob;
 use App\Domains\Mirror\Jobs\SyncMirrorVersionJob;
 use App\Domains\Repository\Contracts\Enums\RepositorySyncStatus;
+use App\Domains\Security\Jobs\ScanPackageVersionsJob;
 use App\Models\AccessToken;
 use App\Models\Mirror;
 use App\Models\MirrorSyncLog;
@@ -27,7 +29,7 @@ use function Pest\Laravel\actingAs;
 
 beforeEach(function () {
     Storage::fake('local');
-    Queue::fake([RefreshMirrorPackageJob::class]);
+    Queue::fake([RefreshMirrorPackageJob::class, ScanPackageVersionsJob::class]);
 
     $this->organization = Organization::factory()->create(['slug' => 'acme']);
     $this->mirror = Mirror::factory()->onDemand()->create([
@@ -263,10 +265,53 @@ it('adds new versions and removes deleted ones when refreshing a package', funct
         ['name' => 'vendor/pkg', 'version' => '2.0.0', 'version_normalized' => '2.0.0.0', 'dist' => ['type' => 'zip', 'url' => 'https://packagist.example.com/dists/vendor/pkg/2.0.0.zip', 'reference' => str_repeat('c', 40)]],
     ];
 
+    $this->travel(1)->second();
+
     // The job class is faked for the metadata requests, so it is run directly.
     (new RefreshMirrorPackageJob($package))->handle(app(ImportMirrorPackageAction::class));
 
     expect($package->versions()->orderBy('version')->pluck('version')->all())->toBe(['1.1.0', '2.0.0']);
+});
+
+it('scans an imported package for advisories only when its versions changed', function () {
+    $this->withHeaders($this->composerHeaders)->getJson('/acme/p2/vendor/pkg.json')->assertOk();
+
+    Queue::assertPushed(ScanPackageVersionsJob::class, 1);
+
+    $package = Package::query()->where('name', 'vendor/pkg')->sole();
+    $importMirrorPackageAction = app(ImportMirrorPackageAction::class);
+
+    $importMirrorPackageAction->handle($this->mirror, 'vendor/pkg');
+
+    Queue::assertPushed(ScanPackageVersionsJob::class, 1);
+
+    $this->upstream->versions[] = ['name' => 'vendor/pkg', 'version' => '2.0.0', 'version_normalized' => '2.0.0.0', 'dist' => ['type' => 'zip', 'url' => 'https://packagist.example.com/dists/vendor/pkg/2.0.0.zip', 'reference' => str_repeat('c', 40)]];
+
+    $importMirrorPackageAction->handle($this->mirror, 'vendor/pkg');
+
+    Queue::assertPushed(ScanPackageVersionsJob::class, 2);
+    Queue::assertPushed(ScanPackageVersionsJob::class, fn (ScanPackageVersionsJob $job) => $job->package->is($package));
+});
+
+it('keeps versions written after an older upstream list was read', function () {
+    $this->withHeaders($this->composerHeaders)->getJson('/acme/p2/vendor/pkg.json')->assertOk();
+
+    $listedAt = now();
+    $this->travel(1)->second();
+
+    // A refresh adds 2.0.0 after a sync read a list that only had 1.0.0.
+    $package = Package::query()->where('name', 'vendor/pkg')->sole();
+    PackageVersion::factory()->create(['package_uuid' => $package->uuid, 'version' => '2.0.0', 'normalized_version' => '2.0.0.0']);
+    PackageVersion::query()->where('package_uuid', $package->uuid)->where('version', '!=', '2.0.0')->update(['updated_at' => $listedAt->copy()->subMinute()]);
+
+    $removed = app(RemoveStaleMirrorVersionsAction::class)->handle(
+        $this->mirror,
+        ['vendor/pkg' => ['1.0.0' => []]],
+        $listedAt,
+    );
+
+    expect($removed)->toBe(1)
+        ->and($package->versions()->orderBy('version')->pluck('version')->all())->toBe(['1.0.0', '2.0.0']);
 });
 
 it('syncs only the imported packages of an on-demand mirror', function () {
