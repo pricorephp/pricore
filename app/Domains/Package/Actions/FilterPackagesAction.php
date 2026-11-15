@@ -19,10 +19,9 @@ class FilterPackagesAction
     {
         return $organization->packages()
             ->getQuery()
-            ->when($packageFiltersData->query !== '', fn (Builder $query) => $query->where(
-                fn (Builder $query) => $query
-                    ->whereLike('name', "%{$packageFiltersData->query}%")
-                    ->orWhereLike('description', "%{$packageFiltersData->query}%"),
+            ->when($packageFiltersData->query !== '', fn (Builder $query) => $this->applySearch(
+                $query,
+                $packageFiltersData->query,
             ))
             ->when($packageFiltersData->source, fn (Builder $query, PackageSource $source) => $this->applySource(
                 $query,
@@ -33,6 +32,23 @@ class FilterPackagesAction
                 $query,
                 $status,
             ));
+    }
+
+    /**
+     * Matches the search as literal text: `_` and `%` are valid in package
+     * names and would otherwise act as LIKE wildcards.
+     *
+     * @param  Builder<Package>  $query
+     * @return Builder<Package>
+     */
+    protected function applySearch(Builder $query, string $search): Builder
+    {
+        $pattern = '%'.str_replace(['!', '%', '_'], ['!!', '!%', '!_'], $search).'%';
+        $operator = $query->getModel()->getConnection()->getDriverName() === 'pgsql' ? 'ilike' : 'like';
+
+        return $query->where(fn (Builder $query) => $query
+            ->whereRaw("name {$operator} ? escape '!'", [$pattern])
+            ->orWhereRaw("description {$operator} ? escape '!'", [$pattern]));
     }
 
     /**

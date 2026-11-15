@@ -105,6 +105,24 @@ it('searches name and description', function () {
         ->and(packageNames(visitPackages(['query' => 'subscriptions'])))->toBe(['acme/billing']);
 });
 
+it('matches underscores and percent signs literally', function () {
+    Package::factory()->forOrganization($this->organization)->artifact()->create(['name' => 'acme/foo_bar', 'description' => null]);
+    Package::factory()->forOrganization($this->organization)->artifact()->create(['name' => 'acme/foo-bar', 'description' => '100% coverage']);
+
+    expect(packageNames(visitPackages(['query' => 'foo_bar'])))->toBe(['acme/foo_bar'])
+        ->and(packageNames(visitPackages(['query' => '100%'])))->toBe(['acme/foo-bar'])
+        ->and(packageNames(visitPackages(['query' => '%'])))->toBe(['acme/foo-bar']);
+});
+
+it('filters by a mirror that has no packages', function () {
+    $emptyMirror = Mirror::factory()->forOrganization($this->organization)->create();
+
+    $page = visitPackages(['mirror' => $emptyMirror->uuid, 'query' => 'acme']);
+
+    expect(packageNames($page))->toBe([]);
+    $page->where('filters.mirror', $emptyMirror->uuid);
+});
+
 it('filters packages with security advisories', function () {
     $package = Package::where('name', 'symfony/console')->firstOrFail();
     $version = PackageVersion::factory()->create(['package_uuid' => $package->uuid]);

@@ -30,7 +30,7 @@ import {
     Upload,
     X,
 } from 'lucide-react';
-import { type ReactNode, useEffect, useMemo, useState } from 'react';
+import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 
 type OrganizationData =
     App.Domains.Organization.Contracts.Data.OrganizationData;
@@ -39,6 +39,7 @@ type PackageFiltersData = App.Domains.Package.Contracts.Data.PackageFiltersData;
 type PackageFacetsData = App.Domains.Package.Contracts.Data.PackageFacetsData;
 type PackageSourceOptionData =
     App.Domains.Package.Contracts.Data.PackageSourceOptionData;
+type PackageSource = App.Domains.Package.Contracts.Enums.PackageSource;
 type PackageStatus = App.Domains.Package.Contracts.Enums.PackageStatus;
 
 interface PaginatedPackages {
@@ -66,7 +67,14 @@ const SOURCE_ICONS: Record<PackageSourceOptionData['source'], LucideIcon> = {
     mirror: Copy,
 };
 
-function sourceKey(source: string | null, mirror: string | null): string {
+interface SourceFilter {
+    source: PackageSource | null;
+    mirror: string | null;
+}
+
+const ALL_SOURCES: SourceFilter = { source: null, mirror: null };
+
+function sourceKey({ source, mirror }: SourceFilter): string {
     return mirror ?? source ?? 'all';
 }
 
@@ -83,34 +91,37 @@ export default function Packages({
     }>().props;
 
     const [query, setQuery] = useState(filters.query);
-    const [source, setSource] = useState(
-        sourceKey(filters.source, filters.mirror),
-    );
+    const [source, setSource] = useState<SourceFilter>({
+        source: filters.source,
+        mirror: filters.mirror,
+    });
     const [status, setStatus] = useState<PackageStatus | null>(filters.status);
     const [isLoading, setIsLoading] = useState(false);
     const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
     const debouncedQuery = useDebounce(query, 250);
+    // The search of the latest visit, which may still be in flight, so a
+    // search cleared before its response arrives still triggers a new visit.
+    const requestedQuery = useRef(filters.query);
 
     const visit = (next: {
         query?: string;
-        source?: string;
+        source?: SourceFilter;
         status?: PackageStatus | null;
     }) => {
         const nextQuery = (next.query ?? query).trim();
         const nextSource = next.source ?? source;
         const nextStatus = next.status === undefined ? status : next.status;
-        const option = facets.sources.find(
-            (option) => sourceKey(option.source, option.mirror) === nextSource,
-        );
         const params: Record<string, string> = {};
+
+        requestedQuery.current = nextQuery;
 
         if (nextQuery !== '') {
             params.query = nextQuery;
         }
-        if (option?.mirror) {
-            params.mirror = option.mirror;
-        } else if (nextSource !== 'all') {
-            params.source = nextSource;
+        if (nextSource.mirror) {
+            params.mirror = nextSource.mirror;
+        } else if (nextSource.source) {
+            params.source = nextSource.source;
         }
         if (nextStatus) {
             params.status = nextStatus;
@@ -126,7 +137,7 @@ export default function Packages({
     };
 
     useEffect(() => {
-        if (debouncedQuery.trim() !== filters.query) {
+        if (debouncedQuery.trim() !== requestedQuery.current) {
             visit({ query: debouncedQuery });
         }
         // Only the debounced search text should trigger a visit here; the
@@ -134,7 +145,7 @@ export default function Packages({
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [debouncedQuery]);
 
-    const changeSource = (value: string) => {
+    const changeSource = (value: SourceFilter) => {
         setSource(value);
         visit({ source: value });
     };
@@ -147,13 +158,13 @@ export default function Packages({
 
     const clearFilters = () => {
         setQuery('');
-        setSource('all');
+        setSource(ALL_SOURCES);
         setStatus(null);
-        visit({ query: '', source: 'all', status: null });
+        visit({ query: '', source: ALL_SOURCES, status: null });
     };
 
     const hasActiveFilters =
-        query.trim() !== '' || source !== 'all' || status !== null;
+        query.trim() !== '' || sourceKey(source) !== 'all' || status !== null;
 
     const vendors = useMemo(() => {
         const groups = new Map<string, PackageData[]>();
@@ -262,26 +273,30 @@ export default function Packages({
                             {facets.sources.length > 1 && (
                                 <Segmented label="Source">
                                     <Segment
-                                        active={source === 'all'}
-                                        onClick={() => changeSource('all')}
+                                        active={sourceKey(source) === 'all'}
+                                        onClick={() =>
+                                            changeSource(ALL_SOURCES)
+                                        }
                                         count={facets.total}
                                     >
                                         All
                                     </Segment>
                                     {facets.sources.map((option) => {
-                                        const key = sourceKey(
-                                            option.source,
-                                            option.mirror,
-                                        );
+                                        const key = sourceKey(option);
                                         const Icon =
                                             SOURCE_ICONS[option.source];
 
                                         return (
                                             <Segment
                                                 key={key}
-                                                active={source === key}
+                                                active={
+                                                    sourceKey(source) === key
+                                                }
                                                 onClick={() =>
-                                                    changeSource(key)
+                                                    changeSource({
+                                                        source: option.source,
+                                                        mirror: option.mirror,
+                                                    })
                                                 }
                                                 count={option.count}
                                             >
