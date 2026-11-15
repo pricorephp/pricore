@@ -9,6 +9,7 @@ use App\Models\Mirror;
 use App\Models\Organization;
 use App\Models\PackageVersion;
 use App\Models\User;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue;
@@ -32,6 +33,7 @@ beforeEach(function () {
 
     $this->upstream = new stdClass;
     $this->upstream->distStatus = 200;
+    $this->upstream->beforeDist = null;
 
     $upstream = $this->upstream;
     $reference = $this->reference;
@@ -54,6 +56,10 @@ beforeEach(function () {
                     ],
                 ],
             ]);
+        }
+
+        if ($upstream->beforeDist) {
+            ($upstream->beforeDist)();
         }
 
         return Http::response('zip-contents', $upstream->distStatus);
@@ -133,6 +139,46 @@ it('returns a bad gateway when the upstream archive cannot be downloaded', funct
         ->assertStatus(502);
 
     expect(DistArchive::query()->count())->toBe(0);
+});
+
+it('returns a bad gateway when the upstream registry cannot be reached', function () {
+    SyncMirrorVersionJob::dispatchSync($this->mirror, 'vendor/pkg', '1.0.0');
+
+    $this->upstream->beforeDist = fn () => throw new ConnectionException('Connection timed out');
+
+    $this->withHeaders($this->composerHeaders)
+        ->get($this->distPath)
+        ->assertStatus(502);
+
+    expect(DistArchive::query()->count())->toBe(0);
+});
+
+it('keeps the archive detached when a sync moves the version during the download', function () {
+    SyncMirrorVersionJob::dispatchSync($this->mirror, 'vendor/pkg', '1.0.0');
+
+    $packageVersion = PackageVersion::query()->sole();
+    $movedReference = str_repeat('c', 40);
+
+    $this->upstream->beforeDist = fn () => PackageVersion::query()
+        ->whereKey($packageVersion->uuid)
+        ->update(['source_reference' => $movedReference]);
+
+    $this->withHeaders($this->composerHeaders)
+        ->get($this->distPath)
+        ->assertOk()
+        ->assertStreamedContent('zip-contents');
+
+    $packageVersion->refresh();
+
+    // The moved version must not advertise the old commit's checksum.
+    expect($packageVersion->source_reference)->toBe($movedReference)
+        ->and($packageVersion->dist_shasum)->toBeNull()
+        ->and($packageVersion->dist_url)->toBeNull();
+
+    $archive = DistArchive::query()->sole();
+
+    expect($archive->source_reference)->toBe($this->reference)
+        ->and($archive->detached_at)->not->toBeNull();
 });
 
 it('does not fetch a reference the version no longer points at', function () {
