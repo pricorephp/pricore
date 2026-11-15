@@ -109,7 +109,7 @@ class SyncMirrorJob implements ShouldBeUnique, ShouldQueue
             ]);
 
             // Filter to only new/changed versions or versions missing dist archives
-            $mirrorDist = $this->mirror->mirror_dist && config('pricore.dist.enabled');
+            $mirrorDist = $this->mirror->downloadsDistsDuringSync();
             $jobs = [];
             $skippedCount = 0;
 

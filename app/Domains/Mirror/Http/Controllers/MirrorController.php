@@ -79,6 +79,7 @@ class MirrorController
             'auth_type' => $request->validated('auth_type'),
             'auth_credentials' => $request->authCredentials(),
             'mirror_dist' => $request->validated('mirror_dist', true),
+            'lazy_dist' => $request->validated('lazy_dist', false),
             'sync_status' => RepositorySyncStatus::Pending,
         ]);
 

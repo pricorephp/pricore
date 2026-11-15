@@ -12,6 +12,7 @@ Click **Add Mirror** and fill in:
 - **Registry URL**: the URL Composer would use, where `packages.json` lives.
 - **Authentication**: none, HTTP Basic (username and password), or a Bearer token.
 - **Mirror dist archives**: download every archive into Pricore. Leave this on unless you have a reason not to; without it, Composer downloads from the upstream registry and every developer needs credentials for it.
+- **Download archives on first install**: fetch each archive from the upstream registry the first time Composer downloads it, instead of during every sync. Use this for large registries where you only install a small part of the packages. Later installs of that version are served from Pricore.
 
 The first sync starts right away. Mirrored packages appear in the package list and install like any other package. Their page says which mirror they come from.
 

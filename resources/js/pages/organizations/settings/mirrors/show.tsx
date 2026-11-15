@@ -154,7 +154,11 @@ export default function MirrorShow({
                                 </Badge>
                             )}
                             {mirror.mirrorDist && (
-                                <Badge variant="outline">Dist mirroring</Badge>
+                                <Badge variant="outline">
+                                    {mirror.lazyDist
+                                        ? 'Dist on demand'
+                                        : 'Dist mirroring'}
+                                </Badge>
                             )}
                         </div>
                         {mirror.lastSyncedAt && (

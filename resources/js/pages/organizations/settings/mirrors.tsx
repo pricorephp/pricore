@@ -163,6 +163,7 @@ function AddMirrorDialog({
     onClose: () => void;
 }) {
     const [authType, setAuthType] = useState('none');
+    const [mirrorDist, setMirrorDist] = useState(true);
 
     return (
         <Dialog
@@ -171,6 +172,7 @@ function AddMirrorDialog({
                 if (!open) {
                     onClose();
                     setAuthType('none');
+                    setMirrorDist(true);
                 }
             }}
         >
@@ -187,6 +189,7 @@ function AddMirrorDialog({
                     onSuccess={() => {
                         onClose();
                         setAuthType('none');
+                        setMirrorDist(true);
                     }}
                     resetOnSuccess
                     className="space-y-4"
@@ -330,7 +333,10 @@ function AddMirrorDialog({
                                 <Checkbox
                                     id="mirror_dist"
                                     name="mirror_dist"
-                                    defaultChecked
+                                    checked={mirrorDist}
+                                    onCheckedChange={(checked) =>
+                                        setMirrorDist(checked === true)
+                                    }
                                     value="1"
                                 />
                                 <Label
@@ -341,6 +347,36 @@ function AddMirrorDialog({
                                 </Label>
                             </div>
 
+                            {mirrorDist && (
+                                <div className="flex items-start space-x-2 pl-6">
+                                    <input
+                                        type="hidden"
+                                        name="lazy_dist"
+                                        value="0"
+                                    />
+                                    <Checkbox
+                                        id="lazy_dist"
+                                        name="lazy_dist"
+                                        value="1"
+                                        className="mt-0.5"
+                                    />
+                                    <div className="grid gap-1">
+                                        <Label
+                                            htmlFor="lazy_dist"
+                                            className="font-normal"
+                                        >
+                                            Download archives on first install
+                                        </Label>
+                                        <p className="text-muted-foreground">
+                                            Archives are fetched from the
+                                            upstream registry when a version is
+                                            first installed, instead of during
+                                            every sync.
+                                        </p>
+                                    </div>
+                                </div>
+                            )}
+
                             <DialogFooter>
                                 <Button
                                     type="button"
@@ -348,6 +384,7 @@ function AddMirrorDialog({
                                     onClick={() => {
                                         onClose();
                                         setAuthType('none');
+                                        setMirrorDist(true);
                                     }}
                                 >
                                     Cancel

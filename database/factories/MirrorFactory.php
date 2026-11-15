@@ -33,6 +33,7 @@ class MirrorFactory extends Factory
             'auth_type' => MirrorAuthType::None,
             'auth_credentials' => null,
             'mirror_dist' => true,
+            'lazy_dist' => false,
             'sync_status' => null,
             'last_synced_at' => null,
         ];
@@ -86,6 +87,14 @@ class MirrorFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'mirror_dist' => false,
+        ]);
+    }
+
+    public function withLazyDist(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'mirror_dist' => true,
+            'lazy_dist' => true,
         ]);
     }
 }

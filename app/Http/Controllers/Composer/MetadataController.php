@@ -72,6 +72,7 @@ class MetadataController extends Controller
         }
 
         $package->setRelation('organization', $organization);
+        $package->loadMissing('mirror');
 
         $versions = $scopeFilter($package->versions()->chaperone())
             // A subdirectory version installs from its dist only (no source block),

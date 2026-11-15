@@ -23,6 +23,7 @@ use Illuminate\Support\Carbon;
  * @property MirrorAuthType $auth_type
  * @property array<string, mixed>|null $auth_credentials
  * @property bool $mirror_dist
+ * @property bool $lazy_dist
  * @property RepositorySyncStatus|null $sync_status
  * @property Carbon|null $last_synced_at
  * @property Carbon|null $created_at
@@ -50,6 +51,7 @@ class Mirror extends Model
         'auth_type' => MirrorAuthType::class,
         'auth_credentials' => 'encrypted:array',
         'mirror_dist' => 'boolean',
+        'lazy_dist' => 'boolean',
         'sync_status' => RepositorySyncStatus::class,
         'last_synced_at' => 'datetime',
     ];
@@ -76,5 +78,19 @@ class Mirror extends Model
     public function syncLogs(): HasMany
     {
         return $this->hasMany(MirrorSyncLog::class, 'mirror_uuid', 'uuid');
+    }
+
+    public function downloadsDistsDuringSync(): bool
+    {
+        return $this->mirror_dist && ! $this->lazy_dist && config('pricore.dist.enabled');
+    }
+
+    /**
+     * Archives are fetched from upstream on their first download instead,
+     * so a large registry is never copied in full.
+     */
+    public function downloadsDistsOnDemand(): bool
+    {
+        return $this->mirror_dist && $this->lazy_dist && config('pricore.dist.enabled');
     }
 }

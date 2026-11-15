@@ -28,6 +28,7 @@ class StoreMirrorRequest extends FormRequest
             'password' => ['required_if:auth_type,basic', 'nullable', 'string', 'max:1024'],
             'token' => ['required_if:auth_type,bearer', 'nullable', 'string', 'max:1024'],
             'mirror_dist' => ['boolean'],
+            'lazy_dist' => ['boolean'],
         ];
     }
 
