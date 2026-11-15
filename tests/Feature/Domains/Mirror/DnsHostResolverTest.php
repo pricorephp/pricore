@@ -21,35 +21,34 @@ function fakeDnsHostResolver(array $records): DnsHostResolver
     };
 }
 
-it('follows CNAME records to their IPv4 addresses', function () {
+it('follows CNAME records and returns every address', function () {
     $resolver = fakeDnsHostResolver([
-        'registry.example.com' => [DNS_A | DNS_CNAME => [['target' => 'edge.example.net']]],
-        'edge.example.net' => [DNS_A | DNS_CNAME => [['ip' => '93.184.216.34'], ['ip' => '93.184.216.35']]],
+        'registry.example.com' => [DNS_A | DNS_CNAME => [['target' => 'edge.example.net']], DNS_AAAA => []],
+        'edge.example.net' => [
+            DNS_A | DNS_CNAME => [['ip' => '93.184.216.34']],
+            DNS_AAAA => [['ipv6' => '2606:4700:4700::1111']],
+        ],
     ]);
 
-    expect($resolver->resolve('registry.example.com'))->toBe(['93.184.216.34', '93.184.216.35']);
+    expect($resolver->resolve('registry.example.com'))->toBe(['93.184.216.34', '2606:4700:4700::1111']);
 });
 
 it('keeps IPv4 addresses when the IPv6 lookup fails', function () {
     $resolver = fakeDnsHostResolver([
         'codeload.example.com' => [
             DNS_A | DNS_CNAME => [['ip' => '140.82.121.9']],
-            DNS_AAAA | DNS_CNAME => false,
+            DNS_AAAA => false,
         ],
     ]);
 
     expect($resolver->resolve('codeload.example.com'))->toBe(['140.82.121.9']);
 });
 
-it('falls back to IPv6 for hosts without an IPv4 address', function () {
+it('keeps IPv6 addresses when the IPv4 lookup fails', function () {
     $resolver = fakeDnsHostResolver([
         'registry.example.com' => [
-            DNS_A | DNS_CNAME => [],
-            DNS_AAAA | DNS_CNAME => [['target' => 'edge.example.net']],
-        ],
-        'edge.example.net' => [
-            DNS_A | DNS_CNAME => [],
-            DNS_AAAA | DNS_CNAME => [['ipv6' => '2606:4700:4700::1111']],
+            DNS_A | DNS_CNAME => false,
+            DNS_AAAA => [['ipv6' => '2606:4700:4700::1111']],
         ],
     ]);
 

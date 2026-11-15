@@ -20,9 +20,9 @@ class DnsHostResolver implements HostResolverInterface
     }
 
     /**
-     * IPv4 is looked up on its own, and IPv6 only when a host has no IPv4
-     * address. Asking for every record type at once fails as a whole when one
-     * of them times out, which discarded working IPv4 answers.
+     * IPv4 and IPv6 are looked up separately and both kept, so the connection
+     * can use either. Asking for every record type at once fails as a whole
+     * when one of them times out, which discarded the working answers.
      *
      * @param  array<string, true>  $visited
      * @return array<int, string>
@@ -37,13 +37,10 @@ class DnsHostResolver implements HostResolverInterface
 
         $visited[$host] = true;
 
-        $addresses = $this->resolveRecords($host, DNS_A | DNS_CNAME, $visited, $depth);
-
-        if ($addresses === []) {
-            $addresses = $this->resolveRecords($host, DNS_AAAA | DNS_CNAME, $visited, $depth);
-        }
-
-        return $addresses;
+        return array_merge(
+            $this->resolveRecords($host, DNS_A | DNS_CNAME, $visited, $depth),
+            $this->resolveRecords($host, DNS_AAAA, $visited, $depth),
+        );
     }
 
     /**
