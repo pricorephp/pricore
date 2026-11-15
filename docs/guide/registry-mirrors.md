@@ -34,6 +34,8 @@ Add a mirror with **Registry URL** `https://repo.packagist.org` and **Packages**
 - A package is checked against upstream in the background when it is requested again after 5 minutes, and with every mirror sync.
 - With **Mirror dist archives** on, an archive is downloaded on its first install and served from Pricore after that.
 
+On-demand mirrors can be turned off with `MIRROR_ON_DEMAND_ENABLED=false`, for example on a shared installation. See [Configuration](/getting-started/configuration#application).
+
 To route all installs through Pricore, disable Packagist in your project:
 
 ```json

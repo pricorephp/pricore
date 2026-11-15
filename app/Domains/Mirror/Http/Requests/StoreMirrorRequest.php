@@ -24,7 +24,11 @@ class StoreMirrorRequest extends FormRequest
                 'max:2048',
                 new SafeMirrorUrl(app(MirrorUrlPolicy::class)),
             ],
-            'sync_mode' => ['sometimes', Rule::enum(MirrorSyncMode::class)],
+            'sync_mode' => [
+                'sometimes',
+                Rule::enum(MirrorSyncMode::class)
+                    ->when(! MirrorSyncMode::onDemandEnabled(), fn ($rule) => $rule->except(MirrorSyncMode::OnDemand)),
+            ],
             'auth_type' => ['required', Rule::enum(MirrorAuthType::class)],
             'username' => ['required_if:auth_type,basic', 'nullable', 'string', 'max:255'],
             'password' => ['required_if:auth_type,basic', 'nullable', 'string', 'max:1024'],

@@ -41,6 +41,7 @@ class MirrorController
         return Inertia::render('organizations/settings/mirrors', [
             'organization' => OrganizationData::fromModel($organization),
             'mirrors' => $mirrors,
+            'onDemandMirrorsEnabled' => MirrorSyncMode::onDemandEnabled(),
         ]);
     }
 

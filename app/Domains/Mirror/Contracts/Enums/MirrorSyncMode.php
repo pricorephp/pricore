@@ -29,6 +29,11 @@ enum MirrorSyncMode: string
         ];
     }
 
+    public static function onDemandEnabled(): bool
+    {
+        return (bool) config('pricore.mirrors.on_demand_enabled', true);
+    }
+
     public function isOnDemand(): bool
     {
         return $this === self::OnDemand;

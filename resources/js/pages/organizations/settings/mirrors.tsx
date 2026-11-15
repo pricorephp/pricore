@@ -23,6 +23,7 @@ type RepositorySyncStatus =
 interface MirrorsPageProps {
     organization: OrganizationData;
     mirrors: MirrorData[];
+    onDemandMirrorsEnabled: boolean;
 }
 
 function getSyncStatusVariant(
@@ -41,7 +42,11 @@ function getSyncStatusLabel(status: RepositorySyncStatus | null): string {
     return 'Pending';
 }
 
-export default function Mirrors({ organization, mirrors }: MirrorsPageProps) {
+export default function Mirrors({
+    organization,
+    mirrors,
+    onDemandMirrorsEnabled,
+}: MirrorsPageProps) {
     const [createDialogOpen, setCreateDialogOpen] = useState(false);
 
     useOrganizationChannel(organization.uuid);
@@ -122,11 +127,12 @@ export default function Mirrors({ organization, mirrors }: MirrorsPageProps) {
 
             <InfoBox
                 title="About Registry Mirrors"
-                description="Registry mirrors import packages from other Composer registries, such as Packagist or a Satis instance, into your organization. They are kept in sync and served alongside your other packages."
+                description={`Registry mirrors import packages from other Composer registries, such as ${onDemandMirrorsEnabled ? 'Packagist or ' : ''}a Satis instance, into your organization. They are kept in sync and served alongside your other packages.`}
             />
 
             <AddMirrorDialog
                 organizationSlug={organization.slug}
+                onDemandEnabled={onDemandMirrorsEnabled}
                 hasPackagistMirror={mirrors.some((mirror) =>
                     isPackagistUrl(mirror.url),
                 )}

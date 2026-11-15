@@ -43,19 +43,24 @@ export function isPackagistUrl(url: string): boolean {
 export function AddMirrorDialog({
     organizationSlug,
     hasPackagistMirror,
+    onDemandEnabled,
     isOpen,
     onClose,
 }: {
     organizationSlug: string;
     hasPackagistMirror: boolean;
+    onDemandEnabled: boolean;
     isOpen: boolean;
     onClose: () => void;
 }) {
-    const [step, setStep] = useState<Step>('source');
+    // Packagist can only be mirrored on demand, so without on-demand mirrors
+    // there is nothing to choose and the dialog opens on the form.
+    const firstStep: Step = onDemandEnabled ? 'source' : 'custom';
+    const [step, setStep] = useState<Step>(firstStep);
 
     const close = () => {
         onClose();
-        setStep('source');
+        setStep(firstStep);
     };
 
     return (
@@ -77,7 +82,11 @@ export function AddMirrorDialog({
                 {step === 'custom' && (
                     <CustomRegistryStep
                         organizationSlug={organizationSlug}
-                        onBack={() => setStep('source')}
+                        onDemandEnabled={onDemandEnabled}
+                        onBack={
+                            onDemandEnabled ? () => setStep('source') : null
+                        }
+                        onCancel={close}
                         onDone={close}
                     />
                 )}
@@ -182,21 +191,23 @@ function StepHeader({
 }: {
     title: string;
     description: string;
-    onBack: () => void;
+    onBack: (() => void) | null;
 }) {
     return (
         <DialogHeader>
             <div className="flex items-center gap-2">
-                <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="-ml-2 size-7"
-                    onClick={onBack}
-                    aria-label="Back to sources"
-                >
-                    <ChevronLeft className="size-4" />
-                </Button>
+                {onBack && (
+                    <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="-ml-2 size-7"
+                        onClick={onBack}
+                        aria-label="Back to sources"
+                    >
+                        <ChevronLeft className="size-4" />
+                    </Button>
+                )}
                 <DialogTitle>{title}</DialogTitle>
             </div>
             <DialogDescription>{description}</DialogDescription>
@@ -345,11 +356,15 @@ function FieldError({ message }: { message?: string }) {
 
 function CustomRegistryStep({
     organizationSlug,
+    onDemandEnabled,
     onBack,
+    onCancel,
     onDone,
 }: {
     organizationSlug: string;
-    onBack: () => void;
+    onDemandEnabled: boolean;
+    onBack: (() => void) | null;
+    onCancel: () => void;
     onDone: () => void;
 }) {
     const [authType, setAuthType] = useState('none');
@@ -399,34 +414,36 @@ function CustomRegistryStep({
                             <FieldError message={errors.url} />
                         </div>
 
-                        <div className="grid space-y-2">
-                            <Label htmlFor="sync_mode">Packages</Label>
-                            <Select
-                                name="sync_mode"
-                                value={syncMode}
-                                onValueChange={(value) =>
-                                    setSyncMode(value as MirrorSyncMode)
-                                }
-                            >
-                                <SelectTrigger id="sync_mode">
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="full">
-                                        All packages
-                                    </SelectItem>
-                                    <SelectItem value="on_demand">
-                                        On demand
-                                    </SelectItem>
-                                </SelectContent>
-                            </Select>
-                            <p className="text-muted-foreground">
-                                {syncMode === 'on_demand'
-                                    ? 'Packages are imported when Composer first asks for them.'
-                                    : 'Every package the registry lists is imported on each sync.'}
-                            </p>
-                            <FieldError message={errors.sync_mode} />
-                        </div>
+                        {onDemandEnabled && (
+                            <div className="grid space-y-2">
+                                <Label htmlFor="sync_mode">Packages</Label>
+                                <Select
+                                    name="sync_mode"
+                                    value={syncMode}
+                                    onValueChange={(value) =>
+                                        setSyncMode(value as MirrorSyncMode)
+                                    }
+                                >
+                                    <SelectTrigger id="sync_mode">
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="full">
+                                            All packages
+                                        </SelectItem>
+                                        <SelectItem value="on_demand">
+                                            On demand
+                                        </SelectItem>
+                                    </SelectContent>
+                                </Select>
+                                <p className="text-muted-foreground">
+                                    {syncMode === 'on_demand'
+                                        ? 'Packages are imported when Composer first asks for them.'
+                                        : 'Every package the registry lists is imported on each sync.'}
+                                </p>
+                                <FieldError message={errors.sync_mode} />
+                            </div>
+                        )}
 
                         <div className="grid space-y-2">
                             <Label htmlFor="auth_type">Authentication</Label>
@@ -549,9 +566,9 @@ function CustomRegistryStep({
                             <Button
                                 type="button"
                                 variant="secondary"
-                                onClick={onBack}
+                                onClick={onBack ?? onCancel}
                             >
-                                Back
+                                {onBack ? 'Back' : 'Cancel'}
                             </Button>
                             <Button type="submit" disabled={processing}>
                                 {processing ? 'Adding...' : 'Add Mirror'}

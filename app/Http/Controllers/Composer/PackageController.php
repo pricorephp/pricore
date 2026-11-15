@@ -35,9 +35,9 @@ class PackageController extends Controller
             ],
         ];
 
-        $onDemandMirrorAddedAt = $organization->mirrors()
-            ->where('sync_mode', MirrorSyncMode::OnDemand)
-            ->max('created_at');
+        $onDemandMirrorAddedAt = MirrorSyncMode::onDemandEnabled()
+            ? $organization->mirrors()->where('sync_mode', MirrorSyncMode::OnDemand)->max('created_at')
+            : null;
 
         // Composer only asks for listed packages, so with an on-demand mirror
         // the list is left out and every dependency is requested here.

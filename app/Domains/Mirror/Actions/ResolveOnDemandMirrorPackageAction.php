@@ -30,6 +30,10 @@ class ResolveOnDemandMirrorPackageAction
      */
     public function handle(Organization $organization, string $packageName): ?Package
     {
+        if (! MirrorSyncMode::onDemandEnabled()) {
+            return null;
+        }
+
         $mirrors = $organization->mirrors()
             ->where('sync_mode', MirrorSyncMode::OnDemand)
             ->oldest()
@@ -80,7 +84,7 @@ class ResolveOnDemandMirrorPackageAction
      */
     public function refreshIfStale(Package $package): void
     {
-        if (! $package->mirror?->isOnDemand()) {
+        if (! MirrorSyncMode::onDemandEnabled() || ! $package->mirror?->isOnDemand()) {
             return;
         }
 

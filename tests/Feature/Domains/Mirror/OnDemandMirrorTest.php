@@ -333,6 +333,69 @@ it('syncs only the imported packages of an on-demand mirror', function () {
         ->and($syncLog->details['versions_found'])->toBe(2);
 });
 
+describe('when on-demand mirrors are turned off', function () {
+    beforeEach(fn () => config(['pricore.mirrors.on_demand_enabled' => false]));
+
+    it('does not import unknown packages', function () {
+        $this->withHeaders($this->composerHeaders)
+            ->getJson('/acme/p2/vendor/pkg.json')
+            ->assertNotFound();
+
+        expect(($this->metadataRequestCount)('vendor/pkg'))->toBe(0);
+    });
+
+    it('lists the packages in packages.json again', function () {
+        Package::factory()->forOrganization($this->organization)->create(['name' => 'acme/private']);
+
+        $this->withHeaders($this->composerHeaders)
+            ->getJson('/acme/packages.json')
+            ->assertOk()
+            ->assertJsonPath('available-packages', ['acme/private']);
+    });
+
+    it('does not refresh packages that were imported before', function () {
+        config(['pricore.mirrors.on_demand_enabled' => true]);
+        $this->withHeaders($this->composerHeaders)->getJson('/acme/p2/vendor/pkg.json')->assertOk();
+
+        config(['pricore.mirrors.on_demand_enabled' => false]);
+        Cache::forget('mirror-package-fresh:'.Package::query()->where('name', 'vendor/pkg')->value('uuid'));
+
+        $this->withHeaders($this->composerHeaders)->getJson('/acme/p2/vendor/pkg.json')->assertOk();
+
+        Queue::assertNotPushed(RefreshMirrorPackageJob::class);
+    });
+
+    it('rejects new on-demand mirrors', function () {
+        Queue::fake([SyncMirrorJob::class]);
+
+        $user = User::factory()->create();
+        $organization = Organization::factory()->create(['owner_uuid' => $user->uuid]);
+        $organization->members()->attach($user->uuid, ['role' => 'owner', 'uuid' => (string) Str::uuid()]);
+
+        actingAs($user)
+            ->post(route('organizations.settings.mirrors.store', $organization->slug), [
+                'name' => 'Packagist',
+                'url' => 'https://repo.packagist.org',
+                'sync_mode' => 'on_demand',
+                'auth_type' => 'none',
+                'mirror_dist' => true,
+            ])
+            ->assertSessionHasErrors('sync_mode');
+
+        expect(Mirror::query()->where('name', 'Packagist')->exists())->toBeFalse();
+    });
+
+    it('tells the mirrors page', function () {
+        $user = User::factory()->create();
+        $this->organization->update(['owner_uuid' => $user->uuid]);
+        $this->organization->members()->attach($user->uuid, ['role' => 'owner', 'uuid' => (string) Str::uuid()]);
+
+        actingAs($user)
+            ->get(route('organizations.settings.mirrors.index', $this->organization->slug))
+            ->assertInertia(fn ($page) => $page->where('onDemandMirrorsEnabled', false));
+    });
+});
+
 it('can create an on-demand mirror', function () {
     Queue::fake([SyncMirrorJob::class]);
 

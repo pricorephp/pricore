@@ -3,6 +3,10 @@
 return [
 
     'mirrors' => [
+        // Mirrors that import packages when Composer first asks for them, as
+        // needed for Packagist. Hosted installs can turn them off.
+        'on_demand_enabled' => (bool) env('MIRROR_ON_DEMAND_ENABLED', true),
+
         'allowed_private_hosts' => array_values(array_filter(array_map(
             static fn (string $host): string => trim($host),
             explode(',', (string) env('MIRROR_ALLOWED_PRIVATE_HOSTS', '')),
