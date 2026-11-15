@@ -1,39 +1,22 @@
+import { show } from '@/actions/App/Domains/Mirror/Http/Controllers/MirrorController';
 import {
-    show,
-    store,
-} from '@/actions/App/Domains/Mirror/Http/Controllers/MirrorController';
+    AddMirrorDialog,
+    isPackagistUrl,
+} from '@/components/add-mirror-dialog';
 import InfoBox from '@/components/info-box';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { CardList } from '@/components/ui/card';
-import { Checkbox } from '@/components/ui/checkbox';
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogTitle,
-} from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
 import { useOrganizationChannel } from '@/hooks/use-organization-channel';
 import { withOrganizationSettingsLayout } from '@/layouts/organization-settings-layout';
-import { Form, Link } from '@inertiajs/react';
-import { ArrowUpRight, Copy, Plus } from 'lucide-react';
+import { Link } from '@inertiajs/react';
+import { ArrowUpRight, Boxes, Copy, Plus } from 'lucide-react';
 import { DateTime } from 'luxon';
 import { useState } from 'react';
 
 type OrganizationData =
     App.Domains.Organization.Contracts.Data.OrganizationData;
 type MirrorData = App.Domains.Mirror.Contracts.Data.MirrorData;
-type MirrorSyncMode = App.Domains.Mirror.Contracts.Enums.MirrorSyncMode;
 type RepositorySyncStatus =
     App.Domains.Repository.Contracts.Enums.RepositorySyncStatus;
 
@@ -88,7 +71,11 @@ export default function Mirrors({ organization, mirrors }: MirrorsPageProps) {
                             className="group flex items-center justify-between px-4 py-3 transition-colors hover:bg-accent/50"
                         >
                             <div className="flex items-center gap-3">
-                                <Copy className="h-5 w-5 text-muted-foreground" />
+                                {isPackagistUrl(mirror.url) ? (
+                                    <Boxes className="h-5 w-5 text-muted-foreground" />
+                                ) : (
+                                    <Copy className="h-5 w-5 text-muted-foreground" />
+                                )}
                                 <div className="space-y-1">
                                     <span className="font-medium transition-colors group-hover:text-primary">
                                         {mirror.name}
@@ -103,6 +90,11 @@ export default function Mirrors({ organization, mirrors }: MirrorsPageProps) {
                                                 mirror.syncStatus,
                                             )}
                                         </Badge>
+                                        {mirror.syncMode === 'on_demand' && (
+                                            <Badge variant="outline">
+                                                On demand
+                                            </Badge>
+                                        )}
                                         <span>
                                             {mirror.packagesCount}{' '}
                                             {mirror.packagesCount === 1
@@ -130,11 +122,14 @@ export default function Mirrors({ organization, mirrors }: MirrorsPageProps) {
 
             <InfoBox
                 title="About Registry Mirrors"
-                description="Registry mirrors let you import packages from external Composer registries (e.g. Satis repositories) into your organization. Packages are synced automatically and served alongside your other packages."
+                description="Registry mirrors import packages from other Composer registries, such as Packagist or a Satis instance, into your organization. They are kept in sync and served alongside your other packages."
             />
 
             <AddMirrorDialog
                 organizationSlug={organization.slug}
+                hasPackagistMirror={mirrors.some((mirror) =>
+                    isPackagistUrl(mirror.url),
+                )}
                 isOpen={createDialogOpen}
                 onClose={() => setCreateDialogOpen(false)}
             />
@@ -151,291 +146,6 @@ function EmptyState() {
                 Add an external Composer registry to mirror its packages.
             </p>
         </div>
-    );
-}
-
-function AddMirrorDialog({
-    organizationSlug,
-    isOpen,
-    onClose,
-}: {
-    organizationSlug: string;
-    isOpen: boolean;
-    onClose: () => void;
-}) {
-    const [authType, setAuthType] = useState('none');
-    const [mirrorDist, setMirrorDist] = useState(true);
-    const [syncMode, setSyncMode] = useState<MirrorSyncMode>('full');
-
-    return (
-        <Dialog
-            open={isOpen}
-            onOpenChange={(open) => {
-                if (!open) {
-                    onClose();
-                    setAuthType('none');
-                    setMirrorDist(true);
-                    setSyncMode('full');
-                }
-            }}
-        >
-            <DialogContent>
-                <DialogTitle>Add Registry Mirror</DialogTitle>
-                <DialogDescription>
-                    Add an external Composer registry to mirror packages from.
-                    The registry must serve a packages.json file.
-                </DialogDescription>
-
-                <Form
-                    action={store.url(organizationSlug)}
-                    method="post"
-                    onSuccess={() => {
-                        onClose();
-                        setAuthType('none');
-                        setMirrorDist(true);
-                        setSyncMode('full');
-                    }}
-                    resetOnSuccess
-                    className="space-y-4"
-                >
-                    {({ processing, errors }) => (
-                        <>
-                            <div className="grid space-y-2">
-                                <Label htmlFor="name">
-                                    Name <span className="text-red-500">*</span>
-                                </Label>
-                                <Input
-                                    id="name"
-                                    name="name"
-                                    required
-                                    placeholder="e.g., Internal Satis"
-                                />
-                                {errors.name && (
-                                    <p className="text-destructive">
-                                        {errors.name}
-                                    </p>
-                                )}
-                            </div>
-
-                            <div className="grid space-y-2">
-                                <Label htmlFor="url">
-                                    Registry URL{' '}
-                                    <span className="text-red-500">*</span>
-                                </Label>
-                                <Input
-                                    id="url"
-                                    name="url"
-                                    required
-                                    placeholder="https://satis.example.com"
-                                />
-                                {errors.url && (
-                                    <p className="text-destructive">
-                                        {errors.url}
-                                    </p>
-                                )}
-                            </div>
-
-                            <div className="grid space-y-2">
-                                <Label htmlFor="sync_mode">Packages</Label>
-                                <Select
-                                    name="sync_mode"
-                                    value={syncMode}
-                                    onValueChange={(value) =>
-                                        setSyncMode(value as MirrorSyncMode)
-                                    }
-                                >
-                                    <SelectTrigger id="sync_mode">
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="full">
-                                            All packages
-                                        </SelectItem>
-                                        <SelectItem value="on_demand">
-                                            On demand
-                                        </SelectItem>
-                                    </SelectContent>
-                                </Select>
-                                <p className="text-muted-foreground">
-                                    {syncMode === 'on_demand'
-                                        ? 'Packages are imported when Composer first asks for them. Use this for large registries such as Packagist (https://repo.packagist.org).'
-                                        : 'Every package the registry lists is imported on each sync.'}
-                                </p>
-                                {errors.sync_mode && (
-                                    <p className="text-destructive">
-                                        {errors.sync_mode}
-                                    </p>
-                                )}
-                            </div>
-
-                            <div className="grid space-y-2">
-                                <Label htmlFor="auth_type">
-                                    Authentication
-                                </Label>
-                                <Select
-                                    name="auth_type"
-                                    value={authType}
-                                    onValueChange={setAuthType}
-                                >
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Select authentication type" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="none">
-                                            None
-                                        </SelectItem>
-                                        <SelectItem value="basic">
-                                            HTTP Basic
-                                        </SelectItem>
-                                        <SelectItem value="bearer">
-                                            Bearer Token
-                                        </SelectItem>
-                                    </SelectContent>
-                                </Select>
-                                {errors.auth_type && (
-                                    <p className="text-destructive">
-                                        {errors.auth_type}
-                                    </p>
-                                )}
-                            </div>
-
-                            {authType === 'basic' && (
-                                <>
-                                    <div className="grid space-y-2">
-                                        <Label htmlFor="username">
-                                            Username{' '}
-                                            <span className="text-red-500">
-                                                *
-                                            </span>
-                                        </Label>
-                                        <Input
-                                            id="username"
-                                            name="username"
-                                            required
-                                        />
-                                        {errors.username && (
-                                            <p className="text-destructive">
-                                                {errors.username}
-                                            </p>
-                                        )}
-                                    </div>
-                                    <div className="grid space-y-2">
-                                        <Label htmlFor="password">
-                                            Password{' '}
-                                            <span className="text-red-500">
-                                                *
-                                            </span>
-                                        </Label>
-                                        <Input
-                                            id="password"
-                                            name="password"
-                                            type="password"
-                                            required
-                                        />
-                                        {errors.password && (
-                                            <p className="text-destructive">
-                                                {errors.password}
-                                            </p>
-                                        )}
-                                    </div>
-                                </>
-                            )}
-
-                            {authType === 'bearer' && (
-                                <div className="grid space-y-2">
-                                    <Label htmlFor="token">
-                                        Token{' '}
-                                        <span className="text-red-500">*</span>
-                                    </Label>
-                                    <Input
-                                        id="token"
-                                        name="token"
-                                        type="password"
-                                        required
-                                    />
-                                    {errors.token && (
-                                        <p className="text-destructive">
-                                            {errors.token}
-                                        </p>
-                                    )}
-                                </div>
-                            )}
-
-                            <div className="flex items-center space-x-2">
-                                <input
-                                    type="hidden"
-                                    name="mirror_dist"
-                                    value="0"
-                                />
-                                <Checkbox
-                                    id="mirror_dist"
-                                    name="mirror_dist"
-                                    checked={mirrorDist}
-                                    onCheckedChange={(checked) =>
-                                        setMirrorDist(checked === true)
-                                    }
-                                    value="1"
-                                />
-                                <Label
-                                    htmlFor="mirror_dist"
-                                    className="font-normal"
-                                >
-                                    Mirror dist archives
-                                </Label>
-                            </div>
-
-                            {mirrorDist && syncMode === 'full' && (
-                                <div className="flex items-start space-x-2 pl-6">
-                                    <input
-                                        type="hidden"
-                                        name="lazy_dist"
-                                        value="0"
-                                    />
-                                    <Checkbox
-                                        id="lazy_dist"
-                                        name="lazy_dist"
-                                        value="1"
-                                        className="mt-0.5"
-                                    />
-                                    <div className="grid gap-1">
-                                        <Label
-                                            htmlFor="lazy_dist"
-                                            className="font-normal"
-                                        >
-                                            Download archives on first install
-                                        </Label>
-                                        <p className="text-muted-foreground">
-                                            Archives are fetched from the
-                                            upstream registry when a version is
-                                            first installed, instead of during
-                                            every sync.
-                                        </p>
-                                    </div>
-                                </div>
-                            )}
-
-                            <DialogFooter>
-                                <Button
-                                    type="button"
-                                    variant="secondary"
-                                    onClick={() => {
-                                        onClose();
-                                        setAuthType('none');
-                                        setMirrorDist(true);
-                                        setSyncMode('full');
-                                    }}
-                                >
-                                    Cancel
-                                </Button>
-                                <Button type="submit" disabled={processing}>
-                                    {processing ? 'Adding...' : 'Add Mirror'}
-                                </Button>
-                            </DialogFooter>
-                        </>
-                    )}
-                </Form>
-            </DialogContent>
-        </Dialog>
     );
 }
 
