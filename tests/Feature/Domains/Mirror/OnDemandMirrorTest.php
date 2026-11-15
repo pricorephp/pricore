@@ -353,6 +353,24 @@ describe('when on-demand mirrors are turned off', function () {
             ->assertJsonPath('available-packages', ['acme/private']);
     });
 
+    it('serves a fresh packages.json to clients that cached it while they were off', function () {
+        Package::factory()->forOrganization($this->organization)->create(['name' => 'acme/private']);
+
+        $lastModified = $this->withHeaders($this->composerHeaders)
+            ->getJson('/acme/packages.json')
+            ->assertOk()
+            ->assertJsonPath('available-packages', ['acme/private'])
+            ->headers->get('Last-Modified');
+
+        $this->travel(1)->minute();
+        config(['pricore.mirrors.on_demand_enabled' => true]);
+
+        $this->withHeaders([...$this->composerHeaders, 'If-Modified-Since' => $lastModified])
+            ->getJson('/acme/packages.json')
+            ->assertOk()
+            ->assertJsonMissingPath('available-packages');
+    });
+
     it('does not refresh packages that were imported before', function () {
         config(['pricore.mirrors.on_demand_enabled' => true]);
         $this->withHeaders($this->composerHeaders)->getJson('/acme/p2/vendor/pkg.json')->assertOk();
