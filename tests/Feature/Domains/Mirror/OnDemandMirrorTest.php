@@ -14,6 +14,7 @@ use App\Models\Package;
 use App\Models\PackageVersion;
 use App\Models\User;
 use Composer\MetadataMinifier\MetadataMinifier;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Cache;
@@ -41,6 +42,7 @@ beforeEach(function () {
     // state lives here and the stub reads it on every request.
     $this->upstream = new stdClass;
     $this->upstream->status = 200;
+    $this->upstream->overrides = [];
     $this->upstream->versions = [
         ['name' => 'vendor/pkg', 'version' => '1.0.0', 'version_normalized' => '1.0.0.0', 'dist' => ['type' => 'zip', 'url' => 'https://packagist.example.com/dists/vendor/pkg/1.0.0.zip', 'reference' => str_repeat('a', 40)]],
         ['name' => 'vendor/pkg', 'version' => '1.1.0', 'version_normalized' => '1.1.0.0', 'dist' => ['type' => 'zip', 'url' => 'https://packagist.example.com/dists/vendor/pkg/1.1.0.zip', 'reference' => str_repeat('b', 40)]],
@@ -50,6 +52,10 @@ beforeEach(function () {
 
     Http::fake(function (Request $request) use ($upstream) {
         $path = parse_url($request->url(), PHP_URL_PATH);
+
+        if ($override = $upstream->overrides[$request->url()] ?? null) {
+            return $override();
+        }
 
         return match (true) {
             $path === '/packages.json' => Http::response(['metadata-url' => '/p2/%package%.json']),
@@ -86,6 +92,25 @@ it('leaves the package list out of packages.json when an on-demand mirror exists
         ->getJson('/acme/packages.json')
         ->assertOk()
         ->assertJsonPath('available-packages', ['acme/private']);
+});
+
+it('serves a fresh packages.json to clients that cached it before an on-demand mirror was added', function () {
+    $this->mirror->delete();
+    Package::factory()->forOrganization($this->organization)->create(['name' => 'acme/private']);
+
+    $lastModified = $this->withHeaders($this->composerHeaders)
+        ->getJson('/acme/packages.json')
+        ->assertOk()
+        ->headers->get('Last-Modified');
+
+    $this->travel(1)->minute();
+
+    Mirror::factory()->onDemand()->create(['organization_uuid' => $this->organization->uuid]);
+
+    $this->withHeaders([...$this->composerHeaders, 'If-Modified-Since' => $lastModified])
+        ->getJson('/acme/packages.json')
+        ->assertOk()
+        ->assertJsonMissingPath('available-packages');
 });
 
 it('imports an unknown package on its first metadata request', function () {
@@ -151,6 +176,37 @@ it('returns a bad gateway when the mirror fails to answer', function () {
 
     $this->withHeaders($this->composerHeaders)
         ->getJson('/acme/p2/vendor/pkg.json')
+        ->assertOk();
+});
+
+it('returns a bad gateway when the mirror cannot be reached', function () {
+    $this->upstream->overrides['https://packagist.example.com/p2/vendor/pkg.json'] = fn () => throw new ConnectionException('Connection refused');
+
+    $this->withHeaders($this->composerHeaders)
+        ->getJson('/acme/p2/vendor/pkg.json')
+        ->assertStatus(502);
+});
+
+it('looks a missed name up again once another on-demand mirror is added', function () {
+    $this->withHeaders($this->composerHeaders)
+        ->getJson('/acme/p2/vendor/other.json')
+        ->assertNotFound();
+
+    Mirror::factory()->onDemand()->create([
+        'organization_uuid' => $this->organization->uuid,
+        'url' => 'https://second.example.com',
+    ]);
+
+    $this->upstream->overrides['https://second.example.com/packages.json'] = fn () => Http::response(['metadata-url' => '/p2/%package%.json']);
+    $this->upstream->overrides['https://second.example.com/p2/vendor/other.json'] = fn () => Http::response([
+        'minified' => 'composer/2.0',
+        'packages' => ['vendor/other' => MetadataMinifier::minify([
+            ['name' => 'vendor/other', 'version' => '1.0.0', 'version_normalized' => '1.0.0.0'],
+        ])],
+    ]);
+
+    $this->withHeaders($this->composerHeaders)
+        ->getJson('/acme/p2/vendor/other.json')
         ->assertOk();
 });
 

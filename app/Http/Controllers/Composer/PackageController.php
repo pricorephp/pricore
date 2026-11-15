@@ -35,9 +35,13 @@ class PackageController extends Controller
             ],
         ];
 
+        $onDemandMirrorAddedAt = $organization->mirrors()
+            ->where('sync_mode', MirrorSyncMode::OnDemand)
+            ->max('created_at');
+
         // Composer only asks for listed packages, so with an on-demand mirror
         // the list is left out and every dependency is requested here.
-        if ($organization->mirrors()->where('sync_mode', MirrorSyncMode::OnDemand)->exists()) {
+        if ($onDemandMirrorAddedAt) {
             unset($rootMetadata['available-packages']);
         }
 
@@ -45,9 +49,11 @@ class PackageController extends Controller
 
         $packagesUpdatedAt = $organization->packages()->max('updated_at');
 
-        // The metadata URLs follow the base URL, which no package timestamp reflects.
+        // The metadata URLs follow the base URL, which no package timestamp
+        // reflects; neither does dropping the package list for a new mirror.
         $lastModified = collect([
             $packagesUpdatedAt ? new \DateTimeImmutable($packagesUpdatedAt) : null,
+            $onDemandMirrorAddedAt ? new \DateTimeImmutable($onDemandMirrorAddedAt) : null,
             $resolveBaseUrlFirstServedAction->handle(),
         ])->filter()->max();
 

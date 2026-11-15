@@ -7,6 +7,8 @@ use App\Domains\Mirror\Exceptions\MirrorSyncException;
 use App\Domains\Mirror\Services\RegistryClient\RegistryClientFactory;
 use App\Models\Mirror;
 use App\Models\Package;
+use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Support\Facades\DB;
 
 class ImportMirrorPackageAction
 {
@@ -31,26 +33,35 @@ class ImportMirrorPackageAction
             $versions = RegistryClientFactory::make($mirror)->getPackageVersions($packageName);
         } catch (MirrorPackageNotFoundException) {
             return null;
+        } catch (ConnectionException $exception) {
+            throw new MirrorSyncException(
+                "Failed to fetch metadata for {$packageName}: could not connect to {$mirror->url}",
+                previous: $exception,
+            );
         }
 
         if ($versions === []) {
             return null;
         }
 
-        $package = $this->findOrCreateMirrorPackageAction->handle($mirror, $packageName);
+        // Other requests must not see the package until all of its versions
+        // are written, or Composer could cache an incomplete version list.
+        return DB::transaction(function () use ($mirror, $packageName, $versions): ?Package {
+            $package = $this->findOrCreateMirrorPackageAction->handle($mirror, $packageName);
 
-        if (! $package || $package->mirror_uuid !== $mirror->uuid) {
-            return null;
-        }
+            if (! $package || $package->mirror_uuid !== $mirror->uuid) {
+                return null;
+            }
 
-        foreach ($versions as $version => $composerJson) {
-            $this->syncMirrorPackageVersionAction->handle($package, (string) $version, $composerJson);
-        }
+            foreach ($versions as $version => $composerJson) {
+                $this->syncMirrorPackageVersionAction->handle($package, (string) $version, $composerJson);
+            }
 
-        $this->removeStaleMirrorVersionsAction->handle($mirror, [$packageName => $versions]);
+            $this->removeStaleMirrorVersionsAction->handle($mirror, [$packageName => $versions]);
 
-        $package->touch();
+            $package->touch();
 
-        return $package;
+            return $package;
+        });
     }
 }

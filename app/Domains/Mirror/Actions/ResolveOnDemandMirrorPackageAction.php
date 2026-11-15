@@ -39,7 +39,9 @@ class ResolveOnDemandMirrorPackageAction
             return null;
         }
 
-        $missingKey = "mirror-package-missing:{$organization->uuid}:{$packageName}";
+        // Keyed by the mirrors asked, so adding or removing one starts over.
+        $mirrorSet = md5($mirrors->pluck('uuid')->join(','));
+        $missingKey = "mirror-package-missing:{$organization->uuid}:{$mirrorSet}:{$packageName}";
 
         if (Cache::has($missingKey)) {
             return null;
