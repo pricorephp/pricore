@@ -54,9 +54,16 @@ class SyncMirrorJob implements ShouldBeUnique, ShouldQueue
         ));
 
         try {
+            // Taken before upstream is read, so stale-version removal cannot
+            // delete a release an on-demand refresh writes during this sync.
+            $listedAt = now();
+
             $registryClient = RegistryClientFactory::make($this->mirror);
 
-            $availablePackages = $registryClient->getAvailablePackages();
+            // An on-demand mirror keeps the packages Composer asked for up to date.
+            $availablePackages = $this->mirror->isOnDemand()
+                ? $this->mirror->packages()->orderBy('name')->pluck('name')->all()
+                : $registryClient->getAvailablePackages();
 
             if (empty($availablePackages)) {
                 $this->completeSyncLogEmpty($syncLog);
@@ -94,7 +101,7 @@ class SyncMirrorJob implements ShouldBeUnique, ShouldQueue
                 throw reset($failedPackageExceptions);
             }
 
-            $staleVersionsRemoved = $removeStaleMirrorVersionsAction->handle($this->mirror, $allPackageVersions);
+            $staleVersionsRemoved = $removeStaleMirrorVersionsAction->handle($this->mirror, $allPackageVersions, $listedAt);
 
             $totalVersions = array_sum(array_map('count', $allPackageVersions));
 
@@ -109,7 +116,7 @@ class SyncMirrorJob implements ShouldBeUnique, ShouldQueue
             ]);
 
             // Filter to only new/changed versions or versions missing dist archives
-            $mirrorDist = $this->mirror->mirror_dist && config('pricore.dist.enabled');
+            $mirrorDist = $this->mirror->downloadsDistsDuringSync();
             $jobs = [];
             $skippedCount = 0;
 

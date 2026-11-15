@@ -9,6 +9,7 @@ use App\Domains\Repository\Contracts\Data\DistArchiveData;
 use App\Models\Mirror;
 use App\Models\Package;
 use App\Models\PackageVersion;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -37,6 +38,11 @@ class DownloadMirrorDistAction
             } catch (UnsafeMirrorUrlException $exception) {
                 throw new MirrorDistDownloadException(
                     "Dist download rejected for {$package->name} {$packageVersion->version}: unsafe URL",
+                    previous: $exception,
+                );
+            } catch (ConnectionException $exception) {
+                throw new MirrorDistDownloadException(
+                    "Dist download failed for {$package->name} {$packageVersion->version}: could not connect to the upstream registry",
                     previous: $exception,
                 );
             }

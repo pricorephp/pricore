@@ -3,6 +3,7 @@
 namespace App\Domains\Mirror\Http\Requests;
 
 use App\Domains\Mirror\Contracts\Enums\MirrorAuthType;
+use App\Domains\Mirror\Contracts\Enums\MirrorSyncMode;
 use App\Domains\Mirror\Rules\SafeMirrorUrl;
 use App\Domains\Mirror\Services\Http\MirrorUrlPolicy;
 use Illuminate\Foundation\Http\FormRequest;
@@ -23,11 +24,17 @@ class StoreMirrorRequest extends FormRequest
                 'max:2048',
                 new SafeMirrorUrl(app(MirrorUrlPolicy::class)),
             ],
+            'sync_mode' => [
+                'sometimes',
+                Rule::enum(MirrorSyncMode::class)
+                    ->when(! MirrorSyncMode::onDemandEnabled(), fn ($rule) => $rule->except(MirrorSyncMode::OnDemand)),
+            ],
             'auth_type' => ['required', Rule::enum(MirrorAuthType::class)],
             'username' => ['required_if:auth_type,basic', 'nullable', 'string', 'max:255'],
             'password' => ['required_if:auth_type,basic', 'nullable', 'string', 'max:1024'],
             'token' => ['required_if:auth_type,bearer', 'nullable', 'string', 'max:1024'],
             'mirror_dist' => ['boolean'],
+            'lazy_dist' => ['boolean'],
         ];
     }
 

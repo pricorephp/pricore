@@ -6,8 +6,11 @@ use App\Domains\Activity\Actions\RecordActivityTask;
 use App\Domains\Activity\Contracts\Enums\ActivityType;
 use App\Domains\Organization\Contracts\Data\OrganizationData;
 use App\Domains\Package\Actions\BuildPackageDownloadStatsAction;
+use App\Domains\Package\Actions\BuildPackageFacetsAction;
+use App\Domains\Package\Actions\FilterPackagesAction;
 use App\Domains\Package\Actions\RecordPackageViewTask;
 use App\Domains\Package\Contracts\Data\PackageData;
+use App\Domains\Package\Contracts\Data\PackageFiltersData;
 use App\Domains\Package\Contracts\Data\PackageVersionData;
 use App\Domains\Package\Contracts\Data\PackageVersionDetailData;
 use App\Http\Controllers\Controller;
@@ -28,22 +31,29 @@ class PackageController extends Controller
         protected BuildPackageDownloadStatsAction $downloadStats,
         protected RecordPackageViewTask $recordPackageView,
         protected RecordActivityTask $recordActivityTask,
+        protected FilterPackagesAction $filterPackagesAction,
+        protected BuildPackageFacetsAction $buildPackageFacetsAction,
     ) {}
 
-    public function index(Organization $organization): Response
+    public function index(Request $request, Organization $organization): Response
     {
         $this->authorize('view', $organization);
 
-        $packages = $organization->packages()
+        $packageFiltersData = PackageFiltersData::fromRequest($request);
+
+        $packages = $this->filterPackagesAction->handle($organization, $packageFiltersData)
             ->with(['repository', 'mirror'])
             ->withCount('versions')
             ->orderBy('name')
-            ->get()
-            ->map(fn ($package) => PackageData::fromModel($package));
+            ->paginate(50)
+            ->withQueryString()
+            ->through(fn (Package $package) => PackageData::fromModel($package));
 
         return Inertia::render('organizations/packages', [
             'organization' => OrganizationData::fromModel($organization),
             'packages' => $packages,
+            'filters' => $packageFiltersData,
+            'facets' => $this->buildPackageFacetsAction->handle($organization),
             'canUploadPackages' => request()->user()?->can('managePackages', $organization) ?? false,
             'maxUploadSize' => config('pricore.uploads.max_size'),
         ]);

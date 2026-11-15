@@ -549,7 +549,9 @@ Row inside a `CardList`: `vendor/` muted + name, description (italic "No descrip
 
 ### Vendor-Grouped List (Packages page)
 
-Packages grouped by Composer vendor: header = mono initial tile (`size-6 rounded-md border bg-card`) + `font-mono` vendor + count, then a `CardList` per vendor. Client-side filter input (`max-w-sm`) above.
+Packages grouped by Composer vendor: header = mono initial tile (`size-6 rounded-md border bg-card`) + `font-mono` vendor + count, then a `CardList` per vendor. Grouping is per page (50 per page).
+
+Filter bar above (server-side, querystring `query` / `source` / `mirror` / `status`): search (`sm:max-w-xs h-9`), source segmented control (All · Repositories · Uploads · one segment per mirror, each with a count pill that turns `bg-primary/10 text-primary` when active), status toggles (`h-9 rounded-lg border`, active `border-ring bg-card shadow-xs`; red `ShieldAlert` Advisories, amber `TriangleAlert` Sync failed, hidden at zero), ghost Clear. Counts cover the whole organization so options don't jump. Pagination: segmented `nav` (`bg-surface-inset p-0.5`, active page `bg-card shadow-xs`) with chevrons, "Showing x–y of n" on the left.
 
 ### Detail Page Header (Package page)
 

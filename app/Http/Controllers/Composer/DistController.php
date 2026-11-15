@@ -3,8 +3,11 @@
 namespace App\Http\Controllers\Composer;
 
 use App\Domains\Composer\Actions\ResolveDistArchiveAction;
+use App\Domains\Mirror\Actions\FetchMirrorDistOnDemandAction;
+use App\Domains\Mirror\Exceptions\MirrorDistDownloadException;
 use App\Http\Controllers\Controller;
 use App\Models\Organization;
+use Illuminate\Contracts\Cache\LockTimeoutException;
 use Illuminate\Filesystem\FilesystemAdapter;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\Response;
@@ -19,6 +22,7 @@ class DistController extends Controller
         string $version,
         string $reference,
         ResolveDistArchiveAction $resolveDistArchiveAction,
+        FetchMirrorDistOnDemandAction $fetchMirrorDistOnDemandAction,
     ): Response {
         $distPath = $resolveDistArchiveAction->handle(
             organization: $organization,
@@ -26,6 +30,21 @@ class DistController extends Controller
             version: $version,
             reference: $reference,
         );
+
+        if (! $distPath) {
+            try {
+                $distPath = $fetchMirrorDistOnDemandAction->handle(
+                    organization: $organization,
+                    packageName: "{$vendor}/{$package}",
+                    version: $version,
+                    reference: $reference,
+                );
+            } catch (MirrorDistDownloadException) {
+                return response()->json(['error' => 'The archive could not be downloaded from the upstream registry'], 502);
+            } catch (LockTimeoutException) {
+                return response()->json(['error' => 'The archive is still being downloaded, try again shortly'], 503);
+            }
+        }
 
         if (! $distPath) {
             return response()->json(['error' => 'Not found'], 404);

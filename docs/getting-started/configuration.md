@@ -11,6 +11,7 @@ Pricore is configured with environment variables, either in `.env` or in the env
 | `APP_ENV` | `production` or `local` | `production` |
 | `APP_DEBUG` | Show detailed errors. Keep this off in production. | `false` |
 | `SIGN_UP_ENABLED` | Let anyone create an account. When off, only invited users can sign up. | `false` |
+| `MIRROR_ON_DEMAND_ENABLED` | Allow [on-demand mirrors](/guide/registry-mirrors#mirroring-packagist), such as a Packagist mirror. When off, they can't be added and existing ones stop importing new packages. | `true` |
 | `TRUSTED_PROXIES` | Comma-separated IPs or CIDR ranges of your load balancer or reverse proxy, or `*` to trust any. Needed so Pricore sees the real client IP and scheme. | - |
 
 ## Database

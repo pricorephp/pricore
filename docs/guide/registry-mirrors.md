@@ -10,8 +10,10 @@ Click **Add Mirror** and fill in:
 
 - **Name**, such as "Internal Satis".
 - **Registry URL**: the URL Composer would use, where `packages.json` lives.
+- **Packages**: **All packages** imports everything the registry lists on each sync. **On demand** imports a package only when Composer first asks for it. See [Mirroring Packagist](#mirroring-packagist).
 - **Authentication**: none, HTTP Basic (username and password), or a Bearer token.
 - **Mirror dist archives**: download every archive into Pricore. Leave this on unless you have a reason not to; without it, Composer downloads from the upstream registry and every developer needs credentials for it.
+- **Download archives on first install**: fetch each archive from the upstream registry the first time Composer downloads it, instead of during every sync. Use this for large registries where you only install a small part of the packages. Later installs of that version are served from Pricore.
 
 The first sync starts right away. Mirrored packages appear in the package list and install like any other package. Their page says which mirror they come from.
 
@@ -21,9 +23,33 @@ Pricore reads registries that serve a `packages.json` in one of these forms:
 
 - Packages listed inline in `packages.json`, as Satis does by default.
 - Packages split over `includes` files.
-- Composer v2 metadata with a `metadata-url`, if the registry also lists its packages under `available-packages`.
+- Composer v2 metadata with a `metadata-url`. To import all packages, the registry must also list them under `available-packages`. Registries that don't, such as Packagist, can be mirrored on demand.
 
-Packagist.org itself can't be mirrored: it doesn't publish a list of its packages in this way, and mirroring all of it wouldn't be useful anyway.
+## Mirroring Packagist
+
+Add a mirror with **Registry URL** `https://repo.packagist.org` and **Packages** set to **On demand**. Pricore then serves every public package your projects use, alongside your private ones:
+
+- Once an organization has an on-demand mirror, its `packages.json` no longer lists its packages, so Composer asks Pricore for every dependency.
+- A package Pricore doesn't have yet is imported from the mirror on the first request. Names the mirror doesn't have either are remembered for 10 minutes.
+- A package is checked against upstream in the background when it is requested again after 5 minutes, and with every mirror sync.
+- With **Mirror dist archives** on, an archive is downloaded on its first install and served from Pricore after that.
+
+On-demand mirrors can be turned off with `MIRROR_ON_DEMAND_ENABLED=false`, for example on a shared installation. See [Configuration](/getting-started/configuration#application).
+
+To route all installs through Pricore, disable Packagist in your project:
+
+```json
+{
+    "repositories": [
+        {"type": "composer", "url": "https://pricore.example.com/acme"},
+        {"packagist.org": false}
+    ]
+}
+```
+
+::: warning
+Packagist archives are served by GitHub's API, which allows 60 unauthenticated downloads per hour from one IP address. Pricore downloads each archive only once, but a first install of a large project can reach that limit. Turn **Mirror dist archives** off to let Composer download archives itself.
+:::
 
 ## Syncing
 

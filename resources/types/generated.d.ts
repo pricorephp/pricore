@@ -83,8 +83,10 @@ export type MirrorData = {
 uuid: string,
 name: string,
 url: string,
+syncMode: App.Domains.Mirror.Contracts.Enums.MirrorSyncMode,
 authType: App.Domains.Mirror.Contracts.Enums.MirrorAuthType,
 mirrorDist: boolean,
+lazyDist: boolean,
 syncStatus: App.Domains.Repository.Contracts.Enums.RepositorySyncStatus | null,
 lastSyncedAt: string | null,
 packagesCount: number,
@@ -105,6 +107,7 @@ details: Record<string, any> | null,
 }
 namespace Enums {
 export type MirrorAuthType = 'none' | 'basic' | 'bearer';
+export type MirrorSyncMode = 'full' | 'on_demand';
 export type SyncVersionResult = 'added' | 'updated' | 'skipped' | 'failed' | 'dist_failed';
 }
 }
@@ -236,6 +239,24 @@ previousPeriodDownloads: number,
 dailyDownloads: App.Domains.Organization.Contracts.Data.DailyDownloadData[],
 versionDailyDownloads: App.Domains.Package.Contracts.Data.VersionDailyDownloadData[],
 };
+export type PackageFacetsData = {
+total: number,
+sources: App.Domains.Package.Contracts.Data.PackageSourceOptionData[],
+vulnerable: number,
+syncFailed: number,
+};
+export type PackageFiltersData = {
+query: string,
+source: App.Domains.Package.Contracts.Enums.PackageSource | null,
+mirror: string | null,
+status: App.Domains.Package.Contracts.Enums.PackageStatus | null,
+};
+export type PackageSourceOptionData = {
+source: App.Domains.Package.Contracts.Enums.PackageSource,
+mirror: string | null,
+label: string,
+count: number,
+};
 export type PackageVersionData = {
 uuid: string,
 version: string,
@@ -290,6 +311,8 @@ dailyDownloads: App.Domains.Organization.Contracts.Data.DailyDownloadData[],
 }
 namespace Enums {
 export type ArtifactPublishResult = 'added' | 'replaced' | 'unchanged';
+export type PackageSource = 'repository' | 'mirror' | 'upload';
+export type PackageStatus = 'vulnerable' | 'sync_failed';
 }
 }
 }

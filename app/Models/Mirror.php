@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Domains\Mirror\Contracts\Enums\MirrorAuthType;
+use App\Domains\Mirror\Contracts\Enums\MirrorSyncMode;
 use App\Domains\Repository\Contracts\Enums\RepositorySyncStatus;
 use App\Models\Concerns\HasUuids;
 use Database\Factories\MirrorFactory;
@@ -20,9 +21,11 @@ use Illuminate\Support\Carbon;
  * @property string $organization_uuid
  * @property string $name
  * @property string $url
+ * @property MirrorSyncMode $sync_mode
  * @property MirrorAuthType $auth_type
  * @property array<string, mixed>|null $auth_credentials
  * @property bool $mirror_dist
+ * @property bool $lazy_dist
  * @property RepositorySyncStatus|null $sync_status
  * @property Carbon|null $last_synced_at
  * @property Carbon|null $created_at
@@ -48,8 +51,10 @@ class Mirror extends Model
 
     protected $casts = [
         'auth_type' => MirrorAuthType::class,
+        'sync_mode' => MirrorSyncMode::class,
         'auth_credentials' => 'encrypted:array',
         'mirror_dist' => 'boolean',
+        'lazy_dist' => 'boolean',
         'sync_status' => RepositorySyncStatus::class,
         'last_synced_at' => 'datetime',
     ];
@@ -76,5 +81,25 @@ class Mirror extends Model
     public function syncLogs(): HasMany
     {
         return $this->hasMany(MirrorSyncLog::class, 'mirror_uuid', 'uuid');
+    }
+
+    public function isOnDemand(): bool
+    {
+        return $this->sync_mode->isOnDemand();
+    }
+
+    public function downloadsDistsDuringSync(): bool
+    {
+        return $this->mirror_dist && ! $this->lazy_dist && ! $this->isOnDemand() && config('pricore.dist.enabled');
+    }
+
+    /**
+     * Archives are fetched from upstream on their first download instead,
+     * so a large registry is never copied in full. On-demand mirrors always
+     * work this way.
+     */
+    public function downloadsDistsOnDemand(): bool
+    {
+        return $this->mirror_dist && ($this->lazy_dist || $this->isOnDemand()) && config('pricore.dist.enabled');
     }
 }
