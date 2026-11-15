@@ -3,6 +3,7 @@
 namespace App\Domains\Mirror\Services\RegistryClient;
 
 use App\Domains\Mirror\Contracts\Interfaces\RegistryClientInterface;
+use App\Domains\Mirror\Exceptions\MirrorPackageNotFoundException;
 use App\Domains\Mirror\Exceptions\MirrorSyncException;
 use App\Domains\Mirror\Services\Http\SecureMirrorHttpClient;
 use Composer\MetadataMinifier\MetadataMinifier;
@@ -62,6 +63,10 @@ class V2RegistryClient implements RegistryClientInterface
 
         if ($ignoreMissing && $response->notFound()) {
             return [];
+        }
+
+        if ($response->notFound()) {
+            throw new MirrorPackageNotFoundException("Package {$packageName} does not exist upstream: HTTP 404");
         }
 
         if (! $response->successful()) {

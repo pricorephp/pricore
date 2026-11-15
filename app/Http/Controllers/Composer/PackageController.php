@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Composer;
 
 use App\Domains\Composer\Actions\ResolveBaseUrlFirstServedAction;
+use App\Domains\Mirror\Contracts\Enums\MirrorSyncMode;
 use App\Http\Controllers\Controller;
 use App\Models\Organization;
 use Illuminate\Http\JsonResponse;
@@ -24,7 +25,7 @@ class PackageController extends Controller
             ->values()
             ->all();
 
-        $response = response()->json([
+        $rootMetadata = [
             'metadata-url' => "{$baseUrl}/%package%.json",
             'available-packages' => $availablePackages,
             'notify-batch' => $notifyBatchUrl,
@@ -32,13 +33,27 @@ class PackageController extends Controller
                 'api-url' => route('composer.security-advisories', ['organization' => $organization->slug]),
                 'metadata' => false,
             ],
-        ]);
+        ];
+
+        $onDemandMirrorAddedAt = $organization->mirrors()
+            ->where('sync_mode', MirrorSyncMode::OnDemand)
+            ->max('created_at');
+
+        // Composer only asks for listed packages, so with an on-demand mirror
+        // the list is left out and every dependency is requested here.
+        if ($onDemandMirrorAddedAt) {
+            unset($rootMetadata['available-packages']);
+        }
+
+        $response = response()->json($rootMetadata);
 
         $packagesUpdatedAt = $organization->packages()->max('updated_at');
 
-        // The metadata URLs follow the base URL, which no package timestamp reflects.
+        // The metadata URLs follow the base URL, which no package timestamp
+        // reflects; neither does dropping the package list for a new mirror.
         $lastModified = collect([
             $packagesUpdatedAt ? new \DateTimeImmutable($packagesUpdatedAt) : null,
+            $onDemandMirrorAddedAt ? new \DateTimeImmutable($onDemandMirrorAddedAt) : null,
             $resolveBaseUrlFirstServedAction->handle(),
         ])->filter()->max();
 

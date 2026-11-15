@@ -4,6 +4,8 @@ import {
 } from '@/actions/App/Domains/Mirror/Http/Controllers/MirrorController';
 import SyncMirrorController from '@/actions/App/Domains/Mirror/Http/Controllers/SyncMirrorController';
 import { show as showPackage } from '@/actions/App/Domains/Package/Http/Controllers/PackageController';
+import { isPackagistUrl } from '@/components/add-mirror-dialog';
+import { CopyButton } from '@/components/copy-button';
 import HeadingSmall from '@/components/heading-small';
 import PackageCard from '@/components/package-card';
 import { RelativeTime } from '@/components/relative-time';
@@ -153,9 +155,13 @@ export default function MirrorShow({
                                           : 'Pending'}
                                 </Badge>
                             )}
+                            {mirror.syncMode === 'on_demand' && (
+                                <Badge variant="outline">On demand</Badge>
+                            )}
                             {mirror.mirrorDist && (
                                 <Badge variant="outline">
-                                    {mirror.lazyDist
+                                    {mirror.lazyDist &&
+                                    mirror.syncMode === 'full'
                                         ? 'Dist on demand'
                                         : 'Dist mirroring'}
                                 </Badge>
@@ -201,6 +207,13 @@ export default function MirrorShow({
                     </DropdownMenu>
                 </div>
 
+                {mirror.syncMode === 'on_demand' && (
+                    <RouteThroughPricore
+                        organization={organization}
+                        mirror={mirror}
+                    />
+                )}
+
                 <div className="space-y-4">
                     <HeadingSmall
                         title="Packages"
@@ -229,10 +242,15 @@ export default function MirrorShow({
                         <Card>
                             <CardContent className="py-8 text-center">
                                 <Package className="mx-auto mb-3 size-8 text-muted-foreground" />
-                                <p className="font-medium">No packages found</p>
+                                <p className="font-medium">
+                                    {mirror.syncMode === 'on_demand'
+                                        ? 'No packages requested yet'
+                                        : 'No packages found'}
+                                </p>
                                 <p className="mt-1 text-sm text-muted-foreground">
-                                    No packages have been imported from this
-                                    mirror yet. Try syncing to import packages.
+                                    {mirror.syncMode === 'on_demand'
+                                        ? 'Packages appear here once a project installs them through Pricore.'
+                                        : 'No packages have been imported from this mirror yet. Try syncing to import packages.'}
                                 </p>
                             </CardContent>
                         </Card>
@@ -440,5 +458,66 @@ export default function MirrorShow({
                 </Dialog>
             </div>
         </AppLayout>
+    );
+}
+
+function RouteThroughPricore({
+    organization,
+    mirror,
+}: {
+    organization: OrganizationData;
+    mirror: MirrorData;
+}) {
+    const upstreamName = isPackagistUrl(mirror.url) ? 'Packagist' : mirror.name;
+
+    const steps = [
+        {
+            title: `Add ${organization.name} as a repository`,
+            command: `composer config repositories.${organization.slug} composer ${organization.composerRepositoryUrl}`,
+        },
+        {
+            title: `Stop asking ${upstreamName} directly`,
+            command: isPackagistUrl(mirror.url)
+                ? 'composer config repo.packagist false'
+                : null,
+        },
+    ];
+
+    return (
+        <section className="rounded-lg border bg-card">
+            <div className="space-y-0.5 border-b px-5 py-4">
+                <h3 className="font-medium">Install through Pricore</h3>
+                <p className="text-muted-foreground">
+                    Run these in a project to resolve every package through{' '}
+                    {organization.name}: your private packages and the public
+                    ones {upstreamName} provides.
+                </p>
+            </div>
+            <ol className="divide-y">
+                {steps.map((step, index) => (
+                    <li key={step.title} className="flex gap-3 px-5 py-4">
+                        <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-medium text-primary tabular-nums">
+                            {index + 1}
+                        </span>
+                        <div className="min-w-0 flex-1 space-y-2">
+                            <p>{step.title}</p>
+                            {step.command ? (
+                                <div className="flex items-center gap-2 rounded-md border bg-surface-inset py-1 pr-1 pl-3">
+                                    <code className="flex-1 truncate font-mono text-sm">
+                                        {step.command}
+                                    </code>
+                                    <CopyButton text={step.command} />
+                                </div>
+                            ) : (
+                                <p className="text-muted-foreground">
+                                    Remove the {upstreamName} repository from
+                                    your project&apos;s composer.json.
+                                </p>
+                            )}
+                        </div>
+                    </li>
+                ))}
+            </ol>
+        </section>
     );
 }

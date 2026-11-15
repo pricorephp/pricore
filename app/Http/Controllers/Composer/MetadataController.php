@@ -4,11 +4,14 @@ namespace App\Http\Controllers\Composer;
 
 use App\Domains\Composer\Actions\ResolveBaseUrlFirstServedAction;
 use App\Domains\Composer\Contracts\Data\VersionMetadataData;
+use App\Domains\Mirror\Actions\ResolveOnDemandMirrorPackageAction;
+use App\Domains\Mirror\Exceptions\MirrorSyncException;
 use App\Http\Controllers\Controller;
 use App\Models\Organization;
 use App\Models\Package;
 use App\Models\PackageVersion;
 use Composer\MetadataMinifier\MetadataMinifier;
+use Illuminate\Contracts\Cache\LockTimeoutException;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Http\JsonResponse;
@@ -18,6 +21,7 @@ class MetadataController extends Controller
 {
     public function __construct(
         protected ResolveBaseUrlFirstServedAction $resolveBaseUrlFirstServedAction,
+        protected ResolveOnDemandMirrorPackageAction $resolveOnDemandMirrorPackageAction,
     ) {}
 
     /**
@@ -61,6 +65,18 @@ class MetadataController extends Controller
         $package = $organization->packages()
             ->where('name', $packageName)
             ->first();
+
+        if (! $package) {
+            try {
+                $package = $this->resolveOnDemandMirrorPackageAction->handle($organization, $packageName);
+            } catch (MirrorSyncException) {
+                return response()->json(['error' => 'The package could not be loaded from the upstream registry'], 502);
+            } catch (LockTimeoutException) {
+                return response()->json(['error' => 'The package is still being loaded, try again shortly'], 503);
+            }
+        } else {
+            $this->resolveOnDemandMirrorPackageAction->refreshIfStale($package);
+        }
 
         if (! $package) {
             return response()->json([

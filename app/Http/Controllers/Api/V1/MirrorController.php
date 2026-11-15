@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1;
 use App\Domains\Activity\Actions\RecordActivityTask;
 use App\Domains\Activity\Contracts\Enums\ActivityType;
 use App\Domains\Mirror\Contracts\Data\MirrorData;
+use App\Domains\Mirror\Contracts\Enums\MirrorSyncMode;
 use App\Domains\Mirror\Http\Requests\StoreMirrorRequest;
 use App\Domains\Mirror\Jobs\SyncMirrorJob;
 use App\Domains\Repository\Contracts\Enums\RepositorySyncStatus;
@@ -43,6 +44,7 @@ class MirrorController extends ApiController
         $mirror = $organization->mirrors()->create([
             'name' => $request->validated('name'),
             'url' => $request->validated('url'),
+            'sync_mode' => $request->validated('sync_mode', MirrorSyncMode::Full->value),
             'auth_type' => $request->validated('auth_type'),
             'auth_credentials' => $request->authCredentials(),
             'mirror_dist' => $request->validated('mirror_dist', true),

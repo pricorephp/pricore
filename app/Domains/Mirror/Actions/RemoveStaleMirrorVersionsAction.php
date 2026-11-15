@@ -16,7 +16,9 @@ class RemoveStaleMirrorVersionsAction
      */
     public function handle(Mirror $mirror, array $allPackageVersions): int
     {
-        $packages = $mirror->packages;
+        $packages = $mirror->packages()
+            ->whereIn('name', array_keys($allPackageVersions))
+            ->get();
 
         if ($packages->isEmpty()) {
             return 0;
