@@ -156,6 +156,24 @@ it('records last_used_at at most once a minute', function () {
     expect($token->refresh()->last_used_at->getTimestamp())->toBe(now()->getTimestamp());
 });
 
+it('does not record a use another request recorded moments ago', function () {
+    $token = AccessToken::factory()
+        ->forOrganization($this->organization)
+        ->neverExpires()
+        ->create(['last_used_at' => now()->subHour()]);
+
+    $this->freezeTime();
+
+    $parallelToken = AccessToken::query()->findOrFail($token->uuid);
+    $token->markAsUsed();
+    $recordedAt = $token->refresh()->last_used_at;
+
+    $this->travel(10)->seconds();
+    $parallelToken->markAsUsed();
+
+    expect($token->refresh()->last_used_at->getTimestamp())->toBe($recordedAt->getTimestamp());
+});
+
 it('allows user-scoped token to access user organizations', function () {
     $plainToken = 'user-scoped-token-'.uniqid();
 

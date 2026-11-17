@@ -127,8 +127,18 @@ class AccessToken extends Model
             return;
         }
 
-        $this->last_used_at = now();
-        $this->saveQuietly();
+        $usedAt = now();
+
+        // Parallel requests all loaded the same stale moment; the condition
+        // lets only the first of them write.
+        static::query()
+            ->whereKey($this->getKey())
+            ->where(fn (Builder $query) => $query
+                ->whereNull('last_used_at')
+                ->orWhere('last_used_at', '<=', $usedAt->copy()->subMinute()))
+            ->update(['last_used_at' => $usedAt]);
+
+        $this->setAttribute('last_used_at', $usedAt)->syncOriginalAttribute('last_used_at');
     }
 
     /**
