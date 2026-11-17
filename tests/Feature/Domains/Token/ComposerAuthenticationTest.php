@@ -128,6 +128,34 @@ it('updates last_used_at timestamp when token is used', function () {
     expect($token->last_used_at)->not->toBeNull();
 });
 
+it('records last_used_at at most once a minute', function () {
+    $plainToken = 'throttle-test-token-'.uniqid();
+
+    $token = AccessToken::factory()
+        ->forOrganization($this->organization)
+        ->withPlainToken($plainToken)
+        ->neverExpires()
+        ->create(['last_used_at' => null]);
+
+    $useToken = fn () => $this->withHeaders(['Authorization' => "Bearer {$plainToken}"])
+        ->getJson("/{$this->organization->slug}/packages.json")
+        ->assertOk();
+
+    $this->freezeTime();
+    $firstUsedAt = now();
+    $useToken();
+
+    $this->travel(30)->seconds();
+    $useToken();
+
+    expect($token->refresh()->last_used_at->getTimestamp())->toBe($firstUsedAt->getTimestamp());
+
+    $this->travel(31)->seconds();
+    $useToken();
+
+    expect($token->refresh()->last_used_at->getTimestamp())->toBe(now()->getTimestamp());
+});
+
 it('allows user-scoped token to access user organizations', function () {
     $plainToken = 'user-scoped-token-'.uniqid();
 

@@ -117,8 +117,16 @@ class AccessToken extends Model
         return false;
     }
 
+    /**
+     * Composer authenticates hundreds of requests for a single install, so
+     * the moment of last use is only recorded once a minute.
+     */
     public function markAsUsed(): void
     {
+        if ($this->last_used_at?->greaterThan(now()->subMinute())) {
+            return;
+        }
+
         $this->last_used_at = now();
         $this->saveQuietly();
     }
