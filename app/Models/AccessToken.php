@@ -117,10 +117,28 @@ class AccessToken extends Model
         return false;
     }
 
+    /**
+     * Composer authenticates hundreds of requests for a single install, so
+     * the moment of last use is only recorded once a minute.
+     */
     public function markAsUsed(): void
     {
-        $this->last_used_at = now();
-        $this->saveQuietly();
+        if ($this->last_used_at?->greaterThan(now()->subMinute())) {
+            return;
+        }
+
+        $usedAt = now();
+
+        // Parallel requests all loaded the same stale moment; the condition
+        // lets only the first of them write.
+        static::query()
+            ->whereKey($this->getKey())
+            ->where(fn (Builder $query) => $query
+                ->whereNull('last_used_at')
+                ->orWhere('last_used_at', '<=', $usedAt->copy()->subMinute()))
+            ->update(['last_used_at' => $usedAt]);
+
+        $this->setAttribute('last_used_at', $usedAt)->syncOriginalAttribute('last_used_at');
     }
 
     /**
