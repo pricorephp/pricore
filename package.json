@@ -18,7 +18,7 @@
         "@babel/core": "^7.26.0",
         "@eslint/js": "^10.0.1",
         "@laravel/vite-plugin-wayfinder": "^0.1.11",
-        "@rolldown/plugin-babel": "^0.2.4",
+        "@rolldown/plugin-babel": "^0.3.0",
         "@tailwindcss/typography": "^0.5.20",
         "@types/luxon": "^3.7.6",
         "@types/node": "^26.6.6",
