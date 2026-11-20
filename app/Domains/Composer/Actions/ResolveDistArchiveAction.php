@@ -9,6 +9,7 @@ use App\Models\PackageVersion;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Facades\Storage;
+use InvalidArgumentException;
 
 class ResolveDistArchiveAction
 {
@@ -54,7 +55,9 @@ class ResolveDistArchiveAction
         foreach ($candidates as $candidate) {
             $archive = $candidate->archives->first();
 
-            if ($archive && $disk->exists($archive->path)) {
+            if ($archive
+                && DistArchiveData::isSafeStoredPath($archive->path)
+                && $disk->exists($archive->path)) {
                 return $archive->path;
             }
         }
@@ -66,12 +69,18 @@ class ResolveDistArchiveAction
         // so recover them by name. Removable once no supported upgrade path
         // predates that migration.
         foreach ($candidates as $candidate) {
-            $legacyPath = DistArchiveData::pathFor(
-                organizationSlug: $organization->slug,
-                packageName: $packageName,
-                version: $candidate->version,
-                reference: $reference,
-            );
+            // Rows mirrored before upstream metadata was validated can hold
+            // names or versions that would resolve outside this organization.
+            try {
+                $legacyPath = DistArchiveData::pathFor(
+                    organizationSlug: $organization->slug,
+                    packageName: $packageName,
+                    version: $candidate->version,
+                    reference: $reference,
+                );
+            } catch (InvalidArgumentException) {
+                continue;
+            }
 
             if ($disk->exists($legacyPath)) {
                 return $legacyPath;

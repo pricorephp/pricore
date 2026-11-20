@@ -41,6 +41,10 @@ class InlineRegistryClient implements RegistryClientInterface
         $normalized = [];
 
         foreach ($packages as $packageName => $versions) {
+            if (! UpstreamMetadataFilter::isSafePackageName($packageName)) {
+                continue;
+            }
+
             $normalizedVersions = [];
 
             foreach ($versions as $key => $composerJson) {
@@ -48,7 +52,7 @@ class InlineRegistryClient implements RegistryClientInterface
                 $normalizedVersions[$version] = $composerJson;
             }
 
-            $normalized[$packageName] = $normalizedVersions;
+            $normalized[$packageName] = UpstreamMetadataFilter::versions($packageName, $normalizedVersions);
         }
 
         return $normalized;
