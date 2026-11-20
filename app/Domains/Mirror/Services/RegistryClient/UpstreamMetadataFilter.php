@@ -62,14 +62,14 @@ class UpstreamMetadataFilter
             return false;
         }
 
-        foreach (['dist', 'source'] as $key) {
-            $reference = $composerJson[$key]['reference'] ?? null;
+        // Only the reference sync stores is used in the archive path: the dist
+        // reference, falling back to the source reference.
+        $reference = $composerJson['dist']['reference'] ?? $composerJson['source']['reference'] ?? null;
 
-            if ($reference !== null && (! is_scalar($reference) || ! DistArchiveData::isPathSafeReference((string) $reference))) {
-                return false;
-            }
+        if ($reference === null) {
+            return true;
         }
 
-        return true;
+        return is_scalar($reference) && DistArchiveData::isPathSafeReference((string) $reference);
     }
 }

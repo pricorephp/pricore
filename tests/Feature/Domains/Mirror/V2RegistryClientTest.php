@@ -240,3 +240,20 @@ it('drops unsafe package names and versions from an inline registry', function (
     expect($client->getAvailablePackages())->toBe(['vendor/pkg']);
     expect(array_keys($client->getPackageVersions('vendor/pkg')))->toBe(['1.0.0']);
 });
+
+it('only checks the reference that sync stores', function () {
+    Http::fake([
+        'registry.example.com/packages.json' => Http::response([
+            'metadata-url' => '/p2/%package%.json',
+            'available-packages' => ['vendor/pkg'],
+        ]),
+        'registry.example.com/p2/vendor/pkg.json' => Http::response(fakeMetadataResponse('vendor/pkg', [
+            ['name' => 'vendor/pkg', 'version' => '1.0.0', 'dist' => ['reference' => 'abc123'], 'source' => ['reference' => 'feature/foo']],
+        ])),
+        'registry.example.com/p2/vendor/pkg~dev.json' => Http::response([], 404),
+    ]);
+
+    $versions = RegistryClientFactory::make($this->mirror)->getPackageVersions('vendor/pkg');
+
+    expect(array_keys($versions))->toBe(['1.0.0']);
+});

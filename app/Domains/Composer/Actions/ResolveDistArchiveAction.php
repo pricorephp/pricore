@@ -55,7 +55,9 @@ class ResolveDistArchiveAction
         foreach ($candidates as $candidate) {
             $archive = $candidate->archives->first();
 
-            if ($archive && $disk->exists($archive->path)) {
+            if ($archive
+                && DistArchiveData::isWithinOrganization($archive->path, $organization->slug)
+                && $disk->exists($archive->path)) {
                 return $archive->path;
             }
         }

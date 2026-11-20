@@ -84,6 +84,25 @@ class DistArchiveData extends Data
         return preg_match('{[/\\\\\x00-\x1F\x7F]}', $reference) !== 1;
     }
 
+    /**
+     * Whether a stored path stays inside the organization's directory. Paths
+     * recorded before upstream metadata was validated may not.
+     */
+    public static function isWithinOrganization(string $path, string $organizationSlug): bool
+    {
+        if (! str_starts_with($path, "{$organizationSlug}/") || str_contains($path, '\\')) {
+            return false;
+        }
+
+        foreach (explode('/', $path) as $segment) {
+            if (in_array($segment, ['', '.', '..'], true)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     protected static function isPathSafeSegment(string $segment): bool
     {
         return preg_match('/^[A-Za-z0-9_.-]+$/', $segment) === 1
