@@ -28,7 +28,13 @@ The Composer metadata then contains both a `source` and a `dist` for each versio
 }
 ```
 
-Composer prefers `dist` and checks the archive against the `shasum` after downloading. Until an archive exists, or when building it fails, the version is offered with `source` only and Composer clones it. Monorepo packages have no usable `source`, so they only appear once their archive is ready.
+Composer prefers `dist` and checks the archive against the `shasum` after downloading.
+
+A version is published, or moved to a new commit, only once its archive is stored. Otherwise a `composer.lock` resolved in between would pin the commit without a `dist` entry, and installs would need access to the Git repository. When an archive fails to build:
+
+- a new version is kept out of the Composer metadata;
+- a version already published stays on its previous commit and archive;
+- the failure is listed in the sync log, and the next sync retries it.
 
 [Uploaded packages](/guide/packages#uploading-packages) are always served from the uploaded archive, and [registry mirrors](/guide/registry-mirrors) store upstream archives when **Mirror dist archives** is on.
 
@@ -86,6 +92,6 @@ Removing an archive doesn't remove the version. Composer falls back to cloning i
 
 ## Troubleshooting
 
-**Versions have no archive.** Check that `DIST_ENABLED` is on, and look for failed jobs in Horizon. Archive failures are logged as warnings and don't fail the sync.
+**Versions have no archive.** Check that `DIST_ENABLED` is on, and open the sync log on the repository page: archives that failed to build are listed with the provider's error.
 
 **Disk usage keeps growing.** Every push to a branch adds an archive. Set `DIST_KEEP_DETACHED_DAYS` and schedule `dist:cleanup`.

@@ -2,23 +2,24 @@
 
 use App\Domains\Repository\Actions\CreateDistArchiveAction;
 use App\Domains\Repository\Contracts\Interfaces\GitProviderInterface;
-use App\Models\Organization;
-use App\Models\Package;
-use App\Models\PackageVersion;
 use Illuminate\Support\Facades\Storage;
 
 beforeEach(function () {
     Storage::fake('local');
+
+    $this->reference = 'abc123def456789012345678901234567890abcd';
+
+    $this->createArchive = fn (GitProviderInterface $provider, string $packageName = 'acme/test-package', ?string $sourcePath = null) => (new CreateDistArchiveAction)->handle(
+        provider: $provider,
+        organizationSlug: 'acme',
+        packageName: $packageName,
+        version: '1.0.0',
+        reference: $this->reference,
+        sourcePath: $sourcePath,
+    );
 });
 
 it('creates a dist archive and returns path and shasum', function () {
-    $organization = Organization::factory()->create(['slug' => 'acme']);
-    $package = Package::factory()->for($organization, 'organization')->create(['name' => 'acme/test-package']);
-    $version = PackageVersion::factory()->for($package)->create([
-        'version' => '1.0.0',
-        'source_reference' => 'abc123def456789012345678901234567890abcd',
-    ]);
-
     $provider = Mockery::mock(GitProviderInterface::class);
     $provider->shouldReceive('downloadArchive')
         ->once()
@@ -28,8 +29,7 @@ it('creates a dist archive and returns path and shasum', function () {
             return true;
         });
 
-    $action = new CreateDistArchiveAction;
-    $result = $action->handle($provider, $version, 'acme');
+    $result = ($this->createArchive)($provider);
 
     expect($result)->not->toBeNull()
         ->and($result->shasum)->toBe(sha1('fake-zip-content'))
@@ -40,39 +40,19 @@ it('creates a dist archive and returns path and shasum', function () {
 });
 
 it('returns null when provider fails to download archive', function () {
-    $organization = Organization::factory()->create(['slug' => 'acme']);
-    $package = Package::factory()->for($organization, 'organization')->create(['name' => 'acme/test-package']);
-    $version = PackageVersion::factory()->for($package)->create([
-        'version' => '1.0.0',
-        'source_reference' => 'abc123def456789012345678901234567890abcd',
-    ]);
-
     $provider = Mockery::mock(GitProviderInterface::class);
     $provider->shouldReceive('downloadArchive')
         ->once()
         ->andReturn(false);
 
-    $action = new CreateDistArchiveAction;
-    $result = $action->handle($provider, $version, 'acme');
-
-    expect($result)->toBeNull();
+    expect(($this->createArchive)($provider))->toBeNull();
 });
 
 it('requests the archive of the version source path', function () {
-    $organization = Organization::factory()->create(['slug' => 'acme']);
-    $package = Package::factory()
-        ->for($organization, 'organization')
-        ->atPath('packages/billing')
-        ->create(['name' => 'acme/billing']);
-    $version = PackageVersion::factory()->for($package)->atPath('packages/billing')->create([
-        'version' => '1.0.0',
-        'source_reference' => 'abc123def456789012345678901234567890abcd',
-    ]);
-
     $provider = Mockery::mock(GitProviderInterface::class);
     $provider->shouldReceive('downloadArchive')
         ->once()
-        ->withArgs(fn (string $ref, string $outputPath, ?string $path) => $ref === $version->source_reference
+        ->withArgs(fn (string $ref, string $outputPath, ?string $path) => $ref === $this->reference
             && $path === 'packages/billing')
         ->andReturnUsing(function (string $ref, string $outputPath) {
             file_put_contents($outputPath, 'subtree-zip');
@@ -80,7 +60,7 @@ it('requests the archive of the version source path', function () {
             return true;
         });
 
-    $result = (new CreateDistArchiveAction)->handle($provider, $version, 'acme');
+    $result = ($this->createArchive)($provider, 'acme/billing', 'packages/billing');
 
     expect($result?->path)->toBe('acme/acme/billing/1.0.0_abc123def456.zip');
 });

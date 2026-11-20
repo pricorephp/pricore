@@ -462,7 +462,8 @@ export default function RepositoryShow({
                                                 </Tooltip>
                                             </div>
                                         )}
-                                        {log.errorMessage && (
+                                        {(log.errorMessage ||
+                                            distFailuresOf(log).length > 0) && (
                                             <button
                                                 type="button"
                                                 onClick={() =>
@@ -494,13 +495,33 @@ export default function RepositoryShow({
                             </DialogDescription>
                         </DialogHeader>
                         <pre className="max-h-80 overflow-auto rounded-md bg-muted p-4 text-sm whitespace-pre-wrap">
-                            {selectedLog?.errorMessage}
+                            {selectedLog &&
+                                [
+                                    selectedLog.errorMessage,
+                                    ...distFailuresOf(selectedLog).map(
+                                        (failure) =>
+                                            `Dist archive failed for ${failure.package} ${failure.version} (${failure.reference.slice(0, 7)}): ${failure.error}`,
+                                    ),
+                                ]
+                                    .filter(Boolean)
+                                    .join('\n\n')}
                         </pre>
                     </DialogContent>
                 </Dialog>
             </div>
         </AppLayout>
     );
+}
+
+type DistFailure = {
+    package: string;
+    version: string;
+    reference: string;
+    error: string;
+};
+
+function distFailuresOf(log: SyncLogData): DistFailure[] {
+    return (log.details?.dist_failures as DistFailure[] | undefined) ?? [];
 }
 
 function WebhookSetupCard({ repository }: { repository: RepositoryData }) {

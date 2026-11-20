@@ -182,6 +182,30 @@ it('excludes dev versions from stable endpoint', function () {
         ->and($versions[0]['version'])->toBe('1.0.0');
 });
 
+it('hides versions whose dist archive failed to build until it builds', function () {
+    $package = Package::factory()
+        ->for($this->organization, 'organization')
+        ->create(['name' => 'acme/package']);
+
+    PackageVersion::factory()
+        ->for($package)
+        ->create(['version' => '1.0.0', 'normalized_version' => '1.0.0.0']);
+
+    PackageVersion::factory()
+        ->for($package)
+        ->create(['version' => '1.1.0', 'normalized_version' => '1.1.0.0', 'dist_failed_at' => now()]);
+
+    $versions = fn () => collect(authenticatedGet("/{$this->organization->slug}/p2/acme/package.json", $this->plainToken)
+        ->assertOk()
+        ->json('packages.acme/package'))->pluck('version')->all();
+
+    expect($versions())->toBe(['1.0.0']);
+
+    config(['pricore.dist.enabled' => false]);
+
+    expect($versions())->toContain('1.1.0');
+});
+
 it('returns only dev versions from dev endpoint', function () {
     $package = Package::factory()
         ->for($this->organization, 'organization')

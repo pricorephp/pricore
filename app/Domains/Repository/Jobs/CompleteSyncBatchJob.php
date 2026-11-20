@@ -66,13 +66,15 @@ class CompleteSyncBatchJob implements ShouldQueue
         $skipped = 0;
         $removed = 0;
         $failed = 0;
+        $distFailures = [];
 
         if ($batch) {
             $added = (int) Cache::pull("sync-batch:{$batch->id}:added", 0);
             $updated = (int) Cache::pull("sync-batch:{$batch->id}:updated", 0);
             $skipped = (int) Cache::pull("sync-batch:{$batch->id}:skipped", 0);
             $removed = (int) Cache::pull("sync-batch:{$batch->id}:removed", 0);
-            $failed = $batch->failedJobs;
+            $distFailures = Cache::pull("sync-batch:{$batch->id}:dist_failures", []);
+            $failed = $batch->failedJobs + count($distFailures);
         }
 
         $failedJobs = $batch ? $batch->failedJobs : 0;
@@ -94,6 +96,7 @@ class CompleteSyncBatchJob implements ShouldQueue
             'details' => array_merge($syncLog->details ?? [], [
                 'failed_jobs' => $failedJobs,
                 'total_jobs' => $totalJobs,
+                'dist_failures' => $distFailures,
             ]),
         ]);
 

@@ -109,6 +109,27 @@ class SyncRefJob implements ShouldQueue
                 $this->incrementCounter($counter, $count);
             }
         }
+
+        $this->appendDistFailures($result->distFailures);
+    }
+
+    /**
+     * @param  array<int, array{package: string, version: string, reference: string, error: string}>  $failures
+     */
+    protected function appendDistFailures(array $failures): void
+    {
+        $batch = $this->batch();
+
+        if (! $batch || $failures === []) {
+            return;
+        }
+
+        $key = "sync-batch:{$batch->id}:dist_failures";
+
+        // Refs of a batch sync in parallel, so the read-modify-write needs a lock
+        Cache::lock("{$key}:lock", 10)->block(10, function () use ($key, $failures) {
+            Cache::put($key, [...Cache::get($key, []), ...$failures], now()->addDay());
+        });
     }
 
     protected function incrementCounter(string $counter, int $count = 1): void
