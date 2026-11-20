@@ -404,3 +404,28 @@ it('does not serve a stored archive path outside the organization', function () 
 
     $response->assertNotFound();
 });
+
+it('serves archives stored under a previous organization slug', function () {
+    $package = Package::factory()
+        ->for($this->organization, 'organization')
+        ->create(['name' => 'acme/test-package']);
+
+    $packageVersion = PackageVersion::factory()
+        ->for($package)
+        ->create([
+            'version' => '1.0.0',
+            'source_reference' => 'abc123def456',
+        ]);
+
+    $storedPath = 'old-acme/acme/test-package/1.0.0_abc123def456.zip';
+    Storage::disk('local')->put($storedPath, 'fake-zip-content');
+
+    DistArchive::factory()->forPackageVersion($packageVersion)->create([
+        'path' => $storedPath,
+        'shasum' => sha1('fake-zip-content'),
+    ]);
+
+    $response = distGet('/acme/dists/acme/test-package/1.0.0/abc123def456.zip', $this->plainToken);
+
+    $response->assertOk();
+});

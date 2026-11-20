@@ -56,7 +56,7 @@ class ResolveDistArchiveAction
             $archive = $candidate->archives->first();
 
             if ($archive
-                && DistArchiveData::isWithinOrganization($archive->path, $organization->slug)
+                && DistArchiveData::isSafeStoredPath($archive->path)
                 && $disk->exists($archive->path)) {
                 return $archive->path;
             }

@@ -85,12 +85,14 @@ class DistArchiveData extends Data
     }
 
     /**
-     * Whether a stored path stays inside the organization's directory. Paths
-     * recorded before upstream metadata was validated may not.
+     * Whether a stored path is free of traversal. Paths recorded before
+     * upstream metadata was validated may not be. The organization prefix is
+     * not checked, because renaming an organization leaves its archives under
+     * the old slug.
      */
-    public static function isWithinOrganization(string $path, string $organizationSlug): bool
+    public static function isSafeStoredPath(string $path): bool
     {
-        if (! str_starts_with($path, "{$organizationSlug}/") || str_contains($path, '\\')) {
+        if (str_starts_with($path, '/') || str_contains($path, '\\')) {
             return false;
         }
 
