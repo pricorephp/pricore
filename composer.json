@@ -67,6 +67,10 @@
             "npm install",
             "npm run build"
         ],
+        "worktree:setup": [
+            "Composer\\Config::disableProcessTimeout",
+            "bin/worktree-setup"
+        ],
         "dev": [
             "Composer\\Config::disableProcessTimeout",
             "npx concurrently -c \"#93c5fd,#c4b5fd,#fb7185,#fdba74,#86efac\" \"php artisan serve\" \"php artisan horizon\" \"php artisan pail --timeout=0\" \"npm run dev\" \"php artisan reverb:start\" --names=server,queue,logs,vite,reverb --kill-others"
