@@ -33,6 +33,8 @@ done
 root="$(git rev-parse --show-toplevel)"
 main="$(cd "$(git rev-parse --git-common-dir)/.." && pwd)"
 marker="# Managed by bin/worktree-setup"
+ready_file="$(git rev-parse --absolute-git-dir)/pricore-worktree-ready"
+lock_dir="$(cd "$(git rev-parse --git-common-dir)" && pwd)/pricore-worktree-setup.lock"
 
 cd "$root"
 
@@ -42,30 +44,54 @@ if [ "$root" = "$main" ]; then
     exit 1
 fi
 
-if [ "$quiet_if_ready" = 1 ] && [ "$force" = 0 ] \
-    && [ -f .env ] && grep -qxF "$marker" .env \
-    && [ -f vendor/autoload.php ] && [ -d node_modules ]; then
+if [ "$quiet_if_ready" = 1 ] && [ "$force" = 0 ] && [ -f "$ready_file" ]; then
     exit 0
 fi
+
+# Only a run that gets through every step marks the worktree as ready.
+rm -f "$ready_file"
 
 # Progress goes to stderr so stdout only carries the final summary.
 step() { printf '\n\033[1;34m==>\033[0m %s\n' "$1" >&2; }
 
 env_get() {
-    grep -E "^$1=" "$2" 2>/dev/null | tail -n1 | cut -d= -f2- | sed -E 's/^"(.*)"$/\1/' || true
+    grep -E "^$1=" "$2" 2>/dev/null | tail -n1 | cut -d= -f2- \
+        | sed -E 's/^"(.*)"$/\1/; s/\\(["$\\])/\1/g' || true
 }
 
+# Write KEY="value" to .env, escaped so paths with spaces, quotes or $ survive.
 env_set() {
-    local key="$1" value="$2"
-    if grep -qE "^$key=" .env; then
-        KEY="$key" VALUE="$value" php -r '
-            $env = file_get_contents(".env");
-            $line = getenv("KEY")."=".getenv("VALUE");
-            file_put_contents(".env", preg_replace("/^".preg_quote(getenv("KEY"), "/")."=.*$/m", addcslashes($line, "\\\\$"), $env));
-        '
-    else
-        printf '%s=%s\n' "$key" "$value" >> .env
-    fi
+    KEY="$1" VALUE="$2" php -r '
+        $key = getenv("KEY");
+        $line = $key."=\"".addcslashes(getenv("VALUE"), "\\\\\"\$")."\"";
+        $env = file_get_contents(".env");
+        $pattern = "/^".preg_quote($key, "/")."=.*$/m";
+        $env = preg_match($pattern, $env)
+            ? preg_replace_callback($pattern, fn () => $line, $env)
+            : rtrim($env, "\n")."\n".$line."\n";
+        file_put_contents(".env", $env);
+    '
+}
+
+# Serialise port allocation across worktrees, so setups started at the same
+# time don't pick the same ports.
+acquire_lock() {
+    local waited=0
+    until mkdir "$lock_dir" 2>/dev/null; do
+        if [ -n "$(find "$lock_dir" -maxdepth 0 -mmin +2 2>/dev/null)" ]; then
+            rmdir "$lock_dir" 2>/dev/null || true
+            continue
+        fi
+        [ "$waited" -ge 120 ] && { echo "Timed out waiting for $lock_dir" >&2; exit 1; }
+        sleep 1
+        waited=$((waited + 1))
+    done
+    trap 'rmdir "$lock_dir" 2>/dev/null || true' EXIT
+}
+
+release_lock() {
+    rmdir "$lock_dir" 2>/dev/null || true
+    trap - EXIT
 }
 
 name="$(basename "$root")"
@@ -90,6 +116,8 @@ pick_offset() {
 if [ "$force" = 1 ] || [ ! -f .env ] || ! grep -qxF "$marker" .env; then
     step "Writing .env"
 
+    acquire_lock
+
     [ -f .env ] && cp .env .env.backup
 
     if [ -f "$main/.env" ]; then
@@ -109,6 +137,8 @@ if [ "$force" = 1 ] || [ ! -f .env ] || ! grep -qxF "$marker" .env; then
     env_set SERVER_PORT "$app_port"
     env_set VITE_PORT "$vite_port"
 
+    # DB_URL would override the SQLite settings below and point at the main database.
+    env_set DB_URL ""
     env_set DB_CONNECTION sqlite
     env_set DB_DATABASE "$root/database/database.sqlite"
 
@@ -124,6 +154,8 @@ if [ "$force" = 1 ] || [ ! -f .env ] || ! grep -qxF "$marker" .env; then
     env_set REVERB_ECHO_HOST localhost
     env_set REVERB_ECHO_PORT "$reverb_port"
     env_set REVERB_ECHO_SCHEME http
+
+    release_lock
 
     [ "$force" = 1 ] && rm -f database/database.sqlite
 fi
@@ -185,6 +217,8 @@ if [ -f .claude/launch.json ]; then
         file_put_contents(".claude/launch.json", json_encode($launch, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)."\n");
     '
 fi
+
+touch "$ready_file"
 
 cat <<EOF
 Pricore worktree '$name' is ready.
