@@ -1,5 +1,6 @@
 <?php
 
+use App\Domains\Mirror\Exceptions\MirrorPackageNotFoundException;
 use App\Domains\Mirror\Exceptions\MirrorSyncException;
 use App\Domains\Mirror\Services\RegistryClient\InlineRegistryClient;
 use App\Domains\Mirror\Services\RegistryClient\RegistryClientFactory;
@@ -181,4 +182,61 @@ it('rejects a private absolute metadata URL before requesting it', function () {
         ->toThrow(MirrorSyncException::class, 'private or reserved');
 
     Http::assertSentCount(1);
+});
+
+it('drops upstream package names that could escape the archive directory', function () {
+    Http::fake([
+        'registry.example.com/packages.json' => Http::response([
+            'metadata-url' => '/p2/%package%.json',
+            'available-packages' => ['vendor/pkg', '../victim-org', 'vendor/..', 'a/b/c'],
+        ]),
+    ]);
+
+    $client = RegistryClientFactory::make($this->mirror);
+
+    expect($client->getAvailablePackages())->toBe(['vendor/pkg']);
+    expect(fn () => $client->getPackageVersions('../victim-org'))
+        ->toThrow(MirrorPackageNotFoundException::class);
+});
+
+it('drops upstream versions and references that could escape the archive directory', function () {
+    Http::fake([
+        'registry.example.com/packages.json' => Http::response([
+            'metadata-url' => '/p2/%package%.json',
+            'available-packages' => ['vendor/pkg'],
+        ]),
+        'registry.example.com/p2/vendor/pkg.json' => Http::response(fakeMetadataResponse('vendor/pkg', [
+            ['name' => 'vendor/pkg', 'version' => '1.0.0', 'dist' => ['reference' => 'abc123']],
+            ['name' => 'vendor/pkg', 'version' => '../../victim-org/pkg/1.0.0', 'dist' => ['reference' => 'abc123']],
+            ['name' => 'vendor/pkg', 'version' => '2.0.0', 'dist' => ['reference' => '../../x']],
+        ])),
+        'registry.example.com/p2/vendor/pkg~dev.json' => Http::response(fakeMetadataResponse('vendor/pkg', [
+            ['name' => 'vendor/pkg', 'version' => 'dev-feature/foo', 'source' => ['reference' => 'def456']],
+        ])),
+    ]);
+
+    $versions = RegistryClientFactory::make($this->mirror)->getPackageVersions('vendor/pkg');
+
+    expect(array_keys($versions))->toEqualCanonicalizing(['1.0.0', 'dev-feature/foo']);
+});
+
+it('drops unsafe package names and versions from an inline registry', function () {
+    Http::fake([
+        'registry.example.com/packages.json' => Http::response([
+            'packages' => [
+                'vendor/pkg' => [
+                    '1.0.0' => ['name' => 'vendor/pkg', 'version' => '1.0.0'],
+                    '../1.0.0' => ['name' => 'vendor/pkg', 'version' => '../1.0.0'],
+                ],
+                '../victim-org' => [
+                    '1.0.0' => ['name' => '../victim-org', 'version' => '1.0.0'],
+                ],
+            ],
+        ]),
+    ]);
+
+    $client = RegistryClientFactory::make($this->mirror);
+
+    expect($client->getAvailablePackages())->toBe(['vendor/pkg']);
+    expect(array_keys($client->getPackageVersions('vendor/pkg')))->toBe(['1.0.0']);
 });

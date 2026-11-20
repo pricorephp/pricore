@@ -359,3 +359,23 @@ it('returns 404 when dist file is missing from disk', function () {
 
     $response->assertNotFound();
 });
+
+it('does not resolve a legacy archive path outside the organization', function () {
+    // A package row mirrored before upstream names were validated.
+    $package = Package::factory()
+        ->for($this->organization, 'organization')
+        ->create(['name' => '../victim-org']);
+
+    PackageVersion::factory()
+        ->for($package)
+        ->create([
+            'version' => 'pkg/1.0.0',
+            'source_reference' => 'abc123def456',
+        ]);
+
+    Storage::disk('local')->put('victim-org/pkg/1.0.0_abc123def456.zip', 'victim-zip-content');
+
+    $response = distGet('/acme/dists/../victim-org/pkg/1.0.0/abc123def456.zip', $this->plainToken);
+
+    $response->assertNotFound();
+});

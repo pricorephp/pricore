@@ -28,13 +28,17 @@ class V2RegistryClient implements RegistryClientInterface
 
     public function getPackageVersions(string $packageName): array
     {
+        if (! UpstreamMetadataFilter::isSafePackageName($packageName)) {
+            throw new MirrorPackageNotFoundException("Package {$packageName} is not a valid package name");
+        }
+
         $versions = $this->fetchVersions($packageName, $this->metadataUrl($packageName));
 
         // Dev versions live in a separate "~dev" metadata file. A missing file
         // is expected for packages without dev branches, so 404s are ignored.
         $devVersions = $this->fetchVersions($packageName, $this->metadataUrl($packageName.'~dev'), ignoreMissing: true);
 
-        return array_merge($versions, $devVersions);
+        return UpstreamMetadataFilter::versions($packageName, array_merge($versions, $devVersions));
     }
 
     public function validateConnection(): bool

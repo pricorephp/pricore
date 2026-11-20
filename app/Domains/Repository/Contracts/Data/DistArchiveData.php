@@ -2,6 +2,7 @@
 
 namespace App\Domains\Repository\Contracts\Data;
 
+use InvalidArgumentException;
 use Spatie\LaravelData\Data;
 
 class DistArchiveData extends Data
@@ -16,6 +17,11 @@ class DistArchiveData extends Data
      * Storage path for an archive. Deterministic on purpose: downloads resolve
      * archives for a commit the version row no longer points at by rebuilding
      * this path, so every writer must derive it here.
+     *
+     * Every part can come from outside (an upstream mirror, a Git ref), so a
+     * part that could leave the organization's directory is refused here.
+     *
+     * @throws InvalidArgumentException
      */
     public static function pathFor(
         string $organizationSlug,
@@ -23,6 +29,15 @@ class DistArchiveData extends Data
         string $version,
         string $reference,
     ): string {
+        if (! self::isPathSafeSegment($organizationSlug)
+            || ! ComposerMetadataData::isPathSafeName($packageName)
+            || ! self::isPathSafeVersion($version)
+            || ! self::isPathSafeReference($reference)) {
+            throw new InvalidArgumentException(
+                "Refusing an unsafe dist archive path for {$packageName} {$version}."
+            );
+        }
+
         $referenceShort = substr($reference, 0, 12);
 
         return "{$organizationSlug}/{$packageName}/{$version}_{$referenceShort}.zip";
@@ -39,5 +54,39 @@ class DistArchiveData extends Data
         string $reference,
     ): string {
         return url("/{$organizationSlug}/dists/{$packageName}/{$version}/{$reference}.zip");
+    }
+
+    /**
+     * Versions may contain slashes (dev-feature/foo), so they are checked per
+     * segment rather than against a strict pattern.
+     */
+    public static function isPathSafeVersion(string $version): bool
+    {
+        if ($version === '' || preg_match('/[\\\\\x00-\x1F\x7F]/', $version) === 1) {
+            return false;
+        }
+
+        foreach (explode('/', $version) as $segment) {
+            if (in_array($segment, ['', '.', '..'], true)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * The reference ends up inside the archive's file name, so it may not
+     * contain a path separator.
+     */
+    public static function isPathSafeReference(string $reference): bool
+    {
+        return preg_match('{[/\\\\\x00-\x1F\x7F]}', $reference) !== 1;
+    }
+
+    protected static function isPathSafeSegment(string $segment): bool
+    {
+        return preg_match('/^[A-Za-z0-9_.-]+$/', $segment) === 1
+            && ! in_array($segment, ['.', '..'], true);
     }
 }
