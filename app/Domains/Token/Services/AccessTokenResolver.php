@@ -59,7 +59,6 @@ class AccessTokenResolver
 
         return AccessToken::query()
             ->where('token_hash', $tokenHash)
-            ->with(['organization', 'user'])
             ->first();
     }
 }

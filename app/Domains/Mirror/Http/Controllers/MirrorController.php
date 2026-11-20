@@ -6,6 +6,7 @@ use App\Domains\Activity\Actions\RecordActivityTask;
 use App\Domains\Activity\Contracts\Enums\ActivityType;
 use App\Domains\Mirror\Contracts\Data\MirrorData;
 use App\Domains\Mirror\Contracts\Data\MirrorSyncLogData;
+use App\Domains\Mirror\Contracts\Enums\MirrorSyncMode;
 use App\Domains\Mirror\Http\Requests\StoreMirrorRequest;
 use App\Domains\Mirror\Jobs\SyncMirrorJob;
 use App\Domains\Organization\Contracts\Data\OrganizationData;
@@ -40,6 +41,7 @@ class MirrorController
         return Inertia::render('organizations/settings/mirrors', [
             'organization' => OrganizationData::fromModel($organization),
             'mirrors' => $mirrors,
+            'onDemandMirrorsEnabled' => MirrorSyncMode::onDemandEnabled(),
         ]);
     }
 
@@ -76,9 +78,11 @@ class MirrorController
         $mirror = $organization->mirrors()->create([
             'name' => $request->validated('name'),
             'url' => $request->validated('url'),
+            'sync_mode' => $request->validated('sync_mode', MirrorSyncMode::Full->value),
             'auth_type' => $request->validated('auth_type'),
             'auth_credentials' => $request->authCredentials(),
             'mirror_dist' => $request->validated('mirror_dist', true),
+            'lazy_dist' => $request->validated('lazy_dist', false),
             'sync_status' => RepositorySyncStatus::Pending,
         ]);
 

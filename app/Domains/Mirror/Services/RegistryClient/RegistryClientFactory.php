@@ -6,6 +6,7 @@ use App\Domains\Mirror\Contracts\Interfaces\RegistryClientInterface;
 use App\Domains\Mirror\Exceptions\MirrorSyncException;
 use App\Domains\Mirror\Services\Http\SecureMirrorHttpClient;
 use App\Models\Mirror;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 
 class RegistryClientFactory
@@ -14,6 +15,24 @@ class RegistryClientFactory
     {
         $httpClient = static::createHttpClient($mirror);
 
+        // On-demand mirrors build a client for every package Composer asks
+        // for, so the root document is reused for a while instead.
+        $rootMetadata = $mirror->isOnDemand()
+            ? Cache::remember(
+                "mirror-root-metadata:{$mirror->uuid}",
+                now()->addMinutes(10),
+                fn (): array => static::fetchRootMetadata($httpClient, $mirror),
+            )
+            : static::fetchRootMetadata($httpClient, $mirror);
+
+        return static::createClient($httpClient, $rootMetadata, $mirror);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    protected static function fetchRootMetadata(SecureMirrorHttpClient $httpClient, Mirror $mirror): array
+    {
         $packagesUrl = Str::finish($mirror->url, '/').'packages.json';
 
         $response = $httpClient->get($packagesUrl);
@@ -32,7 +51,7 @@ class RegistryClientFactory
             );
         }
 
-        return static::createClient($httpClient, $rootMetadata, $mirror);
+        return $rootMetadata;
     }
 
     public static function validateConnection(Mirror $mirror): bool
@@ -72,7 +91,9 @@ class RegistryClientFactory
                 httpClient: $httpClient,
                 baseUrl: $mirror->url,
                 metadataUrlTemplate: $metadataUrl,
-                availablePackages: static::resolveAvailablePackages($rootMetadata, $mirror->url),
+                // On-demand mirrors never enumerate upstream: they only hold the
+                // packages Composer has asked for.
+                availablePackages: $mirror->isOnDemand() ? [] : static::resolveAvailablePackages($rootMetadata, $mirror->url),
             );
         }
 
@@ -103,7 +124,7 @@ class RegistryClientFactory
      * Only registries that advertise their packages via "available-packages"
      * (optionally narrowed by "available-package-patterns") can be enumerated.
      * Registries that expose packages solely through a "list" endpoint — such
-     * as Packagist — are not supported, as eagerly mirroring them is impractical.
+     * as Packagist — can only be mirrored on demand.
      *
      * @param  array<string, mixed>  $rootMetadata
      * @return array<int, string>
@@ -119,7 +140,7 @@ class RegistryClientFactory
         throw new MirrorSyncException(
             "Unsupported Composer v2 registry at {$baseUrl}: it does not advertise an ".
             '"available-packages" list. Registries that only expose a "list" endpoint '.
-            '(such as Packagist) cannot be mirrored.'
+            '(such as Packagist) can only be mirrored on demand.'
         );
     }
 

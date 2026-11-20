@@ -1,61 +1,34 @@
-# Distribution Mirroring
+# Dist Archives
 
-Distribution mirroring lets Composer download zip archives directly from Pricore instead of cloning full Git repositories. This results in significantly faster installs and removes the need for Git on the client machine.
+For every package version, Pricore stores a zip archive and tells Composer to download that instead of cloning the repository. Installs are faster, don't need Git or access to your Git server, and keep working when the Git provider is down.
 
-## How It Works
+This is on by default and needs no setup. This page explains how archives are stored and how to limit the disk space they take.
 
-When a repository is synced, Pricore downloads a zip archive of each version from your Git provider and stores it locally (or on S3). Composer metadata is then served with `dist` URLs pointing to these archives.
+## How it works
 
-Without dist mirroring, Composer must clone the full Git repository and check out the correct ref for every package install. With dist mirroring enabled, Composer downloads a small zip file instead — the same way it works with Packagist.
+During a sync, Pricore downloads an archive of each new version from GitHub, GitLab or Bitbucket, or creates one with `git archive` for Generic Git repositories. For packages in a [monorepo](/guide/repositories#monorepos), it cuts the package's directory out of the full archive.
 
-## Enabling Dist Mirroring
+The Composer metadata then contains both a `source` and a `dist` for each version:
 
-Dist mirroring is enabled by default. You can control it with the `DIST_ENABLED` environment variable:
-
-```bash
-DIST_ENABLED=true
+```json
+{
+    "name": "acme/billing",
+    "version": "1.0.0",
+    "source": {
+        "type": "git",
+        "url": "https://github.com/acme/billing.git",
+        "reference": "4f2a9c..."
+    },
+    "dist": {
+        "type": "zip",
+        "url": "https://pricore.example.com/acme/dists/acme/billing/1.0.0/4f2a9c....zip",
+        "reference": "4f2a9c...",
+        "shasum": "da39a3ee5e6b4b0d3255bfef95601890afd80709"
+    }
+}
 ```
 
-When disabled, Pricore serves only `source` references and Composer falls back to Git cloning.
-
-## Configuration
-
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `DIST_ENABLED` | Enable or disable dist archive creation | `true` |
-| `DIST_DISK` | Storage disk for archives (`local` or `s3`) | `local` |
-| `DIST_SIGNED_URL_EXPIRY` | Signed URL expiry in minutes (S3 only) | `30` |
-| `DIST_KEEP_DETACHED_DAYS` | Days to keep archives a branch has moved past | unset (keep forever) |
-
-### Local Storage
-
-By default, dist archives are stored on the `local` disk under `storage/app/private`. No additional configuration is needed.
-
-### S3 Storage
-
-For production deployments, you can store archives on S3 (or any S3-compatible service):
-
-```bash
-DIST_DISK=s3
-
-AWS_ACCESS_KEY_ID=your-key
-AWS_SECRET_ACCESS_KEY=your-secret
-AWS_DEFAULT_REGION=us-east-1
-AWS_BUCKET=your-bucket
-```
-
-When using S3, Pricore redirects Composer to a signed temporary URL for each download. This keeps archive traffic off your application server. The signed URL expiry can be configured with `DIST_SIGNED_URL_EXPIRY`.
-
-## Provider Support
-
-Dist archive creation depends on your Git provider's capabilities:
-
-| Provider | Support | Method |
-|----------|---------|--------|
-| **GitHub** | Supported | Downloads zipball via GitHub API |
-| **GitLab** | Supported | Downloads archive via GitLab API |
-| **Bitbucket** | Supported | Downloads zip archive via Bitbucket API |
-| **Generic Git** | Supported | Uses `git archive` on the local clone |
+Composer prefers `dist` and checks the archive against the `shasum` after downloading.
 
 A version is published, or moved to a new commit, only once its archive is stored. Otherwise a `composer.lock` resolved in between would pin the commit without a `dist` entry, and installs would need access to the Git repository. When an archive fails to build:
 
@@ -63,93 +36,62 @@ A version is published, or moved to a new commit, only once its archive is store
 - a version already published stays on its previous commit and archive;
 - the failure is listed in the sync log, and the next sync retries it.
 
-## Branch Versions and Lock Files
+[Uploaded packages](/guide/packages#uploading-packages) are always served from the uploaded archive, and [registry mirrors](/guide/registry-mirrors) store upstream archives when **Mirror dist archives** is on.
 
-Tags are immutable, but branches move. When a branch like `main` receives a new commit, Pricore builds a fresh archive for it — and keeps the previous one.
+## Storage
 
-This matters for `composer install`. A `composer.lock` pins the exact commit that was resolved, and `install` downloads that commit specifically rather than re-reading metadata. If the older archive were discarded when the branch moved, every lock file pinning it would fail to install until someone ran `composer update`.
+Archives are stored on the `local` disk, in `storage/app/private`, unless you set `DIST_DISK=s3`. Use S3 or an S3-compatible service when you run Pricore on more than one server; see [Package storage](/getting-started/configuration#package-storage).
 
-So each archive is recorded against its own commit. When a branch moves on, the previous archive is marked **detached**: no longer what the branch resolves to, but still downloadable by the commit that named it.
+With S3, Pricore redirects Composer to a signed S3 URL, so downloads don't pass through Pricore. The links are valid for `DIST_SIGNED_URL_EXPIRY` minutes, 30 by default.
 
-## Archive Retention
+Set `DIST_ENABLED=false` to stop building archives altogether. Composer then clones every package, and monorepo packages can't be installed.
 
-By default, Pricore keeps dist archives for all versions, including detached ones. Two settings control cleanup, both applied by the `dist:cleanup` command.
+## Branches and lock files
 
-### Stable releases
+A tag always points to the same commit, but a branch moves. When `main` gets a new commit, Pricore builds a new `dev-main` archive and keeps the previous one.
 
-The `dist_keep_last_releases` setting on each package controls how many stable release archives to keep. When set to a value greater than `0`, `dist:cleanup` removes archives for older stable versions while keeping the most recent ones.
+That previous archive is still needed. `composer.lock` records the exact commit it resolved, and `composer install` downloads that commit. If the old archive were deleted, every lock file pointing to it would fail to install until someone ran `composer update`.
 
-For example, if `dist_keep_last_releases` is set to `5`, only the 5 most recent stable version archives are kept. Dev versions and pre-release versions are not affected.
+Archives that a branch has moved past are called detached. They are kept forever unless you set a retention period.
 
-### Detached branch archives
+## Cleaning up
 
-`DIST_KEEP_DETACHED_DAYS` bounds how long archives are kept after their branch moves past them:
-
-```bash
-DIST_KEEP_DETACHED_DAYS=30
-```
-
-The window is measured from when an archive **stopped being current**, not from when it was built — a long-lived branch archive superseded yesterday is kept for the full window regardless of its age.
-
-::: warning
-Leaving this unset keeps every detached archive indefinitely, which is the safe default: any commit ever synced stays installable. Setting it trades that guarantee for disk space. Lock files pinning a commit older than the window will fail to install.
-:::
-
-### Running Cleanup
-
-Run the cleanup command manually:
+Two settings limit how many archives are kept. Both are applied by one command:
 
 ```bash
 php artisan dist:cleanup
 ```
 
-Or schedule it in your application's console kernel to run periodically.
+The command doesn't run on its own. Schedule it yourself, for example daily with cron:
 
-::: info
-Cleanup only removes the zip archive from disk. The package version itself remains available — Composer will fall back to Git cloning for versions without a dist archive.
-:::
-
-## How Composer Uses Dist
-
-When Composer resolves a package from Pricore, the metadata includes both `source` and `dist` entries:
-
-```json
-{
-    "name": "acme/my-package",
-    "version": "1.0.0",
-    "source": {
-        "type": "git",
-        "url": "https://github.com/acme/my-package.git",
-        "reference": "abc123..."
-    },
-    "dist": {
-        "type": "zip",
-        "url": "https://pricore.yourcompany.com/org/acme/dists/acme/my-package/1.0.0/abc123....zip",
-        "reference": "abc123...",
-        "shasum": "da39a3ee5e6b4b0d3255bfef95601890afd80709"
-    }
-}
+```
+0 3 * * * cd /var/www/pricore && php artisan dist:cleanup
 ```
 
-Composer prefers `dist` over `source` by default, so installs automatically use the zip archive when available. The `shasum` field provides integrity verification — Composer checks the SHA-1 hash after downloading to ensure the archive hasn't been tampered with.
+With Docker, run it with `docker compose exec app php artisan dist:cleanup`.
+
+### Detached branch archives
+
+```bash
+DIST_KEEP_DETACHED_DAYS=30
+```
+
+Removes archives that stopped being the head of their branch more than 30 days ago. The age is counted from the moment the branch moved on, not from when the archive was built.
+
+::: warning
+A lock file that pins a commit older than this window fails to install with a 404. Run `composer update` for that package, or raise the window.
+:::
+
+### Old releases
+
+Each package has a `dist_keep_last_releases` setting. When it is above `0`, only the archives of that many most recent stable releases are kept. Dev and pre-release versions aren't affected, and neither are uploaded packages, whose archive is the only copy.
+
+There is no setting for this in the interface yet. Set it in the `packages` table.
+
+Removing an archive doesn't remove the version. Composer falls back to cloning it from Git, which doesn't work for monorepo packages.
 
 ## Troubleshooting
 
-### Archives not being created
+**Versions have no archive.** Check that `DIST_ENABLED` is on, and open the sync log on the repository page: archives that failed to build are listed with the provider's error.
 
-- Verify `DIST_ENABLED=true` in your `.env`
-- Check that your Git provider supports archive downloads (see [Provider Support](#provider-support))
-- Open the sync log on the repository page: archives that failed to build are listed with the provider's error
-
-### Disk space growing
-
-- Configure `dist_keep_last_releases` on packages with many releases
-- Set `DIST_KEEP_DETACHED_DAYS` to bound archives from moved branches
-- Schedule `php artisan dist:cleanup` to run daily — it is not scheduled by default
-- Consider using S3 storage for large registries
-
-### `composer install` fails with 404 on a branch version
-
-The lock file pins a commit whose archive is no longer stored. This happens when
-`DIST_KEEP_DETACHED_DAYS` is set and the commit fell outside the window. Either
-raise the window, or run `composer update` to move the lock to the current head.
+**Disk usage keeps growing.** Every push to a branch adds an archive. Set `DIST_KEEP_DETACHED_DAYS` and schedule `dist:cleanup`.
