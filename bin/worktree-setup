@@ -44,7 +44,10 @@ if [ "$root" = "$main" ]; then
     exit 1
 fi
 
-if [ "$quiet_if_ready" = 1 ] && [ "$force" = 0 ] && [ -f "$ready_file" ]; then
+if [ "$quiet_if_ready" = 1 ] && [ "$force" = 0 ] && [ -f "$ready_file" ] \
+    && [ -f .env ] && grep -qxF "$marker" .env \
+    && [ -f vendor/autoload.php ] && [ -d node_modules ] \
+    && [ -f storage/oauth-private.key ] && [ -f database/database.sqlite ]; then
     exit 0
 fi
 
