@@ -1,0 +1,232 @@
+#!/usr/bin/env bash
+#
+# Prepare a git worktree of Pricore so the app runs on its own, next to the
+# main checkout and other worktrees:
+#
+#   - .env copied from the main checkout, with its own SQLite database, ports,
+#     Redis/Horizon/cache prefixes and session cookie
+#   - composer and npm dependencies installed
+#   - Passport keys copied from the main checkout (or generated)
+#   - database migrated (and seeded on first run)
+#   - Wayfinder routes generated
+#
+# Usage: bin/worktree-setup [--force] [--quiet-if-ready]
+#
+#   --force           Regenerate .env and recreate the database
+#   --quiet-if-ready  Exit silently when the worktree was already set up
+#                     (used by the Claude Code SessionStart hook)
+
+set -euo pipefail
+
+force=0
+quiet_if_ready=0
+
+for arg in "$@"; do
+    case "$arg" in
+        --force) force=1 ;;
+        --quiet-if-ready) quiet_if_ready=1 ;;
+        -h|--help) sed -n '2,19p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+        *) echo "Unknown option: $arg" >&2; exit 1 ;;
+    esac
+done
+
+root="$(git rev-parse --show-toplevel)"
+main="$(cd "$(git rev-parse --git-common-dir)/.." && pwd)"
+marker="# Managed by bin/worktree-setup"
+ready_file="$(git rev-parse --absolute-git-dir)/pricore-worktree-ready"
+lock_dir="$(cd "$(git rev-parse --git-common-dir)" && pwd)/pricore-worktree-setup.lock"
+
+cd "$root"
+
+if [ "$root" = "$main" ]; then
+    [ "$quiet_if_ready" = 1 ] && exit 0
+    echo "This is the main checkout, not a worktree. Use 'composer setup' instead." >&2
+    exit 1
+fi
+
+if [ "$quiet_if_ready" = 1 ] && [ "$force" = 0 ] && [ -f "$ready_file" ] \
+    && [ -f .env ] && grep -qxF "$marker" .env \
+    && [ -f vendor/autoload.php ] && [ -d node_modules ] \
+    && [ -f storage/oauth-private.key ] && [ -f database/database.sqlite ]; then
+    exit 0
+fi
+
+# Only a run that gets through every step marks the worktree as ready.
+rm -f "$ready_file"
+
+# Progress goes to stderr so stdout only carries the final summary.
+step() { printf '\n\033[1;34m==>\033[0m %s\n' "$1" >&2; }
+
+env_get() {
+    grep -E "^$1=" "$2" 2>/dev/null | tail -n1 | cut -d= -f2- \
+        | sed -E 's/^"(.*)"$/\1/; s/\\(["$\\])/\1/g' || true
+}
+
+# Write KEY="value" to .env, escaped so paths with spaces, quotes or $ survive.
+env_set() {
+    KEY="$1" VALUE="$2" php -r '
+        $key = getenv("KEY");
+        $line = $key."=\"".addcslashes(getenv("VALUE"), "\\\\\"\$")."\"";
+        $env = file_get_contents(".env");
+        $pattern = "/^".preg_quote($key, "/")."=.*$/m";
+        $env = preg_match($pattern, $env)
+            ? preg_replace_callback($pattern, fn () => $line, $env)
+            : rtrim($env, "\n")."\n".$line."\n";
+        file_put_contents(".env", $env);
+    '
+}
+
+# Serialise port allocation across worktrees, so setups started at the same
+# time don't pick the same ports.
+acquire_lock() {
+    local waited=0
+    until mkdir "$lock_dir" 2>/dev/null; do
+        if [ -n "$(find "$lock_dir" -maxdepth 0 -mmin +2 2>/dev/null)" ]; then
+            rmdir "$lock_dir" 2>/dev/null || true
+            continue
+        fi
+        [ "$waited" -ge 120 ] && { echo "Timed out waiting for $lock_dir" >&2; exit 1; }
+        sleep 1
+        waited=$((waited + 1))
+    done
+    trap 'rmdir "$lock_dir" 2>/dev/null || true' EXIT
+}
+
+release_lock() {
+    rmdir "$lock_dir" 2>/dev/null || true
+    trap - EXIT
+}
+
+name="$(basename "$root")"
+slug="$(printf '%s' "$name" | tr '[:upper:]' '[:lower:]' | tr -c 'a-z0-9\n' '-' | sed -E 's/-+/-/g; s/^-|-$//g')"
+
+# Pick the lowest port offset that no other worktree's .env uses yet.
+pick_offset() {
+    local used="" path port
+    while IFS= read -r path; do
+        [ "$path" = "$root" ] && continue
+        port="$(env_get SERVER_PORT "$path/.env")"
+        [ -n "$port" ] && used="$used ${port}"
+    done < <(git worktree list --porcelain | sed -n 's/^worktree //p')
+
+    local offset=1
+    while [[ " $used " == *" $((8100 + offset)) "* ]]; do
+        offset=$((offset + 1))
+    done
+    echo "$offset"
+}
+
+if [ "$force" = 1 ] || [ ! -f .env ] || ! grep -qxF "$marker" .env; then
+    step "Writing .env"
+
+    acquire_lock
+
+    [ -f .env ] && cp .env .env.backup
+
+    if [ -f "$main/.env" ]; then
+        cp "$main/.env" .env
+    else
+        cp .env.example .env
+    fi
+
+    offset="$(pick_offset)"
+    app_port=$((8100 + offset))
+    reverb_port=$((8300 + offset))
+    vite_port=$((5200 + offset))
+
+    printf '\n%s\n' "$marker" >> .env
+
+    env_set APP_URL "http://localhost:$app_port"
+    env_set SERVER_PORT "$app_port"
+    env_set VITE_PORT "$vite_port"
+
+    # DB_URL would override the SQLite settings below and point at the main database.
+    env_set DB_URL ""
+    env_set DB_CONNECTION sqlite
+    env_set DB_DATABASE "$root/database/database.sqlite"
+
+    env_set REDIS_PREFIX "pricore-$slug-database-"
+    env_set CACHE_PREFIX "pricore-$slug-cache-"
+    env_set HORIZON_PREFIX "pricore_${slug//-/_}_horizon:"
+    env_set SESSION_COOKIE "pricore-$slug-session"
+
+    env_set REVERB_HOST localhost
+    env_set REVERB_PORT "$reverb_port"
+    env_set REVERB_SCHEME http
+    env_set REVERB_SERVER_PORT "$reverb_port"
+    env_set REVERB_ECHO_HOST localhost
+    env_set REVERB_ECHO_PORT "$reverb_port"
+    env_set REVERB_ECHO_SCHEME http
+
+    release_lock
+
+    [ "$force" = 1 ] && rm -f database/database.sqlite
+fi
+
+app_port="$(env_get SERVER_PORT .env)"
+reverb_port="$(env_get REVERB_SERVER_PORT .env)"
+vite_port="$(env_get VITE_PORT .env)"
+
+step "Installing composer dependencies"
+composer install --no-interaction --no-progress >&2
+
+if [ -z "$(env_get APP_KEY .env)" ]; then
+    php artisan key:generate --ansi >&2
+fi
+
+step "Installing npm dependencies"
+npm ci --no-audit --no-fund >&2
+
+if [ ! -f storage/oauth-private.key ]; then
+    step "Setting up Passport keys"
+    if [ -f "$main/storage/oauth-private.key" ] && [ -f "$main/storage/oauth-public.key" ]; then
+        cp "$main/storage/oauth-private.key" "$main/storage/oauth-public.key" storage/
+        chmod 600 storage/oauth-private.key
+    else
+        php artisan passport:keys --no-interaction >&2
+    fi
+fi
+
+step "Migrating database"
+if [ ! -f database/database.sqlite ]; then
+    touch database/database.sqlite
+    php artisan migrate --seed --force --no-interaction >&2
+else
+    php artisan migrate --force --no-interaction >&2
+fi
+
+step "Generating Wayfinder routes"
+php artisan wayfinder:generate --with-form >&2
+
+# Point the Claude Code preview configurations at this worktree's ports.
+if [ -f .claude/launch.json ]; then
+    APP_PORT="$app_port" REVERB_PORT="$reverb_port" VITE_PORT="$vite_port" php -r '
+        $launch = json_decode(file_get_contents(".claude/launch.json"), true);
+        $ports = ["artisan-serve" => getenv("APP_PORT"), "reverb" => getenv("REVERB_PORT"), "vite" => getenv("VITE_PORT")];
+        $launch["configurations"] = array_values(array_filter(
+            $launch["configurations"],
+            fn ($config) => ! str_ends_with($config["url"] ?? "", ".test"),
+        ));
+        foreach ($launch["configurations"] as &$config) {
+            $port = $ports[$config["name"]] ?? null;
+            if ($port === null) {
+                continue;
+            }
+            $config["port"] = (int) $port;
+            if ($config["name"] === "artisan-serve") {
+                $config["runtimeArgs"] = ["artisan", "serve", "--port=".$port];
+            }
+        }
+        file_put_contents(".claude/launch.json", json_encode($launch, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)."\n");
+    '
+fi
+
+touch "$ready_file"
+
+cat <<EOF
+Pricore worktree '$name' is ready.
+  App:     http://localhost:$app_port   (composer run dev)
+  Vite:    port $vite_port
+  Reverb:  port $reverb_port
+  DB:      database/database.sqlite (seeded login: test@example.com / password)
+EOF
