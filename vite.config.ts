@@ -3,22 +3,27 @@ import babel from '@rolldown/plugin-babel';
 import tailwindcss from '@tailwindcss/vite';
 import react, { reactCompilerPreset } from '@vitejs/plugin-react';
 import laravel from 'laravel-vite-plugin';
-import { defineConfig } from 'vite';
+import { defineConfig, loadEnv } from 'vite';
 
-export default defineConfig({
-    plugins: [
-        laravel({
-            input: ['resources/css/app.css', 'resources/js/app.tsx'],
-            ssr: 'resources/js/ssr.tsx',
-            refresh: true
-        }),
-        react(),
-        babel({
-            presets: [reactCompilerPreset()]
-        }),
-        tailwindcss(),
-        wayfinder({
-            formVariants: true
-        })
-    ]
+export default defineConfig(({ mode }) => {
+    const port = Number(loadEnv(mode, process.cwd(), '').VITE_PORT) || undefined;
+
+    return {
+        server: port ? { port, strictPort: true } : undefined,
+        plugins: [
+            laravel({
+                input: ['resources/css/app.css', 'resources/js/app.tsx'],
+                ssr: 'resources/js/ssr.tsx',
+                refresh: true
+            }),
+            react(),
+            babel({
+                presets: [reactCompilerPreset()]
+            }),
+            tailwindcss(),
+            wayfinder({
+                formVariants: true
+            })
+        ]
+    };
 });

@@ -40,6 +40,25 @@ composer run dev
 composer run dev:ssr
 ```
 
+### Working in Git Worktrees
+
+To run a second copy of Pricore from a git worktree next to your main checkout:
+
+```bash
+git worktree add ../pricore-my-feature -b feature/my-feature
+cd ../pricore-my-feature
+composer worktree:setup
+```
+
+This copies `.env` from the main checkout and gives the worktree its own SQLite
+database (migrated and seeded, log in with `test@example.com` / `password`), its own
+ports for the web server, Vite and Reverb, and its own Redis, cache, Horizon and
+session prefixes, so worktrees don't share queues or sessions. `composer run dev`
+then serves it on the printed URL. Run `bin/worktree-setup --force` to start over
+with a fresh `.env` and database.
+
+Claude Code sessions run this setup automatically when they start in a worktree.
+
 ### Code Quality
 
 ```bash

@@ -1,0 +1,17 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd \"$CLAUDE_PROJECT_DIR\" && bin/worktree-setup --quiet-if-ready 2>>storage/logs/worktree-setup.log; exit 0",
+            "timeout": 600,
+            "statusMessage": "Setting up Pricore worktree"
+          }
+        ]
+      }
+    ]
+  }
+}
