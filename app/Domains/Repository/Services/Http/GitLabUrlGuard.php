@@ -7,6 +7,7 @@ use App\Domains\Mirror\Services\Http\MirrorUrlPolicy;
 use App\Domains\Mirror\Services\Http\ResolvedMirrorUrl;
 use App\Domains\Repository\Exceptions\GitProviderException;
 use Closure;
+use GuzzleHttp\Psr7\Uri;
 use Psr\Http\Message\RequestInterface;
 
 /**
@@ -45,6 +46,11 @@ class GitLabUrlGuard
                     previous: $exception,
                 );
             }
+
+            // Connect to the host exactly as it was checked: the pin below is keyed
+            // on the normalized hostname, so a trailing dot or other spelling of
+            // it would miss the pin and be resolved a second time.
+            $request = $request->withUri(new Uri($resolvedUrl->url));
 
             // Pin the validated DNS result so the connection cannot resolve the
             // hostname to a different address after the check.

@@ -154,3 +154,17 @@ it('discards a downloaded archive that is not a zip file', function () {
     expect(gitlabProvider()->downloadArchive('abc123def4567890', $output))->toBeFalse()
         ->and(file_exists($output))->toBeFalse();
 });
+
+it('connects to the hostname the address check was pinned to', function (string $url) {
+    Http::fake(['*' => Http::response(['id' => 1])]);
+
+    (new GitLabProvider('acme/monorepo', ['token' => 'token', 'url' => $url]))->ensureRepositoryAccess();
+
+    Http::assertSent(fn (Request $request) => parse_url($request->url(), PHP_URL_HOST) === 'gitlab.example.test'
+        && $request->header('Host') === ['gitlab.example.test']
+        && $request->hasHeader('Authorization', 'Bearer token'));
+})->with([
+    'trailing dot' => ['https://gitlab.example.test.'],
+    'uppercase' => ['https://GitLab.Example.TEST'],
+    'embedded credentials' => ['https://user:secret@gitlab.example.test'],
+]);
