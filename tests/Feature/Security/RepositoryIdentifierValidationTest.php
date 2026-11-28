@@ -5,6 +5,7 @@ use App\Domains\Repository\Contracts\Enums\GitProvider;
 use App\Domains\Repository\Rules\ValidRepositoryIdentifier;
 use App\Models\Organization;
 use App\Models\User;
+use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Str;
 
 use function Pest\Laravel\actingAs;
@@ -57,6 +58,41 @@ it('accepts ordinary git remote URLs', function (string $identifier) {
     'scp shorthand' => 'git@git.example.com:acme/widgets.git',
 ]);
 
+it('rejects git identifiers on a non-public address', function (string $identifier) {
+    $this->hostResolver->set('git.internal', ['10.0.0.10']);
+
+    actingAs($this->user)
+        ->post(route('organizations.repositories.store', $this->organization->slug), [
+            'provider' => GitProvider::Git->value,
+            'repo_identifier' => $identifier,
+        ])
+        ->assertSessionHasErrors('repo_identifier');
+
+    assertDatabaseCount('repositories', 0);
+})->with([
+    'loopback' => 'http://127.0.0.1:8080/',
+    'link local' => 'http://169.254.169.254/latest/meta-data/',
+    'private over git' => 'git://10.0.0.5/acme/widgets.git',
+    'private over ssh' => 'ssh://git@192.168.1.1:2222/acme/widgets.git',
+    'private scp shorthand' => 'git@192.168.1.1:acme/widgets.git',
+    'name resolving to a private address' => 'https://git.internal/acme/widgets.git',
+]);
+
+it('accepts a git identifier on a private host that is explicitly configured', function () {
+    config()->set('pricore.git.allowed_private_hosts', ['git.internal']);
+    $this->hostResolver->set('git.internal', ['10.0.0.10']);
+    Queue::fake();
+
+    actingAs($this->user)
+        ->post(route('organizations.repositories.store', $this->organization->slug), [
+            'provider' => GitProvider::Git->value,
+            'repo_identifier' => 'https://git.internal/acme/widgets.git',
+        ])
+        ->assertSessionHasNoErrors();
+
+    assertDatabaseCount('repositories', 1);
+});
+
 it('rejects slugs that are not owner/repository', function (string $identifier) {
     actingAs($this->user)
         ->post(route('organizations.repositories.store', $this->organization->slug), [
@@ -85,6 +121,20 @@ it('rejects unsafe identifiers on the bulk import endpoint', function () {
             'repositories' => [
                 ['repo_identifier' => 'https://git.example.com/acme/widgets.git'],
                 ['repo_identifier' => 'ext::sh -c id'],
+            ],
+        ])
+        ->assertSessionHasErrors('repositories.1.repo_identifier');
+
+    assertDatabaseCount('repositories', 0);
+});
+
+it('rejects identifiers on a non-public address on the bulk import endpoint', function () {
+    actingAs($this->user)
+        ->post(route('organizations.repositories.bulk-store', $this->organization->slug), [
+            'provider' => GitProvider::Git->value,
+            'repositories' => [
+                ['repo_identifier' => 'https://git.example.com/acme/widgets.git'],
+                ['repo_identifier' => 'http://127.0.0.1:8080/'],
             ],
         ])
         ->assertSessionHasErrors('repositories.1.repo_identifier');

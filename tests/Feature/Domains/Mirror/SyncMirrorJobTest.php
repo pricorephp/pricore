@@ -1,7 +1,5 @@
 <?php
 
-use App\Domains\Mirror\Actions\CreateMirrorSyncLogAction;
-use App\Domains\Mirror\Actions\RemoveStaleMirrorVersionsAction;
 use App\Domains\Mirror\Exceptions\MirrorSyncException;
 use App\Domains\Mirror\Jobs\SyncMirrorJob;
 use App\Domains\Mirror\Jobs\SyncMirrorVersionJob;
@@ -193,6 +191,9 @@ it('removes stale versions during sync', function () {
         ]),
     ]);
 
+    // Versions written in the same second as the sync starts are kept.
+    $this->travel(1)->second();
+
     SyncMirrorJob::dispatchSync($this->mirror);
 
     $this->assertDatabaseMissing('package_versions', ['uuid' => $staleVersion->uuid]);
@@ -288,8 +289,120 @@ it('supports includes format in packages.json', function () {
     expect($syncLog->details['versions_found'])->toBe(1);
 });
 
+it('keeps versions of a package whose metadata fails to load and syncs the others', function () {
+    $failingPackage = Package::factory()->withoutRepository()->create([
+        'organization_uuid' => $this->organization->uuid,
+        'mirror_uuid' => $this->mirror->uuid,
+        'name' => 'vendor/pkg',
+    ]);
+
+    $failingPackageVersion = PackageVersion::factory()->create([
+        'package_uuid' => $failingPackage->uuid,
+        'version' => '1.0.0',
+        'source_reference' => 'abc',
+    ]);
+
+    $otherPackage = Package::factory()->withoutRepository()->create([
+        'organization_uuid' => $this->organization->uuid,
+        'mirror_uuid' => $this->mirror->uuid,
+        'name' => 'vendor/other',
+    ]);
+
+    $staleVersion = PackageVersion::factory()->create([
+        'package_uuid' => $otherPackage->uuid,
+        'version' => '0.1.0',
+        'source_reference' => 'old',
+    ]);
+
+    Bus::fake(SyncMirrorVersionJob::class);
+
+    Http::fake([
+        'satis.example.com/packages.json' => Http::response([
+            'metadata-url' => '/p2/%package%.json',
+            'available-packages' => ['vendor/other', 'vendor/pkg'],
+        ]),
+        'satis.example.com/p2/vendor/other.json' => Http::response([
+            'minified' => 'composer/2.0',
+            'packages' => [
+                'vendor/other' => MetadataMinifier::minify([
+                    ['name' => 'vendor/other', 'version' => '1.0.0', 'version_normalized' => '1.0.0.0', 'dist' => ['reference' => 'new']],
+                ]),
+            ],
+        ]),
+        'satis.example.com/p2/vendor/other~dev.json' => Http::response('Not Found', 404),
+        'satis.example.com/p2/vendor/pkg.json' => Http::response('Server Error', 500),
+        'satis.example.com/p2/vendor/pkg~dev.json' => Http::response([
+            'minified' => 'composer/2.0',
+            'packages' => [
+                'vendor/pkg' => MetadataMinifier::minify([
+                    ['name' => 'vendor/pkg', 'version' => 'dev-main', 'version_normalized' => 'dev-main', 'dist' => ['reference' => 'dev']],
+                ]),
+            ],
+        ]),
+    ]);
+
+    // Versions written in the same second as the sync starts are kept.
+    $this->travel(1)->second();
+
+    SyncMirrorJob::dispatchSync($this->mirror);
+
+    $this->assertDatabaseHas('package_versions', ['uuid' => $failingPackageVersion->uuid]);
+    $this->assertDatabaseMissing('package_versions', ['uuid' => $staleVersion->uuid]);
+
+    Bus::assertBatched(fn (PendingBatch $pendingBatch) => $pendingBatch->jobs
+        ->map(fn (SyncMirrorVersionJob $syncMirrorVersionJob) => $syncMirrorVersionJob->packageName)
+        ->all() === ['vendor/other']);
+
+    $syncLog = MirrorSyncLog::where('mirror_uuid', $this->mirror->uuid)->latest()->first();
+    expect($syncLog->versions_removed)->toBe(1)
+        ->and($syncLog->details['packages_found'])->toBe(2)
+        ->and($syncLog->details['packages_failed'])->toBe(['vendor/pkg']);
+});
+
+it('marks the sync as failed when every package fails to load', function () {
+    $package = Package::factory()->withoutRepository()->create([
+        'organization_uuid' => $this->organization->uuid,
+        'mirror_uuid' => $this->mirror->uuid,
+        'name' => 'vendor/pkg',
+    ]);
+
+    $packageVersion = PackageVersion::factory()->create([
+        'package_uuid' => $package->uuid,
+        'version' => '1.0.0',
+        'source_reference' => 'abc',
+    ]);
+
+    Bus::fake(SyncMirrorVersionJob::class);
+
+    Http::fake([
+        'satis.example.com/packages.json' => Http::response([
+            'metadata-url' => '/p2/%package%.json',
+            'available-packages' => ['vendor/pkg', 'vendor/other'],
+        ]),
+        'satis.example.com/p2/*' => Http::response('Unauthorized', 401),
+    ]);
+
+    try {
+        SyncMirrorJob::dispatchSync($this->mirror);
+    } catch (MirrorSyncException) {
+        // Expected
+    }
+
+    $this->assertDatabaseHas('package_versions', ['uuid' => $packageVersion->uuid]);
+    Bus::assertNothingBatched();
+
+    $this->mirror->refresh();
+    expect($this->mirror->sync_status)->toBe(RepositorySyncStatus::Failed);
+
+    $syncLog = MirrorSyncLog::where('mirror_uuid', $this->mirror->uuid)->latest()->first();
+    expect($syncLog->status)->toBe(SyncStatus::Failed)
+        ->and($syncLog->error_message)->toContain('vendor/pkg')
+        ->and($syncLog->error_message)->toContain('HTTP 401')
+        ->and($syncLog->details['packages_failed'])->toBe(['vendor/pkg', 'vendor/other']);
+});
+
 it('skips package names and versions that would escape the package directory on the dist disk', function () {
-    Bus::fake();
+    Bus::fake(SyncMirrorVersionJob::class);
 
     Http::fake([
         'satis.example.com/packages.json' => Http::response([
@@ -305,12 +418,9 @@ it('skips package names and versions that would escape the package directory on 
         ]),
     ]);
 
-    (new SyncMirrorJob($this->mirror))->handle(
-        app(CreateMirrorSyncLogAction::class),
-        app(RemoveStaleMirrorVersionsAction::class),
-    );
+    SyncMirrorJob::dispatchSync($this->mirror);
 
-    Bus::assertBatched(fn (PendingBatch $batch) => $batch->jobs->count() === 1
-        && $batch->jobs->first()->packageName === 'vendor/pkg'
-        && $batch->jobs->first()->version === '1.0.0');
+    Bus::assertBatched(fn (PendingBatch $pendingBatch) => $pendingBatch->jobs->count() === 1
+        && $pendingBatch->jobs->first()->packageName === 'vendor/pkg'
+        && $pendingBatch->jobs->first()->version === '1.0.0');
 });

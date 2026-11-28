@@ -17,8 +17,10 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use Laravel\Mcp\Server\Middleware\AddAuthorizationFramingHeaders;
+use Laravel\Passkeys\Exceptions\InvalidPasskeyException;
 use Sentry\Laravel\Integration;
 use Symfony\Component\HttpFoundation\Response;
+use Webauthn\Exception\WebauthnException;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -80,6 +82,9 @@ return Application::configure(basePath: dirname(__DIR__))
     ])
     ->withExceptions(function (Exceptions $exceptions): void {
         Integration::handles($exceptions);
+
+        // A passkey ceremony that fails verification (bad signature, wrong origin) is a user error, not a server error
+        $exceptions->map(WebauthnException::class, fn () => InvalidPasskeyException::make('This passkey could not be verified. Please try again.'));
 
         // MCP clients need a 401 with WWW-Authenticate rather than a login redirect
         $exceptions->shouldRenderJsonWhen(fn (Request $request) => $request->is('mcp') || $request->expectsJson());

@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Actions\Fortify\CreateNewUser;
 use App\Actions\Fortify\ResetUserPassword;
+use App\Http\Responses\PasskeyDeletedResponse;
 use App\Models\User;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
@@ -14,6 +15,7 @@ use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Laravel\Fortify\Features;
 use Laravel\Fortify\Fortify;
+use Laravel\Passkeys\Contracts\PasskeyDeletedResponse as PasskeyDeletedResponseContract;
 
 class FortifyServiceProvider extends ServiceProvider
 {
@@ -22,7 +24,7 @@ class FortifyServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->singleton(PasskeyDeletedResponseContract::class, PasskeyDeletedResponse::class);
     }
 
     /**
@@ -63,6 +65,7 @@ class FortifyServiceProvider extends ServiceProvider
                 && (config('fortify.sign_up_enabled') || session('invitation_token')),
             'githubEnabled' => ! empty(config('services.github.client_id')),
             'gitlabEnabled' => ! empty(config('services.gitlab.client_id')),
+            'passkeysEnabled' => Features::enabled(Features::passkeys()),
             'status' => $request->session()->get('status'),
         ]));
 
@@ -94,6 +97,7 @@ class FortifyServiceProvider extends ServiceProvider
 
         Fortify::confirmPasswordView(fn (Request $request) => Inertia::render('auth/confirm-password', [
             'hasPassword' => $request->user()?->has_password,
+            'hasPasskeys' => Features::enabled(Features::passkeys()) && $request->user()?->hasPasskeysEnabled(),
         ]));
     }
 
@@ -104,6 +108,10 @@ class FortifyServiceProvider extends ServiceProvider
     {
         RateLimiter::for('two-factor', function (Request $request) {
             return Limit::perMinute(5)->by($request->session()->get('login.id'));
+        });
+
+        RateLimiter::for('passkeys', function (Request $request) {
+            return Limit::perMinute(10)->by($request->user()?->getAuthIdentifier() ?? $request->ip());
         });
 
         RateLimiter::for('login', function (Request $request) {

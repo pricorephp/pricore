@@ -1,224 +1,83 @@
 # Access Tokens
 
-Access tokens authenticate Composer clients with your Pricore instance. They provide secure, revocable access to your private packages.
+Composer authenticates to Pricore with an access token. There are two kinds:
 
-## Token Types
+| | Organization token | Personal token |
+|---|---|---|
+| Created under | **Organization Settings** > **Access Tokens** (admins and owner) | **Settings** > **Access Tokens** (any user) |
+| Installs packages from | That organization | Every organization you belong to |
+| Stops working when | It is revoked or expires | It is revoked or expires, or for one organization when you leave it |
+| Use it for | CI, deployments, servers | Your own machine |
 
-Pricore supports two types of tokens:
+Use organization tokens for anything that isn't a person. They keep working when the colleague who created them leaves.
 
-### Organization Tokens
+## Creating a token
 
-- Created by organization owners and admins
-- Grant access only to packages within that organization
-- Ideal for CI/CD pipelines and shared access
-- Managed in **Organization Settings** > **Composer Tokens**
+Click **Create Token**, give it a name that says where it's used, such as "GitHub Actions", and choose when it expires: never, or after 30 days, 90 days or a year.
 
-### Personal Tokens
+The token is shown once, together with the commands to configure Composer. Copy it then; Pricore only stores a hash.
 
-- Created by individual users
-- Grant access across all organizations the user belongs to
-- Ideal for local development
-- Managed in **Settings** > **Personal Tokens**
+### Permissions
 
-## Creating Tokens
+Every token can install packages. You can allow more when you create the token, or later with the edit button in the token list. The token value doesn't change when you edit it.
 
-### Organization Token
+- **Allow publishing packages** lets the token [upload new versions](/guide/packages#publishing-from-ci) of uploaded packages. A personal token can only publish while its owner is an admin or owner of the organization.
+- **API access** grants [REST API](/api/#scopes) permissions, such as reading packages or syncing repositories.
 
-1. Navigate to **Organization Settings** > **Composer Tokens**
-2. Click **Create Token**
-3. Enter a descriptive name (e.g., "CI Pipeline", "Production Deploy")
-4. Select an expiration period (never, 30 days, 90 days, or 1 year)
-5. Enable **Allow publishing packages** only if the token needs to [upload package versions](/guide/packages#publishing-from-ci)
-6. Optionally pick [REST API](/api/) permissions under **API access**
-7. Click **Create**
-8. **Copy the token immediately** — it won't be shown again
+Leave both off unless the token needs them. A token that can only install can't change anything.
 
-### Personal Token
+## Configuring Composer
 
-1. Go to **Settings** > **Personal Tokens**
-2. Click **Create Token**
-3. Enter a name for the token
-4. Select an expiration period
-5. Optionally enable **Allow publishing packages**, or pick [REST API](/api/) permissions under **API access**
-6. Click **Create**
-7. Copy and store the token securely
-
-After creation, a dialog shows the plain token along with a pre-filled Composer command you can copy directly.
-
-## Token Permissions
-
-Every token can install all packages of the organizations it has access to. Tokens can additionally be allowed to publish, or to use the [REST API](/api/#scopes):
-
-| Permission | Scope | Allows |
-|------------|-------|--------|
-| Install (always) | `composer` | Installing packages with Composer |
-| Publish | `write:packages` | Uploading versions of [uploaded packages](/guide/packages#from-an-archive-upload) |
-| API access | `read:*`, `write:*`, `delete:*` | Managing Pricore through the [REST API](/api/) |
-
-Tokens can only install packages unless more was enabled. You can change a token's name and permissions later with the edit button in the token list; the token value stays the same. A personal token can only publish while its owner is an owner or admin of the organization.
-
-::: warning
-Anyone holding a publishing token can publish new versions of your uploaded packages. Use a dedicated organization token per pipeline, store it as a CI secret, and revoke it if it may have leaked. Uploads made with a token show up in the organization's activity feed with the token's name.
-:::
-
-## Using Tokens with Composer
-
-When you create a token, Pricore shows the exact Composer command to configure authentication. The format is:
+Composer sends the token with HTTP basic authentication, with `token` as the username:
 
 ```bash
-composer config --global --auth http-basic.pricore.yourcompany.com token YOUR_ACCESS_TOKEN
+composer config --global --auth http-basic.pricore.example.com token YOUR_TOKEN
 ```
 
-This creates or updates `~/.composer/auth.json`:
+This writes the token to your global `auth.json`, so it is used by every project on your machine. To configure a single project instead, leave out `--global`. That writes `auth.json` in the project directory, which you should add to `.gitignore`.
 
-```json
-{
-    "http-basic": {
-        "pricore.yourcompany.com": {
-            "username": "token",
-            "password": "YOUR_ACCESS_TOKEN"
-        }
-    }
-}
+### CI
+
+In CI, store the token as a secret and pass it through the `COMPOSER_AUTH` environment variable, which Composer reads without any setup step:
+
+::: code-group
+
+```yaml [GitHub Actions]
+- run: composer install
+  env:
+    COMPOSER_AUTH: '{"http-basic":{"pricore.example.com":{"username":"token","password":"${{ secrets.PRICORE_TOKEN }}"}}}'
 ```
 
-### Project Configuration
-
-For project-specific tokens, create `auth.json` in your project root:
-
-```json
-{
-    "http-basic": {
-        "pricore.yourcompany.com": {
-            "username": "token",
-            "password": "YOUR_ACCESS_TOKEN"
-        }
-    }
-}
-```
-
-::: warning
-Add `auth.json` to your `.gitignore` to avoid committing tokens to version control.
-:::
-
-### Environment Variables
-
-For CI/CD, use environment variables:
-
-```bash
-export COMPOSER_AUTH='{"http-basic":{"pricore.yourcompany.com":{"username":"token","password":"'"$PRICORE_TOKEN"'"}}}'
-```
-
-Or in your CI configuration:
-
-```yaml
-# GitHub Actions example
-- name: Configure Composer
-  run: |
-    composer config --global --auth http-basic.pricore.yourcompany.com token ${{ secrets.PRICORE_TOKEN }}
-```
-
-## Token Security
-
-### Best Practices
-
-1. **Use descriptive names** — Know what each token is used for
-2. **Set expiration dates** — Rotate tokens regularly
-3. **Use organization tokens for CI/CD** — Limit access to a single organization
-4. **Only allow publishing where needed** — Keep install tokens read-only
-5. **Use personal tokens for development** — Convenient access across all your organizations
-6. **Never commit tokens** — Use environment variables or secrets management
-
-### Revoking Tokens
-
-To revoke a token:
-
-1. Go to the token list (Organization Settings or Personal Settings)
-2. Find the token to revoke
-3. Click **Revoke**
-4. Confirm the action
-
-Revoked tokens immediately stop working. Update any systems using the token.
-
-### Token Audit
-
-Monitor token usage:
-
-- **Last Used** — When the token was last used
-- **Created** — When the token was created
-- **Expires** — When the token will expire (if set)
-
-Regular audits help identify:
-- Unused tokens that should be revoked
-- Tokens used more frequently than expected
-- Tokens approaching expiration
-
-## CI/CD Integration
-
-### GitHub Actions
-
-```yaml
-name: Install Dependencies
-
-on: [push]
-
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup PHP
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: '8.4'
-
-      - name: Configure Pricore
-        run: composer config --global --auth http-basic.pricore.yourcompany.com token ${{ secrets.PRICORE_TOKEN }}
-
-      - name: Install dependencies
-        run: composer install
-```
-
-### GitLab CI
-
-```yaml
+```yaml [GitLab CI]
 install:
-  stage: build
-  before_script:
-    - composer config --global --auth http-basic.pricore.yourcompany.com token $PRICORE_TOKEN
+  variables:
+    COMPOSER_AUTH: '{"http-basic":{"pricore.example.com":{"username":"token","password":"$PRICORE_TOKEN"}}}'
   script:
     - composer install
 ```
 
-### Bitbucket Pipelines
+```bash [Shell]
+export COMPOSER_AUTH='{"http-basic":{"pricore.example.com":{"username":"token","password":"'"$PRICORE_TOKEN"'"}}}'
+composer install
+```
 
-```yaml
-pipelines:
-  default:
-    - step:
-        script:
-          - composer config --global --auth http-basic.pricore.yourcompany.com token $PRICORE_TOKEN
-          - composer install
+:::
+
+## Revoking a token
+
+Click **Revoke** next to the token. It stops working immediately. The token list also shows when each token was last used, which helps to find tokens nobody needs anymore.
+
+You can also create tokens from the command line, for example while provisioning a server:
+
+```bash
+php artisan token:create --organization=acme --name="Deploy" --expires=never
 ```
 
 ## Troubleshooting
 
-### Authentication Failed
+Composer asks for credentials, or answers `401`:
 
-1. Verify the token is correct (no extra spaces)
-2. Check that the token hasn't been revoked or expired
-3. Verify the domain in `auth.json` matches your Pricore URL
-4. Ensure the token is used as the password (not the username)
-
-### Token Not Working for Specific Package
-
-1. If using an organization token, verify the package belongs to that organization
-2. If using a personal token, verify your organization membership
-3. Ensure the package exists and is accessible
-
-### Token Expired
-
-1. Check the token's expiration date in your settings
-2. Create a new token if expired
-3. Update all systems using the old token
+- The host in `auth.json` must match the host of the repository URL exactly, including any port.
+- The token is the password; the username is `token`.
+- The token may have expired or been revoked. Check the token list.
+- An organization token only works for its own organization. A personal token only works for organizations you are a member of.

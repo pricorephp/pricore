@@ -5,6 +5,7 @@ namespace App\Domains\Mirror\Jobs;
 use App\Domains\Mirror\Actions\CreateMirrorSyncLogAction;
 use App\Domains\Mirror\Actions\RemoveStaleMirrorVersionsAction;
 use App\Domains\Mirror\Events\MirrorSyncStatusUpdated;
+use App\Domains\Mirror\Exceptions\MirrorSyncException;
 use App\Domains\Mirror\Services\RegistryClient\RegistryClientFactory;
 use App\Domains\Repository\Contracts\Data\ComposerMetadataData;
 use App\Domains\Repository\Contracts\Data\DistArchiveData;
@@ -55,9 +56,16 @@ class SyncMirrorJob implements ShouldBeUnique, ShouldQueue
         ));
 
         try {
+            // Taken before upstream is read, so stale-version removal cannot
+            // delete a release an on-demand refresh writes during this sync.
+            $listedAt = now();
+
             $registryClient = RegistryClientFactory::make($this->mirror);
 
-            $availablePackages = $registryClient->getAvailablePackages();
+            // An on-demand mirror keeps the packages Composer asked for up to date.
+            $availablePackages = $this->mirror->isOnDemand()
+                ? $this->mirror->packages()->orderBy('name')->pluck('name')->all()
+                : $registryClient->getAvailablePackages();
 
             if (empty($availablePackages)) {
                 $this->completeSyncLogEmpty($syncLog);
@@ -65,8 +73,11 @@ class SyncMirrorJob implements ShouldBeUnique, ShouldQueue
                 return;
             }
 
-            // Collect all versions per package for stale removal and job dispatch
+            // Collect all versions per package for stale removal and job dispatch.
+            // A package whose metadata fails to load is left out, so its existing
+            // versions are kept and the other packages still sync.
             $allPackageVersions = [];
+            $failedPackageExceptions = [];
             foreach ($availablePackages as $packageName) {
                 // Names and versions become directories on the dist disk, and the
                 // registry is free to advertise anything.
@@ -79,14 +90,35 @@ class SyncMirrorJob implements ShouldBeUnique, ShouldQueue
                     continue;
                 }
 
-                $allPackageVersions[$packageName] = array_filter(
-                    $registryClient->getPackageVersions($packageName),
-                    fn (int|string $version): bool => DistArchiveData::isPathSafeVersion((string) $version),
-                    ARRAY_FILTER_USE_KEY,
-                );
+                try {
+                    $allPackageVersions[$packageName] = array_filter(
+                        $registryClient->getPackageVersions($packageName),
+                        fn (int|string $version): bool => DistArchiveData::isPathSafeVersion((string) $version),
+                        ARRAY_FILTER_USE_KEY,
+                    );
+                } catch (MirrorSyncException $e) {
+                    $failedPackageExceptions[$packageName] = $e;
+
+                    Log::warning('Mirror package metadata failed to load', [
+                        'mirror' => $this->mirror->name,
+                        'package' => $packageName,
+                        'error' => $e->getMessage(),
+                    ]);
+                }
             }
 
-            $staleVersionsRemoved = $removeStaleMirrorVersionsAction->handle($this->mirror, $allPackageVersions);
+            if (empty($allPackageVersions) && ! empty($failedPackageExceptions)) {
+                $syncLog->update([
+                    'details' => [
+                        'packages_found' => count($availablePackages),
+                        'packages_failed' => array_keys($failedPackageExceptions),
+                    ],
+                ]);
+
+                throw reset($failedPackageExceptions);
+            }
+
+            $staleVersionsRemoved = $removeStaleMirrorVersionsAction->handle($this->mirror, $allPackageVersions, $listedAt);
 
             $totalVersions = array_sum(array_map('count', $allPackageVersions));
 
@@ -94,13 +126,14 @@ class SyncMirrorJob implements ShouldBeUnique, ShouldQueue
                 'versions_removed' => $staleVersionsRemoved,
                 'details' => [
                     'packages_found' => count($availablePackages),
+                    'packages_failed' => array_keys($failedPackageExceptions),
                     'versions_found' => $totalVersions,
                     'stale_versions_removed' => $staleVersionsRemoved,
                 ],
             ]);
 
             // Filter to only new/changed versions or versions missing dist archives
-            $mirrorDist = $this->mirror->mirror_dist && config('pricore.dist.enabled');
+            $mirrorDist = $this->mirror->downloadsDistsDuringSync();
             $jobs = [];
             $skippedCount = 0;
 

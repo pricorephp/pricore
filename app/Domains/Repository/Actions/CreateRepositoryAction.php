@@ -9,7 +9,6 @@ use App\Domains\Repository\Jobs\SyncRepositoryJob;
 use App\Models\Organization;
 use App\Models\Repository;
 use App\Models\User;
-use App\Models\UserGitCredential;
 
 class CreateRepositoryAction
 {
@@ -17,6 +16,7 @@ class CreateRepositoryAction
         protected ExtractRepositoryNameAction $extractRepositoryName,
         protected RegisterWebhookAction $registerWebhook,
         protected RecordActivityTask $recordActivity,
+        protected ResolveUserGitCredentialAction $resolveUserGitCredentialAction,
     ) {}
 
     /**
@@ -31,19 +31,25 @@ class CreateRepositoryAction
         ?string $defaultBranch = null,
         ?string $sshKeyUuid = null,
         ?array $packagePaths = null,
+        ?string $gitCredentialUuid = null,
     ): Repository {
         $name ??= $this->extractRepositoryName->handle($repoIdentifier, $provider);
 
         $isGenericGit = $provider === GitProvider::Git;
 
+        $gitCredential = $isGenericGit
+            ? null
+            : $this->resolveUserGitCredentialAction->handle($user, $provider, $gitCredentialUuid);
+
         $repository = Repository::create([
             'organization_uuid' => $organization->uuid,
             'credential_user_uuid' => $isGenericGit ? null : $user->uuid,
+            'git_credential_uuid' => $gitCredential?->uuid,
             'ssh_key_uuid' => $isGenericGit ? $sshKeyUuid : null,
             'name' => $name,
             'provider' => $provider,
             'repo_identifier' => $repoIdentifier,
-            'custom_base_url' => $this->resolveBaseUrl($provider, $user->uuid),
+            'custom_base_url' => $gitCredential?->baseUrl(),
             'default_branch' => $defaultBranch,
             'package_paths' => $packagePaths,
         ]);
@@ -61,19 +67,5 @@ class CreateRepositoryAction
         $this->registerWebhook->handle($repository);
 
         return $repository;
-    }
-
-    private function resolveBaseUrl(GitProvider $provider, string $userUuid): ?string
-    {
-        if (! $provider->supportsSelfHosted()) {
-            return null;
-        }
-
-        $credential = UserGitCredential::query()
-            ->where('user_uuid', $userUuid)
-            ->where('provider', $provider)
-            ->first();
-
-        return $credential?->credentials['url'] ?? null;
     }
 }

@@ -10,10 +10,6 @@ class ExistingVersionData extends Data
         public string $version,
         public string $sourceReference,
         public bool $distFailed = false,
+        public ?string $sourceTag = null,
     ) {}
-
-    public function matches(string $version, string $commit): bool
-    {
-        return $this->version === $version && $this->sourceReference === $commit;
-    }
 }

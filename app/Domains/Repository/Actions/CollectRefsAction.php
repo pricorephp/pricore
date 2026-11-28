@@ -20,7 +20,10 @@ class CollectRefsAction
         $tags = $provider->getTags();
         $branches = $provider->getBranches();
 
-        $sortedTags = $this->sortTagsByVersion($tags);
+        $sortedTags = array_map(
+            fn (array $tag) => [...$tag, 'isTag' => true],
+            $this->sortTagsByVersion($tags),
+        );
         $sortedBranches = $this->sortBranchesByPriority($branches);
 
         // Process tags first (newest first), then branches

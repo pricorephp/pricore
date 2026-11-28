@@ -4,6 +4,7 @@ namespace App\Domains\Repository\Http\Controllers;
 
 use App\Domains\Activity\Actions\RecordActivityTask;
 use App\Domains\Activity\Contracts\Enums\ActivityType;
+use App\Domains\Organization\Contracts\Data\GitCredentialData;
 use App\Domains\Organization\Contracts\Data\OrganizationData;
 use App\Domains\Organization\Contracts\Data\OrganizationSshKeyData;
 use App\Domains\Package\Contracts\Data\PackageData;
@@ -13,6 +14,7 @@ use App\Domains\Repository\Actions\DeleteWebhookAction;
 use App\Domains\Repository\Actions\PurgeDistArchiveFilesTask;
 use App\Domains\Repository\Actions\RecordRepositoryViewTask;
 use App\Domains\Repository\Actions\UpdatePackagePathsAction;
+use App\Domains\Repository\Actions\UpdateTagFormatAction;
 use App\Domains\Repository\Contracts\Data\RepositoryData;
 use App\Domains\Repository\Contracts\Data\SyncLogData;
 use App\Domains\Repository\Contracts\Data\UpdatePackagePathsResultData;
@@ -24,6 +26,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Organization;
 use App\Models\Repository;
 use App\Models\User;
+use App\Models\UserGitCredential;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -55,9 +58,15 @@ class RepositoryController extends Controller
         /** @var User $user */
         $user = auth()->user();
 
-        $configuredProviders = $user->gitCredentials()
-            ->pluck('provider')
-            ->map(fn (GitProvider $provider) => $provider->value)
+        $gitCredentials = $user->gitCredentials()
+            ->orderBy('provider')
+            ->oldest()
+            ->get();
+
+        $configuredProviders = $gitCredentials
+            ->map(fn (UserGitCredential $credential) => $credential->provider->value)
+            ->unique()
+            ->values()
             ->toArray();
 
         $sshKeys = $organization->sshKeys()
@@ -69,6 +78,7 @@ class RepositoryController extends Controller
             'organization' => OrganizationData::fromModel($organization),
             'repositories' => $repositories,
             'configuredProviders' => $configuredProviders,
+            'gitCredentials' => $gitCredentials->map(fn (UserGitCredential $credential) => GitCredentialData::fromModel($credential)),
             'sshKeys' => $sshKeys,
         ]);
     }
@@ -89,6 +99,7 @@ class RepositoryController extends Controller
             defaultBranch: $request->default_branch,
             sshKeyUuid: $request->ssh_key_uuid,
             packagePaths: $request->packagePaths(),
+            gitCredentialUuid: $request->validated('git_credential_uuid'),
         );
 
         $message = 'Repository added successfully.';
@@ -115,7 +126,8 @@ class RepositoryController extends Controller
             organization: $organization,
             provider: GitProvider::from($request->validated('provider')),
             repositories: $request->validated('repositories'),
-            userUuid: $user->uuid,
+            user: $user,
+            gitCredentialUuid: $request->validated('git_credential_uuid'),
         );
 
         return redirect()
@@ -177,7 +189,7 @@ class RepositoryController extends Controller
         ]);
     }
 
-    public function update(UpdateRepositoryRequest $request, Organization $organization, Repository $repository): RedirectResponse
+    public function update(UpdateRepositoryRequest $request, Organization $organization, Repository $repository, UpdateTagFormatAction $updateTagFormatAction): RedirectResponse
     {
         if ($repository->organization_uuid !== $organization->uuid) {
             abort(404);
@@ -190,9 +202,15 @@ class RepositoryController extends Controller
             ? $this->updatePackagePathsAction->handle($repository, $request->packagePaths(), $request->user())
             : new UpdatePackagePathsResultData(changed: false, packagesRemoved: 0);
 
-        $message = $result->changed
-            ? 'Package paths updated and a sync has been started.'
-            : 'Repository updated successfully.';
+        $tagFormatChanged = $request->has('tag_format')
+            && $updateTagFormatAction->handle($repository, $request->validated('tag_format'));
+
+        $message = match (true) {
+            $result->changed && $tagFormatChanged => 'Package paths and tag format updated and a sync has been started.',
+            $result->changed => 'Package paths updated and a sync has been started.',
+            $tagFormatChanged => 'Tag format updated and a sync has been started.',
+            default => 'Repository updated successfully.',
+        };
 
         if ($result->packagesRemoved > 0) {
             $message .= sprintf(

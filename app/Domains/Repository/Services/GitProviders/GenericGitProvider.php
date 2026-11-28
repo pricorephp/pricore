@@ -4,7 +4,10 @@ namespace App\Domains\Repository\Services\GitProviders;
 
 use App\Domains\Repository\Contracts\Enums\GitProvider;
 use App\Domains\Repository\Exceptions\GitProviderException;
+use App\Domains\Repository\Exceptions\UnsafeGitRemoteException;
 use App\Domains\Repository\Rules\ValidRepositoryIdentifier;
+use App\Domains\Repository\Services\GitRemotes\GitRemotePolicy;
+use App\Domains\Repository\Services\GitRemotes\ResolvedGitRemote;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Http;
@@ -13,6 +16,8 @@ use Illuminate\Support\Str;
 
 class GenericGitProvider extends AbstractGitProvider
 {
+    protected ?ResolvedGitRemote $gitRemote = null;
+
     protected function configureHttpClient(): PendingRequest
     {
         // Not used for Generic Git, but required by abstract class
@@ -24,7 +29,7 @@ class GenericGitProvider extends AbstractGitProvider
      */
     public function getTags(): array
     {
-        $output = $this->runGitCommand(['ls-remote', '--tags', '--refs', '--', $this->getAuthenticatedUrl()]);
+        $output = $this->runGitCommand(['ls-remote', '--tags', '--refs', '--', $this->gitRemote()->url]);
 
         return $this->parseLsRemoteOutput($output, 'refs/tags/');
     }
@@ -34,7 +39,7 @@ class GenericGitProvider extends AbstractGitProvider
      */
     public function getBranches(): array
     {
-        $output = $this->runGitCommand(['ls-remote', '--heads', '--', $this->getAuthenticatedUrl()]);
+        $output = $this->runGitCommand(['ls-remote', '--heads', '--', $this->gitRemote()->url]);
 
         return $this->parseLsRemoteOutput($output, 'refs/heads/');
     }
@@ -112,7 +117,7 @@ class GenericGitProvider extends AbstractGitProvider
                 '--depth', '1',
                 '--branch', $ref,
                 '--',
-                $this->getAuthenticatedUrl(),
+                $this->gitRemote()->url,
                 $tempDir,
             ]);
 
@@ -124,15 +129,34 @@ class GenericGitProvider extends AbstractGitProvider
         }
     }
 
-    public function validateCredentials(): bool
+    public function ensureRepositoryAccess(): void
     {
-        try {
-            $this->runGitCommand(['ls-remote', '--', $this->getAuthenticatedUrl(), 'HEAD']);
+        $redactedUrl = static::redactUrlCredentials($this->repositoryIdentifier);
 
-            return true;
+        try {
+            $this->runGitCommand(['ls-remote', '--', $this->gitRemote()->url, 'HEAD']);
+        } catch (UnsafeGitRemoteException $e) {
+            throw $e;
+        } catch (GitProviderException $e) {
+            throw new GitProviderException(
+                "Could not read {$redactedUrl}. Check the URL and, for a private repository, that the selected SSH key is added as a deploy key.\n\n".trim($e->getMessage()),
+                previous: $e,
+            );
         } catch (\Exception $e) {
-            return false;
+            throw new GitProviderException(
+                "Could not read {$redactedUrl}: git did not finish. Check that the host is reachable from Pricore.",
+                previous: $e,
+            );
         }
+    }
+
+    /**
+     * A remote cannot be asked for a commit by SHA without fetching it, so this
+     * settles for the repository still being readable.
+     */
+    public function ensureRefResolves(string $ref): void
+    {
+        $this->ensureRepositoryAccess();
     }
 
     public function getRepositoryUrl(): string
@@ -153,6 +177,14 @@ class GenericGitProvider extends AbstractGitProvider
     protected function downloadFullArchive(string $ref, string $outputPath): bool
     {
         return false;
+    }
+
+    /**
+     * Settled once per provider, so every command of a sync reaches the same host.
+     */
+    protected function gitRemote(): ResolvedGitRemote
+    {
+        return $this->gitRemote ??= app(GitRemotePolicy::class)->resolve($this->getAuthenticatedUrl());
     }
 
     protected function getAuthenticatedUrl(): string
@@ -198,12 +230,27 @@ class GenericGitProvider extends AbstractGitProvider
     }
 
     /**
+     * Messages end up in sync logs that every organization member can read. Over
+     * http(s) a token may sit in the username, so the whole userinfo goes; over
+     * other transports the username is not secret, as in ssh://git@host.
+     */
+    public static function redactUrlCredentials(string $text): string
+    {
+        $text = (string) preg_replace('#(https?://)[^/\s]+@#i', '$1***@', $text);
+
+        return (string) preg_replace('#(\w+://[^/\s:@]*):[^/\s]+@#', '$1:***@', $text);
+    }
+
+    /**
      * @param  array<int, string>  $command
      */
     protected function runGitCommand(array $command): string
     {
+        $gitRemote = $this->gitRemote();
+
         $env = [
             'GIT_TERMINAL_PROMPT' => '0',
+            ...$gitRemote->environment(),
         ];
 
         $tempKeyFile = null;
@@ -212,14 +259,16 @@ class GenericGitProvider extends AbstractGitProvider
             $tempKeyFile = sys_get_temp_dir().'/pricore-ssh-'.Str::random(16);
             file_put_contents($tempKeyFile, $this->getCredential('ssh_key')."\n");
             chmod($tempKeyFile, 0600);
-            $env['GIT_SSH_COMMAND'] = "ssh -i {$tempKeyFile} -o StrictHostKeyChecking=accept-new -o IdentitiesOnly=yes";
+            $env['GIT_SSH_COMMAND'] = "ssh -i {$tempKeyFile} -o StrictHostKeyChecking=accept-new -o IdentitiesOnly=yes".$gitRemote->sshOptions();
+        } elseif ($gitRemote->sshOptions() !== '') {
+            $env['GIT_SSH_COMMAND'] = (getenv('GIT_SSH_COMMAND') ?: 'ssh').$gitRemote->sshOptions();
         }
 
         try {
-            $result = Process::env($env)->run(array_merge(['git'], $command));
+            $result = Process::env($env)->run(['git', ...$gitRemote->gitOptions(), ...$command]);
 
             if ($result->failed()) {
-                throw new GitProviderException('Git command failed: '.$result->errorOutput());
+                throw new GitProviderException('Git command failed: '.static::redactUrlCredentials($result->errorOutput()));
             }
 
             return trim($result->output());

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Domains\Repository\Contracts\Data\DistArchiveData;
 use App\Models\Concerns\HasUuids;
 use Database\Factories\PackageVersionFactory;
 use Eloquent;
@@ -131,6 +132,42 @@ class PackageVersion extends Model
     {
         return $this->hasOne(DistArchive::class, 'package_version_uuid', 'uuid')
             ->whereNull('detached_at');
+    }
+
+    /**
+     * The archive URL advertised to Composer. Built from the current app URL,
+     * because dist_url keeps the host the version was synced under and would
+     * go stale after APP_URL changes; the column only marks that an archive exists.
+     */
+    public function distDownloadUrl(): ?string
+    {
+        $organization = $this->package->organization;
+
+        if (! $this->source_reference || ! $organization) {
+            return null;
+        }
+
+        if (! $this->dist_url && ! $this->fetchesDistOnDemand()) {
+            return null;
+        }
+
+        return DistArchiveData::urlFor(
+            organizationSlug: $organization->slug,
+            packageName: $this->package->name,
+            version: $this->version,
+            reference: $this->source_reference,
+        );
+    }
+
+    /**
+     * Whether the archive is not stored yet but will be fetched from the
+     * upstream registry when Composer first downloads it.
+     */
+    public function fetchesDistOnDemand(): bool
+    {
+        return isset($this->composer_json['dist']['url'])
+            && $this->source_reference !== null
+            && $this->package->mirror?->downloadsDistsOnDemand() === true;
     }
 
     /**

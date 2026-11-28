@@ -2,6 +2,8 @@
 
 namespace App\Domains\Repository\Contracts\Interfaces;
 
+use App\Domains\Repository\Exceptions\GitProviderException;
+
 interface GitProviderInterface
 {
     /**
@@ -16,7 +18,21 @@ interface GitProviderInterface
 
     public function getFileContent(string $ref, string $path): ?string;
 
-    public function validateCredentials(): bool;
+    /**
+     * Throws when the repository cannot be read, with a message saying how to fix it.
+     *
+     * @throws GitProviderException
+     */
+    public function ensureRepositoryAccess(): void;
+
+    /**
+     * Throws when $ref (a commit SHA or ref name) cannot be read. A provider answers
+     * a file request with "not found" too when access to the repository was lost,
+     * so only a readable ref proves a missing file was removed.
+     *
+     * @throws GitProviderException
+     */
+    public function ensureRefResolves(string $ref): void;
 
     public function getRepositoryIdentifier(): string;
 

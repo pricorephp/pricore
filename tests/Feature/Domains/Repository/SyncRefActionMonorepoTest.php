@@ -23,6 +23,7 @@ function monorepoProvider(array $files, array $directories = []): GitProviderInt
         ->andReturnUsing(fn (string $ref, string $path) => $files[$path] ?? null);
     $provider->shouldReceive('listDirectory')
         ->andReturnUsing(fn (string $ref, string $path) => $directories[trim($path, '/')] ?? []);
+    $provider->shouldReceive('ensureRefResolves');
     $provider->shouldReceive('getRepositoryUrl')->andReturn('https://github.com/acme/monorepo.git');
     $provider->shouldReceive('getRepositoryIdentifier')->andReturn('acme/monorepo');
     $provider->shouldReceive('downloadArchive')
@@ -59,7 +60,7 @@ beforeEach(function () {
     ];
 
     $this->sync = fn (GitProviderInterface $provider, string $ref = 'main', string $commit = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa') => app(SyncRefAction::class)
-        ->handle($provider, $this->repository, new RefData(name: $ref, commit: $commit));
+        ->handle($provider, $this->repository, new RefData(name: $ref, commit: $commit, isTag: $ref !== 'main'));
 });
 
 it('syncs every package found under the configured paths and leaves the root alone', function () {

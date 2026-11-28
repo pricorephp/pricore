@@ -1,4 +1,5 @@
 import { store } from '@/actions/App/Domains/Repository/Http/Controllers/RepositoryController';
+import GitCredentialSelect from '@/components/git-credential-select';
 import GitProviderIcon from '@/components/git-provider-icon';
 import { Button } from '@/components/ui/button';
 import {
@@ -31,6 +32,7 @@ interface AddRepositoryDialogProps {
     isOpen: boolean;
     onClose: () => void;
     configuredProviders?: string[];
+    gitCredentials?: GitCredentialData[];
     sshKeys?: OrganizationSshKeyData[];
 }
 
@@ -41,6 +43,9 @@ const gitProviders = {
     git: 'Generic Git',
 };
 
+type GitCredentialData =
+    App.Domains.Organization.Contracts.Data.GitCredentialData;
+
 type RepositorySuggestion =
     App.Domains.Repository.Contracts.Data.RepositorySuggestionData;
 
@@ -49,6 +54,7 @@ export default function AddRepositoryDialog({
     isOpen,
     onClose,
     configuredProviders = [],
+    gitCredentials = [],
     sshKeys = [],
 }: AddRepositoryDialogProps) {
     return (
@@ -67,6 +73,7 @@ export default function AddRepositoryDialog({
                         organizationSlug={organizationSlug}
                         onClose={onClose}
                         configuredProviders={configuredProviders}
+                        gitCredentials={gitCredentials}
                         sshKeys={sshKeys}
                     />
                 )}
@@ -79,6 +86,7 @@ interface AddRepositoryDialogBodyProps {
     organizationSlug: string;
     onClose: () => void;
     configuredProviders: string[];
+    gitCredentials?: GitCredentialData[];
     sshKeys: OrganizationSshKeyData[];
 }
 
@@ -93,6 +101,7 @@ function AddRepositoryDialogBody({
     organizationSlug,
     onClose,
     configuredProviders,
+    gitCredentials = [],
     sshKeys,
 }: AddRepositoryDialogBodyProps) {
     const availableProviders =
@@ -114,6 +123,18 @@ function AddRepositoryDialogBody({
     );
 
     const [provider, setProvider] = useState<string>(defaultProvider);
+    const firstCredentialUuid = (forProvider: string): string =>
+        gitCredentials.find((credential) => credential.provider === forProvider)
+            ?.uuid ?? '';
+    const [credentialUuid, setCredentialUuid] = useState<string>(
+        firstCredentialUuid(defaultProvider),
+    );
+    const providerCredentials = gitCredentials.filter(
+        (credential) => credential.provider === provider,
+    );
+    const credentialQuery = credentialUuid
+        ? `&credential=${encodeURIComponent(credentialUuid)}`
+        : '';
     const [owners, setOwners] = useState<string[]>([]);
     const [selectedOwner, setSelectedOwner] =
         useState<string>(initialWorkspace);
@@ -139,6 +160,7 @@ function AddRepositoryDialogBody({
             workspaceStorageKey,
         );
         setProvider(newProvider);
+        setCredentialUuid(firstCredentialUuid(newProvider));
         setOwners([]);
         setSelectedOwner(remembered);
         setWorkspaceInput(remembered);
@@ -161,7 +183,7 @@ function AddRepositoryDialogBody({
             setSelectedOwner('');
             setRepositories([]);
             try {
-                const url = `/organizations/${organizationSlug}/repositories/owners?provider=${encodeURIComponent(provider)}`;
+                const url = `/organizations/${organizationSlug}/repositories/owners?provider=${encodeURIComponent(provider)}${credentialQuery}`;
                 const response = await fetch(url, {
                     headers: { Accept: 'application/json' },
                     credentials: 'same-origin',
@@ -190,7 +212,7 @@ function AddRepositoryDialogBody({
         fetchOwners();
 
         return () => controller.abort();
-    }, [provider, organizationSlug, isManualOwnerEntry]);
+    }, [provider, credentialQuery, organizationSlug, isManualOwnerEntry]);
 
     useEffect(() => {
         if (provider === 'git' || !selectedOwner) {
@@ -205,7 +227,7 @@ function AddRepositoryDialogBody({
             setSelectedRepo('');
             setRepoIdentifier('');
             try {
-                const url = `/organizations/${organizationSlug}/repositories/suggest?provider=${encodeURIComponent(provider)}&owner=${encodeURIComponent(selectedOwner)}`;
+                const url = `/organizations/${organizationSlug}/repositories/suggest?provider=${encodeURIComponent(provider)}&owner=${encodeURIComponent(selectedOwner)}${credentialQuery}`;
                 const response = await fetch(url, {
                     headers: { Accept: 'application/json' },
                     credentials: 'same-origin',
@@ -247,6 +269,7 @@ function AddRepositoryDialogBody({
     }, [
         selectedOwner,
         provider,
+        credentialQuery,
         organizationSlug,
         isManualOwnerEntry,
         workspaceStorageKey,
@@ -359,6 +382,30 @@ function AddRepositoryDialogBody({
                             .
                         </p>
                     </div>
+
+                    {provider !== 'git' && (
+                        <>
+                            <GitCredentialSelect
+                                credentials={providerCredentials}
+                                value={credentialUuid}
+                                onValueChange={setCredentialUuid}
+                            />
+                            {credentialUuid && (
+                                <input
+                                    type="hidden"
+                                    name="git_credential_uuid"
+                                    value={credentialUuid}
+                                />
+                            )}
+                            {errors.git_credential_uuid &&
+                                !processing &&
+                                !wasSuccessful && (
+                                    <p className="text-destructive">
+                                        {errors.git_credential_uuid}
+                                    </p>
+                                )}
+                        </>
+                    )}
 
                     <div className="grid space-y-2">
                         <Label htmlFor="repo_identifier">

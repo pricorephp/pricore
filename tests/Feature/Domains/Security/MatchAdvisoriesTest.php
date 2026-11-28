@@ -91,6 +91,37 @@ it('creates dependency match when composer.json require references a vulnerable 
     expect($match->dependency_name)->toBe('monolog/monolog');
 });
 
+it('creates dependency match for a vulnerable package whose vendor starts with php', function () {
+    $version = PackageVersion::factory()->create([
+        'package_uuid' => $this->package->uuid,
+        'version' => '1.0.0',
+        'normalized_version' => '1.0.0.0',
+        'composer_json' => [
+            'name' => 'acme/vulnerable-package',
+            'require' => [
+                'php' => '^8.1',
+                'ext-json' => '*',
+                'phpmailer/phpmailer' => '^6.0',
+            ],
+        ],
+    ]);
+
+    SecurityAdvisory::factory()->create([
+        'package_name' => 'phpmailer/phpmailer',
+        'affected_versions' => '>=6.0,<6.5.0',
+        'severity' => AdvisorySeverity::Critical,
+    ]);
+
+    $action = app(MatchAdvisoriesForPackageVersionAction::class);
+    $matchesCreated = $action->handle($version);
+
+    expect($matchesCreated)->toBe(1);
+
+    $match = SecurityAdvisoryMatch::first();
+    expect($match->match_type)->toBe(AdvisoryMatchType::Dependency);
+    expect($match->dependency_name)->toBe('phpmailer/phpmailer');
+});
+
 it('removes stale matches when advisory no longer applies', function () {
     $version = PackageVersion::factory()->create([
         'package_uuid' => $this->package->uuid,

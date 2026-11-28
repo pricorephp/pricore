@@ -6,7 +6,7 @@ use App\Models\Package;
 use App\Models\PackageVersion;
 
 it('includes dist info with shasum when dist_url is set', function () {
-    $organization = Organization::factory()->create();
+    $organization = Organization::factory()->create(['slug' => 'acme']);
     $package = Package::factory()->for($organization, 'organization')->create(['name' => 'acme/test-package']);
     $version = PackageVersion::factory()->for($package)->create([
         'version' => '1.0.0',
@@ -22,7 +22,7 @@ it('includes dist info with shasum when dist_url is set', function () {
 
     expect($array['dist'])->toBe([
         'type' => 'zip',
-        'url' => 'https://example.com/dists/acme/test-package/1.0.0/abc123.zip',
+        'url' => url('/acme/dists/acme/test-package/1.0.0/abc123.zip'),
         'reference' => 'abc123',
         'shasum' => 'da39a3ee5e6b4b0d3255bfef95601890afd80709',
     ]);

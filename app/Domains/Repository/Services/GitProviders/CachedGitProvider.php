@@ -42,9 +42,11 @@ class CachedGitProvider implements GitProviderInterface
         return $result->output();
     }
 
-    public function validateCredentials(): bool
+    public function ensureRepositoryAccess(): void
     {
-        return is_dir($this->clonePath);
+        if (! is_dir($this->clonePath)) {
+            throw new GitProviderException('The repository clone is missing.');
+        }
     }
 
     public function getRepositoryIdentifier(): string
@@ -137,7 +139,7 @@ class CachedGitProvider implements GitProviderInterface
      * clone, an unknown ref or git failing outright must not pass for a removed
      * package, since the sync deletes versions whose composer.json is gone.
      */
-    protected function ensureRefResolves(string $ref): void
+    public function ensureRefResolves(string $ref): void
     {
         $result = $this->git(['rev-parse', '--verify', '--quiet', "{$ref}^{commit}"]);
 

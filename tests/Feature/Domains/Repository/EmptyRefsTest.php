@@ -18,7 +18,7 @@ use Spatie\LaravelData\DataCollection;
  */
 function emptyRefsCollection(array $tags): RefsCollectionData
 {
-    $refs = array_map(fn (array $ref) => RefData::from($ref), $tags);
+    $refs = array_map(fn (array $ref) => RefData::from([...$ref, 'isTag' => true]), $tags);
 
     return new RefsCollectionData(
         tags: new DataCollection(RefData::class, $refs),
@@ -36,6 +36,7 @@ function emptyRefsProvider(array $files = []): GitProviderInterface
     $provider->shouldReceive('getFileContent')
         ->andReturnUsing(fn (string $ref, string $path) => $files[$path] ?? null);
     $provider->shouldReceive('listDirectory')->andReturn([]);
+    $provider->shouldReceive('ensureRefResolves');
     $provider->shouldReceive('getRepositoryUrl')->andReturn('https://github.com/acme/app.git');
     $provider->shouldReceive('getRepositoryIdentifier')->andReturn('acme/app');
 
@@ -97,7 +98,7 @@ it('does not remember a monorepo ref where one of the paths holds a package', fu
     app(SyncRefAction::class)->handle(
         emptyRefsProvider(['php/client/composer.json' => (string) json_encode(['name' => 'acme/client'])]),
         $this->repository,
-        new RefData(name: 'v1.0.0', commit: 'abc123'),
+        new RefData(name: 'v1.0.0', commit: 'abc123', isTag: true),
     );
 
     expect($this->repository->emptyRefs()->count())->toBe(0);
@@ -107,7 +108,7 @@ it('does not remember a ref whose composer.json is invalid', function () {
     app(SyncRefAction::class)->handle(
         emptyRefsProvider(['composer.json' => '{invalid']),
         $this->repository,
-        new RefData(name: 'v1.0.0', commit: 'abc123'),
+        new RefData(name: 'v1.0.0', commit: 'abc123', isTag: true),
     );
 
     expect($this->repository->emptyRefs()->count())->toBe(0);

@@ -40,7 +40,7 @@ it('shows packages page', function () {
     $response->assertInertia(fn ($page) => $page
         ->component('organizations/packages')
         ->has('organization')
-        ->has('packages', 3)
+        ->has('packages.data', 3)
     );
 });
 

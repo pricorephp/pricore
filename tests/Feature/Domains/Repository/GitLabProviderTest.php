@@ -110,7 +110,7 @@ it('refuses a GitLab URL that resolves to a private address', function () {
     $provider = new GitLabProvider('acme/monorepo', ['token' => 'token', 'url' => 'https://gitlab.attacker.test']);
 
     expect(fn () => $provider->getFileContent('main', 'composer.json'))->toThrow(GitProviderException::class)
-        ->and($provider->validateCredentials())->toBeFalse();
+        ->and(fn () => $provider->ensureRepositoryAccess())->toThrow(Exception::class);
 
     Http::assertNothingSent();
 });
@@ -136,7 +136,9 @@ it('reaches a private GitLab host once it is allowed', function (array $config) 
 
     $provider = new GitLabProvider('acme/monorepo', ['token' => 'token', 'url' => 'https://gitlab.internal']);
 
-    expect($provider->validateCredentials())->toBeTrue();
+    $provider->ensureRepositoryAccess();
+
+    Http::assertSentCount(1);
 })->with([
     'allowed host' => [['pricore.gitlab.allowed_private_hosts' => ['gitlab.internal']]],
     'sign-in instance' => [['services.gitlab.instance_uri' => 'https://gitlab.internal/']],

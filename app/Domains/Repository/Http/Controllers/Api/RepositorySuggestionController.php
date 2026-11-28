@@ -2,6 +2,7 @@
 
 namespace App\Domains\Repository\Http\Controllers\Api;
 
+use App\Domains\Repository\Actions\ResolveUserGitCredentialAction;
 use App\Domains\Repository\Contracts\Data\RepositorySuggestionData;
 use App\Domains\Repository\Contracts\Enums\GitProvider;
 use App\Domains\Repository\Services\GitProviders\BitbucketProvider;
@@ -11,16 +12,16 @@ use App\Http\Controllers\Controller;
 use App\Models\Organization;
 use App\Models\Repository;
 use App\Models\User;
-use App\Models\UserGitCredential;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 class RepositorySuggestionController extends Controller
 {
     use AuthorizesRequests;
 
-    public function index(Request $request, Organization $organization): JsonResponse
+    public function index(Request $request, Organization $organization, ResolveUserGitCredentialAction $resolveUserGitCredentialAction): JsonResponse
     {
         $this->authorize('viewSettings', $organization);
 
@@ -33,10 +34,7 @@ class RepositorySuggestionController extends Controller
         /** @var User $user */
         $user = $request->user();
 
-        $credential = UserGitCredential::query()
-            ->where('user_uuid', $user->uuid)
-            ->where('provider', $provider)
-            ->first();
+        $credential = $resolveUserGitCredentialAction->handle($user, $provider, $this->credentialUuid($request));
 
         if (! $credential) {
             return response()->json(['error' => 'No credentials found for this provider'], 404);
@@ -58,6 +56,8 @@ class RepositorySuggestionController extends Controller
             $connectedIdentifiers = Repository::query()
                 ->where('organization_uuid', $organization->uuid)
                 ->where('provider', $provider)
+                ->get(['repo_identifier', 'custom_base_url'])
+                ->filter(fn (Repository $repository) => $credential->servesBaseUrl($repository->custom_base_url))
                 ->pluck('repo_identifier')
                 ->toArray();
 
@@ -78,7 +78,7 @@ class RepositorySuggestionController extends Controller
         }
     }
 
-    public function owners(Request $request, Organization $organization): JsonResponse
+    public function owners(Request $request, Organization $organization, ResolveUserGitCredentialAction $resolveUserGitCredentialAction): JsonResponse
     {
         $this->authorize('viewSettings', $organization);
 
@@ -91,10 +91,7 @@ class RepositorySuggestionController extends Controller
         /** @var User $user */
         $user = $request->user();
 
-        $credential = UserGitCredential::query()
-            ->where('user_uuid', $user->uuid)
-            ->where('provider', $provider)
-            ->first();
+        $credential = $resolveUserGitCredentialAction->handle($user, $provider, $this->credentialUuid($request));
 
         if (! $credential) {
             return response()->json(['error' => 'No credentials found for this provider'], 404);
@@ -112,6 +109,13 @@ class RepositorySuggestionController extends Controller
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
         }
+    }
+
+    protected function credentialUuid(Request $request): ?string
+    {
+        $credentialUuid = $request->query('credential');
+
+        return is_string($credentialUuid) && Str::isUuid($credentialUuid) ? $credentialUuid : null;
     }
 
     /**

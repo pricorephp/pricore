@@ -6,15 +6,16 @@ use App\Domains\Activity\Contracts\Data\ActivityLogData;
 use App\Domains\Organization\Actions\BuildOnboardingChecklistAction;
 use App\Domains\Organization\Actions\BuildOrganizationStatsAction;
 use App\Domains\Organization\Actions\CreateOrganizationAction;
+use App\Domains\Organization\Contracts\Data\GitCredentialData;
 use App\Domains\Organization\Contracts\Data\OrganizationData;
 use App\Domains\Organization\Requests\StoreOrganizationRequest;
 use App\Domains\Package\Contracts\Data\FrequentPackageData;
 use App\Domains\Repository\Actions\BuildRepositoryHealthAction;
-use App\Domains\Repository\Contracts\Enums\GitProvider;
 use App\Domains\Security\Actions\BuildSecurityStatsAction;
 use App\Http\Controllers\Controller;
 use App\Models\Organization;
 use App\Models\User;
+use App\Models\UserGitCredential;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\DB;
@@ -45,9 +46,15 @@ class OrganizationController extends Controller
         /** @var User $user */
         $user = auth()->user();
 
-        $configuredProviders = $user->gitCredentials()
-            ->pluck('provider')
-            ->map(fn (GitProvider $provider) => $provider->value)
+        $gitCredentials = $user->gitCredentials()
+            ->orderBy('provider')
+            ->oldest()
+            ->get();
+
+        $configuredProviders = $gitCredentials
+            ->map(fn (UserGitCredential $credential) => $credential->provider->value)
+            ->unique()
+            ->values()
             ->toArray();
 
         return Inertia::render('organizations/show', [
@@ -55,6 +62,7 @@ class OrganizationController extends Controller
             'stats' => $this->buildStats->handle($organization),
             'onboarding' => $this->buildOnboarding->handle($organization, $user),
             'configuredProviders' => $configuredProviders,
+            'gitCredentials' => $gitCredentials->map(fn (UserGitCredential $credential) => GitCredentialData::fromModel($credential)),
             'repositories' => $this->buildRepositoryHealthAction->handle($organization),
             'securityStats' => Inertia::defer(fn () => $this->buildSecurityStatsAction->handle($organization)),
             'activityLogs' => Inertia::defer(fn () => $organization->activityLogs()

@@ -1,133 +1,81 @@
-# Docker Deployment
+# Docker
 
-::: tip Don't want to self-host?
-[Pricore Cloud](https://pricore.dev) provides a fully managed registry with zero setup, so you can focus on building, not infrastructure.
-:::
+The official image `ghcr.io/pricorephp/pricore` contains PHP, FrankenPHP and the built frontend. The compose file runs it as five containers:
 
-Deploy Pricore with Docker Compose for a simple, production-ready setup.
+| Service | Runs | Port |
+|---------|------|------|
+| `app` | The web interface and Composer API | 8000 |
+| `horizon` | Background jobs | - |
+| `scheduler` | Scheduled tasks | - |
+| `reverb` | WebSockets for live updates | 8080 |
+| `redis` | Queue, cache and sessions | - |
 
-## Quick Start
+Data is kept in three volumes: `pricore-database` for the SQLite database, `pricore-storage` for archives, logs and generated keys, and `redis-data`.
 
-No cloning required — just download the compose file and start:
+## Installing
 
 ```bash
-# Download the compose file
 curl -o docker-compose.yml https://raw.githubusercontent.com/pricorephp/pricore/main/docker-compose.yml
+```
 
-# Start Pricore
+Create a `.env` next to it. Docker Compose reads it automatically:
+
+```bash
+APP_URL=https://pricore.example.com
+APP_KEY=base64:...
+```
+
+Generate the key with:
+
+```bash
+echo "base64:$(openssl rand -base64 32)"
+```
+
+Without an `APP_KEY`, the container generates one on first boot and stores it in `storage/app_key` on the volume. That works, but a key you manage yourself is easier to back up and harder to lose.
+
+Start Pricore and create the first account:
+
+```bash
 docker compose up -d
-
-# Set up your first user and organization
 docker compose exec app php artisan pricore:install
 ```
 
-Pricore will be available at `http://localhost:8000`.
-
-## Automatic Setup
-
-On first boot, the entrypoint script automatically handles:
-
-1. **APP_KEY generation** — If no `APP_KEY` is provided, one is generated and persisted to `/app/storage/app_key` (survives restarts via the storage volume)
-2. **SQLite database creation** — Creates the database file if it doesn't exist
-3. **Database migrations** — Runs `php artisan migrate --force` (only on the main app container, not horizon/scheduler)
-4. **OAuth key generation** — If `PASSPORT_PRIVATE_KEY` is not set, generates the keys that sign [MCP](/guide/mcp) access tokens in `/app/storage`
-5. **Cache warming** — Caches config, routes, views, and events for production performance
-
-Horizon and the scheduler wait for the app container to be healthy before starting, ensuring migrations are complete.
-
-## Providing Your Own APP_KEY
-
-For production, you should provide your own `APP_KEY` via environment variable:
-
-```bash
-# Generate a key
-php -r "echo 'base64:'.base64_encode(random_bytes(32)).PHP_EOL;"
-
-# Set it in your environment
-APP_KEY=base64:your-generated-key docker compose up -d
-```
-
-Or create a `.env` file next to your `docker-compose.yml`:
-
-```bash
-APP_KEY=base64:your-generated-key
-APP_URL=https://pricore.yourcompany.com
-```
-
-## Docker Compose Services
-
-| Service | Description | Port |
-|---------|-------------|------|
-| `app` | FrankenPHP web server | 8000 |
-| `horizon` | Queue worker with Horizon | - |
-| `scheduler` | Scheduled task runner | - |
-| `reverb` | WebSocket server for realtime updates | 8080 |
-| `redis` | Cache, sessions, and queues | - |
+On every start, the `app` container runs the migrations and caches the configuration. On the first start it also creates the SQLite database and the OAuth keys for the [MCP server](/guide/mcp). The other containers wait until `app` is healthy.
 
 ## Configuration
 
-### Changing the Port
+The compose file passes only a few variables to the containers. To set others, such as mail or GitHub OAuth, add them to `.env` and to the `environment` list of the `app`, `horizon` and `scheduler` services. See [Configuration](/getting-started/configuration) for all variables.
 
-```bash
-APP_PORT=9000 docker compose up -d
-```
+To use MySQL or PostgreSQL instead of SQLite, set `DB_CONNECTION`, `DB_HOST`, `DB_PORT`, `DB_DATABASE`, `DB_USERNAME` and `DB_PASSWORD` the same way. `APP_PORT` changes the port the web interface is published on.
 
-### Using External Database
+## Reverse proxy
 
-For MySQL or PostgreSQL:
+Run Pricore behind a proxy that terminates TLS, and set `TRUSTED_PROXIES` to the proxy's address. The proxy must forward `/app` to the Reverb container for live updates to work.
 
-```bash
-DB_CONNECTION=mysql
-DB_HOST=your-db-host
-DB_PORT=3306
-DB_DATABASE=pricore
-DB_USERNAME=pricore
-DB_PASSWORD=your-password
-```
+::: code-group
 
-### Using External Redis
-
-```bash
-REDIS_HOST=your-redis-host
-REDIS_PORT=6379
-REDIS_PASSWORD=your-redis-password
-```
-
-## Development Setup
-
-Contributors who clone the repo can use the development compose file which builds from source and uses bind mounts:
-
-```bash
-git clone https://github.com/pricorephp/pricore.git
-cd pricore
-docker compose -f docker-compose.dev.yml up -d --build
-```
-
-## Reverse Proxy Setup
-
-### Nginx
-
-```nginx
-server {
-    listen 80;
-    server_name pricore.yourcompany.com;
-    return 301 https://$server_name$request_uri;
+```caddyfile [Caddy]
+pricore.example.com {
+    reverse_proxy /app* localhost:8080
+    reverse_proxy localhost:8000
 }
+```
 
+```nginx [nginx]
 server {
-    listen 443 ssl http2;
-    server_name pricore.yourcompany.com;
+    listen 443 ssl;
+    http2 on;
+    server_name pricore.example.com;
 
-    ssl_certificate /etc/nginx/ssl/cert.pem;
-    ssl_certificate_key /etc/nginx/ssl/key.pem;
+    ssl_certificate     /etc/ssl/pricore.pem;
+    ssl_certificate_key /etc/ssl/pricore.key;
 
-    # Allow package archive uploads up to ARTIFACT_MAX_SIZE
+    # At least ARTIFACT_MAX_SIZE, for package uploads
     client_max_body_size 64M;
 
     location / {
         proxy_pass http://localhost:8000;
         proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
     }
@@ -138,105 +86,46 @@ server {
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection "upgrade";
         proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_read_timeout 60s;
-        proxy_send_timeout 60s;
     }
 }
 ```
 
-### Caddy
-
-```caddyfile
-pricore.yourcompany.com {
-    reverse_proxy localhost:8000
-}
-```
-
-### Traefik
-
-```yaml
-labels:
-  - "traefik.enable=true"
-  - "traefik.http.routers.pricore.rule=Host(`pricore.yourcompany.com`)"
-  - "traefik.http.routers.pricore.tls=true"
-  - "traefik.http.routers.pricore.tls.certresolver=letsencrypt"
-```
+:::
 
 ## Updating
 
 ```bash
-# Pull the latest image
 docker compose pull
-
-# Restart services (migrations run automatically)
 docker compose up -d
 ```
 
-::: warning Upgrading a compose file from before the database volume moved
-The `pricore-database` volume used to be mounted on `/app/database`, which hid the migrations shipped with each new image, so upgrades silently skipped them. The app now refuses to start with that layout. Download the current `docker-compose.yml`, or change the `pricore-database` mounts in your own file to `/app/database/data`. Your existing database moves along with the volume. If you set `DB_DATABASE` yourself, change it to `/app/database/data/database.sqlite`.
+Migrations run automatically when the new `app` container starts. Check the [release notes](https://github.com/pricorephp/pricore/releases) before upgrading for steps that need your attention.
 
-The volume still holds the `migrations`, `factories` and `seeders` directories copied from the old image. They are no longer used and can be removed; keep the `database.sqlite` files.
+::: warning Compose files from before the database volume moved
+Older compose files mounted `pricore-database` on `/app/database`. That hid the migrations shipped with each new image, so upgrades skipped them. The container now refuses to start with that layout.
+
+Download the current `docker-compose.yml`, or change the `pricore-database` mounts in your own file to `/app/database/data`. The database moves along with the volume. If you set `DB_DATABASE` yourself, change it to `/app/database/data/database.sqlite`. The old `migrations`, `factories` and `seeders` directories left on the volume can be deleted; keep the `database.sqlite` file.
 :::
 
-## Maintenance
-
-### Viewing Logs
+## Common tasks
 
 ```bash
-# All services
+# Follow the logs of all containers
 docker compose logs -f
 
-# Specific service
-docker compose logs -f app
-docker compose logs -f horizon
-```
+# Run an artisan command
+docker compose exec app php artisan sync:repository --all
 
-### Database Operations
-
-```bash
-# Access tinker
-docker compose exec app php artisan tinker
-
-# Database backup (SQLite)
-docker compose exec app cp /app/database/data/database.sqlite /app/database/data/backup.sqlite
-```
-
-### Cache Operations
-
-```bash
-# Clear cache
-docker compose exec app php artisan cache:clear
-
-# Clear config cache
-docker compose exec app php artisan config:clear
+# Back up the SQLite database
+docker compose exec app php -r "(new PDO('sqlite:/app/database/data/database.sqlite'))->exec(\"VACUUM INTO '/app/database/data/backup.sqlite'\");"
 ```
 
 ## Troubleshooting
 
-### Container Won't Start
+**Repositories don't sync.** Check that the `horizon` container is running: `docker compose ps`, then `docker compose logs horizon`.
 
-1. Check logs: `docker compose logs app`
-2. Verify environment variables are set
-3. Ensure ports aren't in use
-4. Check file permissions on volumes
+**The containers keep restarting.** Run `docker compose logs app`. The entrypoint prints what it's doing and why it stops, for example the old volume layout described above.
 
-### Database Connection Issues
+**Sync status doesn't update live.** The browser must reach Reverb at `/app` on your domain. Check the proxy configuration, and the browser console for WebSocket errors.
 
-1. Verify database container is healthy
-2. Check DB_HOST points to the service name (e.g., `mysql` not `localhost`)
-3. Confirm credentials are correct
-
-### Redis Connection Issues
-
-1. Verify Redis container is healthy: `docker compose exec redis redis-cli ping`
-2. Check REDIS_HOST is set to `redis` (service name)
-3. Review Redis logs: `docker compose logs redis`
-
-### Queue Jobs Not Processing
-
-1. Check Horizon status: `docker compose exec app php artisan horizon:status`
-2. View Horizon logs: `docker compose logs horizon`
-3. Restart Horizon: `docker compose restart horizon`
+**Links point to `localhost`.** Set `APP_URL` in `.env` and run `docker compose up -d` again.

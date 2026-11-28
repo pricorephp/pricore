@@ -29,7 +29,7 @@ beforeEach(function () {
 
 function mockTwoFactorOAuthCallback(User $user, string $provider): void
 {
-    $oauthUser = (new SocialiteUser)->map([
+    $oauthUser = (new SocialiteUser)->setRaw(['confirmed_at' => now()->toIso8601String()])->map([
         'id' => 'two-factor-provider-id',
         'email' => $user->email,
         'name' => $user->name,

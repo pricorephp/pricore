@@ -24,6 +24,15 @@ export type ActivityType = 'repository.added' | 'repository.removed' | 'reposito
 }
 namespace Auth {
 namespace Contracts {
+namespace Data {
+export type PasskeyData = {
+id: number,
+name: string,
+authenticator: string | null,
+createdAt: string | null,
+lastUsedAt: string | null,
+};
+}
 namespace Enums {
 export type GitHubOAuthIntent = 'login' | 'connect';
 export type GitLabOAuthIntent = 'login' | 'connect';
@@ -74,8 +83,10 @@ export type MirrorData = {
 uuid: string,
 name: string,
 url: string,
+syncMode: App.Domains.Mirror.Contracts.Enums.MirrorSyncMode,
 authType: App.Domains.Mirror.Contracts.Enums.MirrorAuthType,
 mirrorDist: boolean,
+lazyDist: boolean,
 syncStatus: App.Domains.Repository.Contracts.Enums.RepositorySyncStatus | null,
 lastSyncedAt: string | null,
 packagesCount: number,
@@ -96,6 +107,7 @@ details: Record<string, any> | null,
 }
 namespace Enums {
 export type MirrorAuthType = 'none' | 'basic' | 'bearer';
+export type MirrorSyncMode = 'full' | 'on_demand';
 export type SyncVersionResult = 'added' | 'updated' | 'skipped' | 'failed' | 'dist_failed';
 }
 }
@@ -111,7 +123,11 @@ export type GitCredentialData = {
 uuid: string,
 provider: string,
 providerLabel: string,
+name: string | null,
+label: string,
+baseUrl: string | null,
 isConfigured: boolean,
+repositoriesCount: number,
 };
 export type OnboardingChecklistData = {
 hasGitProvider: boolean,
@@ -223,6 +239,24 @@ previousPeriodDownloads: number,
 dailyDownloads: App.Domains.Organization.Contracts.Data.DailyDownloadData[],
 versionDailyDownloads: App.Domains.Package.Contracts.Data.VersionDailyDownloadData[],
 };
+export type PackageFacetsData = {
+total: number,
+sources: App.Domains.Package.Contracts.Data.PackageSourceOptionData[],
+vulnerable: number,
+syncFailed: number,
+};
+export type PackageFiltersData = {
+query: string,
+source: App.Domains.Package.Contracts.Enums.PackageSource | null,
+mirror: string | null,
+status: App.Domains.Package.Contracts.Enums.PackageStatus | null,
+};
+export type PackageSourceOptionData = {
+source: App.Domains.Package.Contracts.Enums.PackageSource,
+mirror: string | null,
+label: string,
+count: number,
+};
 export type PackageVersionData = {
 uuid: string,
 version: string,
@@ -277,6 +311,8 @@ dailyDownloads: App.Domains.Organization.Contracts.Data.DailyDownloadData[],
 }
 namespace Enums {
 export type ArtifactPublishResult = 'added' | 'replaced' | 'unchanged';
+export type PackageSource = 'repository' | 'mirror' | 'upload';
+export type PackageStatus = 'vulnerable' | 'sync_failed';
 }
 }
 }
@@ -325,6 +361,7 @@ export type ExistingVersionData = {
 version: string,
 sourceReference: string,
 distFailed: boolean,
+sourceTag: string | null,
 };
 export type RecentSyncData = {
 uuid: string,
@@ -335,6 +372,12 @@ startedAt: string,
 export type RefData = {
 name: string,
 commit: string,
+isTag: boolean,
+packageTags: Record<string, string>,
+};
+export type RefTargetData = {
+version: string,
+packageKey: string | null,
 };
 export type RefsCollectionData = {
 tags: App.Domains.Repository.Contracts.Data.RefData[],
@@ -353,6 +396,7 @@ syncStatusLabel: string | null,
 lastSyncedAt: string | null,
 packagesCount: number,
 packagePaths: string[] | null,
+tagFormat: string | null,
 supportsWebhooks: boolean,
 supportsAutomaticWebhooks: boolean,
 webhookActive: boolean,
@@ -402,6 +446,13 @@ added: number,
 updated: number,
 skipped: number,
 };
+export type TagFormatPreviewData = {
+tag: string,
+release: App.Domains.Repository.Contracts.Enums.TagRelease,
+version: string | null,
+package: string | null,
+packageKnown: boolean,
+};
 export type UpdatePackagePathsResultData = {
 changed: boolean,
 packagesRemoved: number,
@@ -411,6 +462,7 @@ namespace Enums {
 export type GitProvider = 'github' | 'gitlab' | 'bitbucket' | 'git';
 export type RepositorySyncStatus = 'ok' | 'failed' | 'pending';
 export type SyncStatus = 'pending' | 'success' | 'failed';
+export type TagRelease = 'package' | 'shared' | 'ignored';
 }
 }
 }

@@ -37,6 +37,20 @@ enum GitProvider: string
         };
     }
 
+    /**
+     * Whether two base URLs point to the same instance, with null meaning the public host.
+     */
+    public function isSameInstance(?string $baseUrl, ?string $otherBaseUrl): bool
+    {
+        if (! $this->supportsSelfHosted()) {
+            return true;
+        }
+
+        $normalize = fn (?string $url): string => strtolower(rtrim($url ?: 'https://gitlab.com', '/'));
+
+        return $normalize($baseUrl) === $normalize($otherBaseUrl);
+    }
+
     public function supportsWebhooks(): bool
     {
         return match ($this) {

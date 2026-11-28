@@ -3,7 +3,7 @@ import { Separator } from '@/components/ui/separator';
 import { cn, isSameUrl, resolveUrl } from '@/lib/utils';
 import { edit as editAppearance } from '@/routes/appearance';
 import { edit } from '@/routes/profile';
-import { gitCredentials, organizations } from '@/routes/settings';
+import { gitCredentials, organizations, passkeys } from '@/routes/settings';
 import { index as connectedAppsIndex } from '@/routes/settings/connected-apps';
 import { index as tokensIndex } from '@/routes/settings/tokens';
 import { show } from '@/routes/two-factor';
@@ -11,6 +11,7 @@ import { edit as editPassword } from '@/routes/user-password';
 import { type NavItem, type SharedData } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
 import {
+    Fingerprint,
     GitBranch,
     Key,
     Lock,
@@ -43,6 +44,11 @@ const sidebarNavItems: NavItem[] = [
         title: 'Two-Factor Auth',
         href: show(),
         icon: ShieldCheck,
+    },
+    {
+        title: 'Passkeys',
+        href: passkeys(),
+        icon: Fingerprint,
     },
     {
         title: 'Appearance',

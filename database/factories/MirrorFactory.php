@@ -3,6 +3,7 @@
 namespace Database\Factories;
 
 use App\Domains\Mirror\Contracts\Enums\MirrorAuthType;
+use App\Domains\Mirror\Contracts\Enums\MirrorSyncMode;
 use App\Domains\Repository\Contracts\Enums\RepositorySyncStatus;
 use App\Models\Mirror;
 use App\Models\Organization;
@@ -30,9 +31,11 @@ class MirrorFactory extends Factory
             'organization_uuid' => Organization::factory(),
             'name' => fake()->company().' Registry',
             'url' => fake()->url(),
+            'sync_mode' => MirrorSyncMode::Full,
             'auth_type' => MirrorAuthType::None,
             'auth_credentials' => null,
             'mirror_dist' => true,
+            'lazy_dist' => false,
             'sync_status' => null,
             'last_synced_at' => null,
         ];
@@ -86,6 +89,21 @@ class MirrorFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'mirror_dist' => false,
+        ]);
+    }
+
+    public function withLazyDist(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'mirror_dist' => true,
+            'lazy_dist' => true,
+        ]);
+    }
+
+    public function onDemand(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'sync_mode' => MirrorSyncMode::OnDemand,
         ]);
     }
 }

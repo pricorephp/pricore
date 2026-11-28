@@ -72,7 +72,7 @@ class SyncMirrorVersionJob implements ShouldQueue
 
         $this->incrementCounter($result);
 
-        if ($this->mirror->mirror_dist && config('pricore.dist.enabled')) {
+        if ($this->mirror->downloadsDistsDuringSync()) {
             $this->mirrorDist($downloadMirrorDistAction, $recordDistArchiveAction, $package);
         }
     }

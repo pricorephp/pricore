@@ -20,6 +20,10 @@ class DnsHostResolver implements HostResolverInterface
     }
 
     /**
+     * IPv4 and IPv6 are looked up separately and both kept, so the connection
+     * can use either. Asking for every record type at once fails as a whole
+     * when one of them times out, which discarded the working answers.
+     *
      * @param  array<string, true>  $visited
      * @return array<int, string>
      */
@@ -32,7 +36,20 @@ class DnsHostResolver implements HostResolverInterface
         }
 
         $visited[$host] = true;
-        $records = $this->lookup($host);
+
+        return array_merge(
+            $this->resolveRecords($host, DNS_A | DNS_CNAME, $visited, $depth),
+            $this->resolveRecords($host, DNS_AAAA, $visited, $depth),
+        );
+    }
+
+    /**
+     * @param  array<string, true>  $visited
+     * @return array<int, string>
+     */
+    private function resolveRecords(string $host, int $type, array $visited, int $depth): array
+    {
+        $records = $this->lookup($host, $type);
 
         if ($records === false) {
             return [];
@@ -63,8 +80,16 @@ class DnsHostResolver implements HostResolverInterface
     /**
      * @return array<int, array<string, mixed>>|false
      */
-    protected function lookup(string $host): array|false
+    protected function lookup(string $host, int $type): array|false
     {
-        return dns_get_record($host, DNS_A | DNS_AAAA | DNS_CNAME);
+        // Fully qualified first: with a search domain configured, a name without
+        // one of the record types is otherwise retried under every search domain.
+        $records = @dns_get_record("{$host}.", $type);
+
+        if ($records === false || $records === []) {
+            $records = @dns_get_record($host, $type);
+        }
+
+        return $records;
     }
 }

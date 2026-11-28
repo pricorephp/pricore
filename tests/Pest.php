@@ -1,5 +1,6 @@
 <?php
 
+use App\Domains\Composer\Actions\ResolveBaseUrlFirstServedAction;
 use App\Domains\Organization\Contracts\Enums\OrganizationRole;
 use App\Domains\Token\Contracts\Enums\TokenScope;
 use App\Models\AccessToken;
@@ -53,6 +54,15 @@ expect()->extend('toBeOne', function () {
 function something()
 {
     // ..
+}
+
+/**
+ * Record the current base URL as served long ago, so Composer metadata takes
+ * its Last-Modified from package and version timestamps alone.
+ */
+function baseUrlServedSinceLongAgo(): void
+{
+    test()->travelTo(now()->subYear(), fn () => app(ResolveBaseUrlFirstServedAction::class)->handle());
 }
 
 /**

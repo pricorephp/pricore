@@ -21,6 +21,9 @@ class UserGitCredentialController extends Controller
         $user = auth()->user();
 
         $credentials = $user->gitCredentials()
+            ->withCount('repositories')
+            ->orderBy('provider')
+            ->oldest()
             ->get()
             ->map(fn ($credential) => GitCredentialData::fromModel($credential));
 
@@ -29,6 +32,7 @@ class UserGitCredentialController extends Controller
             'providers' => GitProvider::options(),
             'githubConnectUrl' => route('settings.github.connect'),
             'gitlabConnectUrl' => route('settings.gitlab.connect'),
+            'gitlabInstanceHost' => parse_url((string) config('services.gitlab.instance_uri'), PHP_URL_HOST) ?: 'gitlab.com',
         ]);
     }
 
@@ -37,17 +41,10 @@ class UserGitCredentialController extends Controller
         /** @var User $user */
         $user = auth()->user();
 
-        $provider = GitProvider::from($request->validated('provider'));
-
-        if ($user->gitCredentials()->where('provider', $provider)->exists()) {
-            return redirect()
-                ->route('settings.git-credentials')
-                ->with('error', 'Credentials for this provider already exist. Please update the existing credentials instead.');
-        }
-
         UserGitCredential::create([
             'user_uuid' => $user->uuid,
-            'provider' => $provider,
+            'provider' => GitProvider::from($request->validated('provider')),
+            'name' => $request->validated('name'),
             'credentials' => $request->validated('credentials'),
         ]);
 
@@ -58,7 +55,10 @@ class UserGitCredentialController extends Controller
 
     public function update(UpdateUserGitCredentialRequest $request, UserGitCredential $credential): RedirectResponse
     {
+        // A token entered by hand may belong to another account than the one connected through OAuth
         $credential->update([
+            'name' => $request->validated('name'),
+            'account_id' => null,
             'credentials' => $request->validated('credentials'),
         ]);
 

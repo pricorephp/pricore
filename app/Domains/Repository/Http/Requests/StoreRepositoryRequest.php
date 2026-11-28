@@ -38,6 +38,13 @@ class StoreRepositoryRequest extends FormRequest
                 Rule::exists('organization_ssh_keys', 'uuid')
                     ->where('organization_uuid', $organization->uuid),
             ],
+            'git_credential_uuid' => [
+                'nullable',
+                'uuid',
+                Rule::exists('user_git_credentials', 'uuid')
+                    ->where('user_uuid', $this->user()?->uuid)
+                    ->where('provider', (string) $this->input('provider')),
+            ],
             ...$this->packagePathRules(),
         ];
     }

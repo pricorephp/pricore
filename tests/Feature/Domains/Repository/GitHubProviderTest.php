@@ -237,7 +237,7 @@ it('throws a secondary rate limit with its retry delay', function () {
         ]),
     ]);
 
-    expect(fn () => githubProvider()->validateCredentials())
+    expect(fn () => githubProvider()->ensureRepositoryAccess())
         ->toThrow(fn (GitProviderRateLimitedException $e) => expect($e->retryAfter)->toBe(45));
 });
 
@@ -248,5 +248,6 @@ it('treats a forbidden response without rate limit headers as a plain failure', 
         ]),
     ]);
 
-    expect(githubProvider()->validateCredentials())->toBeFalse();
+    expect(fn () => githubProvider()->ensureRepositoryAccess())
+        ->toThrow(GitProviderException::class, 'GitHub denied access to acme/monorepo (HTTP 403)');
 });

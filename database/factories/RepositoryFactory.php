@@ -147,6 +147,13 @@ class RepositoryFactory extends Factory
         ]);
     }
 
+    public function withTagFormat(string $tagFormat): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'tag_format' => $tagFormat,
+        ]);
+    }
+
     /**
      * Indicate that the repository sync has failed.
      */

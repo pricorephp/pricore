@@ -22,6 +22,8 @@ class VersionMetadataData extends Data
 
     public static function fromPackageVersion(PackageVersion $version): self
     {
+        $distUrl = $version->distDownloadUrl();
+
         return new self(
             name: $version->package->name,
             version: $version->version,
@@ -34,9 +36,9 @@ class VersionMetadataData extends Data
                 url: $version->source_url,
                 reference: $version->source_reference,
             ) : null,
-            dist: $version->dist_url ? new SourceData(
+            dist: $distUrl ? new SourceData(
                 type: 'zip',
-                url: $version->dist_url,
+                url: $distUrl,
                 reference: $version->source_reference,
                 shasum: $version->dist_shasum,
             ) : null,

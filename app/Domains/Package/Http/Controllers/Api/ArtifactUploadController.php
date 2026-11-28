@@ -51,7 +51,7 @@ class ArtifactUploadController extends Controller
             'version' => $version->version,
             'version_normalized' => $version->normalized_version,
             'dist' => [
-                'url' => $version->dist_url,
+                'url' => $version->distDownloadUrl(),
                 'shasum' => $version->dist_shasum,
                 'size' => $version->dist_size,
             ],

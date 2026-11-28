@@ -2,6 +2,7 @@
 
 namespace App\Domains\Repository\Jobs;
 
+use App\Domains\Repository\Actions\ClaimSharedVersionsAction;
 use App\Domains\Repository\Actions\CollectRefsAction;
 use App\Domains\Repository\Actions\CreateGitCloneAction;
 use App\Domains\Repository\Actions\CreateSyncLogAction;
@@ -11,9 +12,7 @@ use App\Domains\Repository\Actions\RemoveStaleVersionsAction;
 use App\Domains\Repository\Contracts\Data\RefData;
 use App\Domains\Repository\Contracts\Enums\RepositorySyncStatus;
 use App\Domains\Repository\Contracts\Enums\SyncStatus;
-use App\Domains\Repository\Contracts\Interfaces\GitProviderInterface;
 use App\Domains\Repository\Events\RepositorySyncStatusUpdated;
-use App\Domains\Repository\Exceptions\GitProviderException;
 use App\Domains\Repository\Services\GitProviders\GitProviderFactory;
 use App\Models\Repository;
 use App\Models\RepositorySyncLog;
@@ -64,6 +63,7 @@ class SyncRepositoryJob implements ShouldBeUnique, ShouldQueue
     public function handle(
         CreateSyncLogAction $createSyncLogAction,
         CollectRefsAction $collectRefsAction,
+        ClaimSharedVersionsAction $claimSharedVersionsAction,
         CreateGitCloneAction $createGitCloneAction,
         FilterChangedRefsAction $filterChangedRefsAction,
         RemoveStaleVersionsAction $removeStaleVersionsAction,
@@ -85,9 +85,9 @@ class SyncRepositoryJob implements ShouldBeUnique, ShouldQueue
         try {
             $provider = GitProviderFactory::make($this->repository);
 
-            $this->validateProvider($provider);
+            $provider->ensureRepositoryAccess();
 
-            $refs = $collectRefsAction->handle($provider);
+            $refs = $claimSharedVersionsAction->handle($this->repository, $collectRefsAction->handle($provider));
 
             // Read as late as possible: a request made while this job was queued
             // could not queue a job of its own, as this one holds the unique lock
@@ -173,15 +173,6 @@ class SyncRepositoryJob implements ShouldBeUnique, ShouldQueue
 
             throw $e;
         }
-    }
-
-    protected function validateProvider(GitProviderInterface $provider): void
-    {
-        if ($provider->validateCredentials()) {
-            return;
-        }
-
-        throw new GitProviderException('Failed to validate repository access');
     }
 
     /**

@@ -123,6 +123,7 @@ class PackageVersionData extends Data
         $cleanUrl = preg_replace('/^git@/', '', $sourceUrl) ?? '';
         $cleanUrl = preg_replace('/\.git$/', '', $cleanUrl) ?? '';
         $cleanUrl = str_replace(':', '/', $cleanUrl);
+        $cleanUrl = preg_replace('#^ssh\.bitbucket\.org/#', 'bitbucket.org/', $cleanUrl) ?? '';
 
         if (str_starts_with($cleanUrl, 'github.com/')) {
             return "https://{$cleanUrl}/tree/{$commitSha}";
@@ -140,7 +141,7 @@ class PackageVersionData extends Data
         // If it's already an HTTPS URL, append /tree/{sha}
         if (str_starts_with($sourceUrl, 'http://') || str_starts_with($sourceUrl, 'https://')) {
             $url = parse_url($sourceUrl);
-            $path = rtrim($url['path'] ?? '', '.git');
+            $path = preg_replace('/\.git$/', '', $url['path'] ?? '') ?? '';
 
             return ($url['scheme'] ?? 'https').'://'.($url['host'] ?? '').$path.'/tree/'.$commitSha;
         }
@@ -183,6 +184,7 @@ class PackageVersionData extends Data
         $cleanUrl = preg_replace('/^git@/', '', $sourceUrl) ?? '';
         $cleanUrl = preg_replace('/\.git$/', '', $cleanUrl) ?? '';
         $cleanUrl = str_replace(':', '/', $cleanUrl);
+        $cleanUrl = preg_replace('#^ssh\.bitbucket\.org/#', 'bitbucket.org/', $cleanUrl) ?? '';
 
         if (str_starts_with($cleanUrl, 'github.com/')) {
             return "https://{$cleanUrl}/releases/tag/{$sourceTag}";
