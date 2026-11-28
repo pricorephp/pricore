@@ -6,6 +6,8 @@ use App\Domains\Mirror\Actions\CreateMirrorSyncLogAction;
 use App\Domains\Mirror\Actions\RemoveStaleMirrorVersionsAction;
 use App\Domains\Mirror\Events\MirrorSyncStatusUpdated;
 use App\Domains\Mirror\Services\RegistryClient\RegistryClientFactory;
+use App\Domains\Repository\Contracts\Data\ComposerMetadataData;
+use App\Domains\Repository\Contracts\Data\DistArchiveData;
 use App\Domains\Repository\Contracts\Enums\RepositorySyncStatus;
 use App\Domains\Repository\Contracts\Enums\SyncStatus;
 use App\Models\Mirror;
@@ -66,7 +68,22 @@ class SyncMirrorJob implements ShouldBeUnique, ShouldQueue
             // Collect all versions per package for stale removal and job dispatch
             $allPackageVersions = [];
             foreach ($availablePackages as $packageName) {
-                $allPackageVersions[$packageName] = $registryClient->getPackageVersions($packageName);
+                // Names and versions become directories on the dist disk, and the
+                // registry is free to advertise anything.
+                if (! ComposerMetadataData::isPathSafeName($packageName)) {
+                    Log::warning('Skipping mirrored package with an unsafe name', [
+                        'mirror' => $this->mirror->name,
+                        'package' => $packageName,
+                    ]);
+
+                    continue;
+                }
+
+                $allPackageVersions[$packageName] = array_filter(
+                    $registryClient->getPackageVersions($packageName),
+                    fn (int|string $version): bool => DistArchiveData::isPathSafeVersion((string) $version),
+                    ARRAY_FILTER_USE_KEY,
+                );
             }
 
             $staleVersionsRemoved = $removeStaleMirrorVersionsAction->handle($this->mirror, $allPackageVersions);

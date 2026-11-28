@@ -63,6 +63,19 @@ class MirrorUrlPolicy
         return $this->resolve($uri, $allowPrivate);
     }
 
+    /**
+     * Resolve a URL that is not tied to a mirror, such as a self-hosted Git
+     * provider. Private addresses are only reachable for the hosts given.
+     *
+     * @param  array<int, mixed>  $allowedPrivateHosts
+     */
+    public function resolveWithAllowedHosts(string $url, array $allowedPrivateHosts): ResolvedMirrorUrl
+    {
+        $uri = $this->parse($url);
+
+        return $this->resolve($uri, $this->isAllowedPrivateHost($this->canonicalHost($uri), $allowedPrivateHosts));
+    }
+
     public function isSameOrigin(string $url, string $mirrorUrl): bool
     {
         return ! UriComparator::isCrossOrigin($this->parse($mirrorUrl), $this->parse($url));
@@ -181,9 +194,12 @@ class MirrorUrlPolicy
         return ! IpUtils::checkIp($address, $ranges);
     }
 
-    private function isAllowedPrivateHost(string $host): bool
+    /**
+     * @param  array<int, mixed>|null  $allowedHosts  Defaults to the hosts allowed for mirrors
+     */
+    private function isAllowedPrivateHost(string $host, ?array $allowedHosts = null): bool
     {
-        $allowedHosts = config('pricore.mirrors.allowed_private_hosts', []);
+        $allowedHosts ??= config('pricore.mirrors.allowed_private_hosts', []);
 
         if (! is_array($allowedHosts)) {
             return false;

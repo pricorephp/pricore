@@ -10,6 +10,7 @@ use Illuminate\Http\Client\RequestException;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use ZipArchive;
 
 abstract class AbstractGitProvider implements GitProviderInterface
 {
@@ -108,7 +109,7 @@ abstract class AbstractGitProvider implements GitProviderInterface
         $path = trim((string) $path, '/');
 
         if ($path === '') {
-            return $this->downloadFullArchive($ref, $outputPath);
+            return $this->downloadVerifiedArchive($ref, $outputPath);
         }
 
         $fullArchive = $this->fullArchive($ref);
@@ -125,6 +126,37 @@ abstract class AbstractGitProvider implements GitProviderInterface
         );
     }
 
+    /**
+     * Whatever the provider answered with is stored and served as a package
+     * archive, so anything that is not a zip is discarded.
+     */
+    protected function downloadVerifiedArchive(string $ref, string $outputPath): bool
+    {
+        if (! $this->downloadFullArchive($ref, $outputPath)) {
+            return false;
+        }
+
+        $zip = new ZipArchive;
+
+        if ($zip->open($outputPath, ZipArchive::RDONLY) === true) {
+            $zip->close();
+
+            return true;
+        }
+
+        Log::warning('Discarded a downloaded archive that is not a zip file', [
+            'provider' => class_basename($this),
+            'repository' => $this->repositoryIdentifier,
+            'ref' => $ref,
+        ]);
+
+        if (file_exists($outputPath)) {
+            unlink($outputPath);
+        }
+
+        return false;
+    }
+
     protected function fullArchive(string $ref): ?string
     {
         $cached = $this->fullArchives[$ref] ?? null;
@@ -135,7 +167,7 @@ abstract class AbstractGitProvider implements GitProviderInterface
 
         $tempPath = sys_get_temp_dir().'/pricore-archive-'.Str::random(16).'.zip';
 
-        if (! $this->downloadFullArchive($ref, $tempPath)) {
+        if (! $this->downloadVerifiedArchive($ref, $tempPath)) {
             if (file_exists($tempPath)) {
                 unlink($tempPath);
             }

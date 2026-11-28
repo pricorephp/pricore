@@ -9,6 +9,7 @@ use App\Models\PackageVersion;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Facades\Storage;
+use InvalidArgumentException;
 
 class ResolveDistArchiveAction
 {
@@ -66,12 +67,16 @@ class ResolveDistArchiveAction
         // so recover them by name. Removable once no supported upgrade path
         // predates that migration.
         foreach ($candidates as $candidate) {
-            $legacyPath = DistArchiveData::pathFor(
-                organizationSlug: $organization->slug,
-                packageName: $packageName,
-                version: $candidate->version,
-                reference: $reference,
-            );
+            try {
+                $legacyPath = DistArchiveData::pathFor(
+                    organizationSlug: $organization->slug,
+                    packageName: $packageName,
+                    version: $candidate->version,
+                    reference: $reference,
+                );
+            } catch (InvalidArgumentException) {
+                continue;
+            }
 
             if ($disk->exists($legacyPath)) {
                 return $legacyPath;

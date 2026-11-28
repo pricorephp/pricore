@@ -2,6 +2,7 @@
 
 namespace App\Domains\Repository\Contracts\Data;
 
+use InvalidArgumentException;
 use Spatie\LaravelData\Data;
 
 class DistArchiveData extends Data
@@ -25,7 +26,25 @@ class DistArchiveData extends Data
     ): string {
         $referenceShort = substr($reference, 0, 12);
 
+        if (! ComposerMetadataData::isPathSafeName($packageName) || ! static::isPathSafeVersion("{$version}_{$referenceShort}")) {
+            throw new InvalidArgumentException("Refusing to build a dist path for {$packageName} {$version}.");
+        }
+
         return "{$organizationSlug}/{$packageName}/{$version}_{$referenceShort}.zip";
+    }
+
+    /**
+     * Versions come from Git refs and mirrored registries and become part of
+     * the storage path. Branch names may hold slashes, but no segment may step
+     * out of the package's own directory on the dist disk.
+     */
+    public static function isPathSafeVersion(string $version): bool
+    {
+        if ($version === '' || preg_match('/[\\\\[:cntrl:]]/', $version) === 1) {
+            return false;
+        }
+
+        return array_intersect(explode('/', $version), ['', '.', '..']) === [];
     }
 
     /**

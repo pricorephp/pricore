@@ -1,5 +1,7 @@
 <?php
 
+use App\Domains\Mirror\Actions\CreateMirrorSyncLogAction;
+use App\Domains\Mirror\Actions\RemoveStaleMirrorVersionsAction;
 use App\Domains\Mirror\Exceptions\MirrorSyncException;
 use App\Domains\Mirror\Jobs\SyncMirrorJob;
 use App\Domains\Mirror\Jobs\SyncMirrorVersionJob;
@@ -11,6 +13,7 @@ use App\Models\Organization;
 use App\Models\Package;
 use App\Models\PackageVersion;
 use Composer\MetadataMinifier\MetadataMinifier;
+use Illuminate\Bus\PendingBatch;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Http;
 
@@ -283,4 +286,31 @@ it('supports includes format in packages.json', function () {
     $syncLog = MirrorSyncLog::where('mirror_uuid', $this->mirror->uuid)->latest()->first();
     expect($syncLog->details['packages_found'])->toBe(1);
     expect($syncLog->details['versions_found'])->toBe(1);
+});
+
+it('skips package names and versions that would escape the package directory on the dist disk', function () {
+    Bus::fake();
+
+    Http::fake([
+        'satis.example.com/packages.json' => Http::response([
+            'packages' => [
+                'vendor/pkg' => [
+                    '1.0.0' => ['name' => 'vendor/pkg', 'version' => '1.0.0', 'dist' => ['reference' => 'abc']],
+                    '2.0.0/../../../../victim/vendor/pkg/2.0.0' => ['name' => 'vendor/pkg', 'dist' => ['reference' => 'def']],
+                ],
+                '../../victim/pkg' => [
+                    '1.0.0' => ['name' => '../../victim/pkg', 'version' => '1.0.0', 'dist' => ['reference' => 'abc']],
+                ],
+            ],
+        ]),
+    ]);
+
+    (new SyncMirrorJob($this->mirror))->handle(
+        app(CreateMirrorSyncLogAction::class),
+        app(RemoveStaleMirrorVersionsAction::class),
+    );
+
+    Bus::assertBatched(fn (PendingBatch $batch) => $batch->jobs->count() === 1
+        && $batch->jobs->first()->packageName === 'vendor/pkg'
+        && $batch->jobs->first()->version === '1.0.0');
 });

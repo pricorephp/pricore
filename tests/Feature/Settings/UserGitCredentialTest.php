@@ -162,3 +162,47 @@ test('unauthenticated user cannot access git credentials', function () {
 
     $response->assertRedirect(route('login'));
 });
+
+test('store rejects a gitlab url on a private network', function (string $url) {
+    $this->hostResolver->set('gitlab.internal', ['10.0.0.5']);
+
+    $this->actingAs($this->user)
+        ->post(route('settings.git-credentials.store'), [
+            'provider' => 'gitlab',
+            'credentials' => ['token' => 'glpat-test', 'url' => $url],
+        ])
+        ->assertSessionHasErrors('credentials.url');
+
+    expect(UserGitCredential::where('user_uuid', $this->user->uuid)->exists())->toBeFalse();
+})->with([
+    'https://gitlab.internal',
+    'http://127.0.0.1:8080',
+    'http://169.254.169.254',
+]);
+
+test('update rejects a gitlab url on a private network', function () {
+    $credential = UserGitCredential::create([
+        'user_uuid' => $this->user->uuid,
+        'provider' => 'gitlab',
+        'credentials' => ['token' => 'glpat-test', 'url' => 'https://gitlab.com'],
+    ]);
+
+    $this->actingAs($this->user)
+        ->patch(route('settings.git-credentials.update', $credential), [
+            'credentials' => ['token' => 'glpat-test', 'url' => 'http://127.0.0.1'],
+        ])
+        ->assertSessionHasErrors('credentials.url');
+
+    expect($credential->fresh()->credentials['url'])->toBe('https://gitlab.com');
+});
+
+test('store accepts a public self-hosted gitlab url', function () {
+    $this->actingAs($this->user)
+        ->post(route('settings.git-credentials.store'), [
+            'provider' => 'gitlab',
+            'credentials' => ['token' => 'glpat-test', 'url' => 'https://gitlab.example.com'],
+        ])
+        ->assertSessionHasNoErrors();
+
+    expect(UserGitCredential::where('user_uuid', $this->user->uuid)->exists())->toBeTrue();
+});

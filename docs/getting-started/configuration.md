@@ -166,6 +166,12 @@ Create a GitLab OAuth Application:
 2. Follow the same steps as above
 3. Set `GITLAB_INSTANCE_URI` to your instance URL (e.g., `https://gitlab.example.com/`)
 
+Users can also enter the URL of a self-hosted GitLab with their own access token. Such a URL must resolve to public addresses; requests to private, loopback, link-local and reserved addresses are blocked, including redirects. The host of `GITLAB_INSTANCE_URI` is always allowed. To allow other GitLab instances on a private network, list their exact hostnames or IP addresses:
+
+```bash
+GITLAB_ALLOWED_PRIVATE_HOSTS=gitlab.internal,10.20.30.40
+```
+
 ### Bitbucket
 
 Bitbucket uses API token authentication instead of OAuth — no environment variables are needed. Credentials are configured per user in **Settings** > **Git Providers**.

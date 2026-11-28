@@ -29,6 +29,11 @@ class ComposerMetadataData extends Data
         self::validateRequiredFields($data);
 
         $version = self::extractVersion($ref);
+
+        // Git itself rejects such ref names, but a provider API can return anything.
+        if (! DistArchiveData::isPathSafeVersion($version)) {
+            throw new ComposerMetadataException("The ref \"{$ref}\" cannot be used as a version");
+        }
         $normalizedVersion = self::normalizeVersion($version);
 
         return new self(

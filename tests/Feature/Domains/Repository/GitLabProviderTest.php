@@ -102,3 +102,53 @@ it('throws a rate limit with its retry delay instead of waiting it out', functio
 
     Http::assertSentCount(1);
 });
+
+it('refuses a GitLab URL that resolves to a private address', function () {
+    Http::fake();
+    $this->hostResolver->set('gitlab.attacker.test', ['10.0.0.5']);
+
+    $provider = new GitLabProvider('acme/monorepo', ['token' => 'token', 'url' => 'https://gitlab.attacker.test']);
+
+    expect(fn () => $provider->getFileContent('main', 'composer.json'))->toThrow(GitProviderException::class)
+        ->and($provider->validateCredentials())->toBeFalse();
+
+    Http::assertNothingSent();
+});
+
+it('does not follow a redirect to a private address', function () {
+    Http::fake([
+        'gitlab.attacker.test/*' => Http::response('', 302, ['Location' => 'http://169.254.169.254/latest/meta-data']),
+        '169.254.169.254/*' => Http::response('secret'),
+    ]);
+
+    $provider = new GitLabProvider('acme/monorepo', ['token' => 'token', 'url' => 'https://gitlab.attacker.test']);
+    $output = $this->directory.'/archive.zip';
+
+    expect($provider->downloadArchive('abc123def4567890', $output))->toBeFalse();
+
+    Http::assertNotSent(fn (Request $request) => str_contains($request->url(), '169.254.169.254'));
+});
+
+it('reaches a private GitLab host once it is allowed', function (array $config) {
+    config($config);
+    Http::fake(['gitlab.internal/*' => Http::response(['id' => 1])]);
+    $this->hostResolver->set('gitlab.internal', ['10.0.0.5']);
+
+    $provider = new GitLabProvider('acme/monorepo', ['token' => 'token', 'url' => 'https://gitlab.internal']);
+
+    expect($provider->validateCredentials())->toBeTrue();
+})->with([
+    'allowed host' => [['pricore.gitlab.allowed_private_hosts' => ['gitlab.internal']]],
+    'sign-in instance' => [['services.gitlab.instance_uri' => 'https://gitlab.internal/']],
+]);
+
+it('discards a downloaded archive that is not a zip file', function () {
+    Http::fake([
+        'gitlab.com/api/v4/projects/*/repository/archive.zip*' => Http::response('{"internal":"response"}'),
+    ]);
+
+    $output = $this->directory.'/archive.zip';
+
+    expect(gitlabProvider()->downloadArchive('abc123def4567890', $output))->toBeFalse()
+        ->and(file_exists($output))->toBeFalse();
+});

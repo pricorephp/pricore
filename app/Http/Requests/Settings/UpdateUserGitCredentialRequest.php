@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Settings;
 
 use App\Domains\Repository\Contracts\Enums\GitProvider;
+use App\Domains\Repository\Rules\SafeGitLabUrl;
 use App\Models\UserGitCredential;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
@@ -35,7 +36,7 @@ class UpdateUserGitCredentialRequest extends FormRequest
             ],
             GitProvider::GitLab => [
                 'credentials.token' => ['required', 'string'],
-                'credentials.url' => ['nullable', 'url'],
+                'credentials.url' => ['nullable', 'url', app(SafeGitLabUrl::class)],
             ],
             GitProvider::Bitbucket => [
                 'credentials.email' => ['required', 'email'],
