@@ -13,13 +13,6 @@ return [
         ))),
     ],
 
-    'gitlab' => [
-        'allowed_private_hosts' => array_values(array_filter(array_map(
-            static fn (string $host): string => trim($host),
-            explode(',', (string) env('GITLAB_ALLOWED_PRIVATE_HOSTS', '')),
-        ))),
-    ],
-
     'git' => [
         'allowed_private_hosts' => array_values(array_filter(array_map(
             static fn (string $host): string => trim($host),

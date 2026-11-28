@@ -46,7 +46,7 @@ GIT_ALLOWED_PRIVATE_HOSTS=git.internal,10.20.30.40
 ```
 
 ::: warning
-An allowed host is reachable on every port by every organization admin through the Generic Git provider. Only allow hosts that serve Git.
+An allowed host is reachable on every port by every organization admin through the Generic Git provider, and by every user who enters it as a self-hosted GitLab URL. Only allow hosts that serve Git.
 :::
 
 ## Monorepos

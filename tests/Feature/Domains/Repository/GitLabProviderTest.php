@@ -140,7 +140,7 @@ it('reaches a private GitLab host once it is allowed', function (array $config) 
 
     Http::assertSentCount(1);
 })->with([
-    'allowed host' => [['pricore.gitlab.allowed_private_hosts' => ['gitlab.internal']]],
+    'allowed host' => [['pricore.git.allowed_private_hosts' => ['gitlab.internal']]],
     'sign-in instance' => [['services.gitlab.instance_uri' => 'https://gitlab.internal/']],
 ]);
 

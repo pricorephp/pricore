@@ -60,13 +60,14 @@ class GitLabUrlGuard
     }
 
     /**
-     * The instance configured for GitLab sign-in is trusted by the operator.
+     * Shares the allowlist of the Generic Git provider. The instance configured
+     * for GitLab sign-in is trusted by the operator as well.
      *
      * @return array<int, mixed>
      */
     private function allowedPrivateHosts(): array
     {
-        $allowedHosts = config('pricore.gitlab.allowed_private_hosts', []);
+        $allowedHosts = config('pricore.git.allowed_private_hosts', []);
         $instanceHost = parse_url((string) config('services.gitlab.instance_uri'), PHP_URL_HOST);
 
         return [
