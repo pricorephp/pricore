@@ -359,3 +359,73 @@ it('returns 404 when dist file is missing from disk', function () {
 
     $response->assertNotFound();
 });
+
+it('does not resolve a legacy archive path outside the organization', function () {
+    // A package row mirrored before upstream names were validated.
+    $package = Package::factory()
+        ->for($this->organization, 'organization')
+        ->create(['name' => '../victim-org']);
+
+    PackageVersion::factory()
+        ->for($package)
+        ->create([
+            'version' => 'pkg/1.0.0',
+            'source_reference' => 'abc123def456',
+        ]);
+
+    Storage::disk('local')->put('victim-org/pkg/1.0.0_abc123def456.zip', 'victim-zip-content');
+
+    $response = distGet('/acme/dists/../victim-org/pkg/1.0.0/abc123def456.zip', $this->plainToken);
+
+    $response->assertNotFound();
+});
+
+it('does not serve a stored archive path outside the organization', function () {
+    $package = Package::factory()
+        ->for($this->organization, 'organization')
+        ->create(['name' => 'acme/test-package']);
+
+    $packageVersion = PackageVersion::factory()
+        ->for($package)
+        ->create([
+            'version' => '1.0.0',
+            'source_reference' => 'abc123def456',
+        ]);
+
+    $storedPath = 'acme/../victim-org/pkg/1.0.0_abc123def456.zip';
+    Storage::disk('local')->put('victim-org/pkg/1.0.0_abc123def456.zip', 'victim-zip-content');
+
+    DistArchive::factory()->forPackageVersion($packageVersion)->create([
+        'path' => $storedPath,
+        'shasum' => sha1('victim-zip-content'),
+    ]);
+
+    $response = distGet('/acme/dists/acme/test-package/1.0.0/abc123def456.zip', $this->plainToken);
+
+    $response->assertNotFound();
+});
+
+it('serves archives stored under a previous organization slug', function () {
+    $package = Package::factory()
+        ->for($this->organization, 'organization')
+        ->create(['name' => 'acme/test-package']);
+
+    $packageVersion = PackageVersion::factory()
+        ->for($package)
+        ->create([
+            'version' => '1.0.0',
+            'source_reference' => 'abc123def456',
+        ]);
+
+    $storedPath = 'old-acme/acme/test-package/1.0.0_abc123def456.zip';
+    Storage::disk('local')->put($storedPath, 'fake-zip-content');
+
+    DistArchive::factory()->forPackageVersion($packageVersion)->create([
+        'path' => $storedPath,
+        'shasum' => sha1('fake-zip-content'),
+    ]);
+
+    $response = distGet('/acme/dists/acme/test-package/1.0.0/abc123def456.zip', $this->plainToken);
+
+    $response->assertOk();
+});

@@ -134,7 +134,7 @@ class RegistryClientFactory
         $availablePackages = $rootMetadata['available-packages'] ?? null;
 
         if (is_array($availablePackages)) {
-            return array_values(array_filter($availablePackages, 'is_string'));
+            return UpstreamMetadataFilter::packageNames($availablePackages);
         }
 
         throw new MirrorSyncException(
