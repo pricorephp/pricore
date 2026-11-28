@@ -1,6 +1,7 @@
 <?php
 
 use App\Domains\Repository\Contracts\Data\ComposerMetadataData;
+use App\Domains\Repository\Contracts\Data\DistArchiveData;
 use App\Domains\Repository\Contracts\Data\RefData;
 use App\Exceptions\ComposerMetadataException;
 
@@ -131,4 +132,26 @@ it('defaults type to library when not specified', function () {
     $result = ComposerMetadataData::fromComposerJson($composerJson, new RefData('v1.0.0', '', isTag: true));
 
     expect($result->type)->toBe('library');
+});
+
+it('rejects refs that would step out of the package directory on the dist disk', function (string $ref) {
+    ComposerMetadataData::fromComposerJson(json_encode(['name' => 'vendor/package']), new RefData($ref, '', isTag: true));
+})->with([
+    '1.0.0/../../../../victim-org/vendor/pkg/1.0.0',
+    'feature/../../other',
+    'feature//double',
+    'feature/',
+    'main\\..\\other',
+])->throws(ComposerMetadataException::class);
+
+it('builds dist paths for tags and nested branch names only', function () {
+    expect(DistArchiveData::pathFor('acme', 'vendor/package', 'dev-feature/login', 'abcdef1234567890'))
+        ->toBe('acme/vendor/package/dev-feature/login_abcdef123456.zip');
+
+    expect(fn () => DistArchiveData::pathFor('acme', 'vendor/package', '1.0.0/../../../../victim/vendor/pkg/1.0.0', 'abcdef1234567890'))
+        ->toThrow(InvalidArgumentException::class)
+        ->and(fn () => DistArchiveData::pathFor('acme', '../../victim/pkg', '1.0.0', 'abcdef1234567890'))
+        ->toThrow(InvalidArgumentException::class)
+        ->and(fn () => DistArchiveData::pathFor('acme', 'vendor/package', '1.0.0', '../../../x'))
+        ->toThrow(InvalidArgumentException::class);
 });

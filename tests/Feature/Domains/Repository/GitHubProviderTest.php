@@ -170,12 +170,16 @@ it('cuts a subdirectory archive from the zipball and reuses the download', funct
 });
 
 it('downloads the whole zipball when no path is given', function () {
-    Http::fake(['api.github.com/repos/acme/monorepo/zipball/abc123*' => Http::response('zip-bytes')]);
+    $fixture = $this->directory.'/fixture.zip';
+    createTestZip($fixture, ['monorepo-abc123/composer.json' => 'root']);
+    $zipBytes = (string) file_get_contents($fixture);
+
+    Http::fake(['api.github.com/repos/acme/monorepo/zipball/abc123*' => Http::response($zipBytes)]);
 
     $output = $this->directory.'/full.zip';
 
     expect(githubProvider()->downloadArchive('abc123', $output))->toBeTrue()
-        ->and(file_get_contents($output))->toBe('zip-bytes');
+        ->and(file_get_contents($output))->toBe($zipBytes);
 });
 
 it('keeps the cached zipball intact when other requests follow the download', function () {

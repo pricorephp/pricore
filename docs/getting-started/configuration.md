@@ -131,6 +131,12 @@ GITLAB_INSTANCE_URI=https://gitlab.example.com   # only for self-hosted GitLab
 
 The callback URLs default to `/auth/{provider}/callback` on `APP_URL`. Set `GITHUB_REDIRECT_URI` or `GITLAB_REDIRECT_URI` only if you need something else.
 
+Users can also enter the URL of a self-hosted GitLab with their own access token. Such a URL must resolve to public addresses; requests to private, loopback, link-local and reserved addresses are blocked, including redirects. The host of `GITLAB_INSTANCE_URI` is always allowed. To allow other GitLab instances on a private network, add their exact hostnames or IP addresses to `GIT_ALLOWED_PRIVATE_HOSTS`, the same setting that allows [Git servers on a private network](/guide/repositories#git-servers-on-a-private-network):
+
+```bash
+GIT_ALLOWED_PRIVATE_HOSTS=gitlab.internal,10.20.30.40
+```
+
 ### Bitbucket
 
 Bitbucket has no OAuth sign-in. Each user adds an API token under **Settings** > **Git Providers**; see [Repositories](/guide/repositories#github-gitlab-and-bitbucket) for the scopes it needs.
@@ -184,7 +190,7 @@ Organization admins can enter any URL as a Generic Git repository or a registry 
 
 | Variable | Description |
 |----------|-------------|
-| `GIT_ALLOWED_PRIVATE_HOSTS` | Hosts allowed for [Generic Git repositories](/guide/repositories#git-servers-on-a-private-network) |
+| `GIT_ALLOWED_PRIVATE_HOSTS` | Hosts allowed for [Generic Git repositories](/guide/repositories#git-servers-on-a-private-network) and self-hosted GitLab URLs |
 | `MIRROR_ALLOWED_PRIVATE_HOSTS` | Hosts allowed for [registry mirrors](/guide/registry-mirrors#private-networks) |
 
 Both take a comma-separated list such as `git.internal,10.20.30.40`. Wildcards and CIDR ranges are not accepted. GitHub, GitLab and Bitbucket repositories are not affected.

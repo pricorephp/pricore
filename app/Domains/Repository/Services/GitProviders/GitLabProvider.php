@@ -4,6 +4,7 @@ namespace App\Domains\Repository\Services\GitProviders;
 
 use App\Domains\Repository\Contracts\Data\RepositorySuggestionData;
 use App\Domains\Repository\Exceptions\GitProviderException;
+use App\Domains\Repository\Services\Http\GitLabUrlGuard;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
@@ -18,6 +19,7 @@ class GitLabProvider extends AbstractGitProvider
 
         return $this->withRetries(Http::baseUrl($baseUrl)
             ->withToken($token ?? '')
+            ->withMiddleware(app(GitLabUrlGuard::class)->middleware())
             ->timeout(30));
     }
 

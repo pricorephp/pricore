@@ -400,3 +400,27 @@ it('marks the sync as failed when every package fails to load', function () {
         ->and($syncLog->error_message)->toContain('HTTP 401')
         ->and($syncLog->details['packages_failed'])->toBe(['vendor/pkg', 'vendor/other']);
 });
+
+it('skips package names and versions that would escape the package directory on the dist disk', function () {
+    Bus::fake(SyncMirrorVersionJob::class);
+
+    Http::fake([
+        'satis.example.com/packages.json' => Http::response([
+            'packages' => [
+                'vendor/pkg' => [
+                    '1.0.0' => ['name' => 'vendor/pkg', 'version' => '1.0.0', 'dist' => ['reference' => 'abc']],
+                    '2.0.0/../../../../victim/vendor/pkg/2.0.0' => ['name' => 'vendor/pkg', 'dist' => ['reference' => 'def']],
+                ],
+                '../../victim/pkg' => [
+                    '1.0.0' => ['name' => '../../victim/pkg', 'version' => '1.0.0', 'dist' => ['reference' => 'abc']],
+                ],
+            ],
+        ]),
+    ]);
+
+    SyncMirrorJob::dispatchSync($this->mirror);
+
+    Bus::assertBatched(fn (PendingBatch $pendingBatch) => $pendingBatch->jobs->count() === 1
+        && $pendingBatch->jobs->first()->packageName === 'vendor/pkg'
+        && $pendingBatch->jobs->first()->version === '1.0.0');
+});

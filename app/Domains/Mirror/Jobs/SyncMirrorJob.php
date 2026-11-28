@@ -7,6 +7,8 @@ use App\Domains\Mirror\Actions\RemoveStaleMirrorVersionsAction;
 use App\Domains\Mirror\Events\MirrorSyncStatusUpdated;
 use App\Domains\Mirror\Exceptions\MirrorSyncException;
 use App\Domains\Mirror\Services\RegistryClient\RegistryClientFactory;
+use App\Domains\Repository\Contracts\Data\ComposerMetadataData;
+use App\Domains\Repository\Contracts\Data\DistArchiveData;
 use App\Domains\Repository\Contracts\Enums\RepositorySyncStatus;
 use App\Domains\Repository\Contracts\Enums\SyncStatus;
 use App\Models\Mirror;
@@ -77,8 +79,23 @@ class SyncMirrorJob implements ShouldBeUnique, ShouldQueue
             $allPackageVersions = [];
             $failedPackageExceptions = [];
             foreach ($availablePackages as $packageName) {
+                // Names and versions become directories on the dist disk, and the
+                // registry is free to advertise anything.
+                if (! ComposerMetadataData::isPathSafeName($packageName)) {
+                    Log::warning('Skipping mirrored package with an unsafe name', [
+                        'mirror' => $this->mirror->name,
+                        'package' => $packageName,
+                    ]);
+
+                    continue;
+                }
+
                 try {
-                    $allPackageVersions[$packageName] = $registryClient->getPackageVersions($packageName);
+                    $allPackageVersions[$packageName] = array_filter(
+                        $registryClient->getPackageVersions($packageName),
+                        fn (int|string $version): bool => DistArchiveData::isPathSafeVersion((string) $version),
+                        ARRAY_FILTER_USE_KEY,
+                    );
                 } catch (MirrorSyncException $e) {
                     $failedPackageExceptions[$packageName] = $e;
 
